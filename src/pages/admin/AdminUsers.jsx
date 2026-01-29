@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { adminAPI } from '../../lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
@@ -54,15 +54,15 @@ const AdminUsers = () => {
 
   useEffect(() => {
     loadUsers();
-  }, [search, roleFilter]);
+  }, [loadUsers]);
 
-  const loadUsers = async () => {
+  const loadUsers = useCallback(async () => {
     setLoading(true);
     try {
       const params = { limit: 100 };
       if (search) params.search = search;
       if (roleFilter !== 'all') params.role = roleFilter;
-      
+
       const res = await adminAPI.getUsers(params);
       setUsers(res.data || []);
     } catch (error) {
@@ -70,7 +70,7 @@ const AdminUsers = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [search, roleFilter]);
 
   const handleRoleChange = async (userId, newRole) => {
     try {

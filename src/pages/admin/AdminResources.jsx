@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { resourceAPI } from '../../lib/api';
 import { Card, CardContent } from '../../components/ui/card';
@@ -69,15 +69,15 @@ const AdminResources = () => {
 
   useEffect(() => {
     loadResources();
-  }, [search, typeFilter]);
+  }, [loadResources]);
 
-  const loadResources = async () => {
+  const loadResources = useCallback(async () => {
     setLoading(true);
     try {
       const params = { limit: 50 };
       if (search) params.search = search;
       if (typeFilter !== 'all') params.resource_type = typeFilter;
-      
+
       const res = await resourceAPI.list(params);
       setResources(res.data || []);
     } catch (error) {
@@ -85,7 +85,7 @@ const AdminResources = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [search, typeFilter]);
 
   const handleDelete = async () => {
     if (!deleteId) return;

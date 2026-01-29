@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { profileAPI, adminAPI } from '../../lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
@@ -59,15 +59,15 @@ const AdminEntrepreneurs = () => {
 
   useEffect(() => {
     loadProfiles();
-  }, [search, statusFilter]);
+  }, [loadProfiles]);
 
-  const loadProfiles = async () => {
+  const loadProfiles = useCallback(async () => {
     setLoading(true);
     try {
       const params = { limit: 50 };
       if (search) params.search = search;
       if (statusFilter !== 'all') params.status = statusFilter;
-      
+
       const res = await profileAPI.list(params);
       setProfiles(res.data || []);
     } catch (error) {
@@ -75,7 +75,7 @@ const AdminEntrepreneurs = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [search, statusFilter]);
 
   const handleApprove = async (id) => {
     setActionLoading(id);

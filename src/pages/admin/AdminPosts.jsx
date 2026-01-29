@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { postAPI, categoryAPI } from '../../lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
@@ -51,9 +51,9 @@ const AdminPosts = () => {
 
   useEffect(() => {
     loadPosts();
-  }, [search]);
+  }, [loadPosts]);
 
-  const loadPosts = async () => {
+  const loadPosts = useCallback(async () => {
     setLoading(true);
     try {
       const res = await postAPI.list({ search: search || undefined, limit: 50 });
@@ -63,7 +63,7 @@ const AdminPosts = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [search]);
 
   const handleDelete = async () => {
     if (!deleteId) return;
@@ -156,9 +156,9 @@ const AdminPosts = () => {
                     <TableCell>
                       <div className="flex items-center gap-3">
                         {post.featured_image && (
-                          <img 
-                            src={post.featured_image} 
-                            alt="" 
+                          <img
+                            src={post.featured_image}
+                            alt=""
                             className="w-12 h-8 rounded object-cover"
                           />
                         )}
@@ -194,7 +194,7 @@ const AdminPosts = () => {
                               Edit
                             </Link>
                           </DropdownMenuItem>
-                          <DropdownMenuItem 
+                          <DropdownMenuItem
                             className="text-red-600"
                             onClick={() => setDeleteId(post.id)}
                           >
@@ -223,7 +223,7 @@ const AdminPosts = () => {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
+            <AlertDialogAction
               onClick={handleDelete}
               disabled={deleting}
               className="bg-red-600 hover:bg-red-700"

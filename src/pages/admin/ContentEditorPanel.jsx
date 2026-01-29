@@ -74,7 +74,7 @@ const ContentEditorPanel = () => {
     if (editor) {
       setEditorReady(true);
       console.log('Editor is ready', editor.isEditable);
-      
+
       if (itemId) {
         const loadContent = async () => {
           try {
@@ -89,7 +89,7 @@ const ContentEditorPanel = () => {
             setSeoTitle(data.seo_title || '');
             setSeoDescription(data.seo_description || '');
             setSeoKeywords(data.seo_keywords || '');
-            
+
             if (data.content) {
               editor.commands.setContent(data.content);
             }
@@ -121,7 +121,7 @@ const ContentEditorPanel = () => {
     if (title && !seoTitle) {
       setSeoTitle(title);
     }
-  }, [title]);
+  }, [title, seoTitle]);
 
   const handleSave = async () => {
     if (!title.trim()) {
@@ -136,14 +136,14 @@ const ContentEditorPanel = () => {
     setSaving(true);
     try {
       const content = editor?.getHTML() || '';
-      
+
       console.log('Editor state:', {
         hasEditor: !!editor,
         content: content.substring(0, 100),
         contentLength: content.length,
         isEditable: editor?.isEditable,
       });
-      
+
       if (!content || content === '<p></p>') {
         toast.warning('Please add some content before saving');
         setSaving(false);
@@ -165,7 +165,7 @@ const ContentEditorPanel = () => {
       };
 
       console.log('Saving content to database:', payload);
-      
+
       let response;
       if (itemId) {
         // Update existing content
@@ -174,10 +174,10 @@ const ContentEditorPanel = () => {
         // Create new content
         response = await contentAPI.create(payload);
       }
-      
+
       console.log('Save response:', response);
       toast.success(`Content ${status === 'published' ? 'published' : 'saved'} successfully!`);
-      
+
       // Redirect after successful save
       setTimeout(() => {
         navigate(`/admin/content-manager?type=${type}`);
@@ -333,29 +333,29 @@ const ContentEditorPanel = () => {
             <CardContent>
               <div className="editor-toolbar">
                 <div className="toolbar-group">
-                  <button 
+                  <button
                     onClick={() => {
                       console.log('Bold clicked, editor:', editor?.isEditable);
                       editor?.chain().focus().toggleBold().run();
-                    }} 
+                    }}
                     disabled={!editor}
                     title="Bold">
                     <strong>B</strong>
                   </button>
-                  <button 
+                  <button
                     onClick={() => {
                       console.log('Italic clicked');
                       editor?.chain().focus().toggleItalic().run();
-                    }} 
+                    }}
                     disabled={!editor}
                     title="Italic">
                     <em>I</em>
                   </button>
-                  <button 
+                  <button
                     onClick={() => {
                       console.log('Underline clicked');
                       editor?.chain().focus().toggleUnderline().run();
-                    }} 
+                    }}
                     disabled={!editor}
                     title="Underline">
                     <u>U</u>
@@ -365,7 +365,7 @@ const ContentEditorPanel = () => {
                 <div className="toolbar-divider" />
 
                 <div className="toolbar-group">
-                  <button 
+                  <button
                     onClick={() => {
                       console.log('H1 clicked');
                       editor?.chain().focus().toggleHeading({ level: 1 }).run();
@@ -374,7 +374,7 @@ const ContentEditorPanel = () => {
                   >
                     H1
                   </button>
-                  <button 
+                  <button
                     onClick={() => {
                       console.log('H2 clicked');
                       editor?.chain().focus().toggleHeading({ level: 2 }).run();
@@ -383,7 +383,7 @@ const ContentEditorPanel = () => {
                   >
                     H2
                   </button>
-                  <button 
+                  <button
                     onClick={() => {
                       console.log('H3 clicked');
                       editor?.chain().focus().toggleHeading({ level: 3 }).run();
@@ -397,7 +397,7 @@ const ContentEditorPanel = () => {
                 <div className="toolbar-divider" />
 
                 <div className="toolbar-group">
-                  <button 
+                  <button
                     onClick={() => {
                       console.log('Bullet List clicked');
                       editor?.chain().focus().toggleBulletList().run();
@@ -406,7 +406,7 @@ const ContentEditorPanel = () => {
                   >
                     Bullet List
                   </button>
-                  <button 
+                  <button
                     onClick={() => {
                       console.log('Ordered List clicked');
                       editor?.chain().focus().toggleOrderedList().run();
@@ -420,7 +420,7 @@ const ContentEditorPanel = () => {
                 <div className="toolbar-divider" />
 
                 <div className="toolbar-group">
-                  <button 
+                  <button
                     onClick={() => {
                       console.log('Left align clicked');
                       editor?.chain().focus().setTextAlign('left').run();
@@ -429,7 +429,7 @@ const ContentEditorPanel = () => {
                   >
                     Left
                   </button>
-                  <button 
+                  <button
                     onClick={() => {
                       console.log('Center align clicked');
                       editor?.chain().focus().setTextAlign('center').run();
@@ -438,7 +438,7 @@ const ContentEditorPanel = () => {
                   >
                     Center
                   </button>
-                  <button 
+                  <button
                     onClick={() => {
                       console.log('Right align clicked');
                       editor?.chain().focus().setTextAlign('right').run();
@@ -452,7 +452,7 @@ const ContentEditorPanel = () => {
                 <div className="toolbar-divider" />
 
                 <div className="toolbar-group">
-                  <button 
+                  <button
                     onClick={() => {
                       const url = prompt('Enter image URL:');
                       if (url) {
@@ -464,7 +464,7 @@ const ContentEditorPanel = () => {
                   >
                     Image
                   </button>
-                  <button 
+                  <button
                     onClick={() => {
                       const url = prompt('Enter link URL:');
                       if (url) {
@@ -481,7 +481,7 @@ const ContentEditorPanel = () => {
                 <div className="toolbar-divider" />
 
                 <div className="toolbar-group">
-                  <button 
+                  <button
                     onClick={() => {
                       console.log('Undo clicked');
                       editor?.chain().focus().undo().run();
@@ -490,7 +490,7 @@ const ContentEditorPanel = () => {
                   >
                     Undo
                   </button>
-                  <button 
+                  <button
                     onClick={() => {
                       console.log('Redo clicked');
                       editor?.chain().focus().redo().run();
@@ -504,13 +504,13 @@ const ContentEditorPanel = () => {
 
               <div className="editor-content" style={{ display: 'block', width: '100%', boxSizing: 'border-box' }}>
                 {!editor ? (
-                  <div style={{padding: '16px', color: '#999'}}>Loading editor...</div>
+                  <div style={{ padding: '16px', color: '#999' }}>Loading editor...</div>
                 ) : (
                   <>
                     <div style={{ marginBottom: '8px', fontSize: '12px', color: '#666' }}>
                       {editor.isEditable ? '✓ Ready to edit' : '✗ Editor not editable'}
                     </div>
-                    <EditorContent 
+                    <EditorContent
                       editor={editor}
                       style={{
                         outline: 'none',

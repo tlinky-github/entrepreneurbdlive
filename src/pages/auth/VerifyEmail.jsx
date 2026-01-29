@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Button } from '../../components/ui/button';
 import api from '../../lib/api';
@@ -8,9 +8,19 @@ import { Loader2, CheckCircle, XCircle, Mail } from 'lucide-react';
 const VerifyEmail = () => {
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
-  
+
   const [status, setStatus] = useState('verifying'); // verifying, success, error
   const [errorMessage, setErrorMessage] = useState('');
+
+  const verifyEmail = useCallback(async () => {
+    try {
+      await api.post('/auth/verify-email', { token });
+      setStatus('success');
+    } catch (error) {
+      setStatus('error');
+      setErrorMessage(error.response?.data?.detail || 'Verification failed');
+    }
+  }, [token]);
 
   useEffect(() => {
     if (token) {
@@ -19,17 +29,7 @@ const VerifyEmail = () => {
       setStatus('error');
       setErrorMessage('Invalid verification link');
     }
-  }, [token]);
-
-  const verifyEmail = async () => {
-    try {
-      await api.post('/auth/verify-email', { token });
-      setStatus('success');
-    } catch (error) {
-      setStatus('error');
-      setErrorMessage(error.response?.data?.detail || 'Verification failed');
-    }
-  };
+  }, [token, verifyEmail]);
 
   if (status === 'verifying') {
     return (

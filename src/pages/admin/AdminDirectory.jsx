@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { listingAPI, adminAPI } from '../../lib/api';
 import { Card, CardContent } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
@@ -59,18 +59,14 @@ const AdminDirectory = () => {
   const [deleteId, setDeleteId] = useState(null);
   const [actionLoading, setActionLoading] = useState(null);
 
-  useEffect(() => {
-    loadListings();
-  }, [search, statusFilter, typeFilter]);
-
-  const loadListings = async () => {
+  const loadListings = useCallback(async () => {
     setLoading(true);
     try {
       const params = { limit: 50 };
       if (search) params.search = search;
       if (statusFilter !== 'all') params.status = statusFilter;
       if (typeFilter !== 'all') params.listing_type = typeFilter;
-      
+
       const res = await listingAPI.list(params);
       setListings(res.data || []);
     } catch (error) {
@@ -78,7 +74,11 @@ const AdminDirectory = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [search, statusFilter, typeFilter]);
+
+  useEffect(() => {
+    loadListings();
+  }, [loadListings]);
 
   const handleApprove = async (id) => {
     setActionLoading(id);
