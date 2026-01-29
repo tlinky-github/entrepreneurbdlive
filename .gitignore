@@ -1,0 +1,117 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# ==================== INTERNAL DOCUMENTATION ====================
+# Keep only README.md, ignore internal guides
+ARCHITECTURE.md
+CMS_COMPLETE.md
+CMS_IMPLEMENTATION.md
+CMS_QUICKSTART.md
+CMS_QUICK_REFERENCE.md
+CONTENT_MANAGEMENT_GUIDE.md
+EDITOR_COMPLETE.md
+FEATURE_MATRIX.md
+GITHUB_PUSH_GUIDE.md
+GITIGNORE_SUMMARY.md
+IMPLEMENTATION_CHECKLIST.md
+INSTALLATION_COMPLETE.md
+QUICK_REFERENCE.md
+SITEMAP_GUIDE.md
+SITEMAP_IMPLEMENTATION.md
+SITEMAP_README.md
+SITEMAP_SETUP.md
+START_HERE.md
+TROUBLESHOOTING.md
+VISUAL_EDITOR_GUIDE.md
+VISUAL_EDITOR_OPTIONS.md
+VISUAL_EDITOR_QUICKSTART.md
+VISUAL_EDITOR_README.md
+VISUAL_EDITOR_SETUP.md
+
+# ==================== FRONTEND DEPENDENCIES ====================
+/node_modules
+/.pnp
+.pnp.js
+
+# ==================== BACKEND DEPENDENCIES ====================
+/backend/node_modules
+/backend/.env
+/backend/.env.local
+/backend/database.db
+/backend/database.db-journal
+/backend/*.sqlite
+/backend/*.sqlite3
+
+# ==================== ENVIRONMENT VARIABLES ====================
+.env
+.env.local
+.env.example
+.env.development.local
+.env.test.local
+.env.production.local
+/backend/.env.example
+
+# ==================== BUILD & DIST ====================
+/build
+/dist
+/out
+
+# ==================== TESTING ====================
+/coverage
+.nyc_output
+
+# ==================== LOGS ====================
+npm-debug.log*
+npm-error.log*
+yarn-debug.log*
+yarn-error.log*
+yarn.lock
+pnpm-debug.log*
+pnpm-error.log*
+lerna-debug.log*
+
+# ==================== IDE & EDITOR ====================
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ==================== OS SPECIFIC ====================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+desktop.ini
+
+# ==================== MISC ====================
+.cache
+.eslintcache
+*.tgz
+*.tar.gz
+.next
+out/
+.turbo
+
+# ==================== LOCAL DEVELOPMENT ====================
+.env.local.js
+local.js
+*.local.js
+.env.development
+debug.log
+
+# ==================== DATABASE ====================
+*.db
+*.sqlite
+*.sqlite3
+
+# ==================== TEMPORARY FILES ====================
+.tmp/
+temp/
+tmp/
+
