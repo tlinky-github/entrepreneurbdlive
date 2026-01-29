@@ -1,5 +1,8 @@
 
 import EvolutionPost from '../content/posts/evolution-entrepreneurship.mdx';
+import MindsetPost from '../content/posts/entrepreneurial-mindset.mdx';
+import DigitalPost from '../content/posts/digital-transformation.mdx';
+import SustainabilityPost from '../content/posts/sustainable-entrepreneurship.mdx';
 
 export const categories = [
     {
@@ -163,7 +166,7 @@ export const posts = [
         title: "Developing an Entrepreneurial Mindset in Bangladesh’s Economy",
         slug: "developing-entrepreneurial-mindset-bangladesh",
         excerpt: "How to shift your thinking from employee to employer and spot opportunities in a crowded market.",
-        content_component: EvolutionPost, // Placeholder
+        content_component: MindsetPost,
         featured_image: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&q=80&w=1000",
         category_id: 2,
         author_name: "Editorial Team",
@@ -263,7 +266,7 @@ export const posts = [
         title: "The Digital Transformation of Bangladeshi Businesses",
         slug: "digital-transformation-bangladeshi-businesses",
         excerpt: "How traditional businesses are adopting digital tools to survive and thrive in the modern economy.",
-        content_component: EvolutionPost, // Placeholder
+        content_component: DigitalPost,
         featured_image: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80&w=1000",
         category_id: 3,
         author_name: "Tech Editor",
@@ -349,7 +352,7 @@ export const posts = [
         title: "The Rise of Green and Sustainable Entrepreneurship",
         slug: "rise-green-sustainable-entrepreneurship",
         excerpt: "How conscious business practices are not just good for the planet, but profitable for the bottom line.",
-        content_component: EvolutionPost, // Placeholder
+        content_component: SustainabilityPost,
         featured_image: "https://images.unsplash.com/photo-1542601906990-b4d3fb7d5763?auto=format&fit=crop&q=80&w=1000",
         category_id: 4,
         author_name: "Sustainability Expert",
