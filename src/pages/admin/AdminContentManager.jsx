@@ -1,7 +1,7 @@
 // src/pages/admin/AdminContentManager.jsx
 // Unified Content Manager for Blog, Entrepreneurs, Directory, Knowledge Hub
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
@@ -83,9 +83,9 @@ const AdminContentManager = () => {
   useEffect(() => {
     loadItems();
     loadCategories();
-  }, [contentType, search]);
+  }, [loadItems, loadCategories]);
 
-  const loadItems = async () => {
+  const loadItems = useCallback(async () => {
     setLoading(true);
     try {
       // Mock data for demo - replace with actual API calls
@@ -115,9 +115,9 @@ const AdminContentManager = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [contentType]);
 
-  const loadCategories = async () => {
+  const loadCategories = useCallback(async () => {
     try {
       const mockCategories = [
         { id: 1, name: 'Technology', slug: 'technology' },
@@ -128,7 +128,7 @@ const AdminContentManager = () => {
     } catch (error) {
       console.error('Error loading categories:', error);
     }
-  };
+  }, []);
 
   const handleCreateCategory = async () => {
     if (!newCategory.trim()) {
@@ -263,7 +263,7 @@ const AdminContentManager = () => {
                   {filteredItems.map((item) => {
                     const catName = categories.find(c => c.id === item.category_id)?.name || '-';
                     const title = item.title || item.slug || item.company_name || `${item.first_name} ${item.last_name}`;
-                    
+
                     return (
                       <TableRow key={item.id}>
                         <TableCell className="font-medium">{title}</TableCell>
@@ -278,18 +278,18 @@ const AdminContentManager = () => {
                         {contentType === 'blog' && <TableCell>{item.views || 0}</TableCell>}
                         <TableCell>
                           <div className="action-icons">
-                            <Eye 
-                              size={18} 
+                            <Eye
+                              size={18}
                               className="icon-btn"
                               onClick={() => window.open(config.route)}
                             />
-                            <Edit2 
-                              size={18} 
+                            <Edit2
+                              size={18}
                               className="icon-btn"
                               onClick={() => window.location.href = `/admin/content-editor?type=${contentType}&id=${item.id}`}
                             />
-                            <Trash2 
-                              size={18} 
+                            <Trash2
+                              size={18}
                               className="icon-btn delete"
                               onClick={() => setDeleteId(item.id)}
                             />
@@ -332,7 +332,7 @@ const AdminContentManager = () => {
                 <Button onClick={handleCreateCategory}>Add Category</Button>
               </div>
 
-              <Button 
+              <Button
                 onClick={() => setShowCategoryModal(false)}
                 variant="outline"
                 className="w-full mt-4"

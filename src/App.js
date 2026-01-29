@@ -243,9 +243,8 @@ const DynamicPage = () => {
   const [page, setPage] = React.useState(null);
   const [loading, setLoading] = React.useState(true);
   const { slug } = require('react-router-dom').useParams();
-  const api = require('./lib/api').default;
-
   React.useEffect(() => {
+    const api = require('./lib/api').default;
     const loadPage = async () => {
       try {
         const res = await api.get(`/pages/${slug}`);
