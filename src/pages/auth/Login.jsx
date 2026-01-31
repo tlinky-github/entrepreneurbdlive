@@ -19,6 +19,7 @@ const Login = () => {
 
   return (
     <div className="min-h-screen bg-stone-50 flex items-center justify-center py-12 px-4" data-testid="login-page">
+      <SEO pageKey="login" />
       <div className="w-full max-w-md">
         {/* Logo */}
         <Link to="/" className="flex items-center justify-center gap-2 mb-8">
@@ -55,8 +56,8 @@ const Login = () => {
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
                   <Label htmlFor="password">Password</Label>
-                  <Link 
-                    to="/forgot-password" 
+                  <Link
+                    to="/forgot-password"
                     className="text-sm text-emerald-900 hover:text-emerald-700"
                   >
                     Forgot password?

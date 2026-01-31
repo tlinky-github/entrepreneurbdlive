@@ -174,6 +174,13 @@ const BlogDetail = () => {
         type="article"
         author={post.author_name}
         publishedTime={post.created_at}
+        keywords={[...(post.tags || []), post.category_name, post.author_name].filter(Boolean)}
+        breadcrumbs={[
+          { name: 'Home', path: '/' },
+          { name: 'Blog', path: '/blog' },
+          ...(post.category_name ? [{ name: post.category_name, path: `/blog?category=${post.category_slug || post.category_name.toLowerCase()}` }] : []),
+          { name: post.title, path: `/blog/${post.slug}` }
+        ]}
       />
       {/* Back Button */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
@@ -212,12 +219,13 @@ const BlogDetail = () => {
         </header>
 
         {/* Featured Image */}
+        {/* Featured Image */}
         {post.featured_image && (
-          <div className="aspect-video bg-stone-100 rounded-xl overflow-hidden mb-10">
+          <div className="w-full bg-stone-100 rounded-xl overflow-hidden mb-10 shadow-lg">
             <img
               src={post.featured_image}
               alt={post.title}
-              className="w-full h-full object-cover"
+              className="w-full h-auto"
             />
           </div>
         )}

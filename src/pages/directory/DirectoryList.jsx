@@ -90,7 +90,13 @@ const DirectoryList = () => {
 
   return (
     <div className="bg-stone-50 min-h-screen" data-testid="directory-page">
-      <SEO pageKey="directory" />
+      <SEO
+        pageKey="directory"
+        breadcrumbs={[
+          { name: 'Home', path: '/' },
+          { name: 'Directory', path: '/directory' }
+        ]}
+      />
       {/* Header */}
       <div className="bg-emerald-900 py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

@@ -82,7 +82,13 @@ const EntrepreneurList = () => {
 
   return (
     <div className="bg-stone-50 min-h-screen" data-testid="entrepreneurs-page">
-      <SEO pageKey="entrepreneurs" />
+      <SEO
+        pageKey="entrepreneurs"
+        breadcrumbs={[
+          { name: 'Home', path: '/' },
+          { name: 'Entrepreneurs', path: '/entrepreneurs' }
+        ]}
+      />
       {/* Header */}
       <div className="bg-emerald-900 py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

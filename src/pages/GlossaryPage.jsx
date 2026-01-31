@@ -28,7 +28,14 @@ const GlossaryPage = () => {
 
   return (
     <>
-      <SEO pageKey="glossary" />
+      <SEO
+        pageKey="glossary"
+        breadcrumbs={[
+          { name: 'Home', path: '/' },
+          { name: 'Resources', path: '/resources' },
+          { name: 'Glossary', path: '/resources/glossary' }
+        ]}
+      />
       {/* Hero Section */}
       <section className="py-24 bg-stone-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

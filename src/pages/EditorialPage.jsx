@@ -9,7 +9,13 @@ import { editorialPrinciples } from '../data/mock';
 const EditorialPage = () => {
   return (
     <>
-      <SEO pageKey="editorial" />
+      <SEO
+        pageKey="editorial"
+        breadcrumbs={[
+          { name: 'Home', path: '/' },
+          { name: 'Editorial Policy', path: '/editorial' }
+        ]}
+      />
       {/* Hero Section */}
       <section className="py-24 bg-stone-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

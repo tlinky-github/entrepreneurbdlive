@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { SEO } from '../../components/SEO';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
@@ -15,7 +16,7 @@ const ForgotPassword = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!email) {
       toast.error('Please enter your email');
       return;
@@ -35,6 +36,7 @@ const ForgotPassword = () => {
   if (sent) {
     return (
       <div className="min-h-screen bg-stone-50 flex items-center justify-center py-12 px-4" data-testid="forgot-password-sent">
+        <SEO title="Check Your Email | Entrepreneur BD" />
         <div className="w-full max-w-md text-center">
           <div className="w-16 h-16 bg-emerald-100 rounded-full mx-auto mb-6 flex items-center justify-center">
             <CheckCircle className="w-8 h-8 text-emerald-900" />
@@ -56,6 +58,10 @@ const ForgotPassword = () => {
 
   return (
     <div className="min-h-screen bg-stone-50 flex items-center justify-center py-12 px-4" data-testid="forgot-password-page">
+      <SEO
+        title="Forgot Password | Entrepreneur BD"
+        description="Reset your password to regain access to your Entrepreneur BD account."
+      />
       <div className="w-full max-w-md">
         {/* Logo */}
         <Link to="/" className="flex items-center justify-center gap-2 mb-8">

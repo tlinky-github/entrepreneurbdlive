@@ -41,7 +41,13 @@ const ContactPage = () => {
 
   return (
     <>
-      <SEO pageKey="contact" />
+      <SEO
+        pageKey="contact"
+        breadcrumbs={[
+          { name: 'Home', path: '/' },
+          { name: 'Contact', path: '/contact' }
+        ]}
+      />
       {/* Hero Section */}
       <section className="py-24 bg-stone-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

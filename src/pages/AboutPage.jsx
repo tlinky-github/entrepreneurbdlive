@@ -9,7 +9,13 @@ import { siteConfig, editorialPrinciples } from '../data/mock';
 const AboutPage = () => {
   return (
     <>
-      <SEO pageKey="about" />
+      <SEO
+        pageKey="about"
+        breadcrumbs={[
+          { name: 'Home', path: '/' },
+          { name: 'About Us', path: '/about' }
+        ]}
+      />
       {/* Hero Section */}
       <section className="py-24 bg-stone-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -114,7 +120,7 @@ const AboutPage = () => {
                         src="/shaddam.webp"
                         alt="Md Shaddam Hossain"
                         className="w-full h-full object-cover"
-                      />                      
+                      />
                     </div>
                     <div className="text-center">
                       <h3 className="text-xl font-bold text-white mb-1">{siteConfig.founder.name}</h3>

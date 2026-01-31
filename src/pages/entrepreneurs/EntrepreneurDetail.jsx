@@ -127,6 +127,12 @@ const EntrepreneurDetail = () => {
         description={profile.short_bio}
         image={profile.photo}
         type="profile"
+        keywords={[profile.industry, profile.city, profile.role_title, profile.company_name, 'Entrepreneur', 'Bangladesh'].filter(Boolean)}
+        breadcrumbs={[
+          { name: 'Home', path: '/' },
+          { name: 'Entrepreneurs', path: '/entrepreneurs' },
+          { name: profile.name, path: `/entrepreneurs/${profile.slug}` }
+        ]}
       />
       {/* Back Button */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">

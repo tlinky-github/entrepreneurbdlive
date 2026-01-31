@@ -9,7 +9,14 @@ import { guides } from '../data/mock';
 const GuidesPage = () => {
   return (
     <>
-      <SEO pageKey="guides" />
+      <SEO
+        pageKey="guides"
+        breadcrumbs={[
+          { name: 'Home', path: '/' },
+          { name: 'Resources', path: '/resources' },
+          { name: 'Guides', path: '/resources/guides' }
+        ]}
+      />
       {/* Hero Section */}
       <section className="py-24 bg-stone-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

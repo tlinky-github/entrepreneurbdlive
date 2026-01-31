@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { SEO } from '../../components/SEO';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
@@ -12,7 +13,7 @@ const ResetPassword = () => {
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
   const navigate = useNavigate();
-  
+
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -20,7 +21,7 @@ const ResetPassword = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!password || !confirmPassword) {
       toast.error('Please fill in all fields');
       return;
@@ -51,6 +52,7 @@ const ResetPassword = () => {
   if (!token) {
     return (
       <div className="min-h-screen bg-stone-50 flex items-center justify-center py-12 px-4">
+        <SEO title="Invalid Reset Link | Entrepreneur BD" />
         <div className="w-full max-w-md text-center">
           <h1 className="text-2xl font-bold text-stone-900 mb-4">Invalid Reset Link</h1>
           <p className="text-stone-600 mb-8">
@@ -69,6 +71,7 @@ const ResetPassword = () => {
   if (success) {
     return (
       <div className="min-h-screen bg-stone-50 flex items-center justify-center py-12 px-4" data-testid="reset-success">
+        <SEO title="Password Reset Successful | Entrepreneur BD" />
         <div className="w-full max-w-md text-center">
           <div className="w-16 h-16 bg-emerald-100 rounded-full mx-auto mb-6 flex items-center justify-center">
             <CheckCircle className="w-8 h-8 text-emerald-900" />
@@ -89,6 +92,10 @@ const ResetPassword = () => {
 
   return (
     <div className="min-h-screen bg-stone-50 flex items-center justify-center py-12 px-4" data-testid="reset-password-page">
+      <SEO
+        title="Reset Password | Entrepreneur BD"
+        description="Choose a new password for your account."
+      />
       <div className="w-full max-w-md">
         {/* Logo */}
         <Link to="/" className="flex items-center justify-center gap-2 mb-8">

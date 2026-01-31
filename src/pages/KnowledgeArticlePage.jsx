@@ -41,6 +41,12 @@ const KnowledgeArticlePage = () => {
         title={article.title}
         description={article.description}
         type="article"
+        keywords={[article.title, article.subtitle, 'Entrepreneurship Knowledge', 'Business Guide'].filter(Boolean)}
+        breadcrumbs={[
+          { name: 'Home', path: '/' },
+          { name: 'Knowledge Hub', path: '/knowledge' },
+          { name: article.title, path: `/knowledge/${article.id}` }
+        ]}
       />
       {/* Breadcrumb */}
       <div className="bg-stone-50 border-b border-stone-200">

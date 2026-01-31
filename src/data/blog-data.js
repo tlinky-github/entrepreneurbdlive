@@ -1,8 +1,28 @@
-
 import EvolutionPost from '../content/posts/evolution-entrepreneurship.mdx';
 import MindsetPost from '../content/posts/entrepreneurial-mindset.mdx';
 import DigitalPost from '../content/posts/digital-transformation.mdx';
 import SustainabilityPost from '../content/posts/sustainable-entrepreneurship.mdx';
+import BusinessTrendsPost from '../content/posts/business-trends.mdx';
+import StartupOverviewPost from '../content/posts/startup-ecosystem-overview.mdx';
+import GovtInitiativesPost from '../content/posts/govt-initiatives.mdx';
+import RegulationsPost from '../content/posts/regulations-licensing.mdx';
+import FinancePost from '../content/posts/access-to-finance.mdx';
+import SmePost from '../content/posts/role-of-smes.mdx';
+// Batch 2 Imports
+import SoftSkillsPost from '../content/posts/essential-soft-skills.mdx';
+import AdaptabilityPost from '../content/posts/adaptability-success.mdx';
+import TimeMgmtPost from '../content/posts/time-management.mdx';
+import ResiliencePost from '../content/posts/building-resilience.mdx';
+import FinancialLiteracyPost from '../content/posts/financial-literacy.mdx';
+import NetworkingPost from '../content/posts/networking-collaboration.mdx';
+// Batch 3 Imports
+import EcommerceRegsPost from '../content/posts/ecommerce-regulations.mdx';
+import DigitalMarketingPost from '../content/posts/digital-marketing-basics.mdx';
+import DataAnalyticsPost from '../content/posts/data-analytics.mdx';
+import FreelancingPost from '../content/posts/freelancing-future.mdx';
+// Batch 4 Imports
+import SocialEntPost from '../content/posts/social-entrepreneurship.mdx';
+import RuralTechPost from '../content/posts/tech-rural-growth.mdx';
 
 export const categories = [
     {
@@ -32,11 +52,10 @@ export const categories = [
 ];
 
 export const posts = [
-    // --- Category 1: Startup Ecosystem ---
     {
-        id: 101,
+        id: 1,
         title: "The Evolution of Entrepreneurship in Bangladesh",
-        slug: "evolution-of-entrepreneurship-in-bangladesh",
+        slug: "evolution-entrepreneurship",
         excerpt: "A comprehensive look at how entrepreneurship has transformed in Bangladesh over the decades, from traditional trade to a booming startup ecosystem.",
         content_component: EvolutionPost,
         featured_image: "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&q=80&w=1000",
@@ -48,415 +67,301 @@ export const posts = [
         tags: ["history", "ecosystem", "growth"]
     },
     {
-        id: 102,
+        id: 2,
+        title: "The Entrepreneurial Mindset: From Employee to Owner",
+        slug: "entrepreneurial-mindset",
+        excerpt: "In a culture that has traditionally prized the stability of a government job, choosing entrepreneurship is an act of rebellion. Learn how to shift your psychology.",
+        content_component: MindsetPost,
+        featured_image: "https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&q=80&w=1000",
+        category_id: 2,
+        author_name: "Editorial Team",
+        created_at: new Date().toISOString(),
+        status: "published",
+        is_featured: false,
+        tags: ["mindset", "psychology", "growth"]
+    },
+    {
+        id: 3,
+        title: "Digital Transformation: Beyond the Buzzword",
+        slug: "digital-transformation",
+        excerpt: "Digital formation is no longer a corporate buzzword. In 2026, it is the difference between a shop that survives the rainy season and one that closes down.",
+        content_component: DigitalPost,
+        featured_image: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80&w=1000",
+        category_id: 3,
+        author_name: "Editorial Team",
+        created_at: new Date().toISOString(),
+        status: "published",
+        is_featured: false,
+        tags: ["technology", "innovation", "digital"]
+    },
+    {
+        id: 4,
+        title: "Green Entrepreneurship: Opportunities in Climate Challenge",
+        slug: "sustainable-entrepreneurship",
+        excerpt: "Bangladesh is ground zero for climate change, but also for climate innovation. Explore how green entrepreneurs are turning challenges into opportunities.",
+        content_component: SustainabilityPost,
+        featured_image: "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?auto=format&fit=crop&q=80&w=1000",
+        category_id: 4,
+        author_name: "Editorial Team",
+        created_at: new Date().toISOString(),
+        status: "published",
+        is_featured: false,
+        tags: ["sustainability", "green business", "innovation"]
+    },
+    {
+        id: 5,
+        title: "The Future is Here: Business Trends 2026",
+        slug: "business-trends",
+        excerpt: "Business in 2026 is evolving rapidly. Key trends including AI, Remote First, and Sustainability that are defining the new era.",
+        content_component: BusinessTrendsPost,
+        featured_image: "/images/business-trends-2026.webp",
+        category_id: 3,
+        author_name: "Editorial Team",
+        created_at: new Date().toISOString(),
+        status: "published",
+        is_featured: false,
+        tags: ["trends", "future", "business"]
+    },
+    // --- Batch 1: Startup Ecosystem ---
+    {
+        id: 6,
         title: "Understanding the Startup Ecosystem in Bangladesh",
-        slug: "understanding-startup-ecosystem-bangladesh",
-        excerpt: "An in-depth analysis of the key players, incubators, investors, and support systems driving the Bangladeshi startup scene.",
-        content_component: EvolutionPost, // Placeholder
-        featured_image: "https://images.unsplash.com/photo-1559136555-9303baea8ebd?auto=format&fit=crop&q=80&w=1000",
-        category_id: 1,
-        author_name: "Editorial Team",
-        created_at: new Date().toISOString(),
-        status: "published",
-        is_featured: false,
-        tags: ["ecosystem", "startups", "dhaka"]
-    },
-    {
-        id: 103,
-        title: "Why Entrepreneurship Is Key to Bangladesh’s Economic Future",
-        slug: "why-entrepreneurship-is-key-economic-future",
-        excerpt: "Exploring the critical role entrepreneurs play in job creation, innovation, and GDP growth in Bangladesh.",
-        content_component: EvolutionPost, // Placeholder
-        featured_image: "https://images.unsplash.com/photo-1526304640155-24e5dafa0a7c?auto=format&fit=crop&q=80&w=1000",
-        category_id: 1,
-        author_name: "Editorial Team",
-        created_at: new Date().toISOString(),
-        status: "published",
-        is_featured: false,
-        tags: ["economy", "future", "development"]
-    },
-    {
-        id: 104,
-        title: "The Role of SMEs in Shaping Bangladesh’s Development",
-        slug: "role-of-smes-bangladesh-development",
-        excerpt: "SMEs are the backbone of the economy. We examine their contribution and the challenges they face.",
-        content_component: EvolutionPost, // Placeholder
+        slug: "startup-ecosystem-overview",
+        excerpt: "A 360-degree view of the landscape: Talent, Capital, Policy, and Market. Who are the key players and where is the money coming from?",
+        content_component: StartupOverviewPost,
         featured_image: "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&q=80&w=1000",
         category_id: 1,
         author_name: "Editorial Team",
         created_at: new Date().toISOString(),
         status: "published",
         is_featured: false,
-        tags: ["sme", "development", "business"]
+        tags: ["ecosystem", "startups", "overview"]
     },
     {
-        id: 105,
+        id: 7,
         title: "How Government Initiatives Support Startup Development",
-        slug: "government-initiatives-startup-development",
-        excerpt: "A guide to the grants, policies, and programs offered by the Bangladesh government to support new businesses.",
-        content_component: EvolutionPost, // Placeholder
-        featured_image: "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?auto=format&fit=crop&q=80&w=1000",
+        slug: "govt-initiatives",
+        excerpt: "From Startup Bangladesh Limited to High-Tech Parks: A breakdown of the grants, tax holidays, and resources available to founders.",
+        content_component: GovtInitiativesPost,
+        featured_image: "/images/govt-initiatives.webp",
         category_id: 1,
         author_name: "Editorial Team",
         created_at: new Date().toISOString(),
         status: "published",
         is_featured: false,
-        tags: ["government", "policy", "support"]
+        tags: ["government", "policy", "grants"]
     },
     {
-        id: 106,
+        id: 8,
         title: "Regulations and Licensing: What Every Entrepreneur Should Know",
-        slug: "regulations-licensing-entrepreneurs-bangladesh",
-        excerpt: "Navigating the legal landscape: Trade licenses, TINs, VAT, and other essential compliance requirements.",
-        content_component: EvolutionPost, // Placeholder
+        slug: "regulations-licensing",
+        excerpt: "Trade License, TIN, BIN, and RJSC. Demystifying the paperwork so you can operate legally without fear of fines.",
+        content_component: RegulationsPost,
         featured_image: "https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&q=80&w=1000",
         category_id: 1,
-        author_name: "Legal Expert",
+        author_name: "Editorial Team",
         created_at: new Date().toISOString(),
         status: "published",
         is_featured: false,
-        tags: ["legal", "licensing", "compliance"]
+        tags: ["legal", "compliance", "licensing"]
     },
     {
-        id: 107,
+        id: 9,
         title: "The Importance of Access to Finance for New Businesses",
-        slug: "importance-access-finance-new-businesses",
-        excerpt: "Understanding funding options: Bootstrapping, angel investors, venture capital, and bank loans in Bangladesh.",
-        content_component: EvolutionPost, // Placeholder
+        slug: "access-to-finance",
+        excerpt: "Bootstrapping vs. Debt vs. Equity. Understanding the 'Capital Stack' and how to prepare your business for funding.",
+        content_component: FinancePost,
         featured_image: "https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?auto=format&fit=crop&q=80&w=1000",
         category_id: 1,
-        author_name: "Finance Expert",
+        author_name: "Editorial Team",
         created_at: new Date().toISOString(),
         status: "published",
         is_featured: false,
         tags: ["finance", "funding", "investment"]
     },
     {
-        id: 108,
-        title: "The Informal Sector’s Hidden Contribution to the Bangladeshi Economy",
-        slug: "informal-sector-contribution-economy",
-        excerpt: "Shining a light on the massive, often overlooked impact of informal businesses and daily earners.",
-        content_component: EvolutionPost, // Placeholder
-        featured_image: "https://images.unsplash.com/photo-1532629345422-7515f3d16bb6?auto=format&fit=crop&q=80&w=1000",
+        id: 10,
+        title: "The Role of SMEs in Shaping Bangladesh’s Development",
+        slug: "role-of-smes",
+        excerpt: "SMEs are the heartbeat of the economy, contributing 25% to GDP. Explore why 'Small' is actually 'Big' for national development.",
+        content_component: SmePost,
+        featured_image: "/images/sme-development.webp",
         category_id: 1,
         author_name: "Editorial Team",
         created_at: new Date().toISOString(),
         status: "published",
         is_featured: false,
-        tags: ["economy", "informal", "impact"]
+        tags: ["sme", "economy", "development"]
     },
+    // --- Batch 2: Growth & Skills ---
     {
-        id: 109,
-        title: "Barriers to Entry: Challenges New Entrepreneurs Face in Bangladesh",
-        slug: "barriers-to-entry-new-entrepreneurs",
-        excerpt: "Real talk about the hurdles founders face, from bureaucracy to infrastructure, and how to overcome them.",
-        content_component: EvolutionPost, // Placeholder
-        featured_image: "https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&q=80&w=1000",
-        category_id: 1,
-        author_name: "Editorial Team",
-        created_at: new Date().toISOString(),
-        status: "published",
-        is_featured: false,
-        tags: ["challenges", "startups", "advice"]
-    },
-
-    // --- Category 2: Business Growth & Skills ---
-    {
-        id: 201,
-        title: "Developing an Entrepreneurial Mindset in Bangladesh’s Economy",
-        slug: "developing-entrepreneurial-mindset-bangladesh",
-        excerpt: "How to shift your thinking from employee to employer and spot opportunities in a crowded market.",
-        content_component: MindsetPost,
-        featured_image: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&q=80&w=1000",
-        category_id: 2,
-        author_name: "Editorial Team",
-        created_at: new Date().toISOString(),
-        status: "published",
-        is_featured: true,
-        tags: ["mindset", "growth", "psychology"]
-    },
-    {
-        id: 202,
+        id: 11,
         title: "Essential Soft Skills Every Entrepreneur Should Master",
-        slug: "essential-soft-skills-entrepreneur",
-        excerpt: "Communication, leadership, and emotional intelligence: The intangible skills that drive tangible results.",
-        content_component: EvolutionPost, // Placeholder
-        featured_image: "https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&q=80&w=1000",
+        slug: "essential-soft-skills",
+        excerpt: "In the age of AI, empathy and communication are the premium assets. Learn the human skills that algorithms cannot replace.",
+        content_component: SoftSkillsPost,
+        featured_image: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&q=80&w=1000",
         category_id: 2,
-        author_name: "HR Expert",
+        author_name: "Editorial Team",
         created_at: new Date().toISOString(),
         status: "published",
         is_featured: false,
-        tags: ["skills", "leadership", "soft-skills"]
+        tags: ["skills", "leadership", "communication"]
     },
     {
-        id: 203,
+        id: 12,
         title: "Why Adaptability Is the Key to Long-Term Business Success",
-        slug: "adaptability-key-business-success",
-        excerpt: "In a rapidly changing world, the ability to pivot and adapt is more valuable than the perfect business plan.",
-        content_component: EvolutionPost, // Placeholder
-        featured_image: "https://images.unsplash.com/photo-1504384308090-c54be3853247?auto=format&fit=crop&q=80&w=1000",
+        slug: "adaptability-success",
+        excerpt: "Darwin was right. In a volatile market, it is not the strongest who survive, but the most adaptable. Learn how to pivot.",
+        content_component: AdaptabilityPost,
+        featured_image: "https://images.unsplash.com/photo-1487014679447-9f8336841d58?auto=format&fit=crop&q=80&w=1000",
         category_id: 2,
         author_name: "Editorial Team",
         created_at: new Date().toISOString(),
         status: "published",
         is_featured: false,
-        tags: ["strategy", "adaptability", "resilience"]
+        tags: ["adaptability", "strategy", "growth"]
     },
     {
-        id: 204,
+        id: 13,
         title: "Time Management Hacks for Busy Entrepreneurs",
-        slug: "time-management-hacks-entrepreneurs",
-        excerpt: "Maximize your productivity with these proven techniques tailored for founders wearing multiple hats.",
-        content_component: EvolutionPost, // Placeholder
-        featured_image: "https://images.unsplash.com/photo-1506784983877-45594efa4cbe?auto=format&fit=crop&q=80&w=1000",
-        category_id: 2,
-        author_name: "Productivity Coach",
-        created_at: new Date().toISOString(),
-        status: "published",
-        is_featured: false,
-        tags: ["productivity", "time-management", "tips"]
-    },
-    {
-        id: 205,
-        title: "How to Build Resilience in the Face of Business Uncertainty",
-        slug: "build-resilience-business-uncertainty",
-        excerpt: "Strategies for staying mentally strong and focused when things don't go according to plan.",
-        content_component: EvolutionPost, // Placeholder
-        featured_image: "https://images.unsplash.com/photo-1493836512294-502baa1986e2?auto=format&fit=crop&q=80&w=1000",
+        slug: "time-management",
+        excerpt: "Stop managing time; start managing focus. Tactical hacks like Time Blocking and 'Eat the Frog' to reclaim your calendar.",
+        content_component: TimeMgmtPost,
+        featured_image: "/images/time-management.webp",
         category_id: 2,
         author_name: "Editorial Team",
         created_at: new Date().toISOString(),
         status: "published",
         is_featured: false,
-        tags: ["resilience", "mental-health", "crisis"]
+        tags: ["productivity", "time-management", "hacks"]
     },
     {
-        id: 206,
-        title: "The Importance of Financial Literacy for Entrepreneurs",
-        slug: "importance-financial-literacy-entrepreneurs",
-        excerpt: "Why you need to understand cash flow, profit margins, and balance sheets to keep your business alive.",
-        content_component: EvolutionPost, // Placeholder
-        featured_image: "https://images.unsplash.com/photo-1554224155-984068587247?auto=format&fit=crop&q=80&w=1000",
+        id: 14,
+        title: "How to Build Resilience in the Face of Business Uncertainty",
+        slug: "building-resilience",
+        excerpt: "Entrepreneurship is the art of getting punched and smiling. Build the psychological infrastructure to handle failure and stress.",
+        content_component: ResiliencePost,
+        featured_image: "https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&q=80&w=1000",
         category_id: 2,
-        author_name: "Finance Expert",
+        author_name: "Editorial Team",
         created_at: new Date().toISOString(),
         status: "published",
         is_featured: false,
-        tags: ["finance", "literacy", "accounting"]
+        tags: ["resilience", "mindset", "mental-health"]
     },
     {
-        id: 207,
+        id: 15,
+        title: "The Importance of Financial Literacy for Entrepreneurs",
+        slug: "financial-literacy",
+        excerpt: "Revenue is vanity, Profit is sanity, Cash is reality. Master the basic language of money to keep your business alive.",
+        content_component: FinancialLiteracyPost,
+        featured_image: "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&q=80&w=1000",
+        category_id: 2,
+        author_name: "Editorial Team",
+        created_at: new Date().toISOString(),
+        status: "published",
+        is_featured: false,
+        tags: ["finance", "accounting", "money"]
+    },
+    {
+        id: 16,
         title: "Why Networking and Collaboration Matter for Growth",
-        slug: "networking-collaboration-growth",
-        excerpt: "Your network is your net worth. How to build meaningful connections in the Bangladeshi business community.",
-        content_component: EvolutionPost, // Placeholder
+        slug: "networking-collaboration",
+        excerpt: "Networking is farming, not hunting. Learn how to build 'Network Intelligence' and genuine relationships that pay off years later.",
+        content_component: NetworkingPost,
         featured_image: "https://images.unsplash.com/photo-1515187029135-18ee286d815b?auto=format&fit=crop&q=80&w=1000",
         category_id: 2,
         author_name: "Editorial Team",
         created_at: new Date().toISOString(),
         status: "published",
         is_featured: false,
-        tags: ["networking", "collaboration", "community"]
+        tags: ["networking", "growth", "community"]
     },
-
-    // --- Category 3: Digital Innovation ---
+    // --- Batch 3: Digital Innovation ---
     {
-        id: 301,
-        title: "The Digital Transformation of Bangladeshi Businesses",
-        slug: "digital-transformation-bangladeshi-businesses",
-        excerpt: "How traditional businesses are adopting digital tools to survive and thrive in the modern economy.",
-        content_component: DigitalPost,
-        featured_image: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80&w=1000",
-        category_id: 3,
-        author_name: "Tech Editor",
-        created_at: new Date().toISOString(),
-        status: "published",
-        is_featured: true,
-        tags: ["digital", "tech", "transformation"]
-    },
-    {
-        id: 302,
+        id: 17,
         title: "Understanding eCommerce Regulations and Opportunities",
-        slug: "ecommerce-regulations-opportunities-bangladesh",
-        excerpt: "A look at the booming eCommerce sector in Bangladesh, including legal frameworks and market potential.",
-        content_component: EvolutionPost, // Placeholder
-        featured_image: "https://images.unsplash.com/photo-1556742049-0cfed4f7a07d?auto=format&fit=crop&q=80&w=1000",
+        slug: "ecommerce-regulations",
+        excerpt: "From DBID to the 5-Day Delivery Rule. A guide to the legal framework of selling online in Bangladesh.",
+        content_component: EcommerceRegsPost,
+        featured_image: "/images/ecommerce-regulations.webp",
         category_id: 3,
-        author_name: "Legal Expert",
+        author_name: "Editorial Team",
         created_at: new Date().toISOString(),
         status: "published",
         is_featured: false,
-        tags: ["ecommerce", "online-business", "law"]
+        tags: ["ecommerce", "legal", "digital"]
     },
     {
-        id: 303,
-        title: "Building an Online Business Presence in Bangladesh",
-        slug: "building-online-business-presence",
-        excerpt: "From social media to websites: Essential steps to establish your brand in the digital space.",
-        content_component: EvolutionPost, // Placeholder
+        id: 18,
+        title: "Digital Marketing Basics for New Entrepreneurs",
+        slug: "digital-marketing-basics",
+        excerpt: "SEO, Facebook Ads, or TikTok? A 'Minimum Viable Marketing' guide to getting your first customers without wasting money.",
+        content_component: DigitalMarketingPost,
         featured_image: "https://images.unsplash.com/photo-1432888498266-38ffec3eaf0a?auto=format&fit=crop&q=80&w=1000",
         category_id: 3,
-        author_name: "Digital Marketer",
+        author_name: "Editorial Team",
         created_at: new Date().toISOString(),
         status: "published",
         is_featured: false,
-        tags: ["branding", "online", "marketing"]
+        tags: ["marketing", "digital", "growth"]
     },
     {
-        id: 304,
+        id: 19,
         title: "Why Data and Analytics Matter in Modern Entrepreneurship",
-        slug: "data-analytics-modern-entrepreneurship",
-        excerpt: "Making data-driven decisions: How to use analytics to optimize your business performance.",
-        content_component: EvolutionPost, // Placeholder
+        slug: "data-analytics",
+        excerpt: "Data is the new sunlight. Move from 'I feel' to 'The data shows'. Understanding CAC, LTV, and Conversion Rates.",
+        content_component: DataAnalyticsPost,
         featured_image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=1000",
         category_id: 3,
-        author_name: "Data Analyst",
+        author_name: "Editorial Team",
         created_at: new Date().toISOString(),
         status: "published",
         is_featured: false,
-        tags: ["data", "analytics", "growth"]
+        tags: ["data", "analytics", "metrics"]
     },
     {
-        id: 305,
-        title: "Digital Marketing Basics for New Entrepreneurs",
-        slug: "digital-marketing-basics-new-entrepreneurs",
-        excerpt: "SEO, social media, and email marketing: A crash course for founders on a budget.",
-        content_component: EvolutionPost, // Placeholder
-        featured_image: "https://images.unsplash.com/photo-1533750516457-a7f992034fec?auto=format&fit=crop&q=80&w=1000",
-        category_id: 3,
-        author_name: "Digital Marketer",
-        created_at: new Date().toISOString(),
-        status: "published",
-        is_featured: false,
-        tags: ["marketing", "seo", "digital"]
-    },
-    {
-        id: 306,
+        id: 20,
         title: "Freelancing and Solopreneurship: The Future of Self-Employment",
-        slug: "freelancing-solopreneurship-future",
-        excerpt: "Examining the rise of the gig economy and how individuals are building successful one-person businesses.",
-        content_component: EvolutionPost, // Placeholder
-        featured_image: "https://images.unsplash.com/photo-1531403009284-440f080d1e12?auto=format&fit=crop&q=80&w=1000",
+        slug: "freelancing-future",
+        excerpt: "The 'Job' is dying. The 'Gig' is rising. Moving from a task-doer to a high-value asset builder in the expert economy.",
+        content_component: FreelancingPost,
+        featured_image: "/images/freelancing.webp",
         category_id: 3,
-        author_name: "Freelance Expert",
+        author_name: "Editorial Team",
         created_at: new Date().toISOString(),
         status: "published",
         is_featured: false,
         tags: ["freelancing", "solopreneur", "work"]
     },
-
-    // --- Category 4: Social & Future Impact ---
+    // --- Batch 4: Social & Future ---
     {
-        id: 401,
-        title: "The Rise of Green and Sustainable Entrepreneurship",
-        slug: "rise-green-sustainable-entrepreneurship",
-        excerpt: "How conscious business practices are not just good for the planet, but profitable for the bottom line.",
-        content_component: SustainabilityPost,
-        featured_image: "https://images.unsplash.com/photo-1542601906990-b4d3fb7d5763?auto=format&fit=crop&q=80&w=1000",
-        category_id: 4,
-        author_name: "Sustainability Expert",
-        created_at: new Date().toISOString(),
-        status: "published",
-        is_featured: true,
-        tags: ["sustainability", "green", "environment"]
-    },
-    {
-        id: 402,
+        id: 21,
         title: "Social Entrepreneurship: Creating Value Beyond Profit",
-        slug: "social-entrepreneurship-creating-value",
-        excerpt: "Profiles of businesses that are solving social problems while maintaining financial viability.",
-        content_component: EvolutionPost, // Placeholder
-        featured_image: "https://images.unsplash.com/photo-1532619675605-1ede6c2ed2b0?auto=format&fit=crop&q=80&w=1000",
+        slug: "social-entrepreneurship",
+        excerpt: "Profit with Purpose. Using market mechanisms to solve social problems like poverty, hygiene, and education.",
+        content_component: SocialEntPost,
+        featured_image: "https://images.unsplash.com/photo-1531206715517-5c0ba140b2b8?auto=format&fit=crop&q=80&w=1000",
         category_id: 4,
-        author_name: "Social Impact Lead",
+        author_name: "Editorial Team",
         created_at: new Date().toISOString(),
         status: "published",
         is_featured: false,
-        tags: ["social-impact", "nonprofit", "business"]
+        tags: ["social-impact", "purpose", "sustainability"]
     },
     {
-        id: 403,
-        title: "How Rural Entrepreneurship Is Empowering Local Communities",
-        slug: "rural-entrepreneurship-empowering-communities",
-        excerpt: "The untold stories of innovation in rural Bangladesh and its impact on poverty alleviation.",
-        content_component: EvolutionPost, // Placeholder
-        featured_image: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&q=80&w=1000",
-        category_id: 4,
-        author_name: "Community Leader",
-        created_at: new Date().toISOString(),
-        status: "published",
-        is_featured: false,
-        tags: ["rural", "community", "empowerment"]
-    },
-    {
-        id: 404,
+        id: 22,
         title: "How Technology Is Enabling Rural Business Growth",
-        slug: "technology-enabling-rural-business-growth",
-        excerpt: "Connecting the unconnected: How mobile internet and agritech are revolutionizing rural markets.",
-        content_component: EvolutionPost, // Placeholder
-        featured_image: "https://images.unsplash.com/photo-1530631673369-d7267f6e1535?auto=format&fit=crop&q=80&w=1000",
+        slug: "tech-rural-growth",
+        excerpt: "The future is in the villages. Agritech, Rural E-Commerce, and Telemedicine are unlocking the 68,000 village economy.",
+        content_component: RuralTechPost,
+        featured_image: "https://images.unsplash.com/photo-1625246333195-5519a4e2456a?auto=format&fit=crop&q=80&w=1000",
         category_id: 4,
-        author_name: "Tech Editor",
+        author_name: "Editorial Team",
         created_at: new Date().toISOString(),
         status: "published",
         is_featured: false,
-        tags: ["agritech", "rural", "digital"]
-    },
-    {
-        id: 405,
-        title: "How Urbanization Is Changing Business Opportunities",
-        slug: "urbanization-changing-business-opportunities",
-        excerpt: "The shift to cities creates new needs and markets. We explore the opportunities in urban Bangladesh.",
-        content_component: EvolutionPost, // Placeholder
-        featured_image: "https://images.unsplash.com/photo-1449824913929-2b3a3e3dd190?auto=format&fit=crop&q=80&w=1000",
-        category_id: 4,
-        author_name: "Urban Planner",
-        created_at: new Date().toISOString(),
-        status: "published",
-        is_featured: false,
-        tags: ["urban", "city", "market"]
-    },
-    {
-        id: 406,
-        title: "Public-Private Partnerships and Their Role in Innovation",
-        slug: "public-private-partnerships-innovation",
-        excerpt: "Collaborating for change: How government and private sector alliances are driving major infrastructure and tech projects.",
-        content_component: EvolutionPost, // Placeholder
-        featured_image: "https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&q=80&w=1000",
-        category_id: 4,
-        author_name: "Policy Analyst",
-        created_at: new Date().toISOString(),
-        status: "published",
-        is_featured: false,
-        tags: ["ppp", "innovation", "policy"]
-    },
-    {
-        id: 407,
-        title: "The Connection Between Education and Entrepreneurial Growth",
-        slug: "education-entrepreneurial-growth-connection",
-        excerpt: "Analyzing the education gap and how universities are adapting to produce the next generation of founders.",
-        content_component: EvolutionPost, // Placeholder
-        featured_image: "https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&q=80&w=1000",
-        category_id: 4,
-        author_name: "Education Specialist",
-        created_at: new Date().toISOString(),
-        status: "published",
-        is_featured: false,
-        tags: ["education", "university", "skills"]
-    },
-    {
-        id: 408,
-        title: "Understanding Entrepreneurship in Bangladesh",
-        slug: "understanding-entrepreneurship-bangladesh",
-        excerpt: "A primer on what it really means to be an entrepreneur in the unique context of Bangladesh.",
-        content_component: EvolutionPost, // Placeholder - Could technically be in Cat 1 but fits broad impact too
-        featured_image: "https://images.unsplash.com/photo-1532619187608-e5375cabad54?auto=format&fit=crop&q=80&w=1000",
-        category_id: 1, // Moving to Cat 1
-        author_name: "Editor",
-        created_at: new Date().toISOString(),
-        status: "published",
-        is_featured: false,
-        tags: ["overview", "entrepreneurship"]
+        tags: ["rural", "agritech", "development"]
     }
 ];

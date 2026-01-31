@@ -98,6 +98,12 @@ const DirectoryDetail = () => {
         description={listing.short_description}
         image={listing.logo}
         type="business.business"
+        keywords={[listing.category, listing.city, listing.listing_type, 'Business Directory', 'Bangladesh'].filter(Boolean)}
+        breadcrumbs={[
+          { name: 'Home', path: '/' },
+          { name: 'Directory', path: '/directory' },
+          { name: listing.business_name, path: `/directory/${listing.slug}` }
+        ]}
       />
       {/* Back Button */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">

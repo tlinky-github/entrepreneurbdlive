@@ -23,6 +23,7 @@ const Register = () => {
 
   return (
     <div className="min-h-screen bg-stone-50 flex items-center justify-center py-12 px-4" data-testid="register-page">
+      <SEO pageKey="register" />
       <div className="w-full max-w-md">
         {/* Logo */}
         <Link to="/" className="flex items-center justify-center gap-2 mb-8">
@@ -52,11 +53,10 @@ const Register = () => {
                 >
                   <Label
                     htmlFor="user"
-                    className={`flex items-center gap-3 p-4 border rounded-lg cursor-pointer transition-colors ${
-                      accountType === 'user' 
-                        ? 'border-emerald-900 bg-emerald-50' 
+                    className={`flex items-center gap-3 p-4 border rounded-lg cursor-pointer transition-colors ${accountType === 'user'
+                        ? 'border-emerald-900 bg-emerald-50'
                         : 'border-stone-200 hover:border-stone-300'
-                    }`}
+                      }`}
                   >
                     <RadioGroupItem value="user" id="user" className="sr-only" />
                     <Users className="w-5 h-5 text-emerald-900" />
@@ -67,11 +67,10 @@ const Register = () => {
                   </Label>
                   <Label
                     htmlFor="entrepreneur"
-                    className={`flex items-center gap-3 p-4 border rounded-lg cursor-pointer transition-colors ${
-                      accountType === 'entrepreneur' 
-                        ? 'border-emerald-900 bg-emerald-50' 
+                    className={`flex items-center gap-3 p-4 border rounded-lg cursor-pointer transition-colors ${accountType === 'entrepreneur'
+                        ? 'border-emerald-900 bg-emerald-50'
                         : 'border-stone-200 hover:border-stone-300'
-                    }`}
+                      }`}
                   >
                     <RadioGroupItem value="entrepreneur" id="entrepreneur" className="sr-only" />
                     <Building2 className="w-5 h-5 text-emerald-900" />

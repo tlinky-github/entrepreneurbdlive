@@ -7,7 +7,13 @@ import { Button } from '../components/ui/button';
 const PrivacyPage = () => {
   return (
     <>
-      <SEO pageKey="privacy" />
+      <SEO
+        pageKey="privacy"
+        breadcrumbs={[
+          { name: 'Home', path: '/' },
+          { name: 'Privacy Policy', path: '/privacy' }
+        ]}
+      />
       {/* Hero Section */}
       <section className="py-20 lg:py-24 bg-stone-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
