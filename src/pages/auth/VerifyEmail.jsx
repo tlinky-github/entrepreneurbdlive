@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { SEO } from '../../components/SEO';
 import { Button } from '../../components/ui/button';
 import api from '../../lib/api';
 import { toast } from 'sonner';
@@ -34,6 +35,7 @@ const VerifyEmail = () => {
   if (status === 'verifying') {
     return (
       <div className="min-h-screen bg-stone-50 flex items-center justify-center py-12 px-4" data-testid="verify-loading">
+        <SEO title="Verifying Email | Entrepreneur BD" />
         <div className="w-full max-w-md text-center">
           <Loader2 className="w-16 h-16 text-emerald-900 animate-spin mx-auto mb-6" />
           <h1 className="text-2xl font-bold text-stone-900 mb-4">Verifying Your Email</h1>

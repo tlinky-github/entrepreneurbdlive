@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { SEO } from '../../components/SEO';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
@@ -54,8 +55,8 @@ const Register = () => {
                   <Label
                     htmlFor="user"
                     className={`flex items-center gap-3 p-4 border rounded-lg cursor-pointer transition-colors ${accountType === 'user'
-                        ? 'border-emerald-900 bg-emerald-50'
-                        : 'border-stone-200 hover:border-stone-300'
+                      ? 'border-emerald-900 bg-emerald-50'
+                      : 'border-stone-200 hover:border-stone-300'
                       }`}
                   >
                     <RadioGroupItem value="user" id="user" className="sr-only" />
@@ -68,8 +69,8 @@ const Register = () => {
                   <Label
                     htmlFor="entrepreneur"
                     className={`flex items-center gap-3 p-4 border rounded-lg cursor-pointer transition-colors ${accountType === 'entrepreneur'
-                        ? 'border-emerald-900 bg-emerald-50'
-                        : 'border-stone-200 hover:border-stone-300'
+                      ? 'border-emerald-900 bg-emerald-50'
+                      : 'border-stone-200 hover:border-stone-300'
                       }`}
                   >
                     <RadioGroupItem value="entrepreneur" id="entrepreneur" className="sr-only" />
