@@ -2,92 +2,128 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://entrepreneurs.bd/</loc>
-    <lastmod>2026-01-29</lastmod>
+    <lastmod>2026-01-31</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1</priority>
   </url>
   <url>
     <loc>https://entrepreneurs.bd/blog</loc>
-    <lastmod>2026-01-29</lastmod>
+    <lastmod>2026-01-31</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://entrepreneurs.bd/entrepreneurs</loc>
-    <lastmod>2026-01-29</lastmod>
+    <lastmod>2026-01-31</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://entrepreneurs.bd/directory</loc>
-    <lastmod>2026-01-29</lastmod>
+    <lastmod>2026-01-31</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://entrepreneurs.bd/resources</loc>
-    <lastmod>2026-01-29</lastmod>
+    <lastmod>2026-01-31</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://entrepreneurs.bd/knowledge</loc>
-    <lastmod>2026-01-29</lastmod>
+    <lastmod>2026-01-31</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://entrepreneurs.bd/resources/guides</loc>
-    <lastmod>2026-01-29</lastmod>
+    <lastmod>2026-01-31</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://entrepreneurs.bd/resources/faqs</loc>
-    <lastmod>2026-01-29</lastmod>
+    <lastmod>2026-01-31</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://entrepreneurs.bd/resources/glossary</loc>
-    <lastmod>2026-01-29</lastmod>
+    <lastmod>2026-01-31</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://entrepreneurs.bd/editorial</loc>
-    <lastmod>2026-01-29</lastmod>
+    <lastmod>2026-01-31</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://entrepreneurs.bd/about</loc>
-    <lastmod>2026-01-29</lastmod>
+    <lastmod>2026-01-31</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://entrepreneurs.bd/contact</loc>
-    <lastmod>2026-01-29</lastmod>
+    <lastmod>2026-01-31</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://entrepreneurs.bd/privacy</loc>
-    <lastmod>2026-01-29</lastmod>
+    <lastmod>2026-01-31</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://entrepreneurs.bd/disclaimer</loc>
-    <lastmod>2026-01-29</lastmod>
+    <lastmod>2026-01-31</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://entrepreneurs.bd/terms</loc>
-    <lastmod>2026-01-29</lastmod>
+    <lastmod>2026-01-31</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://entrepreneurs.bd/blog/business-trends</loc>
+    <lastmod>2026-01-31</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://entrepreneurs.bd/blog/digital-transformation</loc>
+    <lastmod>2026-01-31</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://entrepreneurs.bd/blog/entrepreneurial-mindset</loc>
+    <lastmod>2026-01-31</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://entrepreneurs.bd/blog/evolution-entrepreneurship</loc>
+    <lastmod>2026-01-31</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://entrepreneurs.bd/blog/hello-world</loc>
+    <lastmod>2026-01-31</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://entrepreneurs.bd/blog/sustainable-entrepreneurship</loc>
+    <lastmod>2026-01-31</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
   </url>
 </urlset>

@@ -8,6 +8,9 @@ const SITE_URL = process.env.SITE_URL || 'https://entrepreneurs.bd';
 const API_URL = process.env.API_URL || 'https://api.entrepreneurs.bd';
 const PUBLIC_DIR = path.join(__dirname, '../public');
 const INCLUDE_DYNAMIC = process.env.INCLUDE_DYNAMIC === 'true';
+const POSTS_DIR = path.join(__dirname, '../src/content/posts');
+const args = process.argv.slice(2);
+const WATCH_MODE = args.includes('--watch');
 
 // Define all static routes
 const staticRoutes = [
@@ -45,7 +48,7 @@ function createUrlEntry(baseUrl, changefreq, priority) {
  * Generates the complete sitemap XML
  */
 function generateSitemap(routes) {
-  const urlEntries = routes.map(route => 
+  const urlEntries = routes.map(route =>
     createUrlEntry(
       `${SITE_URL}${route.url}`,
       route.changefreq,
@@ -141,13 +144,46 @@ async function fetchDynamicRoutes() {
 }
 
 /**
+ * Fetch local MDX blog posts
+ */
+function fetchLocalPostRoutes() {
+  const localRoutes = [];
+  try {
+    if (fs.existsSync(POSTS_DIR)) {
+      console.log('  Scanning local blog posts...');
+      const files = fs.readdirSync(POSTS_DIR);
+      const mdxFiles = files.filter(file => file.endsWith('.mdx'));
+
+      mdxFiles.forEach(file => {
+        const slug = file.replace(/\.mdx$/, '');
+        localRoutes.push({
+          url: `/blog/${slug}`,
+          changefreq: 'weekly',
+          priority: 0.8
+        });
+      });
+      console.log(`    ✓ Found ${localRoutes.length} local posts`);
+    } else {
+      console.warn(`  ⚠ Posts directory not found: ${POSTS_DIR}`);
+    }
+  } catch (error) {
+    console.warn('  ⚠ Could not scan local posts:', error.message);
+  }
+  return localRoutes;
+}
+
+/**
  * Main function to generate and write sitemap
  */
 async function main() {
   try {
     console.log('🔄 Generating sitemap...\n');
-    
+
     let allRoutes = [...staticRoutes];
+
+    // Add local posts
+    const localRoutes = fetchLocalPostRoutes();
+    allRoutes = [...allRoutes, ...localRoutes];
 
     // Fetch dynamic routes if enabled
     if (INCLUDE_DYNAMIC) {
@@ -157,8 +193,11 @@ async function main() {
       console.log(`\n  Total dynamic routes added: ${dynamicRoutes.length}`);
     }
 
+    // Deduplicate routes based on URL
+    const uniqueRoutes = Array.from(new Map(allRoutes.map(item => [item.url, item])).values());
+
     // Create sitemap content
-    const sitemapContent = generateSitemap(allRoutes);
+    const sitemapContent = generateSitemap(uniqueRoutes);
 
     // Ensure public directory exists
     if (!fs.existsSync(PUBLIC_DIR)) {
@@ -174,14 +213,35 @@ async function main() {
     console.log(`  Total URLs: ${allRoutes.length}`);
     console.log(`  Site URL: ${SITE_URL}`);
     console.log(`  Static routes: ${staticRoutes.length}`);
+    console.log(`  Local posts: ${localRoutes.length}`);
     if (INCLUDE_DYNAMIC) {
-      console.log(`  Dynamic routes: ${allRoutes.length - staticRoutes.length}`);
+      console.log(`  Dynamic routes: ${allRoutes.length - staticRoutes.length - localRoutes.length}`);
     }
   } catch (error) {
     console.error('✗ Error generating sitemap:', error.message);
-    process.exit(1);
+    if (!WATCH_MODE) process.exit(1);
   }
 }
 
-// Run the script
+// Watch mode implementation
+if (WATCH_MODE) {
+  console.log(`\n👀 Watch mode enabled. Monitoring ${POSTS_DIR} for changes...`);
+
+  if (fs.existsSync(POSTS_DIR)) {
+    let debounceTimer;
+    fs.watch(POSTS_DIR, (eventType, filename) => {
+      if (filename && filename.endsWith('.mdx')) {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+          console.log(`\n📝 Detected change in ${filename}. Regenerating sitemap...`);
+          main();
+        }, 500); // Debounce for 500ms
+      }
+    });
+  } else {
+    console.warn(`⚠ Cannot watch non-existent directory: ${POSTS_DIR}`);
+  }
+}
+
+// Run the script immediately
 main();

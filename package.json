@@ -80,10 +80,13 @@
   },
   "scripts": {
     "start": "craco start",
-    "prebuild": "node scripts/generate-sitemap.js",
+    "prestart": "node scripts/generate-sitemap-advanced.js",
+    "prebuild": "node scripts/generate-sitemap-advanced.js",
     "build": "craco build",
     "test": "craco test",
-    "generate-sitemap": "node scripts/generate-sitemap.js"
+    "generate-sitemap": "node scripts/generate-sitemap-advanced.js",
+    "sitemap": "node scripts/generate-sitemap-advanced.js",
+    "watch:sitemap": "node scripts/generate-sitemap-advanced.js --watch"
   },
   "browserslist": {
     "production": [
