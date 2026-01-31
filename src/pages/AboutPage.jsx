@@ -111,10 +111,10 @@ const AboutPage = () => {
                   <div className="w-full max-w-xs mx-auto">
                     <div className="aspect-square rounded-2xl overflow-hidden border-4 border-emerald-800 shadow-xl mb-6">
                       <img
-                        src={siteConfig.founder.image}
-                        alt={siteConfig.founder.name}
+                        src="/shaddam.webp"
+                        alt="Md Shaddam Hossain"
                         className="w-full h-full object-cover"
-                      />
+                      />                      
                     </div>
                     <div className="text-center">
                       <h3 className="text-xl font-bold text-white mb-1">{siteConfig.founder.name}</h3>
