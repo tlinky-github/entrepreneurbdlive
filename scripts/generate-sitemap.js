@@ -43,7 +43,7 @@ function createUrlEntry(baseUrl, changefreq, priority) {
  * Generates the complete sitemap XML
  */
 function generateSitemap(routes) {
-  const urlEntries = routes.map(route => 
+  const urlEntries = routes.map(route =>
     createUrlEntry(
       `${SITE_URL}${route.url}`,
       route.changefreq,
@@ -62,8 +62,42 @@ ${urlEntries}
  */
 function main() {
   try {
-    // Create sitemap content
-    const sitemapContent = generateSitemap(staticRoutes);
+    // Generate static routes
+    let sitemapContent = generateSitemap(staticRoutes);
+
+    // Read blog data to extract slugs (parsing as text to avoid ES Module issues)
+    const blogDataPath = path.join(__dirname, '../src/data/blog-data.js');
+    if (fs.existsSync(blogDataPath)) {
+      const blogDataContent = fs.readFileSync(blogDataPath, 'utf-8');
+      const slugRegex = /slug:\s*"([^"]+)"/g;
+      let match;
+      const blogUrls = [];
+
+      while ((match = slugRegex.exec(blogDataContent)) !== null) {
+        // Skip duplicate slugs if any (though unlikely in source)
+        if (!blogUrls.includes(match[1])) {
+          blogUrls.push({
+            url: `/blog/${match[1]}`,
+            changefreq: 'weekly',
+            priority: 0.8
+          });
+        }
+      }
+
+      if (blogUrls.length > 0) {
+        const blogEntries = blogUrls.map(route =>
+          createUrlEntry(
+            `${SITE_URL}${route.url}`,
+            route.changefreq,
+            route.priority
+          )
+        ).join('\n');
+
+        // Insert blog entries before closing tag
+        sitemapContent = sitemapContent.replace('</urlset>', `${blogEntries}\n</urlset>`);
+        console.log(`✓ Added ${blogUrls.length} blog post URLs`);
+      }
+    }
 
     // Ensure public directory exists
     if (!fs.existsSync(PUBLIC_DIR)) {
