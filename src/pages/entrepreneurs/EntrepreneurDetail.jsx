@@ -30,6 +30,7 @@ const EntrepreneurDetail = () => {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [following, setFollowing] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -173,9 +174,9 @@ const EntrepreneurDetail = () => {
                         <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />
                       )}
                     </div>
-                    {profile.role_title && profile.company_name && (
+                    {(profile.designation || profile.role_title) && profile.company_name && (
                       <p className="text-lg text-stone-600">
-                        {profile.role_title} at <span className="font-medium">{profile.company_name}</span>
+                        {profile.designation || profile.role_title} at <span className="font-medium">{profile.company_name}</span>
                       </p>
                     )}
                     {profile.city && (
@@ -231,11 +232,36 @@ const EntrepreneurDetail = () => {
               </div>
             </div>
 
-            {/* Bio */}
-            {profile.short_bio && (
+            {/* About / Bio */}
+            {(profile.details || profile.short_bio) && (
               <div className="mt-8 pt-8 border-t border-stone-200">
                 <h2 className="text-lg font-semibold text-stone-900 mb-4">About</h2>
-                <p className="text-stone-700 leading-relaxed">{profile.short_bio}</p>
+                <div className="relative">
+                  <p className="text-stone-700 leading-relaxed">
+                    {isExpanded 
+                      ? (profile.details || profile.short_bio) 
+                      : `${(profile.details || profile.short_bio).substring(0, 160)}${(profile.details || profile.short_bio).length > 160 ? '...' : ''}`
+                    }
+                  </p>
+                  {(profile.details || profile.short_bio).length > 160 && (
+                    <button 
+                      onClick={() => setIsExpanded(!isExpanded)}
+                      className="text-emerald-900 font-semibold mt-2 hover:underline focus:outline-none"
+                    >
+                      {isExpanded ? 'Show less' : 'Read more'}
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Full Story / Content */}
+            {profile.content && (
+              <div className="mt-8 pt-8 border-t border-stone-200">
+                <div 
+                  className="prose prose-stone max-w-none text-stone-700 leading-relaxed"
+                  dangerouslySetInnerHTML={{ __html: profile.content }}
+                />
               </div>
             )}
 
@@ -254,9 +280,9 @@ const EntrepreneurDetail = () => {
                     Website
                   </a>
                 )}
-                {profile.linkedin && (
+                {(profile.linkedin || profile.social_linkedin) && (
                   <a
-                    href={profile.linkedin}
+                    href={profile.linkedin || profile.social_linkedin}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-2 px-4 py-2 bg-stone-100 hover:bg-blue-100 rounded-lg text-stone-700 hover:text-blue-700 transition-colors"
@@ -265,9 +291,9 @@ const EntrepreneurDetail = () => {
                     LinkedIn
                   </a>
                 )}
-                {profile.twitter && (
+                {(profile.twitter || profile.social_twitter) && (
                   <a
-                    href={profile.twitter}
+                    href={profile.twitter || profile.social_twitter}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-2 px-4 py-2 bg-stone-100 hover:bg-sky-100 rounded-lg text-stone-700 hover:text-sky-600 transition-colors"
@@ -276,9 +302,9 @@ const EntrepreneurDetail = () => {
                     Twitter
                   </a>
                 )}
-                {profile.facebook && (
+                {(profile.facebook || profile.social_facebook) && (
                   <a
-                    href={profile.facebook}
+                    href={profile.facebook || profile.social_facebook}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-2 px-4 py-2 bg-stone-100 hover:bg-blue-100 rounded-lg text-stone-700 hover:text-blue-600 transition-colors"

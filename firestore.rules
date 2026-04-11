@@ -1,0 +1,68 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to check if user is an admin or super admin
+    function isAdmin() {
+      return request.auth != null && (
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'super_admin' ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'editor' ||
+        request.auth.token.email == 'admin@entrepreneurs-bd.com'
+      );
+    }
+
+    // Public Collections: Anyone can read, only Admin can write
+    match /posts/{post} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /profiles/{profile} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /listings/{listing} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /resources/{resource} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Taxonomies: Public read, Admin write
+    match /industries/{industry} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /cities/{city} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /categories/{category} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Settings: Public read, Super Admin write
+    match /settings/{setting} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Users: User can read/write their own profile (limit what they can write)
+    // Admin can read/write everything
+    match /users/{userId} {
+      allow read: if request.auth != null && (request.auth.uid == userId || isAdmin());
+      allow create: if request.auth != null && request.auth.uid == userId;
+      allow update: if request.auth != null && (
+        isAdmin() || 
+        (request.auth.uid == userId && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']))
+      );
+      allow delete: if isAdmin();
+    }
+  }
+}

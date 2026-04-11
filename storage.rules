@@ -1,0 +1,18 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Helper function to check if user is an admin
+    // This is simplified for storage as it's hard to check Firestore from here
+    // without using custom claims. For now, we check if they are logged in.
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    match /{allPaths=**} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+  }
+}

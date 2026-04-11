@@ -49,10 +49,6 @@ const AdminPosts = () => {
   const [deleteId, setDeleteId] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
-  useEffect(() => {
-    loadPosts();
-  }, [loadPosts]);
-
   const loadPosts = useCallback(async () => {
     setLoading(true);
     try {
@@ -64,6 +60,10 @@ const AdminPosts = () => {
       setLoading(false);
     }
   }, [search]);
+
+  useEffect(() => {
+    loadPosts();
+  }, [loadPosts]);
 
   const handleDelete = async () => {
     if (!deleteId) return;
@@ -94,14 +94,14 @@ const AdminPosts = () => {
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-bold text-stone-900">Blog Posts</h1>
-          <p className="text-stone-500">Manage your blog content</p>
+          <p className="text-stone-500">Manage your website's news and articles</p>
         </div>
-        <Link to="/admin/posts/new">
-          <Button className="bg-emerald-900 hover:bg-emerald-800" data-testid="new-post-btn">
-            <Plus className="w-4 h-4 mr-2" />
-            New Post
-          </Button>
-        </Link>
+        <Button asChild className="bg-emerald-900 group">
+          <Link to="/admin/content-editor?type=blog">
+            <Plus className="w-4 h-4 mr-2 group-hover:rotate-90 transition-transform" />
+            Add New Post
+          </Link>
+        </Button>
       </div>
 
       {/* Search */}

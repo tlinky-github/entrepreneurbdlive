@@ -9,6 +9,7 @@ import { Skeleton } from '../../components/ui/skeleton';
 import { toast } from 'sonner';
 import { Save, Loader2, Globe, Mail, Phone, MapPin, Facebook, Twitter, Linkedin, Youtube, Search } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
+import ImageUploader from '../../components/common/ImageUploader';
 
 const AdminSettings = () => {
   const [settings, setSettings] = useState({
@@ -62,16 +63,6 @@ const AdminSettings = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="space-y-6">
-        <Skeleton className="h-10 w-48" />
-        <Skeleton className="h-64" />
-        <Skeleton className="h-64" />
-      </div>
-    );
-  }
-
   return (
     <div data-testid="admin-settings">
       <div className="flex items-center justify-between mb-8">
@@ -79,7 +70,7 @@ const AdminSettings = () => {
           <h1 className="text-2xl font-bold text-stone-900">Site Settings</h1>
           <p className="text-stone-500">Configure your site's global settings</p>
         </div>
-        <Button onClick={handleSave} disabled={saving} className="bg-emerald-900 hover:bg-emerald-800">
+        <Button onClick={handleSave} disabled={saving || loading} className="bg-emerald-900 hover:bg-emerald-800">
           {saving ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -101,6 +92,13 @@ const AdminSettings = () => {
           <TabsTrigger value="social">Social Media</TabsTrigger>
           <TabsTrigger value="seo">SEO</TabsTrigger>
         </TabsList>
+
+        {loading && (
+          <div className="flex items-center gap-2 p-4 bg-emerald-50 text-emerald-800 rounded-lg animate-pulse border border-emerald-100">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            <span className="text-sm font-medium">Fetching settings from database...</span>
+          </div>
+        )}
 
         <TabsContent value="general">
           <Card className="border-stone-200">
@@ -129,21 +127,21 @@ const AdminSettings = () => {
               </div>
               <div className="grid sm:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="logo_url">Logo URL</Label>
-                  <Input
-                    id="logo_url"
+                  <Label>Logo</Label>
+                  <ImageUploader
                     value={settings.logo_url}
-                    onChange={(e) => handleChange('logo_url', e.target.value)}
-                    placeholder="https://example.com/logo.png"
+                    onChange={(url) => handleChange('logo_url', url)}
+                    entityType="settings"
+                    placeholder="Upload site logo"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="favicon_url">Favicon URL</Label>
-                  <Input
-                    id="favicon_url"
+                  <Label>Favicon</Label>
+                  <ImageUploader
                     value={settings.favicon_url}
-                    onChange={(e) => handleChange('favicon_url', e.target.value)}
-                    placeholder="https://example.com/favicon.ico"
+                    onChange={(url) => handleChange('favicon_url', url)}
+                    entityType="settings"
+                    placeholder="Upload favicon"
                   />
                 </div>
               </div>

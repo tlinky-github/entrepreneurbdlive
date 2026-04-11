@@ -19,9 +19,10 @@ import { Input } from '../../components/ui/input';
 import { Badge } from '../../components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { toast } from 'sonner';
-import { Save, ChevronLeft, Eye, Settings } from 'lucide-react';
-import { contentAPI } from '../../lib/api';
-import '@tiptap/extension-text-style';
+import { Save, ChevronLeft, Eye, Settings, Star } from 'lucide-react';
+import { contentAPI, taxonomyAPI, categoryAPI } from '../../lib/api';
+import ImageUploader from '../../components/common/ImageUploader';
+import { Label } from '../../components/ui/label';
 import './ContentEditorPanel.css';
 
 const ContentEditorPanel = () => {
@@ -37,13 +38,28 @@ const ContentEditorPanel = () => {
   const [status, setStatus] = useState('draft');
   const [featuredImage, setFeaturedImage] = useState('');
   const [saving, setSaving] = useState(false);
+  const [publishing, setPublishing] = useState(false);
   const [contentLoaded, setContentLoaded] = useState(false);
   const [editorReady, setEditorReady] = useState(false);
+  const [isFeatured, setIsFeatured] = useState(false);
 
   // SEO Fields
   const [seoTitle, setSeoTitle] = useState('');
   const [seoDescription, setSeoDescription] = useState('');
   const [seoKeywords, setSeoKeywords] = useState('');
+
+  // Specialized Fields
+  const [designation, setDesignation] = useState('');
+  const [companyName, setCompanyName] = useState('');
+  const [founderName, setFounderName] = useState('');
+  const [ceoName, setCeoName] = useState('');
+  const [headquarters, setHeadquarters] = useState('');
+  const [employeeSize, setEmployeeSize] = useState('');
+  const [companyPageUrl, setCompanyPageUrl] = useState('');
+  const [lifeAtCompany, setLifeAtCompany] = useState('');
+  const [socialLinkedin, setSocialLinkedin] = useState('');
+  const [socialTwitter, setSocialTwitter] = useState('');
+  const [socialFacebook, setSocialFacebook] = useState('');
 
   const [categories, setCategories] = useState([
     { id: 1, name: 'Technology' },
@@ -51,11 +67,38 @@ const ContentEditorPanel = () => {
     { id: 3, name: 'Finance' }
   ]);
 
-  // Initialize editor with minimal config for testing
+  // 1. Shared Extensions to prevent duplicates
+  const sharedExtensions = [
+    StarterKit.configure({
+      history: true,
+    }),
+    Link.configure({ openOnClick: false }),
+    Image,
+    TextAlign.configure({ types: ['heading', 'paragraph'] }),
+    Underline,
+    TextStyle,
+    Color,
+    Highlight,
+  ];
+
+  // Main Content Editor
   const editor = useEditor({
-    extensions: [StarterKit],
+    extensions: [
+      ...sharedExtensions,
+      Placeholder.configure({ placeholder: 'Write your story...' })
+    ],
     content: '<p>Start typing here...</p>',
     autofocus: true,
+    editable: true,
+  });
+
+  // Second Editor for "Life at Company" (Directory Only)
+  const lifeAtCompanyEditor = useEditor({
+    extensions: [
+      ...sharedExtensions,
+      Placeholder.configure({ placeholder: 'Describe company culture, environment, and perks...' })
+    ],
+    content: '',
     editable: true,
   });
 
@@ -90,9 +133,26 @@ const ContentEditorPanel = () => {
             setSeoDescription(data.seo_description || '');
             setSeoKeywords(data.seo_keywords || '');
 
+            // Load specialized fields
+            setDesignation(data.designation || '');
+            setCompanyName(data.company_name || data.business_name || '');
+            setFounderName(data.founder_name || '');
+            setCeoName(data.ceo_name || '');
+            setHeadquarters(data.headquarters || '');
+            setEmployeeSize(data.employee_size || '');
+            setCompanyPageUrl(data.company_page_url || '');
+            setLifeAtCompany(data.life_at_company || '');
+            setSocialLinkedin(data.social_linkedin || '');
+            setSocialTwitter(data.social_twitter || '');
+            setSocialFacebook(data.social_facebook || '');
+
             if (data.content) {
               editor.commands.setContent(data.content);
             }
+            if (data.life_at_company && lifeAtCompanyEditor) {
+              lifeAtCompanyEditor.commands.setContent(data.life_at_company);
+            }
+            setIsFeatured(data.is_featured || false);
             setContentLoaded(true);
           } catch (error) {
             console.error('Error loading content:', error);
@@ -105,7 +165,22 @@ const ContentEditorPanel = () => {
         setContentLoaded(true);
       }
     }
-  }, [itemId, type, editor]);
+  }, [itemId, type, editor, lifeAtCompanyEditor]);
+
+  // Load real categories from database
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const res = await categoryAPI.list();
+        if (res.data && res.data.length > 0) {
+          setCategories(res.data);
+        }
+      } catch (error) {
+        console.error('Error loading categories:', error);
+      }
+    };
+    loadCategories();
+  }, []);
 
   // Auto-generate slug
   useEffect(() => {
@@ -157,11 +232,28 @@ const ContentEditorPanel = () => {
         excerpt,
         content,
         category_id: parseInt(category),
-        status,
+        // If editing existing content, force status to pending for re-approval
+        status: itemId ? 'pending' : status,
         featured_image: featuredImage,
         seo_title: seoTitle,
         seo_description: seoDescription,
-        seo_keywords: seoKeywords
+        seo_keywords: seoKeywords,
+        // Include all specialized fields in payload
+        designation,
+        company_name: companyName,
+        founder_name: founderName,
+        ceo_name: ceoName,
+        headquarters,
+        employee_size: employeeSize,
+        company_page_url: companyPageUrl,
+        life_at_company: lifeAtCompanyEditor?.getHTML() || '',
+        social_linkedin: socialLinkedin,
+        social_twitter: socialTwitter,
+        social_facebook: socialFacebook,
+        is_featured: isFeatured,
+        // Sync excerpt to fields used by the frontend for intro text
+        details: type === 'entrepreneurs' ? excerpt : undefined,
+        short_description: type === 'directory' ? excerpt : undefined
       };
 
       console.log('Saving content to database:', payload);
@@ -184,19 +276,21 @@ const ContentEditorPanel = () => {
       }, 1500);
     } catch (error) {
       console.error('Save error:', error);
-      if (error.response?.status === 400) {
-        toast.error(error.response.data?.error || 'Failed to save content');
-      } else {
-        toast.error('Failed to save content. Make sure the backend is running on port 8001');
-      }
+      const errorMsg = error.message || 'Failed to save content';
+      toast.error(`${errorMsg}. Please check your internet connection or Firestore permissions.`);
     } finally {
       setSaving(false);
     }
   };
 
   const handlePublish = async () => {
+    setPublishing(true);
     setStatus('published');
-    await handleSave();
+    // Ensure the status update is reflected in handleSave
+    setTimeout(async () => {
+      await handleSave();
+      setPublishing(false);
+    }, 0);
   };
 
   // Generate preview URL based on content type
@@ -232,11 +326,15 @@ const ContentEditorPanel = () => {
           <button onClick={() => window.open(getPreviewUrl(), '_blank')} style={{ marginRight: '4px' }}>
             <Eye size={18} /> Preview
           </button>
-          <button onClick={handleSave} disabled={saving}>
-            <Save size={18} /> Save Draft
+          <button onClick={handleSave} disabled={saving || publishing}>
+            <Save size={18} /> {saving ? 'Saving...' : 'Save Draft'}
           </button>
-          <button onClick={handlePublish} disabled={saving}>
-            Publish
+          <button 
+            onClick={handlePublish} 
+            disabled={saving || publishing}
+            style={{ backgroundColor: '#10b981', color: 'white' }}
+          >
+            {publishing ? 'Publishing...' : status === 'published' ? 'Update' : 'Publish'}
           </button>
         </div>
       </div>
@@ -250,23 +348,123 @@ const ContentEditorPanel = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <label>Title *</label>
+                <label>
+                  {type === 'entrepreneurs' ? 'Full Name *' : 
+                   type === 'directory' ? 'Business Name *' : 
+                   'Title *'}
+                </label>
                 <Input
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Enter article title"
+                  placeholder={type === 'entrepreneurs' ? 'Enter name' : 'Enter title'}
                 />
               </div>
 
-              <div>
-                <label>Slug</label>
-                <Input
-                  value={slug}
-                  onChange={(e) => setSlug(e.target.value)}
-                  placeholder="auto-generated"
-                  disabled
-                />
-              </div>
+              {type === 'entrepreneurs' && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label>Designation</label>
+                    <Input
+                      value={designation}
+                      onChange={(e) => setDesignation(e.target.value)}
+                      placeholder="e.g. Founder & CEO"
+                    />
+                  </div>
+                  <div>
+                    <label>Company Name</label>
+                    <Input
+                      value={companyName}
+                      onChange={(e) => setCompanyName(e.target.value)}
+                      placeholder="Target Company"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {type === 'directory' && (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label>Founder Name</label>
+                      <Input
+                        value={founderName}
+                        onChange={(e) => setFounderName(e.target.value)}
+                        placeholder="Founder name"
+                      />
+                    </div>
+                    <div>
+                      <label>CEO Name</label>
+                      <Input
+                        value={ceoName}
+                        onChange={(e) => setCeoName(e.target.value)}
+                        placeholder="CEO name"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label>Headquarters</label>
+                      <Input
+                        value={headquarters}
+                        onChange={(e) => setHeadquarters(e.target.value)}
+                        placeholder="City, Country"
+                      />
+                    </div>
+                    <div>
+                      <label>Employee Size</label>
+                      <select
+                        value={employeeSize}
+                        onChange={(e) => setEmployeeSize(e.target.value)}
+                        className="input-select"
+                      >
+                        <option value="">Select Size</option>
+                        <option value="1-10">1-10</option>
+                        <option value="11-50">11-50</option>
+                        <option value="51-200">51-200</option>
+                        <option value="201-500">201-500</option>
+                        <option value="500+">500+</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label>Official Page URL</label>
+                    <Input
+                      value={companyPageUrl}
+                      onChange={(e) => setCompanyPageUrl(e.target.value)}
+                      placeholder="https://company.com"
+                    />
+                  </div>
+                   <div>
+                    <label>Life at Company (Rich Text)</label>
+                    <div className="directory-rich-editor border rounded-md mt-1 overflow-hidden bg-white">
+                      <div className="flex items-center gap-1 p-2 border-b bg-stone-50 overflow-x-auto">
+                        <button 
+                          onClick={() => lifeAtCompanyEditor?.chain().focus().toggleBold().run()} 
+                          className={`p-1 rounded hover:bg-stone-200 ${lifeAtCompanyEditor?.isActive('bold') ? 'bg-stone-200' : ''}`}
+                        >
+                          <strong>B</strong>
+                        </button>
+                        <button 
+                          onClick={() => lifeAtCompanyEditor?.chain().focus().toggleBulletList().run()} 
+                          className={`p-1 rounded hover:bg-stone-200 ${lifeAtCompanyEditor?.isActive('bulletList') ? 'bg-stone-200' : ''}`}
+                        >
+                          Bullets
+                        </button>
+                        <button 
+                          onClick={() => lifeAtCompanyEditor?.chain().focus().toggleOrderedList().run()} 
+                          className={`p-1 rounded hover:bg-stone-200 ${lifeAtCompanyEditor?.isActive('orderedList') ? 'bg-stone-200' : ''}`}
+                        >
+                          Numbers
+                        </button>
+                      </div>
+                      <EditorContent 
+                        editor={lifeAtCompanyEditor} 
+                        className="p-4 min-h-[150px] focus:outline-none prose prose-sm max-w-none"
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
 
               <div>
                 <label>Category *</label>
@@ -284,43 +482,94 @@ const ContentEditorPanel = () => {
 
               <div>
                 <label>Status</label>
-                <div className="status-buttons">
+                <div className="status-buttons gap-2 flex">
                   <button
                     onClick={() => setStatus('draft')}
-                    className={`status-btn ${status === 'draft' ? 'active' : ''}`}
+                    className={`status-btn transition-all px-3 py-1 rounded border ${status === 'draft' ? 'bg-stone-200 border-stone-400' : 'bg-white border-stone-200'}`}
                   >
                     Draft
                   </button>
                   <button
                     onClick={() => setStatus('published')}
-                    className={`status-btn ${status === 'published' ? 'active' : ''}`}
+                    className={`status-btn transition-all px-3 py-1 rounded border ${status === 'published' ? 'bg-emerald-100 border-emerald-400 text-emerald-900' : 'bg-white border-stone-200'}`}
                   >
                     Published
                   </button>
                 </div>
               </div>
 
+              <div className="space-y-2">
+                <Label>
+                  {type === 'entrepreneurs' ? 'Profile Photo' : 
+                   type === 'directory' ? 'Company Logo' : 
+                   'Featured Image'}
+                </Label>
+                <div className="mt-1">
+                  <ImageUploader
+                    value={featuredImage}
+                    onChange={setFeaturedImage}
+                    entityType={type}
+                    placeholder={`Upload ${type === 'entrepreneurs' ? 'photo' : 'image'}`}
+                  />
+                </div>
+              </div>
+
+              {type === 'entrepreneurs' && (
+                <div className="space-y-4 pt-4 border-t border-stone-100">
+                  <h4 className="font-semibold text-sm">Social Profiles</h4>
+                  <div className="grid grid-cols-1 gap-3">
+                    <Input
+                      value={socialLinkedin}
+                      onChange={(e) => setSocialLinkedin(e.target.value)}
+                      placeholder="LinkedIn URL"
+                    />
+                    <Input
+                      value={socialTwitter}
+                      onChange={(e) => setSocialTwitter(e.target.value)}
+                      placeholder="Twitter URL"
+                    />
+                    <Input
+                      value={socialFacebook}
+                      onChange={(e) => setSocialFacebook(e.target.value)}
+                      placeholder="Facebook URL"
+                    />
+                  </div>
+                </div>
+              )}
+
               <div>
-                <label>Featured Image URL</label>
-                <Input
-                  value={featuredImage}
-                  onChange={(e) => setFeaturedImage(e.target.value)}
-                  placeholder="https://..."
-                  type="url"
+                <label>
+                  {type === 'entrepreneurs' ? 'Short Bio (Max 400 chars)' : 'Short Description (Used in lists)'}
+                </label>
+                <textarea
+                  value={excerpt}
+                  onChange={(e) => {
+                    if (type === 'entrepreneurs' && e.target.value.length > 400) return;
+                    setExcerpt(e.target.value);
+                  }}
+                  placeholder={type === 'entrepreneurs' ? 'Brief introduction...' : 'Brief summary (used in lists)'}
+                  className="textarea-input w-full p-2 border rounded"
+                  rows={4}
                 />
-                {featuredImage && (
-                  <img src={featuredImage} alt="Featured" className="featured-preview" />
+                {type === 'entrepreneurs' && (
+                  <small className={`char-count ${excerpt.length > 350 ? 'text-orange-500' : ''}`}>
+                    {excerpt.length}/400
+                  </small>
                 )}
               </div>
 
-              <div>
-                <label>Excerpt</label>
-                <textarea
-                  value={excerpt}
-                  onChange={(e) => setExcerpt(e.target.value)}
-                  placeholder="Brief summary (used in lists)"
-                  className="textarea-input"
+              <div className="flex items-center gap-2 pt-4">
+                <input 
+                  type="checkbox" 
+                  id="featured-toggle"
+                  checked={isFeatured}
+                  onChange={(e) => setIsFeatured(e.target.checked)}
+                  className="w-4 h-4 accent-emerald-600"
                 />
+                <label htmlFor="featured-toggle" className="flex items-center gap-1 cursor-pointer font-medium">
+                  <Star className={`w-4 h-4 ${isFeatured ? 'fill-yellow-500 text-yellow-500' : 'text-stone-400'}`} />
+                  Set as Featured Content
+                </label>
               </div>
             </CardContent>
           </Card>

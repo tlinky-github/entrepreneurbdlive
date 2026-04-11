@@ -155,6 +155,12 @@ const AdminDirectory = () => {
           <h1 className="text-2xl font-bold text-stone-900">Directory Listings</h1>
           <p className="text-stone-500">Manage business directory listings</p>
         </div>
+        <Button asChild className="bg-emerald-900 group">
+          <Link to="/admin/content-editor?type=directory">
+            <Plus className="w-4 h-4 mr-2 group-hover:rotate-90 transition-transform" />
+            Add New Listing
+          </Link>
+        </Button>
       </div>
 
       {/* Filters */}

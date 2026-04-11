@@ -2,13 +2,14 @@
 // Unified Content Manager for Blog, Entrepreneurs, Directory, Knowledge Hub
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Badge } from '../../components/ui/badge';
 import { Skeleton } from '../../components/ui/skeleton';
 import { toast } from 'sonner';
-import { Plus, Search, Edit2, Trash2, Eye, Settings, BookOpen, Users, MapPin, Lightbulb } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, Eye, Settings, BookOpen, Users, MapPin, Lightbulb, CheckCircle, XCircle } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,9 +34,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '../../components/ui/alert-dialog';
+import { contentAPI, categoryAPI, adminAPI } from '../../lib/api';
 import './AdminContentManager.css';
 
 const AdminContentManager = () => {
+  const navigate = useNavigate();
   const [contentType, setContentType] = useState('blog'); // blog, entrepreneurs, directory, knowledge
   const [items, setItems] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -59,59 +62,35 @@ const AdminContentManager = () => {
       label: 'Entrepreneurs',
       route: '/entrepreneurs',
       apiKey: 'profiles',
-      fields: ['first_name', 'last_name', 'bio', 'image', 'category_id', 'seo_title', 'seo_description']
+      fields: ['name', 'photo', 'designation', 'company_name', 'category', 'details', 'social_linkedin', 'social_twitter', 'social_facebook', 'seo_title', 'seo_description']
     },
     directory: {
       icon: MapPin,
       label: 'Business Directory',
       route: '/directory',
       apiKey: 'listings',
-      fields: ['company_name', 'description', 'location', 'category_id', 'seo_title', 'seo_description']
+      fields: ['logo', 'business_name', 'founder_name', 'ceo_name', 'category', 'headquarters', 'employee_size', 'details', 'company_page_url', 'life_at_company', 'seo_title', 'seo_description']
     },
     knowledge: {
       icon: Lightbulb,
       label: 'Knowledge Hub',
       route: '/knowledge',
       apiKey: 'resources',
-      fields: ['title', 'description', 'content', 'category_id', 'file_url', 'seo_title', 'seo_description']
+      fields: ['title', 'details', 'content', 'category_id', 'file_url', 'seo_title', 'seo_description']
     }
   };
 
   const config = contentConfig[contentType];
   const ConfigIcon = config.icon;
 
-  useEffect(() => {
-    loadItems();
-    loadCategories();
-  }, [loadItems, loadCategories]);
-
   const loadItems = useCallback(async () => {
     setLoading(true);
     try {
-      // Mock data for demo - replace with actual API calls
-      const mockData = {
-        blog: [
-          { id: 1, title: 'Getting Started with Entrepreneurship', slug: 'getting-started', category_id: 1, views: 234, status: 'published' },
-          { id: 2, title: 'Marketing Tips for Startups', slug: 'marketing-tips', category_id: 2, views: 156, status: 'published' }
-        ],
-        entrepreneurs: [
-          { id: 1, first_name: 'John', last_name: 'Doe', category_id: 1, status: 'active' },
-          { id: 2, first_name: 'Jane', last_name: 'Smith', category_id: 2, status: 'active' }
-        ],
-        directory: [
-          { id: 1, company_name: 'Tech Solutions Inc', location: 'New York', category_id: 1, status: 'active' },
-          { id: 2, company_name: 'Digital Marketing Pro', location: 'San Francisco', category_id: 2, status: 'active' }
-        ],
-        knowledge: [
-          { id: 1, title: 'Business Planning Guide', category_id: 1, views: 450, status: 'published' },
-          { id: 2, title: 'Financial Literacy Handbook', category_id: 2, views: 320, status: 'published' }
-        ]
-      };
-
-      setItems(mockData[contentType] || []);
+      const res = await contentAPI.list(contentType);
+      setItems(res.data || []);
     } catch (error) {
-      toast.error('Failed to load items');
-      console.error(error);
+      console.error('Error loading items:', error);
+      toast.error('Failed to load items from database');
     } finally {
       setLoading(false);
     }
@@ -119,16 +98,17 @@ const AdminContentManager = () => {
 
   const loadCategories = useCallback(async () => {
     try {
-      const mockCategories = [
-        { id: 1, name: 'Technology', slug: 'technology' },
-        { id: 2, name: 'Marketing', slug: 'marketing' },
-        { id: 3, name: 'Finance', slug: 'finance' }
-      ];
-      setCategories(mockCategories);
+      const res = await categoryAPI.list();
+      setCategories(res.data || []);
     } catch (error) {
       console.error('Error loading categories:', error);
     }
   }, []);
+
+  useEffect(() => {
+    loadItems();
+    loadCategories();
+  }, [loadItems, loadCategories]);
 
   const handleCreateCategory = async () => {
     if (!newCategory.trim()) {
@@ -151,14 +131,36 @@ const AdminContentManager = () => {
     }
   };
 
+  const handleStatusChange = async (id, newStatus) => {
+    try {
+      const typeMap = {
+        blog: 'blog',
+        entrepreneurs: 'profile',
+        directory: 'listing'
+      };
+      const apiType = typeMap[contentType] || contentType;
+      
+      if (newStatus === 'published') {
+        await adminAPI.approve(apiType, id);
+      } else if (newStatus === 'rejected') {
+        await adminAPI.reject(apiType, id);
+      }
+      
+      toast.success(`Item ${newStatus} successfully`);
+      loadItems();
+    } catch (error) {
+      toast.error('Failed to update status');
+    }
+  };
+
   const handleDelete = async () => {
     if (!deleteId) return;
     setDeleting(true);
     try {
-      // Mock: In real app, call API
+      await contentAPI.delete(contentType, deleteId);
       setItems(items.filter(item => item.id !== deleteId));
       setDeleteId(null);
-      toast.success('Item deleted');
+      toast.success('Item deleted successfully');
     } catch (error) {
       toast.error('Failed to delete item');
     } finally {
@@ -187,6 +189,13 @@ const AdminContentManager = () => {
           </h1>
           <p className="page-subtitle">Manage content, categories, and SEO for all sections</p>
         </div>
+        <Button 
+          className="bg-emerald-900 hover:bg-emerald-800"
+          onClick={() => navigate(`/admin/content-editor?type=${contentType}`)}
+        >
+          <Plus size={18} className="mr-2" />
+          Create New {config.label}
+        </Button>
       </div>
 
       {/* Content Type Selector */}
@@ -278,10 +287,26 @@ const AdminContentManager = () => {
                         {contentType === 'blog' && <TableCell>{item.views || 0}</TableCell>}
                         <TableCell>
                           <div className="action-icons">
+                            {item.status !== 'published' && (
+                              <>
+                                <CheckCircle
+                                  size={18}
+                                  className="icon-btn text-green-600"
+                                  onClick={() => handleStatusChange(item.id, 'published')}
+                                  title="Approve"
+                                />
+                                <XCircle
+                                  size={18}
+                                  className="icon-btn text-red-600"
+                                  onClick={() => handleStatusChange(item.id, 'rejected')}
+                                  title="Reject"
+                                />
+                              </>
+                            )}
                             <Eye
                               size={18}
                               className="icon-btn"
-                              onClick={() => window.open(config.route)}
+                              onClick={() => window.open(`${config.route}/${item.slug}`)}
                             />
                             <Edit2
                               size={18}

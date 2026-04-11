@@ -35,24 +35,23 @@ const ImageUploader = ({
 
     setUploading(true);
     try {
-      // Get presigned URL
-      const urlRes = await api.post('/upload/presigned-url', {
-        filename: file.name,
-        content_type: file.type,
-        entity_type: entityType
+      // 1. Get secure presigned URL from our new Vercel API
+      const response = await fetch('/api/upload-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fileName: file.name,
+          fileType: entityType,
+          contentType: file.type
+        })
       });
 
-      const { presigned_url, public_url, mock } = urlRes.data;
+      if (!response.ok) throw new Error('Failed to get upload URL');
+      
+      const { uploadUrl, publicUrl } = await response.json();
 
-      if (mock) {
-        // In mock mode, just use a placeholder URL
-        toast.info('Image upload configured in mock mode');
-        onChange(URL.createObjectURL(file)); // Use local blob URL for preview
-        return;
-      }
-
-      // Upload file to R2
-      await fetch(presigned_url, {
+      // 2. Upload file directly to Cloudflare R2 using the secure link
+      const uploadRes = await fetch(uploadUrl, {
         method: 'PUT',
         body: file,
         headers: {
@@ -60,12 +59,14 @@ const ImageUploader = ({
         }
       });
 
-      // Set the public URL
-      onChange(public_url);
-      toast.success('Image uploaded successfully');
+      if (!uploadRes.ok) throw new Error('Cloudflare upload failed');
+
+      // 3. Update the frontend with the new permanent R2 image link
+      onChange(publicUrl);
+      toast.success('Image uploaded to R2 successfully');
     } catch (error) {
       console.error('Upload error:', error);
-      toast.error('Failed to upload image');
+      toast.error('Failed to upload image. Check your R2 settings.');
     } finally {
       setUploading(false);
       if (fileInputRef.current) {

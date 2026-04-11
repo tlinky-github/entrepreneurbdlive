@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { SEO } from '../../components/SEO';
-import { listingAPI } from '../../lib/api';
+import { listingAPI, categoryAPI, taxonomyAPI } from '../../lib/api';
 import { Card, CardContent } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
 import { Input } from '../../components/ui/input';
@@ -32,27 +32,34 @@ import {
   TabsTrigger,
 } from '../../components/ui/tabs';
 
-const listingTypes = [
-  { value: 'startup', label: 'Startups' },
-  { value: 'sme', label: 'SMEs' },
-  { value: 'entrepreneur', label: 'Entrepreneurs' },
-  { value: 'service_provider', label: 'Service Providers' },
-];
-
-const categories = [
-  'Technology', 'E-commerce', 'Fintech', 'Healthcare', 'Education',
-  'Agriculture', 'Manufacturing', 'Retail', 'Logistics', 'Food & Beverage',
-  'Fashion', 'Media', 'Real Estate', 'Marketing', 'Consulting', 'Other'
-];
-
 const DirectoryList = () => {
   const [listings, setListings] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [listingTypes, setListingTypes] = useState([
+    { value: 'startup', label: 'Startups' },
+    { value: 'sme', label: 'SMEs' },
+    { value: 'entrepreneur', label: 'Entrepreneurs' },
+    { value: 'service_provider', label: 'Service Providers' },
+  ]);
   const [loading, setLoading] = useState(true);
   const [searchParams, setSearchParams] = useSearchParams();
 
   const search = searchParams.get('search') || '';
   const listingType = searchParams.get('type') || '';
   const category = searchParams.get('category') || '';
+
+  // Load dynamic filters
+  useEffect(() => {
+    const loadFilters = async () => {
+      try {
+        const catRes = await categoryAPI.list();
+        setCategories(catRes.data?.map(c => c.name) || []);
+      } catch (error) {
+        console.error('Error loading filters:', error);
+      }
+    };
+    loadFilters();
+  }, []);
 
   useEffect(() => {
     const loadListings = async () => {
@@ -281,8 +288,10 @@ const ListingCard = ({ listing, featured }) => (
           </Badge>
         )}
 
-        {listing.short_description && (
-          <p className="text-sm text-stone-600 mt-3 line-clamp-2">{listing.short_description}</p>
+        {(listing.details || listing.short_description) && (
+          <p className="text-sm text-stone-600 mt-3 line-clamp-3">
+            {listing.details || listing.short_description}
+          </p>
         )}
 
         <div className="flex items-center gap-4 mt-4 pt-4 border-t border-stone-100 text-xs text-stone-400">

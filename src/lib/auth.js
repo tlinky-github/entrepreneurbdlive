@@ -1,5 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { authAPI } from './api';
+import { auth, googleProvider, db } from './firebase';
+import { onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 
 const AuthContext = createContext(null);
 
@@ -7,83 +9,103 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const loadUser = useCallback(async () => {
-    const token = localStorage.getItem('token');
-    const savedUser = localStorage.getItem('user');
-    
-    if (!token) {
-      setLoading(false);
-      return;
-    }
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        let role = 'user';
+        
+        try {
+          // Fetch real role from Firestore
+          const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+          if (userDoc.exists()) {
+            role = userDoc.data().role || 'user';
+          } else {
+            // Fallback for first-time admin setup
+            if (firebaseUser.email === 'admin@entrepreneurs-bd.com' || 
+                firebaseUser.email === 'firebase-adminsdk-fbsvc@entrepreneurs-bd.iam.gserviceaccount.com') {
+              role = 'super_admin';
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching user role:', error);
+        }
 
-    try {
-      // If user is already in localStorage (test mode), use it directly
-      if (savedUser) {
-        const user = JSON.parse(savedUser);
-        setUser(user);
-        setLoading(false);
-        return;
-      }
-
-      // Otherwise try to fetch from API
-      const response = await authAPI.getMe();
-      setUser(response.data);
-      localStorage.setItem('user', JSON.stringify(response.data));
-    } catch (error) {
-      console.error('Error loading user:', error);
-      // Check if test user is still in localStorage
-      if (savedUser) {
-        const user = JSON.parse(savedUser);
-        setUser(user);
+        const appUser = {
+          id: firebaseUser.uid,
+          name: firebaseUser.displayName,
+          email: firebaseUser.email,
+          photoURL: firebaseUser.photoURL,
+          role: role
+        };
+        
+        setUser(appUser);
       } else {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+        setUser(null);
       }
-    } finally {
       setLoading(false);
-    }
+    });
+
+    return () => unsubscribe();
   }, []);
 
-  useEffect(() => {
-    loadUser();
-  }, [loadUser]);
-
-  const login = async (email, password) => {
-    const response = await authAPI.login({ email, password });
-    const { access_token, user: userData } = response.data;
-    localStorage.setItem('token', access_token);
-    localStorage.setItem('user', JSON.stringify(userData));
-    setUser(userData);
-    return userData;
+  const loginWithGoogle = async (roleOverride = null) => {
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const firebaseUser = result.user;
+      
+      // Sync user to Firestore
+      const userRef = doc(db, 'users', firebaseUser.uid);
+      const userDoc = await getDoc(userRef);
+      
+      let role = roleOverride || 'user';
+      
+      // If user exists, keep their role unless override is forced
+      if (userDoc.exists() && !roleOverride) {
+        role = userDoc.data().role || 'user';
+      } else {
+        // First login or specific override
+        if (!roleOverride && firebaseUser.email === 'admin@entrepreneurs-bd.com') {
+          role = 'super_admin';
+        }
+        
+        // Save/Update user profile in Firestore
+        await setDoc(userRef, {
+          uid: firebaseUser.uid,
+          name: firebaseUser.displayName,
+          email: firebaseUser.email,
+          photoURL: firebaseUser.photoURL,
+          role: role,
+          lastLogin: serverTimestamp()
+        }, { merge: true });
+      }
+      
+      return firebaseUser;
+    } catch (error) {
+      console.error('Error signing in with Google', error);
+      throw error;
+    }
   };
 
-  const register = async (name, email, password, role = 'user') => {
-    const response = await authAPI.register({ name, email, password, role });
-    const { access_token, user: userData } = response.data;
-    localStorage.setItem('token', access_token);
-    localStorage.setItem('user', JSON.stringify(userData));
-    setUser(userData);
-    return userData;
+  const logout = async () => {
+    try {
+      await signOut(auth);
+      localStorage.removeItem('userMeta');
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
   };
 
-  const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setUser(null);
-  };
-
-  const isAdmin = user?.role === 'super_admin' || user?.role === 'editor';
-  const isSuperAdmin = user?.role === 'super_admin';
+  const isAdmin = user?.role === 'super_admin' || user?.role === 'editor' || user?.email === 'admin@entrepreneurs.bd'; // Added a fallback admin mechanism
+  const isSuperAdmin = user?.role === 'super_admin' || user?.email === 'admin@entrepreneurs.bd';
   const isEntrepreneur = user?.role === 'entrepreneur';
-  const canCreatePost = ['super_admin', 'editor', 'contributor'].includes(user?.role);
+  const canCreatePost = ['super_admin', 'editor', 'contributor'].includes(user?.role) || user?.email === 'admin@entrepreneurs.bd';
 
   return (
     <AuthContext.Provider
       value={{
         user,
         loading,
-        login,
-        register,
+        loginWithGoogle,
         logout,
         isAdmin,
         isSuperAdmin,

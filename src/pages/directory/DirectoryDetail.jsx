@@ -142,12 +142,12 @@ const DirectoryDetail = () => {
                     <p className="text-lg text-stone-600 capitalize mb-2">
                       {listing.listing_type?.replace('_', ' ')}
                     </p>
-                    {listing.city && (
+                    {listing.headquarters || listing.city ? (
                       <p className="text-sm text-stone-500 flex items-center gap-1">
                         <MapPin className="w-4 h-4" />
-                        {listing.address ? `${listing.address}, ` : ''}{listing.city}, {listing.country}
+                        {listing.headquarters || (listing.address ? `${listing.address}, ${listing.city}` : listing.city)}
                       </p>
-                    )}
+                    ) : null}
                   </div>
 
                   <div className="flex items-center gap-2">
@@ -156,7 +156,7 @@ const DirectoryDetail = () => {
                       Share
                     </Button>
                     {listing.website && (
-                      <a href={listing.website} target="_blank" rel="noopener noreferrer">
+                      <a href={listing.company_page_url || listing.website} target="_blank" rel="noopener noreferrer">
                         <Button className="bg-emerald-900 hover:bg-emerald-800">
                           <Globe className="w-4 h-4 mr-2" />
                           Visit Website
@@ -171,28 +171,85 @@ const DirectoryDetail = () => {
                   {listing.category && (
                     <Badge variant="outline">{listing.category}</Badge>
                   )}
+                  {listing.employee_size && (
+                    <span className="text-sm text-stone-500 flex items-center gap-1">
+                      <Users className="w-4 h-4" />
+                      {listing.employee_size} Employees
+                    </span>
+                  )}
                   <span className="text-sm text-stone-500 flex items-center gap-1">
                     <Eye className="w-4 h-4" />
                     {listing.view_count} views
-                  </span>
-                  <span className="text-sm text-stone-500 flex items-center gap-1">
-                    <Calendar className="w-4 h-4" />
-                    Joined {new Date(listing.created_at).toLocaleDateString()}
                   </span>
                 </div>
               </div>
             </div>
 
-            {/* Description */}
-            {(listing.short_description || listing.full_description) && (
-              <div className="mt-8 pt-8 border-t border-stone-200">
+            {/* Description & Leadership */}
+            <div className="grid md:grid-cols-3 gap-8 mt-8 pt-8 border-t border-stone-200">
+              <div className="md:col-span-2">
                 <h2 className="text-lg font-semibold text-stone-900 mb-4">About</h2>
-                {listing.short_description && (
-                  <p className="text-stone-700 font-medium mb-4">{listing.short_description}</p>
+                {listing.details || listing.short_description || listing.full_description ? (
+                  <p className="text-stone-700 leading-relaxed whitespace-pre-wrap">
+                    {listing.details || listing.full_description || listing.short_description}
+                  </p>
+                ) : (
+                  <p className="text-stone-400 italic">No description provided</p>
                 )}
-                {listing.full_description && (
-                  <p className="text-stone-600 leading-relaxed">{listing.full_description}</p>
+
+                {/* Main Rich Content */}
+                {listing.content && (
+                  <div className="mt-8 pt-8 border-t border-stone-200">
+                    <div 
+                      className="prose prose-stone max-w-none text-stone-700"
+                      dangerouslySetInnerHTML={{ __html: listing.content }}
+                    />
+                  </div>
                 )}
+              </div>
+              
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wider mb-3">Leadership</h3>
+                  <div className="space-y-4">
+                    {listing.founder_name && (
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-emerald-50 rounded-lg flex items-center justify-center text-emerald-900 font-bold">
+                          {listing.founder_name.charAt(0)}
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-stone-900">{listing.founder_name}</p>
+                          <p className="text-xs text-stone-500">Founder</p>
+                        </div>
+                      </div>
+                    )}
+                    {listing.ceo_name && (
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-stone-50 rounded-lg flex items-center justify-center text-stone-900 font-bold">
+                          {listing.ceo_name.charAt(0)}
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-stone-900">{listing.ceo_name}</p>
+                          <p className="text-xs text-stone-500">CEO</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Life at Company */}
+            {listing.life_at_company && (
+              <div className="mt-8 pt-8 border-t border-stone-200">
+                <h2 className="text-xl font-bold text-emerald-900 mb-6 flex items-center gap-2">
+                  <Star className="w-5 h-5 fill-emerald-900" />
+                  Life at {listing.business_name}
+                </h2>
+                <div 
+                  className="prose prose-stone max-w-none text-stone-700 bg-emerald-50/30 p-6 rounded-2xl border border-emerald-100"
+                  dangerouslySetInnerHTML={{ __html: listing.life_at_company }}
+                />
               </div>
             )}
 

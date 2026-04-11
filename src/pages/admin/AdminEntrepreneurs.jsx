@@ -14,7 +14,8 @@ import {
   MoreVertical,
   Users,
   Star,
-  Filter
+  Filter,
+  Plus
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -57,10 +58,6 @@ const AdminEntrepreneurs = () => {
   const [deleteId, setDeleteId] = useState(null);
   const [actionLoading, setActionLoading] = useState(null);
 
-  useEffect(() => {
-    loadProfiles();
-  }, [loadProfiles]);
-
   const loadProfiles = useCallback(async () => {
     setLoading(true);
     try {
@@ -76,6 +73,10 @@ const AdminEntrepreneurs = () => {
       setLoading(false);
     }
   }, [search, statusFilter]);
+
+  useEffect(() => {
+    loadProfiles();
+  }, [loadProfiles]);
 
   const handleApprove = async (id) => {
     setActionLoading(id);
@@ -142,6 +143,12 @@ const AdminEntrepreneurs = () => {
           <h1 className="text-2xl font-bold text-stone-900">Entrepreneur Profiles</h1>
           <p className="text-stone-500">Manage and approve entrepreneur profiles</p>
         </div>
+        <Button asChild className="bg-emerald-900 group">
+          <Link to="/admin/content-editor?type=entrepreneurs">
+            <Plus className="w-4 h-4 mr-2 group-hover:rotate-90 transition-transform" />
+            Add New Profile
+          </Link>
+        </Button>
       </div>
 
       {/* Filters */}

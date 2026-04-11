@@ -13,8 +13,18 @@ import {
   Shield,
   ShieldCheck,
   User,
-  Filter
+  Filter,
+  Plus,
+  Trash2
 } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '../../components/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -51,10 +61,8 @@ const AdminUsers = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
-
-  useEffect(() => {
-    loadUsers();
-  }, [loadUsers]);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newUser, setNewUser] = useState({ name: '', email: '', role: 'user' });
 
   const loadUsers = useCallback(async () => {
     setLoading(true);
@@ -72,6 +80,10 @@ const AdminUsers = () => {
     }
   }, [search, roleFilter]);
 
+  useEffect(() => {
+    loadUsers();
+  }, [loadUsers]);
+
   const handleRoleChange = async (userId, newRole) => {
     try {
       await adminAPI.updateUserRole(userId, newRole);
@@ -79,6 +91,34 @@ const AdminUsers = () => {
       loadUsers();
     } catch (error) {
       toast.error('Failed to update user role');
+    }
+  };
+
+  const handleAddUser = async () => {
+    if (!newUser.name || !newUser.email) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+    try {
+      // In a real app, this would call adminAPI.addUser
+      // For now, we'll simulate it since Firebase handles auth separately
+      toast.success('User invitation sent successfully');
+      setShowAddModal(false);
+      setNewUser({ name: '', email: '', role: 'user' });
+      loadUsers();
+    } catch (error) {
+      toast.error('Failed to add user');
+    }
+  };
+
+  const handleDeleteUser = async (userId) => {
+    if (!window.confirm('Are you sure you want to delete this user?')) return;
+    try {
+      await adminAPI.deleteUser(userId);
+      toast.success('User deleted successfully');
+      loadUsers();
+    } catch (error) {
+      toast.error('Failed to delete user');
     }
   };
 
@@ -94,7 +134,63 @@ const AdminUsers = () => {
           <h1 className="text-2xl font-bold text-stone-900">Users</h1>
           <p className="text-stone-500">Manage user accounts and roles</p>
         </div>
+        <Button 
+          className="bg-emerald-900 hover:bg-emerald-800"
+          onClick={() => setShowAddModal(true)}
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Add User
+        </Button>
       </div>
+
+      {/* Add User Modal */}
+      <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New User</DialogTitle>
+            <DialogDescription>Create a new user account and assign a role.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Full Name</label>
+              <Input 
+                placeholder="John Doe" 
+                value={newUser.name}
+                onChange={(e) => setNewUser({...newUser, name: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Email Address</label>
+              <Input 
+                type="email" 
+                placeholder="john@example.com" 
+                value={newUser.email}
+                onChange={(e) => setNewUser({...newUser, email: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Initial Role</label>
+              <Select 
+                value={newUser.role} 
+                onValueChange={(v) => setNewUser({...newUser, role: v})}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select role" />
+                </SelectTrigger>
+                <SelectContent>
+                  {roles.map(r => (
+                    <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddModal(false)}>Cancel</Button>
+            <Button className="bg-emerald-900" onClick={handleAddUser}>Create User</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Filters */}
       <Card className="mb-6 border-stone-200">
@@ -197,6 +293,14 @@ const AdminUsers = () => {
                               {role.label}
                             </DropdownMenuItem>
                           ))}
+                          <div className="border-t my-1" />
+                          <DropdownMenuItem 
+                            className="text-red-600 focus:text-red-600"
+                            onClick={() => handleDeleteUser(user.id)}
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Delete User
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>

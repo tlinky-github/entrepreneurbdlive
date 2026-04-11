@@ -249,13 +249,11 @@
   background: #d1d5db;
 }
 
-/* Editor Content */
-.editor-content {
+/* Editor Content and Generic TipTap instances */
+.editor-content,
+.directory-rich-editor {
   border: 1px solid #e5e7eb;
-  border-top: none;
   border-radius: 0 0 6px 6px;
-  min-height: 400px;
-  padding: 16px;
   background: white;
   cursor: text;
   position: relative;
@@ -263,7 +261,23 @@
   box-sizing: border-box;
 }
 
-.editor-content .ProseMirror {
+.editor-content {
+  border-top: none;
+  min-height: 400px;
+  padding: 16px;
+}
+
+.directory-rich-editor {
+  border-top: none;
+  min-height: 200px;
+}
+
+.directory-rich-editor .ProseMirror {
+  min-height: 150px;
+  padding: 12px;
+}
+
+.ProseMirror {
   outline: 2px solid transparent;
   outline-offset: -1px;
   min-height: 400px;
@@ -278,10 +292,8 @@
   -webkit-user-select: text;
 }
 
-.editor-content .ProseMirror:focus {
-  outline: 2px solid #667eea;
-  outline-offset: -1px;
-  border-radius: 4px;
+.ProseMirror:focus {
+  outline: none;
 }
 
 .editor-content .ProseMirror p {

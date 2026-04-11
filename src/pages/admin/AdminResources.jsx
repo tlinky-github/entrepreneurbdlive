@@ -67,10 +67,6 @@ const AdminResources = () => {
   const [typeFilter, setTypeFilter] = useState('all');
   const [deleteId, setDeleteId] = useState(null);
 
-  useEffect(() => {
-    loadResources();
-  }, [loadResources]);
-
   const loadResources = useCallback(async () => {
     setLoading(true);
     try {
@@ -86,6 +82,10 @@ const AdminResources = () => {
       setLoading(false);
     }
   }, [search, typeFilter]);
+
+  useEffect(() => {
+    loadResources();
+  }, [loadResources]);
 
   const handleDelete = async () => {
     if (!deleteId) return;

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { SEO } from '../../components/SEO';
-import { profileAPI } from '../../lib/api';
+import { profileAPI, industryAPI, cityAPI } from '../../lib/api';
 import { Card, CardContent } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
 import { Input } from '../../components/ui/input';
@@ -26,25 +26,33 @@ import {
   SelectValue,
 } from '../../components/ui/select';
 
-const industries = [
-  'Technology', 'E-commerce', 'Fintech', 'Healthcare', 'Education',
-  'Agriculture', 'Manufacturing', 'Retail', 'Logistics', 'Food & Beverage',
-  'Fashion', 'Media', 'Real Estate', 'Energy', 'Other'
-];
-
-const cities = [
-  'Dhaka', 'Chittagong', 'Sylhet', 'Rajshahi', 'Khulna',
-  'Comilla', 'Rangpur', 'Gazipur', 'Narayanganj', 'Other'
-];
-
 const EntrepreneurList = () => {
   const [profiles, setProfiles] = useState([]);
+  const [industries, setIndustries] = useState([]);
+  const [cities, setCities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchParams, setSearchParams] = useSearchParams();
 
   const search = searchParams.get('search') || '';
   const industry = searchParams.get('industry') || '';
   const city = searchParams.get('city') || '';
+
+  // Load dynamic filters
+  useEffect(() => {
+    const loadFilters = async () => {
+      try {
+        const [indRes, cityRes] = await Promise.all([
+          industryAPI.list(),
+          cityAPI.list()
+        ]);
+        setIndustries(indRes.data?.map(i => i.name) || []);
+        setCities(cityRes.data?.map(c => c.name) || []);
+      } catch (error) {
+        console.error('Error loading filters:', error);
+      }
+    };
+    loadFilters();
+  }, []);
 
   useEffect(() => {
     const loadProfiles = async () => {
@@ -221,9 +229,9 @@ const ProfileCard = ({ profile, featured }) => (
             {featured && <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />}
           </div>
 
-          {profile.role_title && profile.company_name && (
+          {(profile.designation || profile.role_title) && profile.company_name && (
             <p className="text-sm text-stone-500 mb-2">
-              {profile.role_title} at {profile.company_name}
+              {profile.designation || profile.role_title} at {profile.company_name}
             </p>
           )}
 
@@ -246,8 +254,10 @@ const ProfileCard = ({ profile, featured }) => (
             </Badge>
           )}
 
-          {profile.short_bio && (
-            <p className="text-sm text-stone-600 mt-3 line-clamp-2">{profile.short_bio}</p>
+          {(profile.details || profile.short_bio) && (
+            <p className="text-sm text-stone-600 mt-3 line-clamp-3">
+              {profile.details || profile.short_bio}
+            </p>
           )}
 
           <div className="flex justify-center gap-3 mt-4">
