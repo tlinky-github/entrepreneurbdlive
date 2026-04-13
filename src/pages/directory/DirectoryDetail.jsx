@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { listingAPI, authorAPI } from '../../lib/api';
+import { listingAPI } from '../../lib/api';
 import { SEO } from '../../components/SEO';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
-import { Card, CardContent } from '../../components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Skeleton } from '../../components/ui/skeleton';
 import { toast } from 'sonner';
 import {
@@ -18,13 +18,9 @@ import {
   Share2,
   ExternalLink,
   Eye,
-  Calendar,
   CheckCircle,
   Plus,
   Minus,
-  Linkedin,
-  Twitter,
-  Facebook,
   Users
 } from 'lucide-react';
 
@@ -32,6 +28,7 @@ const DirectoryDetail = () => {
   const { slug } = useParams();
   const [listing, setListing] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [openFaqIndex, setOpenFaqIndex] = useState(null);
 
   useEffect(() => {
     const loadListing = async () => {
@@ -99,7 +96,7 @@ const DirectoryDetail = () => {
   }
 
   return (
-    <div className="bg-stone-50 min-h-screen" data-testid="directory-detail-page">
+    <div className="bg-stone-50 min-h-screen pb-12" data-testid="directory-detail-page">
       <SEO
         title={listing.seoTitle || listing.business_name}
         description={listing.metaDescription || listing.short_description}
@@ -112,135 +109,147 @@ const DirectoryDetail = () => {
           { name: listing.business_name, path: `/directory/${listing.slug}` }
         ]}
       />
+
       {/* Back Button */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
-        <Link to="/directory" className="inline-flex items-center gap-2 text-stone-600 hover:text-emerald-900 transition-colors">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+        <Link to="/directory" className="inline-flex items-center gap-2 text-stone-500 hover:text-emerald-900 transition-colors text-sm font-medium">
           <ArrowLeft className="w-4 h-4" />
           Back to Directory
         </Link>
       </div>
 
-      {/* Listing Card */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Card className="border-stone-200 overflow-hidden">
-          <CardContent className="p-8">
-            {/* Header */}
-            <div className="flex flex-col md:flex-row gap-6">
-              <div className="w-24 h-24 bg-stone-100 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden">
-                {listing.logo ? (
-                  <img src={listing.logo} alt={listing.business_name} className="w-full h-full object-cover" />
-                ) : (
-                  <Building2 className="w-12 h-12 text-stone-400" />
-                )}
+      {/* Hero Header Section */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
+        <div className="relative rounded-[1.5rem] md:rounded-[2rem] overflow-hidden shadow-2xl h-40 md:h-60 lg:h-80 group">
+          {/* Cover Image with Mesh Gradient Fallback */}
+          {listing.cover_image ? (
+            <img 
+              src={listing.cover_image} 
+              alt="" 
+              className="w-full h-full object-cover transform transition-transform duration-700 group-hover:scale-105" 
+            />
+          ) : (
+            <div className="w-full h-full bg-stone-900 relative">
+              <div className="absolute inset-0 bg-gradient-to-br from-emerald-950 via-emerald-900/40 to-stone-950 opacity-80" />
+              <div className="absolute inset-0 opacity-10" style={{ backgroundImage: `url("https://www.transparenttextures.com/patterns/carbon-fibre.png")` }} />
+              <div className="absolute inset-0 flex items-center justify-center">
+                 <Building2 className="w-16 h-16 md:w-20 md:h-20 text-emerald-800/20" />
               </div>
+            </div>
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+        </div>
 
-              <div className="flex-1">
-                <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-                  <div>
-                    <div className="flex items-center gap-2 flex-wrap mb-2">
-                      <h1 className="text-2xl font-bold text-stone-900">{listing.business_name}</h1>
-                      {listing.is_verified && (
-                        <Badge className="bg-blue-100 text-blue-700">Verified</Badge>
+        {/* Profile Identity Bar */}
+        <div className="relative -mt-12 md:-mt-16 flex flex-col md:flex-row items-center md:items-end gap-4 md:gap-8 px-4 md:px-12">
+          <div className="w-24 h-24 md:w-36 md:h-36 bg-white rounded-2xl md:rounded-3xl shadow-xl border-4 md:border-[6px] border-white flex items-center justify-center overflow-hidden flex-shrink-0 z-10 transition-transform hover:scale-105 duration-300">
+            {listing.logo ? (
+              <img src={listing.logo} alt={listing.business_name} className="w-full h-full object-contain p-3 md:p-4" />
+            ) : (
+              <Building2 className="w-12 h-12 md:w-16 md:h-16 text-stone-200" />
+            )}
+          </div>
+          
+          <div className="md:pb-4 flex-1 w-full text-center md:text-left">
+            <div className="flex flex-wrap items-center gap-2 md:gap-3 justify-center md:justify-start">
+              <h1 className="text-2xl md:text-4xl font-black text-stone-900 tracking-tight">
+                {listing.business_name}
+              </h1>
+              {listing.is_featured && (
+                <div className="bg-yellow-100 p-1 rounded-full ring-2 ring-white shadow-sm">
+                   <Star className="w-4 h-4 text-yellow-600 fill-yellow-600" />
+                </div>
+              )}
+            </div>
+            <p className="text-xs md:text-sm text-stone-500 font-bold mt-1 uppercase tracking-[0.15em] opacity-70">
+              {listing.listing_type_name || listing.listing_type?.replace('_', ' ') || 'Registered Business'}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Content Layout Grid */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12">
+        <div className="grid lg:grid-cols-12 gap-10">
+          
+          {/* Main Info Column */}
+          <div className="lg:col-span-8 space-y-10">
+            <Card className="border-stone-200 shadow-sm overflow-hidden">
+              <CardContent className="p-8 md:p-10">
+                <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-8 mb-10 pb-10 border-b border-stone-100">
+                  <div className="space-y-6 flex-1">
+                    <div className="flex flex-wrap gap-3">
+                      {listing.city && (
+                        <div className="flex items-center gap-2 text-sm bg-emerald-50 text-emerald-800 px-4 py-1.5 rounded-full font-semibold border border-emerald-100">
+                           <MapPin className="w-4 h-4" /> {listing.city}
+                        </div>
                       )}
-                      {listing.is_featured && (
-                        <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />
+                      {listing.employee_size && (
+                        <div className="flex items-center gap-2 text-sm bg-blue-50 text-blue-800 px-4 py-1.5 rounded-full font-semibold border border-blue-100">
+                           <Users className="w-4 h-4" /> {listing.employee_size} Employees
+                        </div>
                       )}
+                      <div className="flex items-center gap-2 text-sm bg-stone-100 text-stone-600 px-4 py-1.5 rounded-full font-semibold border border-stone-200">
+                         <Eye className="w-4 h-4" /> {listing.view_count || 0} Views
+                      </div>
                     </div>
-                    <p className="text-lg text-stone-600 capitalize mb-2">
-                      {listing.listing_type_name || listing.listing_type?.replace('_', ' ') || '-'}
-                    </p>
-                    {listing.headquarters || listing.city ? (
-                      <p className="text-sm text-stone-500 flex items-center gap-1">
-                        <MapPin className="w-4 h-4" />
-                        {listing.headquarters || (listing.address ? `${listing.address}, ${listing.city}` : listing.city)}
-                      </p>
-                    ) : null}
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" onClick={handleShare}>
-                      <Share2 className="w-4 h-4 mr-2" />
-                      Share
+                  <div className="flex gap-3 w-full md:w-auto">
+                    <Button variant="outline" onClick={handleShare} className="flex-1 md:flex-initial h-11 border-stone-300">
+                      <Share2 className="w-4 h-4 mr-2" /> Share
                     </Button>
                     {listing.website && (
-                      <a href={listing.company_page_url || listing.website} target="_blank" rel="noopener noreferrer">
-                        <Button className="bg-emerald-900 hover:bg-emerald-800">
-                          <Globe className="w-4 h-4 mr-2" />
-                          Visit Website
+                      <a href={listing.website} target="_blank" rel="noopener noreferrer" className="flex-1 md:flex-initial">
+                        <Button className="bg-emerald-900 hover:bg-emerald-800 w-full h-11 px-8">
+                          <Globe className="w-4 h-4 mr-2" /> Visit Website
                         </Button>
                       </a>
                     )}
                   </div>
                 </div>
 
-                {/* Stats */}
-                <div className="flex items-center gap-6 mt-6">
-                  {listing.category && (
-                    <Badge variant="outline">{listing.category}</Badge>
-                  )}
-                  {listing.employee_size && (
-                    <span className="text-sm text-stone-500 flex items-center gap-1">
-                      <Users className="w-4 h-4" />
-                      {listing.employee_size} Employees
-                    </span>
-                  )}
-                  <span className="text-sm text-stone-500 flex items-center gap-1">
-                    <Eye className="w-4 h-4" />
-                    {listing.view_count} views
-                  </span>
+                <div className="prose prose-stone max-w-none prose-h2:text-2xl prose-h2:font-black prose-p:text-stone-800 prose-p:leading-relaxed prose-p:text-lg">
+                   <h2 className="mb-6 uppercase tracking-widest text-sm text-stone-900 font-black border-l-4 border-emerald-600 pl-4">Company Overview</h2>
+                   <div className="whitespace-pre-wrap text-stone-900 font-medium">
+                      {listing.details || listing.short_description || "No detailed description available for this business listing."}
+                   </div>
                 </div>
-              </div>
-            </div>
 
-            {/* Description & Leadership */}
-            <div className="grid md:grid-cols-3 gap-8 mt-8 pt-8 border-t border-stone-200">
-              <div className="md:col-span-2">
-                <h2 className="text-lg font-semibold text-stone-900 mb-4">About</h2>
-                {listing.details || listing.short_description || listing.full_description ? (
-                  <p className="text-stone-700 leading-relaxed whitespace-pre-wrap">
-                    {listing.details || listing.full_description || listing.short_description}
-                  </p>
-                ) : (
-                  <p className="text-stone-400 italic">No description provided</p>
-                )}
-
-                {/* Main Rich Content with Inline FAQs */}
+                {/* Rich Content & FAQs */}
                 {listing.content && (
-                  <div className="mt-8 pt-8 border-t border-stone-200 tiptap-content">
+                  <div className="mt-12 pt-12 border-t border-stone-100 tiptap-content">
                     {(() => {
-                      const content = listing.content || '';
-                      const parts = content.split(/(<faq-section[^>]*><\/faq-section>)/g);
+                      const contentHtml = listing.content || '';
+                      const parts = contentHtml.split(/(<faq-section[^>]*><\/faq-section>)/g);
                       
                       return parts.map((part, index) => {
                         if (part.startsWith('<faq-section')) {
                           try {
                             const match = part.match(/data-faqs='([^']*)'/);
                             if (match && match[1]) {
-                              const faqs = JSON.parse(match[1].replace(/&quot;/g, '"'));
+                              const faqsData = JSON.parse(match[1].replace(/&quot;/g, '"'));
                               return (
-                                <div key={index} className="my-12 pt-8 border-t border-stone-200 bg-emerald-50/30 rounded-2xl p-6 md:p-8">
-                                  <h2 className="text-2xl font-bold text-stone-900 mb-6 flex items-center gap-2">
-                                    <CheckCircle className="w-6 h-6 text-emerald-700" />
+                                <div key={index} className="my-16 bg-stone-50 rounded-[2rem] p-8 md:p-12 border border-stone-100 shadow-inner">
+                                  <h3 className="text-2xl font-black text-stone-900 mb-8 flex items-center gap-3">
+                                    <CheckCircle className="w-8 h-8 text-emerald-600" />
                                     Frequently Asked Questions
-                                  </h2>
+                                  </h3>
                                   <div className="space-y-4">
-                                    {faqs.map((faq, fIndex) => (
-                                      <div 
-                                        key={fIndex}
-                                        className="bg-white border border-stone-200 rounded-xl overflow-hidden shadow-sm"
-                                      >
+                                    {faqsData.map((faq, fIndex) => (
+                                      <div key={fIndex} className="bg-white rounded-2xl border border-stone-200 shadow-sm transition-all hover:border-emerald-200">
                                         <button
-                                          onClick={() => setOpenFaqIndex(openFaqIndex === `inline-${index}-${fIndex}` ? null : `inline-${index}-${fIndex}`)}
-                                          className="w-full flex items-center justify-between p-4 text-left hover:bg-stone-50 transition-colors"
+                                          onClick={() => setOpenFaqIndex(openFaqIndex === `faq-${index}-${fIndex}` ? null : `faq-${index}-${fIndex}`)}
+                                          className="w-full flex items-center justify-between p-6 text-left group"
                                         >
-                                          <strong className="font-bold text-stone-900 pr-4">{faq.question || faq.q}</strong>
-                                          <div className="text-emerald-700">
-                                            {openFaqIndex === `inline-${index}-${fIndex}` ? <Minus className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
+                                          <span className="font-bold text-stone-800 group-hover:text-emerald-900 transition-colors">{faq.question || faq.q}</span>
+                                          <div className={`p-2 rounded-full transition-colors ${openFaqIndex === `faq-${index}-${fIndex}` ? 'bg-emerald-100 text-emerald-700' : 'bg-stone-50 text-stone-400'}`}>
+                                            {openFaqIndex === `faq-${index}-${fIndex}` ? <Minus className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
                                           </div>
                                         </button>
-                                        {openFaqIndex === `inline-${index}-${fIndex}` && (
-                                          <div className="px-4 pb-4 pt-0 text-stone-600 border-t border-stone-100 animate-in fade-in slide-in-from-top-1 duration-200">
-                                            <p className="mt-4 leading-relaxed whitespace-pre-wrap">{faq.answer || faq.a}</p>
+                                        {openFaqIndex === `faq-${index}-${fIndex}` && (
+                                          <div className="px-6 pb-6 text-stone-600 border-t border-stone-50 animate-in fade-in slide-in-from-top-2 duration-300">
+                                            <p className="pt-4 leading-relaxed">{faq.answer || faq.a}</p>
                                           </div>
                                         )}
                                       </div>
@@ -250,139 +259,129 @@ const DirectoryDetail = () => {
                               );
                             }
                           } catch (e) {
-                            console.error('Error parsing inline FAQs:', e);
+                            console.error('FAQ parse error:', e);
                           }
                           return null;
                         }
                         return <div key={index} dangerouslySetInnerHTML={{ __html: part }} />;
-                      })
+                      });
                     })()}
                   </div>
                 )}
-              </div>
-              
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wider mb-3">Leadership</h3>
-                  <div className="space-y-4">
-                    {listing.founder_name && (
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-emerald-50 rounded-lg flex items-center justify-center text-emerald-900 font-bold">
-                          {listing.founder_name.charAt(0)}
-                        </div>
-                        <div>
-                          <p className="text-sm font-semibold text-stone-900">{listing.founder_name}</p>
-                          <p className="text-xs text-stone-500">Founder</p>
-                        </div>
-                      </div>
-                    )}
-                    {listing.ceo_name && (
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-stone-50 rounded-lg flex items-center justify-center text-stone-900 font-bold">
-                          {listing.ceo_name.charAt(0)}
-                        </div>
-                        <div>
-                          <p className="text-sm font-semibold text-stone-900">{listing.ceo_name}</p>
-                          <p className="text-xs text-stone-500">CEO</p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
 
-            {/* Life at Company */}
+            {/* Life at Company Rich Section */}
             {listing.life_at_company && (
-              <div className="mt-8 pt-8 border-t border-stone-200">
-                <h2 className="text-xl font-bold text-emerald-900 mb-6 flex items-center gap-2">
-                  <Star className="w-5 h-5 fill-emerald-900" />
+              <div className="bg-emerald-900 rounded-[2.5rem] p-10 md:p-14 text-white shadow-2xl relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-800 rounded-full blur-3xl -mr-32 -mt-32 opacity-50" />
+                <h2 className="text-3xl font-black mb-8 relative z-10 flex items-center gap-3 text-white">
+                  <Star className="w-8 h-8 fill-yellow-400 text-yellow-400" />
                   Life at {listing.business_name}
                 </h2>
                 <div 
-                  className="tiptap-content bg-emerald-50/30 p-6 rounded-2xl border border-emerald-100"
+                  className="tiptap-content relative z-10 prose prose-invert max-w-none text-white [&_*]:text-white"
                   dangerouslySetInnerHTML={{ __html: listing.life_at_company }}
                 />
               </div>
             )}
+          </div>
 
-            {/* Contact Info */}
-            <div className="mt-8 pt-8 border-t border-stone-200">
-              <h2 className="text-lg font-semibold text-stone-900 mb-4">Contact Information</h2>
-              <div className="grid sm:grid-cols-2 gap-4">
-                {listing.email && (
-                  <a
-                    href={`mailto:${listing.email}`}
-                    className="flex items-center gap-3 p-4 bg-stone-50 rounded-lg hover:bg-emerald-50 transition-colors"
-                  >
-                    <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
-                      <Mail className="w-5 h-5 text-emerald-900" />
-                    </div>
-                    <div>
-                      <p className="text-xs text-stone-500">Email</p>
-                      <p className="text-sm font-medium text-stone-900">{listing.email}</p>
-                    </div>
-                  </a>
-                )}
-                {listing.phone && (
-                  <a
-                    href={`tel:${listing.phone}`}
-                    className="flex items-center gap-3 p-4 bg-stone-50 rounded-lg hover:bg-emerald-50 transition-colors"
-                  >
-                    <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
-                      <Phone className="w-5 h-5 text-emerald-900" />
-                    </div>
-                    <div>
-                      <p className="text-xs text-stone-500">Phone</p>
-                      <p className="text-sm font-medium text-stone-900">{listing.phone}</p>
-                    </div>
-                  </a>
-                )}
-                {listing.website && (
-                  <a
-                    href={listing.website}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-3 p-4 bg-stone-50 rounded-lg hover:bg-emerald-50 transition-colors"
-                  >
-                    <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
-                      <Globe className="w-5 h-5 text-emerald-900" />
-                    </div>
-                    <div>
-                      <p className="text-xs text-stone-500">Website</p>
-                      <p className="text-sm font-medium text-stone-900 flex items-center gap-1">
-                        {listing.website.replace(/^https?:\/\//, '').replace(/\/$/, '')}
-                        <ExternalLink className="w-3 h-3" />
-                      </p>
-                    </div>
-                  </a>
-                )}
-                {listing.address && (
-                  <div className="flex items-center gap-3 p-4 bg-stone-50 rounded-lg">
-                    <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
-                      <MapPin className="w-5 h-5 text-emerald-900" />
-                    </div>
-                    <div>
-                      <p className="text-xs text-stone-500">Address</p>
-                      <p className="text-sm font-medium text-stone-900">
-                        {listing.address}, {listing.city}
-                      </p>
-                    </div>
+          {/* Right Sidebar Column */}
+          <div className="lg:col-span-4 space-y-8">
+            {/* Vital Statistics */}
+            <Card className="border-stone-200 shadow-sm overflow-hidden rounded-3xl">
+               <CardHeader className="bg-stone-50 border-b border-stone-100">
+                  <CardTitle className="text-xs font-black uppercase tracking-[0.2em] text-stone-400">Company Vitals</CardTitle>
+               </CardHeader>
+               <CardContent className="p-8 space-y-6">
+                  <div className="flex justify-between items-center group">
+                    <span className="text-stone-400 text-sm font-bold uppercase tracking-wider group-hover:text-emerald-600 transition-colors">Industry</span>
+                    <span className="text-stone-900 font-black">{listing.industry || listing.industry_name || 'General Business'}</span>
                   </div>
-                )}
-              </div>
-            </div>
+                  <div className="flex justify-between items-center group">
+                    <span className="text-stone-400 text-sm font-bold uppercase tracking-wider group-hover:text-emerald-600 transition-colors">Staff Size</span>
+                    <span className="text-stone-900 font-black">{listing.employee_size || 'Startup'}</span>
+                  </div>
+                  {listing.startup_stage && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-stone-400 text-sm font-bold uppercase tracking-wider">Growth Stage</span>
+                      <Badge className="bg-emerald-900 text-white hover:bg-emerald-950 font-black px-4 py-1">
+                        {listing.startup_stage}
+                      </Badge>
+                    </div>
+                  )}
+                  {listing.headquarters && (
+                     <div className="pt-4 border-t border-stone-100">
+                        <span className="text-stone-400 text-[10px] font-black uppercase block mb-2">Location</span>
+                        <p className="text-stone-700 font-bold flex items-start gap-2">
+                           <MapPin className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+                           {listing.headquarters}
+                        </p>
+                     </div>
+                  )}
+               </CardContent>
+            </Card>
 
-            {/* Plan Badge */}
-            {listing.plan === 'premium' && (
-              <div className="mt-8 pt-8 border-t border-stone-200">
-                <Badge className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white">
-                  Premium Listing
-                </Badge>
-              </div>
+            {/* Leadership Profiles */}
+            {(listing.founder_name || listing.ceo_name) && (
+              <Card className="border-stone-200 shadow-sm rounded-3xl overflow-hidden">
+                <CardHeader className="bg-stone-50 border-b border-stone-100">
+                  <CardTitle className="text-xs font-black uppercase tracking-[0.2em] text-stone-400">Leadership Team</CardTitle>
+                </CardHeader>
+                <CardContent className="p-8 space-y-6">
+                  {listing.founder_name && (
+                    <div className="flex items-center gap-4 group">
+                      <div className="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-900 font-black text-xl shadow-inner group-hover:bg-emerald-100 transition-colors">
+                        {listing.founder_name.charAt(0)}
+                      </div>
+                      <div>
+                        <p className="font-black text-stone-900 group-hover:text-emerald-900 transition-colors">{listing.founder_name}</p>
+                        <p className="text-xs text-stone-400 font-bold uppercase tracking-widest mt-0.5">Founder</p>
+                      </div>
+                    </div>
+                  )}
+                  {listing.ceo_name && (
+                    <div className="flex items-center gap-4 group">
+                      <div className="w-14 h-14 bg-stone-100 rounded-2xl flex items-center justify-center text-stone-900 font-black text-xl shadow-inner group-hover:bg-stone-200 transition-colors">
+                        {listing.ceo_name.charAt(0)}
+                      </div>
+                      <div>
+                        <p className="font-black text-stone-900 group-hover:text-emerald-900 transition-colors">{listing.ceo_name}</p>
+                        <p className="text-xs text-stone-400 font-bold uppercase tracking-widest mt-0.5">Chief Executive</p>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             )}
-          </CardContent>
-        </Card>
+
+            {/* Direct Contact Card */}
+            <Card className="bg-stone-900 border-none rounded-3xl text-white shadow-xl overflow-hidden">
+               <CardContent className="p-8 space-y-6">
+                  <h4 className="text-lg font-black">Get in Touch</h4>
+                  <div className="space-y-4">
+                    {listing.email && (
+                      <a href={`mailto:${listing.email}`} className="flex items-center gap-4 group">
+                        <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center group-hover:bg-emerald-600 transition-colors">
+                          <Mail className="w-5 h-5" />
+                        </div>
+                        <span className="text-sm font-bold text-stone-300 group-hover:text-white transition-colors">{listing.email}</span>
+                      </a>
+                    )}
+                    {listing.phone && (
+                      <a href={`tel:${listing.phone}`} className="flex items-center gap-4 group">
+                        <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center group-hover:bg-emerald-600 transition-colors">
+                          <Phone className="w-5 h-5" />
+                        </div>
+                        <span className="text-sm font-bold text-stone-300 group-hover:text-white transition-colors">{listing.phone}</span>
+                      </a>
+                    )}
+                  </div>
+               </CardContent>
+            </Card>
+          </div>
+        </div>
       </div>
     </div>
   );

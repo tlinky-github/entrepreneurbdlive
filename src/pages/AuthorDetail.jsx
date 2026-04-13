@@ -117,7 +117,17 @@ const AuthorDetail = () => {
         {/* Header Section */}
         <div className="relative mb-12">
           {/* Cover Background */}
-          <div className="h-48 md:h-64 w-full bg-gradient-to-r from-emerald-900 to-stone-900 rounded-3xl" />
+          <div className="h-48 md:h-64 w-full bg-stone-900 rounded-3xl overflow-hidden relative shadow-inner">
+            {author.cover_image ? (
+              <img src={author.cover_image} className="w-full h-full object-cover" alt="" />
+            ) : (
+              <div className="w-full h-full relative">
+                <div className="absolute inset-0 bg-gradient-to-br from-emerald-950 via-emerald-900/60 to-stone-950 opacity-90" />
+                <div className="absolute inset-0 opacity-10" style={{ backgroundImage: `url("https://www.transparenttextures.com/patterns/carbon-fibre.png")` }} />
+              </div>
+            )}
+            <div className="absolute inset-0 bg-black/10" />
+          </div>
           
           {/* Profile Basic Info */}
           <div className="absolute -bottom-12 md:-bottom-10 left-4 md:left-8 flex flex-col md:flex-row items-center md:items-end gap-4 md:gap-6 w-[calc(100%-2rem)] md:w-full pr-0 md:pr-16">
@@ -126,7 +136,7 @@ const AuthorDetail = () => {
                 <img src={author.photo} alt={author.name} className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-4xl text-stone-400 font-bold bg-stone-50">
-                  {author.name.charAt(0)}
+                  {author.name?.charAt(0) || 'A'}
                 </div>
               )}
             </div>

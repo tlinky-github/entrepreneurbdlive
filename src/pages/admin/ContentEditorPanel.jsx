@@ -67,6 +67,9 @@ const ContentEditorPanel = () => {
   const [socialFacebook, setSocialFacebook] = useState('');
   const [listingType, setListingType] = useState('');
   const [startupStage, setStartupStage] = useState('');
+  const [logo, setLogo] = useState('');
+  const [photo, setPhoto] = useState('');
+  const [coverImage, setCoverImage] = useState('');
   
   // Author & FAQ State
   const [authorId, setAuthorId] = useState('');
@@ -179,6 +182,9 @@ const ContentEditorPanel = () => {
             setSeoDescription(data.seo_description || '');
             setSeoKeywords(data.seo_keywords || '');
             setOgImage(data.og_image || '');
+            setLogo(data.logo || '');
+            setPhoto(data.photo || '');
+            setCoverImage(data.cover_image || '');
 
             // Load specialized fields
             setDesignation(data.designation || '');
@@ -468,6 +474,9 @@ const ContentEditorPanel = () => {
         industry,
         city,
         authorId,
+        logo,
+        photo,
+        cover_image: coverImage,
         // MIRROR FIELDS for frontend compatibility
         business_name: type === 'directory' ? title : companyName,
         name: type === 'entrepreneurs' ? title : null,
@@ -1070,6 +1079,48 @@ const ContentEditorPanel = () => {
 
         {/* Right: SEO & Preview */}
         <div className="editor-right">
+          {/* Media Section */}
+          <Card className="mb-6 border-stone-200">
+            <CardHeader className="bg-stone-50/50 border-b border-stone-100">
+              <CardTitle className="text-sm font-bold uppercase tracking-wider text-stone-600">Premium Media Assets</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6 pt-6">
+              {/* Primary Image: Logo, Photo, or Featured Image */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-widest text-stone-400">
+                  {type === 'directory' ? 'Business Logo *' : 
+                   type === 'entrepreneurs' ? 'Profile Photo *' : 
+                   'Featured Image *'}
+                </label>
+                <ImageUploader 
+                  value={type === 'directory' ? logo : type === 'entrepreneurs' ? photo : featuredImage}
+                  onChange={(url) => {
+                    if (type === 'directory') setLogo(url);
+                    else if (type === 'entrepreneurs') setPhoto(url);
+                    else setFeaturedImage(url);
+                  }}
+                  entityType={type}
+                  placeholder={type === 'directory' ? "Upload logo" : "Upload photo"}
+                />
+                <p className="text-[10px] text-stone-400">Recommended: Square format for logos and photos.</p>
+              </div>
+
+              {/* Cover Background (Only for Directory/Entrepreneurs) */}
+              {(type === 'directory' || type === 'entrepreneurs') && (
+                <div className="space-y-2 pt-4 border-t border-stone-100">
+                  <label className="text-xs font-bold uppercase tracking-widest text-stone-400">Cover Background</label>
+                  <ImageUploader 
+                    value={coverImage}
+                    onChange={(url) => setCoverImage(url)}
+                    entityType="cover"
+                    placeholder="Premium background image"
+                  />
+                  <p className="text-[10px] text-stone-400">High resolution landscape image recommended.</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           {/* SEO Section */}
           <Card>
             <CardHeader>
