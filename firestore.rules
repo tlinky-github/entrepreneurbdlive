@@ -20,25 +20,29 @@ service cloud.firestore {
       return request.auth != null && request.auth.uid == userId;
     }
 
-    // Public Collections: Anyone can read, only Admin can write
+    // Public Collections: Anyone can read, only Admin can write (with view_count exception)
     match /posts/{post} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin() || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['view_count']);
     }
 
     match /profiles/{profile} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin() || (request.resource.data.diff(resource.data).affectedKeys().hasAny(['view_count', 'follower_count']));
     }
 
     match /listings/{listing} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin() || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['view_count']);
     }
 
     match /resources/{resource} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin() || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['view_count']);
     }
 
     // Taxonomies: Public read, Admin write
@@ -55,7 +59,7 @@ service cloud.firestore {
       allow write: if isOwner(request.resource.data.userId) || isOwner(resource.data.userId);
     }
     match /bookmarks/{bookmarkId} {
-      allow read: if isOwner(resource.data.userId);
+      allow read: if request.auth != null; // Allowed to check if own bookmark exists
       allow write: if isOwner(request.resource.data.userId) || isOwner(resource.data.userId);
     }
     match /site_settings/{id} { allow read: if true; allow write: if isAdmin(); }

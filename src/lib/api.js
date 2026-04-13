@@ -122,7 +122,14 @@ export const profileAPI = {
       const q = query(collection(db, 'profiles'), where('slug', '==', slug), limit(1));
       const snapshot = await getDocs(q);
       if (snapshot.empty) return { data: null };
-      return { data: docToData(snapshot.docs[0]) };
+      
+      const profileDoc = snapshot.docs[0];
+      // Update view count
+      await updateDoc(doc(db, 'profiles', profileDoc.id), {
+        view_count: increment(1)
+      });
+      
+      return { data: docToData(profileDoc) };
     } catch (error) {
       console.error('Firestore Profile Get Error:', error);
       throw error;
@@ -231,7 +238,16 @@ export const contentAPI = {
       knowledge: 'resources'
     };
     const colName = collectionMap[type] || type;
-    const docSnap = await getDoc(doc(db, colName, id));
+    const docRef = doc(db, colName, id);
+    const docSnap = await getDoc(docRef);
+    
+    if (docSnap.exists()) {
+      // Update view count
+      await updateDoc(docRef, {
+        view_count: increment(1)
+      }).catch(err => console.warn('Failed to increment view count:', err));
+    }
+    
     return { data: docToData(docSnap) };
   },
   create: async (payload) => {
