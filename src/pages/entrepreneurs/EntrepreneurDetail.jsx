@@ -23,7 +23,8 @@ import {
   UserMinus,
   CheckCircle,
   Plus,
-  Minus
+  Minus,
+  Share2
 } from 'lucide-react';
 
 const EntrepreneurDetail = () => {
@@ -122,8 +123,8 @@ const EntrepreneurDetail = () => {
     <div className="bg-stone-50 min-h-screen" data-testid="entrepreneur-detail-page">
       <SEO
         title={profile.seoTitle || profile.name}
-        description={profile.metaDescription || profile.short_bio}
-        image={profile.photo}
+        description={profile.metaDescription || profile.short_bio || profile.details}
+        image={profile.featured_image || profile.photo}
         type="profile"
         author={authorData?.name || "Entrepreneur BD"}
         faqs={profile.faqs}
@@ -153,8 +154,8 @@ const EntrepreneurDetail = () => {
               {/* Avatar */}
               <div className="flex-shrink-0">
                 <div className="w-32 h-32 bg-white rounded-xl shadow-lg flex items-center justify-center overflow-hidden border-4 border-white">
-                  {profile.photo ? (
-                    <img src={profile.photo} alt={profile.name} className="w-full h-full object-cover" />
+                  {(profile.featured_image || profile.photo) ? (
+                    <img src={profile.featured_image || profile.photo} alt={profile.name} className="w-full h-full object-cover" />
                   ) : (
                     <span className="text-4xl font-bold text-emerald-900">
                       {profile.name?.charAt(0)}
@@ -178,10 +179,10 @@ const EntrepreneurDetail = () => {
                         {profile.designation || profile.role_title} at <span className="font-medium">{profile.company_name}</span>
                       </p>
                     )}
-                    {profile.city && (
+                    {(profile.city || profile.headquarters) && (
                       <p className="text-sm text-stone-500 flex items-center gap-1 mt-2">
                         <MapPin className="w-4 h-4" />
-                        {profile.city}, {profile.country}
+                        {profile.headquarters || `${profile.city}${profile.country ? `, ${profile.country}` : ''}`}
                       </p>
                     )}
                   </div>
@@ -193,16 +194,30 @@ const EntrepreneurDetail = () => {
                   </div>
                 </div>
 
-                {/* Stats */}
-                <div className="flex items-center gap-6 mt-6 pt-6 border-t border-stone-200">
-                  {profile.industry && (
-                    <div>
-                      <Badge className="bg-emerald-100 text-emerald-900">{profile.industry}</Badge>
+                {/* Snapshot Stats */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6 pt-6 border-t border-stone-200">
+                  {profile.startup_stage && (
+                    <div className="flex flex-col">
+                      <span className="text-[10px] uppercase font-bold text-stone-400">Stage</span>
+                      <span className="text-sm font-semibold text-stone-700">{profile.startup_stage}</span>
                     </div>
                   )}
-                  {profile.startup_stage && (
-                    <div>
-                      <Badge variant="outline">{profile.startup_stage}</Badge>
+                  {profile.industry && (
+                    <div className="flex flex-col">
+                      <span className="text-[10px] uppercase font-bold text-stone-400">Industry</span>
+                      <span className="text-sm font-semibold text-stone-700">{profile.industry}</span>
+                    </div>
+                  )}
+                  {profile.employee_size && (
+                    <div className="flex flex-col">
+                      <span className="text-[10px] uppercase font-bold text-stone-400">Team Size</span>
+                      <span className="text-sm font-semibold text-stone-700">{profile.employee_size} members</span>
+                    </div>
+                  )}
+                  {(profile.founder_name || profile.ceo_name) && (
+                    <div className="flex flex-col">
+                      <span className="text-[10px] uppercase font-bold text-stone-400">Leadership</span>
+                      <span className="text-sm font-semibold text-stone-700 truncate">{profile.ceo_name || profile.founder_name}</span>
                     </div>
                   )}
                 </div>
@@ -358,15 +373,15 @@ const EntrepreneurDetail = () => {
             <div className="mt-8 pt-8 border-t border-stone-200">
               <h2 className="text-lg font-semibold text-stone-900 mb-4">Connect</h2>
               <div className="flex flex-wrap gap-3">
-                {profile.website && (
+                {(profile.company_page_url || profile.website) && (
                   <a
-                    href={profile.website}
+                    href={profile.company_page_url || profile.website}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-2 px-4 py-2 bg-stone-100 hover:bg-emerald-100 rounded-lg text-stone-700 hover:text-emerald-900 transition-colors"
                   >
                     <Globe className="w-4 h-4" />
-                    Website
+                    Official Website
                   </a>
                 )}
                 {(profile.linkedin || profile.social_linkedin) && (

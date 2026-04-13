@@ -119,19 +119,19 @@ const AuthorDetail = () => {
           {/* Cover Background */}
           <div className="h-48 md:h-64 w-full bg-gradient-to-r from-emerald-900 to-stone-900 rounded-3xl" />
           
-          {/* Profile Basic Info Info */}
-          <div className="absolute -bottom-10 left-8 md:flex items-end gap-6 w-full pr-16">
-            <div className="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-stone-50 overflow-hidden bg-stone-100 shadow-xl flex-shrink-0">
+          {/* Profile Basic Info */}
+          <div className="absolute -bottom-12 md:-bottom-10 left-4 md:left-8 flex flex-col md:flex-row items-center md:items-end gap-4 md:gap-6 w-[calc(100%-2rem)] md:w-full pr-0 md:pr-16">
+            <div className="w-28 h-28 md:w-40 md:h-40 rounded-full border-4 border-white overflow-hidden bg-stone-100 shadow-xl flex-shrink-0">
               {author.photo ? (
                 <img src={author.photo} alt={author.name} className="w-full h-full object-cover" />
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-4xl text-stone-400 font-bold">
+                <div className="w-full h-full flex items-center justify-center text-4xl text-stone-400 font-bold bg-stone-50">
                   {author.name.charAt(0)}
                 </div>
               )}
             </div>
-            <div className="pb-4 pt-12 md:pt-0">
-              <h1 className="text-3xl md:text-4xl font-bold text-white drop-shadow-md">{author.name}</h1>
+            <div className="pb-4 pt-2 md:pt-0 text-center md:text-left">
+              <h1 className="text-2xl md:text-4xl font-bold text-white drop-shadow-lg">{author.name}</h1>
               <div className="flex flex-wrap items-center gap-4 mt-2">
                 <Badge className="bg-emerald-100 text-emerald-900 hover:bg-emerald-100 border-none px-3">
                   {author.designation || 'Official Author'}
@@ -209,7 +209,7 @@ const AuthorDetail = () => {
               ) : (
                 contents.map((item) => (
                   <Link key={item.id} to={item.link}>
-                    <Card className="border-stone-200 hover:border-emerald-200 hover:shadow-md transition-all group mb-4">
+                    <Card className="border-stone-200 hover:border-emerald-500/30 hover:shadow-xl hover:shadow-emerald-900/5 transition-all duration-300 group mb-4 overflow-hidden">
                       <CardContent className="p-0">
                         <div className="flex flex-col md:flex-row">
                           {item.featured_image && (
@@ -244,7 +244,7 @@ const AuthorDetail = () => {
                                 {item.excerpt || item.details || item.short_description || (item.content ? item.content.replace(/<[^>]*>/g, '').substring(0, 160) + '...' : '')}
                               </p>
                             </div>
-                            <div className="mt-4 flex items-center text-xs font-bold text-emerald-900 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="mt-4 flex items-center text-xs font-bold text-emerald-900 group-hover:translate-x-1 transition-transform">
                               READ MORE <ChevronRight className="w-3 h-3 ml-1" />
                             </div>
                           </div>

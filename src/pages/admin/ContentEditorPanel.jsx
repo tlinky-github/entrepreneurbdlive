@@ -25,7 +25,7 @@ import ImageUploader from '../../components/common/ImageUploader';
 import LinkDialog from '../../components/admin/LinkDialog';
 import ImageEditorDialog from '../../components/admin/ImageEditorDialog';
 import { Label } from '../../components/ui/label';
-import { Pencil, Globe, Smartphone, Monitor, Plus, X } from 'lucide-react';
+import { Pencil, Globe, Smartphone, Monitor, Plus, X, Check } from 'lucide-react';
 import FaqExtension from '../../components/editor/FaqExtension';
 import './ContentEditorPanel.css';
 
@@ -73,9 +73,16 @@ const ContentEditorPanel = () => {
   const [authorsList, setAuthorsList] = useState([]);
   const [faqs, setFaqs] = useState([]); // Array of { q: '', a: '' }
 
+  // Taxonomy & Metadata States
   const [categories, setCategories] = useState([]);
+  const [industry, setIndustry] = useState('');
+  const [city, setCity] = useState('');
+  const [industries, setIndustries] = useState([]);
+  const [cities, setCities] = useState([]);
   const [listingTypes, setListingTypes] = useState([]);
   const [startupStages, setStartupStages] = useState([]);
+  const [showQuickAdd, setShowQuickAdd] = useState({ category: false, author: false, listingType: false, stage: false, industry: false, city: false });
+  const [quickAddValue, setQuickAddValue] = useState('');
 
   const [isEditingSlug, setIsEditingSlug] = useState(false);
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
@@ -194,6 +201,8 @@ const ContentEditorPanel = () => {
             }
             setListingType(data.listing_type || '');
             setStartupStage(data.startup_stage || '');
+            setIndustry(data.industry || '');
+            setCity(data.city || '');
             setAuthorId(data.authorId || '');
             setFaqs(data.faqs || []);
             setIsFeatured(data.is_featured || false);
@@ -211,59 +220,163 @@ const ContentEditorPanel = () => {
     }
   }, [itemId, type, editor, lifeAtCompanyEditor]);
 
-  // Load real categories from database
+
+  // Metadata Refreshers
+  const refreshCategories = async () => {
+    try {
+      const res = type === 'blog' ? await blogCategoryAPI.list() : await categoryAPI.list();
+      if (res.data) setCategories(res.data);
+    } catch (error) { console.error('Error loading categories:', error); }
+  };
+
+  const refreshAuthors = async () => {
+    try {
+      const res = await authorAPI.list();
+      if (res.data) setAuthorsList(res.data);
+    } catch (error) { console.error('Error loading authors:', error); }
+  };
+
+  const refreshListingTypes = async () => {
+    try {
+      const res = await taxonomyAPI.list('listing_types');
+      if (res.data) setListingTypes(res.data);
+    } catch (error) { console.error('Error loading types:', error); }
+  };
+
+  const refreshStartupStages = async () => {
+    try {
+      const res = await taxonomyAPI.list('startup_stages');
+      if (res.data) setStartupStages(res.data);
+    } catch (error) { console.error('Error loading stages:', error); }
+  };
+
+  const refreshIndustries = async () => {
+    try {
+      const res = await taxonomyAPI.list('industries');
+      if (res.data) setIndustries(res.data);
+    } catch (error) { console.error('Error loading industries:', error); }
+  };
+
+  const refreshCities = async () => {
+    try {
+      const res = await taxonomyAPI.list('cities');
+      if (res.data) setCities(res.data);
+    } catch (error) { console.error('Error loading cities:', error); }
+  };
+
+  // Initial Data Loads
   useEffect(() => {
-    const loadCategories = async () => {
-      try {
-        const res = type === 'blog' ? await blogCategoryAPI.list() : await categoryAPI.list();
-        if (res.data && res.data.length > 0) {
-          setCategories(res.data);
-        }
-      } catch (error) {
-        console.error('Error loading categories:', error);
-      }
-    };
-    loadCategories();
+    refreshAuthors();
+  }, []);
+
+  useEffect(() => {
+    refreshCategories();
   }, [type]);
 
-  // Load Listing Types for Directory
   useEffect(() => {
     if (type === 'directory') {
-      const loadTypes = async () => {
-        try {
-          const res = await taxonomyAPI.list('listing_types');
-          setListingTypes(res.data || []);
-        } catch (error) {
-          console.error('Error loading listing types:', error);
-        }
-      };
-      loadTypes();
+      refreshListingTypes();
+      refreshCities();
     }
     if (type === 'entrepreneurs') {
-      const loadStages = async () => {
-        try {
-          const res = await taxonomyAPI.list('startup_stages');
-          setStartupStages(res.data || []);
-        } catch (error) {
-          console.error('Error loading stages:', error);
-        }
-      };
-      loadStages();
+      refreshStartupStages();
+      refreshIndustries();
     }
   }, [type]);
 
-  // Load Authors
-  useEffect(() => {
-    const loadAuthorsList = async () => {
-      try {
-        const res = await authorAPI.list();
-        setAuthorsList(res.data || []);
-      } catch (error) {
-        console.error('Error loading authors list:', error);
+  const handleQuickAdd = async (taxType) => {
+    if (!quickAddValue.trim()) return;
+    try {
+      let newItem;
+      switch (taxType) {
+        case 'category':
+          newItem = type === 'blog' ? await blogCategoryAPI.create(quickAddValue) : await categoryAPI.create(quickAddValue);
+          await refreshCategories();
+          setCategory(newItem.id.toString());
+          break;
+        case 'author':
+          newItem = await authorAPI.create({ name: quickAddValue, designation: 'Official Author', bio: '' });
+          await refreshAuthors();
+          setAuthorId(newItem.id);
+          break;
+        case 'listingType':
+          newItem = await taxonomyAPI.create('listing_types', quickAddValue);
+          await refreshListingTypes();
+          setListingType(newItem.slug);
+          break;
+        case 'stage':
+          newItem = await taxonomyAPI.create('startup_stages', quickAddValue);
+          await refreshStartupStages();
+          setStartupStage(newItem.slug);
+          break;
+        case 'industry':
+          newItem = await taxonomyAPI.create('industries', quickAddValue);
+          await refreshIndustries();
+          setIndustry(newItem.name); // Store name or slug
+          break;
+        case 'city':
+          newItem = await taxonomyAPI.create('cities', quickAddValue);
+          await refreshCities();
+          setCity(newItem.name);
+          break;
       }
-    };
-    loadAuthorsList();
-  }, []);
+      toast.success(`Success! Created "${quickAddValue}"`);
+      setQuickAddValue('');
+      setShowQuickAdd(prev => ({ ...prev, [taxType]: false }));
+    } catch (error) {
+      console.error('Quick Add Failed:', error);
+      toast.error('Failed to create item');
+    }
+  };
+
+  const QuickSelector = ({ label, value, onChange, options, taxType, placeholder = "Select..." }) => (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <label className="text-sm font-medium text-stone-700">{label}</label>
+        <button 
+          type="button"
+          onClick={() => {
+            setQuickAddValue('');
+            setShowQuickAdd(prev => ({ ...prev, [taxType]: !prev[taxType] }));
+          }}
+          className="text-[10px] font-bold text-emerald-600 hover:text-emerald-700 flex items-center gap-1 uppercase tracking-tight"
+        >
+          {showQuickAdd[taxType] ? <><X className="w-3 h-3" /> Cancel</> : <><Plus className="w-3 h-3" /> New {label}</>}
+        </button>
+      </div>
+
+      {showQuickAdd[taxType] ? (
+        <div className="flex gap-2">
+          <Input 
+            value={quickAddValue}
+            onChange={(e) => setQuickAddValue(e.target.value)}
+            placeholder={`Enter ${label.toLowerCase()} name...`}
+            className="flex-1"
+            autoFocus
+            onKeyDown={(e) => e.key === 'Enter' && handleQuickAdd(taxType)}
+          />
+          <Button 
+            type="button" 
+            onClick={() => handleQuickAdd(taxType)}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white"
+          >
+            <Check className="w-4 h-4" />
+          </Button>
+        </div>
+      ) : (
+        <select
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="input-select w-full"
+        >
+          <option value="">{placeholder}</option>
+          {options.map(opt => (
+            <option key={opt.id || opt.slug || opt} value={opt.id || opt.slug || opt}>{opt.name || opt}</option>
+          ))}
+        </select>
+      )}
+    </div>
+  );
 
   // Auto-generate slug
   useEffect(() => {
@@ -347,6 +460,8 @@ const ContentEditorPanel = () => {
         is_featured: isFeatured,
         listing_type: listingType,
         startup_stage: startupStage,
+        industry,
+        city,
         authorId,
         // Sync excerpt to fields used by the frontend for intro text
         details: type === 'entrepreneurs' ? excerpt : null,
@@ -496,18 +611,23 @@ const ContentEditorPanel = () => {
                        />
                      </div>
                    </div>
-                   <div>
-                     <label>Startup Stage</label>
-                     <select
+                   <div className="space-y-4">
+                     <QuickSelector
+                       label="Startup Stage"
                        value={startupStage}
-                       onChange={(e) => setStartupStage(e.target.value)}
-                       className="input-select"
-                     >
-                       <option value="">Select Stage</option>
-                       {startupStages.map(s => (
-                         <option key={s.id} value={s.slug}>{s.name}</option>
-                       ))}
-                     </select>
+                       onChange={setStartupStage}
+                       options={startupStages}
+                       taxType="stage"
+                       placeholder="Select Stage"
+                     />
+                     <QuickSelector
+                       label="Industry"
+                       value={industry}
+                       onChange={setIndustry}
+                       options={industries}
+                       taxType="industry"
+                       placeholder="Select Industry"
+                     />
                    </div>
                  </>
                )}
@@ -533,14 +653,14 @@ const ContentEditorPanel = () => {
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label>Headquarters</label>
-                      <Input
-                        value={headquarters}
-                        onChange={(e) => setHeadquarters(e.target.value)}
-                        placeholder="City, Country"
-                      />
-                    </div>
+                    <QuickSelector
+                      label="City"
+                      value={city}
+                      onChange={setCity}
+                      options={cities}
+                      taxType="city"
+                      placeholder="Select City"
+                    />
                     <div>
                       <label>Employee Size</label>
                       <select
@@ -556,19 +676,14 @@ const ContentEditorPanel = () => {
                         <option value="500+">500+</option>
                       </select>
                     </div>
-                    <div>
-                      <label>Listing Type *</label>
-                      <select
-                        value={listingType}
-                        onChange={(e) => setListingType(e.target.value)}
-                        className="input-select"
-                      >
-                        <option value="">Select Type</option>
-                        {listingTypes.map(t => (
-                          <option key={t.id} value={t.slug}>{t.name}</option>
-                        ))}
-                      </select>
-                    </div>
+                    <QuickSelector
+                      label="Listing Type"
+                      value={listingType}
+                      onChange={setListingType}
+                      options={listingTypes}
+                      taxType="listingType"
+                      placeholder="Select Type"
+                    />
                   </div>
                   <div>
                     <label>Official Page URL</label>
@@ -610,19 +725,14 @@ const ContentEditorPanel = () => {
                 </>
               )}
 
-              <div>
-                <label>Category *</label>
-                <select
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  className="input-select"
-                >
-                  <option value="">Select a category</option>
-                  {categories.map(cat => (
-                    <option key={cat.id} value={cat.id}>{cat.name}</option>
-                  ))}
-                </select>
-              </div>
+               <QuickSelector
+                label="Category *"
+                value={category}
+                onChange={setCategory}
+                options={categories}
+                taxType="category"
+                placeholder="Select a category"
+              />
 
               <div>
                 <label>Status</label>
@@ -675,20 +785,15 @@ const ContentEditorPanel = () => {
                 </div>
               </div>
 
-              <div>
-                <label>Assigned Author</label>
-                <select
-                  value={authorId}
-                  onChange={(e) => setAuthorId(e.target.value)}
-                  className="input-select"
-                >
-                  <option value="">Select Author</option>
-                  {authorsList.map(a => (
-                    <option key={a.id} value={a.id}>{a.name}</option>
-                  ))}
-                </select>
-                <p className="text-[10px] text-stone-400 mt-1">Assign an official author for professional attribution.</p>
-              </div>
+              <QuickSelector
+                label="Assigned Author"
+                value={authorId}
+                onChange={setAuthorId}
+                options={authorsList}
+                taxType="author"
+                placeholder="Select Author"
+              />
+              <p className="text-[10px] text-stone-400 mt-1">Assign an official author for professional attribution.</p>
 
               {type === 'entrepreneurs' && (
                 <div className="space-y-4 pt-4 border-t border-stone-100">

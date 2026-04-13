@@ -215,8 +215,8 @@ const ProfileCard = ({ profile, featured }) => (
       <CardContent className="p-6">
         <div className="text-center">
           <div className="w-20 h-20 bg-emerald-100 rounded-full mx-auto mb-4 flex items-center justify-center overflow-hidden">
-            {profile.photo ? (
-              <img src={profile.photo} alt={profile.name} className="w-full h-full object-cover" />
+            {(profile.featured_image || profile.photo) ? (
+              <img src={profile.featured_image || profile.photo} alt={profile.name} className="w-full h-full object-cover" />
             ) : (
               <span className="text-2xl font-bold text-emerald-900">
                 {profile.name?.charAt(0)}
@@ -235,10 +235,10 @@ const ProfileCard = ({ profile, featured }) => (
             </p>
           )}
 
-          {profile.city && (
+          {(profile.city || profile.headquarters) && (
             <p className="text-xs text-stone-400 flex items-center justify-center gap-1 mb-3">
               <MapPin className="w-3 h-3" />
-              {profile.city}, {profile.country}
+              {profile.headquarters || `${profile.city}${profile.country ? `, ${profile.country}` : ''}`}
             </p>
           )}
 
@@ -261,7 +261,7 @@ const ProfileCard = ({ profile, featured }) => (
           )}
 
           <div className="flex justify-center gap-3 mt-4">
-            {profile.website && (
+            {(profile.company_page_url || profile.website) && (
               <Globe className="w-4 h-4 text-stone-400 hover:text-emerald-900" />
             )}
             {profile.linkedin && (
@@ -270,11 +270,6 @@ const ProfileCard = ({ profile, featured }) => (
             {profile.twitter && (
               <Twitter className="w-4 h-4 text-stone-400 hover:text-emerald-900" />
             )}
-          </div>
-
-          <div className="mt-4 text-xs text-stone-400">
-            <Users className="w-3 h-3 inline mr-1" />
-            {profile.follower_count} followers
           </div>
         </div>
       </CardContent>
