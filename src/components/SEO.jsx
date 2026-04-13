@@ -41,6 +41,20 @@ export const SEO = ({
         }))
     } : null;
 
+    // Generate FAQ Schema
+    const faqSchema = props.faqs?.length > 0 ? {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": props.faqs.map(faq => ({
+            "@type": "Question",
+            "name": faq.question || faq.q,
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": faq.answer || faq.a
+            }
+        }))
+    } : null;
+
     return (
         <Helmet>
             {/* Basic Metadata */}
@@ -98,6 +112,13 @@ export const SEO = ({
             {breadcrumbSchema && (
                 <script type="application/ld+json">
                     {JSON.stringify(breadcrumbSchema)}
+                </script>
+            )}
+
+            {/* FAQ Schema */}
+            {faqSchema && (
+                <script type="application/ld+json">
+                    {JSON.stringify(faqSchema)}
                 </script>
             )}
 

@@ -213,10 +213,14 @@
   flex-wrap: wrap;
   gap: 8px;
   padding: 12px;
-  background: #f9fafb;
+  background: white;
   border: 1px solid #e5e7eb;
   border-bottom: none;
   border-radius: 6px 6px 0 0;
+  position: sticky;
+  top: 72px; /* Anchor below the editor header */
+  z-index: 50;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }
 
 .toolbar-group {
@@ -305,8 +309,14 @@
   line-height: 1.6;
 }
 
-.editor-content .ProseMirror ul,
+.editor-content .ProseMirror ul {
+  list-style-type: disc !important;
+  margin: 12px 0;
+  padding-left: 24px;
+}
+
 .editor-content .ProseMirror ol {
+  list-style-type: decimal !important;
   margin: 12px 0;
   padding-left: 24px;
 }

@@ -66,6 +66,7 @@ service cloud.firestore {
     match /categories/{id} { allow read: if true; allow write: if isAdmin(); }
     match /blog_categories/{id} { allow read: if true; allow write: if isAdmin(); }
     match /listing_types/{id} { allow read: if true; allow write: if isAdmin(); }
+    match /authors/{id} { allow read: if true; allow write: if isAdmin(); }
     match /startup_stages/{stage} {
       allow read: if true;
       allow write: if isAdmin();

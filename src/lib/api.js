@@ -261,6 +261,8 @@ export const contentAPI = {
     const colName = collectionMap[type] || type;
     const res = await addDoc(collection(db, colName), {
       ...data,
+      authorId: data.authorId || null,
+      faqs: data.faqs || [],
       created_at: serverTimestamp()
     });
     return { id: res.id, ...data };
@@ -275,7 +277,12 @@ export const contentAPI = {
     };
     const colName = collectionMap[type] || type;
     const ref = doc(db, colName, id);
-    await updateDoc(ref, { ...data, updated_at: serverTimestamp() });
+    await updateDoc(ref, { 
+      ...data, 
+      authorId: data.authorId || null,
+      faqs: data.faqs || [],
+      updated_at: serverTimestamp() 
+    });
     return { id, ...data };
   },
   delete: async (type, id) => {
@@ -525,6 +532,63 @@ export const taxonomyAPI = {
   }
 };
 
+// --- Authors API ---
+export const authorAPI = {
+  list: async () => {
+    try {
+      const q = query(collection(db, 'authors'), orderBy('name', 'asc'));
+      const snapshot = await getDocs(q);
+      return { data: snapshot.docs.map(docToData) };
+    } catch (error) {
+       console.error('Error listing authors:', error);
+       return { data: [] };
+    }
+  },
+  get: async (id) => {
+    try {
+      const docSnap = await getDoc(doc(db, 'authors', id));
+      return { data: docToData(docSnap) };
+    } catch (error) {
+      console.error('Error getting author:', error);
+      throw error;
+    }
+  },
+  getBySlug: async (slug) => {
+    try {
+      const q = query(collection(db, 'authors'), where('slug', '==', slug), limit(1));
+      const snapshot = await getDocs(q);
+      if (snapshot.empty) return { data: null };
+      return { data: docToData(snapshot.docs[0]) };
+    } catch (error) {
+      console.error('Error getting author by slug:', error);
+      throw error;
+    }
+  },
+  create: async (data) => {
+    const slug = data.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    const res = await addDoc(collection(db, 'authors'), {
+      ...data,
+      slug,
+      created_at: serverTimestamp()
+    });
+    return { id: res.id, ...data, slug };
+  },
+  update: async (id, data) => {
+    const ref = doc(db, 'authors', id);
+    const slug = data.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    await updateDoc(ref, {
+      ...data,
+      slug,
+      updated_at: serverTimestamp()
+    });
+    return { id, ...data, slug };
+  },
+  delete: async (id) => {
+    await deleteDoc(doc(db, 'authors', id));
+    return { success: true };
+  }
+};
+
 // Exporting actual implementations
 export const categoryAPI = { 
   list: () => taxonomyAPI.list('categories'),
@@ -563,5 +627,5 @@ export const settingsAPI = {
 export default { 
   postAPI, profileAPI, listingAPI, contentAPI, interactionAPI, 
   adminAPI, commentAPI, resourceAPI, authAPI, categoryAPI, 
-  blogCategoryAPI, industryAPI, cityAPI, taxonomyAPI, settingsAPI 
+  blogCategoryAPI, industryAPI, cityAPI, taxonomyAPI, settingsAPI, authorAPI
 };

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { MDXProvider } from '@mdx-js/react';
-import { postAPI, commentAPI, interactionAPI } from '../../lib/api';
+import { postAPI, commentAPI, interactionAPI, authorAPI } from '../../lib/api';
 import { useAuth } from '../../lib/auth';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
@@ -20,7 +20,14 @@ import {
   MessageCircle,
   ArrowLeft,
   Clock,
-  Loader2
+  Loader2,
+  Plus,
+  Minus,
+  CheckCircle,
+  Linkedin,
+  Twitter,
+  Facebook,
+  Globe
 } from 'lucide-react';
 
 const BlogDetail = () => {
@@ -33,6 +40,8 @@ const BlogDetail = () => {
   const [bookmarked, setBookmarked] = useState(false);
   const [newComment, setNewComment] = useState('');
   const [submittingComment, setSubmittingComment] = useState(false);
+  const [authorData, setAuthorData] = useState(null);
+  const [openFaqIndex, setOpenFaqIndex] = useState(null);
 
   useEffect(() => {
     const loadPost = async () => {
@@ -47,6 +56,16 @@ const BlogDetail = () => {
         }
 
         setPost(postRes.data);
+        
+        // Load Author Data if exists
+        if (postRes.data.authorId) {
+          try {
+            const authorRes = await authorAPI.get(postRes.data.authorId);
+            setAuthorData(authorRes.data);
+          } catch (err) {
+            console.error('Error fetching author details:', err);
+          }
+        }
 
         // Load comments
         const commentsRes = await commentAPI.list('blog', postRes.data.id);
@@ -179,9 +198,10 @@ const BlogDetail = () => {
         description={post.metaDescription || post.excerpt}
         image={post.featured_image}
         type="article"
-        author={post.author_name}
+        author={authorData?.name || post.author_name}
         publishedTime={post.created_at}
-        keywords={[...(post.tags || []), post.category_name, post.author_name].filter(Boolean)}
+        faqs={post.faqs}
+        keywords={[...(post.tags || []), post.category_name, authorData?.name || post.author_name].filter(Boolean)}
         breadcrumbs={[
           { name: 'Home', path: '/' },
           { name: 'Blog', path: '/blog' },
@@ -210,19 +230,49 @@ const BlogDetail = () => {
             <p className="text-xl text-stone-600 mb-6">{post.excerpt}</p>
           )}
 
-          <div className="flex flex-wrap items-center gap-6 text-sm text-stone-500 pb-6 border-b border-stone-200">
-            <div className="flex items-center gap-2">
-              <Avatar className="w-10 h-10">
-                <AvatarFallback className="bg-emerald-100 text-emerald-900">
-                  {post.author_name?.charAt(0)}
-                </AvatarFallback>
-              </Avatar>
-              <div>
-                <p className="font-medium text-stone-900">{post.author_name}</p>
-                <p className="text-xs">Author</p>
-              </div>
-            </div>
-          </div>
+           <div className="flex flex-wrap items-center gap-6 text-sm text-stone-500 pb-6 border-b border-stone-200">
+             <div className="flex items-center gap-2">
+               {authorData ? (
+                 <Link to={`/author/${authorData.slug}`} className="flex items-center gap-2 group">
+                   <Avatar className="w-10 h-10 border border-stone-200 group-hover:border-emerald-500 transition-colors">
+                     {authorData.photo ? (
+                       <img src={authorData.photo} alt={authorData.name} className="w-full h-full object-cover" />
+                     ) : (
+                       <AvatarFallback className="bg-emerald-100 text-emerald-900">
+                         {authorData.name?.charAt(0)}
+                       </AvatarFallback>
+                     )}
+                   </Avatar>
+                   <div>
+                     <p className="font-medium text-stone-900 group-hover:text-emerald-900 transition-colors">{authorData.name}</p>
+                     <p className="text-xs">Professional Author</p>
+                   </div>
+                 </Link>
+               ) : (
+                 <div className="flex items-center gap-2">
+                   <Avatar className="w-10 h-10">
+                     <AvatarFallback className="bg-emerald-100 text-emerald-900">
+                       {post.author_name?.charAt(0)}
+                     </AvatarFallback>
+                   </Avatar>
+                   <div>
+                     <p className="font-medium text-stone-900">{post.author_name}</p>
+                     <p className="text-xs">Author</p>
+                   </div>
+                 </div>
+               )}
+             </div>
+             <div className="flex items-center gap-2">
+                <Calendar className="w-4 h-4" />
+                {post.created_at?.seconds 
+                  ? new Date(post.created_at.seconds * 1000).toLocaleDateString()
+                  : 'Recently Published'}
+             </div>
+             <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4" />
+                {readingTime} min read
+             </div>
+           </div>
         </header>
 
         {/* Featured Image */}
@@ -260,6 +310,98 @@ const BlogDetail = () => {
                   #{tag}
                 </Badge>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* Dynamic FAQs Section */}
+        {post.faqs?.length > 0 && (
+          <div className="mt-16 pt-8 border-t border-stone-200 bg-emerald-50/30 rounded-2xl p-6 md:p-8">
+            <h2 className="text-2xl font-bold text-stone-900 mb-6 flex items-center gap-2">
+              <CheckCircle className="w-6 h-6 text-emerald-700" />
+              Frequently Asked Questions
+            </h2>
+            <div className="space-y-4">
+              {post.faqs.map((faq, index) => (
+                <div 
+                  key={index}
+                  className="bg-white border border-stone-200 rounded-xl overflow-hidden transition-all duration-200 shadow-sm"
+                >
+                  <button
+                    onClick={() => setOpenFaqIndex(openFaqIndex === index ? null : index)}
+                    className="w-full flex items-center justify-between p-4 text-left hover:bg-stone-50 transition-colors"
+                  >
+                    <span className="font-bold text-stone-900 pr-4">{faq.question || faq.q}</span>
+                    {openFaqIndex === index ? (
+                      <Minus className="w-5 h-5 text-emerald-700 flex-shrink-0" />
+                    ) : (
+                      <Plus className="w-5 h-5 text-emerald-700 flex-shrink-0" />
+                    )}
+                  </button>
+                  {openFaqIndex === index && (
+                    <div className="px-4 pb-4 pt-0 text-stone-600 border-t border-stone-100 animate-in fade-in slide-in-from-top-1 duration-200">
+                      <p className="mt-4 leading-relaxed whitespace-pre-wrap">{faq.answer || faq.a}</p>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Author Bio Section */}
+        {authorData && (
+          <div className="mt-12 bg-white border border-stone-200 rounded-2xl p-6 md:p-8 shadow-sm">
+            <div className="flex flex-col md:flex-row gap-6 items-start">
+              <Link to={`/author/${authorData.slug}`} className="flex-shrink-0">
+                <div className="w-24 h-24 rounded-full overflow-hidden bg-stone-100 border-2 border-emerald-900 shadow-md">
+                   {authorData.photo ? (
+                      <img src={authorData.photo} alt={authorData.name} className="w-full h-full object-cover" />
+                   ) : (
+                      <div className="w-full h-full flex items-center justify-center text-3xl font-bold text-emerald-900">
+                         {authorData.name.charAt(0)}
+                      </div>
+                   )}
+                </div>
+              </Link>
+              <div className="flex-1">
+                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+                    <div>
+                       <h3 className="text-xl font-bold text-stone-900">About the Author: {authorData.name}</h3>
+                       <p className="text-sm text-emerald-700 font-medium">Professional Contributor</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                       {authorData.website && (
+                         <a href={authorData.website} target="_blank" rel="noopener noreferrer" className="text-stone-400 hover:text-emerald-900 transition-colors">
+                            <Globe className="w-5 h-5" />
+                         </a>
+                       )}
+                       {authorData.linkedin && (
+                         <a href={authorData.linkedin} target="_blank" rel="noopener noreferrer" className="text-stone-400 hover:text-blue-700 transition-colors">
+                            <Linkedin className="w-5 h-5" />
+                         </a>
+                       )}
+                       {authorData.twitter && (
+                         <a href={authorData.twitter} target="_blank" rel="noopener noreferrer" className="text-stone-400 hover:text-sky-500 transition-colors">
+                            <Twitter className="w-5 h-5" />
+                         </a>
+                       )}
+                       {authorData.facebook && (
+                         <a href={authorData.facebook} target="_blank" rel="noopener noreferrer" className="text-stone-400 hover:text-blue-600 transition-colors">
+                            <Facebook className="w-5 h-5" />
+                         </a>
+                       )}
+                    </div>
+                 </div>
+                 <p className="text-stone-600 leading-relaxed mb-6">
+                    {authorData.bio || `Expert contributor at entrepreneurs.bd, sharing insights to help the next generation of Bangladeshi founders grow.`}
+                 </p>
+                 <Link to={`/author/${authorData.slug}`}>
+                    <Button variant="outline" size="sm" className="border-emerald-900 text-emerald-900 hover:bg-emerald-50">
+                       View Full Profile & Contributions
+                    </Button>
+                 </Link>
+              </div>
             </div>
           </div>
         )}

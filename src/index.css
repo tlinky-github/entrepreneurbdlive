@@ -115,8 +115,14 @@ code {
   margin: 1.25rem 0;
 }
 
-.tiptap-content ul,
+.tiptap-content ul {
+  list-style-type: disc !important;
+  padding-left: 1.5rem;
+  margin: 1.25rem 0;
+}
+
 .tiptap-content ol {
+  list-style-type: decimal !important;
   padding-left: 1.5rem;
   margin: 1.25rem 0;
 }

@@ -50,6 +50,7 @@ import DirectoryList from './pages/directory/DirectoryList';
 import DirectoryDetail from './pages/directory/DirectoryDetail';
 import ResourceList from './pages/resources/ResourceList';
 import ResourceDetail from './pages/resources/ResourceDetail';
+import AuthorDetail from './pages/AuthorDetail';
 
 // Auth Pages
 import Login from './pages/auth/Login';
@@ -58,6 +59,7 @@ import Register from './pages/auth/Register';
 
 // Admin Pages
 import AdminLayout, { AdminDashboard } from './pages/admin/AdminLayout';
+import AdminAuthors from './pages/admin/AdminAuthors';
 import AdminPosts from './pages/admin/AdminPosts';
 import PostEditor from './pages/admin/PostEditor';
 import AdminEntrepreneurs from './pages/admin/AdminEntrepreneurs';
@@ -135,6 +137,7 @@ function AppRoutes() {
       <Route path="/directory/:slug" element={<PublicLayout><DirectoryDetail /></PublicLayout>} />
       <Route path="/resources" element={<PublicLayout><ResourceList /></PublicLayout>} />
       <Route path="/resources/:slug" element={<PublicLayout><ResourceDetail /></PublicLayout>} />
+      <Route path="/author/:slug" element={<PublicLayout><AuthorDetail /></PublicLayout>} />
 
       {/* Auth Routes */}
       <Route path="/login" element={<AuthLayout><Login /></AuthLayout>} />
@@ -155,6 +158,7 @@ function AppRoutes() {
         <Route path="content-editor" element={<ContentEditorPanel />} />
         <Route path="test-editor" element={<TestEditor />} />
         <Route path="posts" element={<AdminPosts />} />
+        <Route path="authors" element={<AdminAuthors />} />
         <Route path="posts/new" element={<ContentEditorPanel />} />
         <Route path="posts/:id/edit" element={<ContentEditorPanel />} />
         <Route path="entrepreneurs" element={<AdminEntrepreneurs />} />

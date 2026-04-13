@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { profileAPI, interactionAPI } from '../../lib/api';
+import { profileAPI, interactionAPI, authorAPI } from '../../lib/api';
 import { SEO } from '../../components/SEO';
 import { useAuth } from '../../lib/auth';
 import { Button } from '../../components/ui/button';
@@ -19,9 +19,11 @@ import {
   Mail,
   Users,
   Star,
-  Share2,
   UserPlus,
-  UserMinus
+  UserMinus,
+  CheckCircle,
+  Plus,
+  Minus
 } from 'lucide-react';
 
 const EntrepreneurDetail = () => {
@@ -30,6 +32,8 @@ const EntrepreneurDetail = () => {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [authorData, setAuthorData] = useState(null);
+  const [openFaqIndex, setOpenFaqIndex] = useState(null);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -44,6 +48,16 @@ const EntrepreneurDetail = () => {
         }
 
         setProfile(res.data);
+
+        // Fetch Author Data if exists
+        if (res.data?.authorId) {
+          try {
+            const authorRes = await authorAPI.get(res.data.authorId);
+            setAuthorData(authorRes.data);
+          } catch (err) {
+            console.error('Error fetching entrepreneur profile author:', err);
+          }
+        }
       } catch (error) {
         console.error('Error loading profile:', error);
       } finally {
@@ -111,6 +125,8 @@ const EntrepreneurDetail = () => {
         description={profile.metaDescription || profile.short_bio}
         image={profile.photo}
         type="profile"
+        author={authorData?.name || "Entrepreneur BD"}
+        faqs={profile.faqs}
         keywords={[profile.industry, profile.city, profile.role_title, profile.company_name, 'Entrepreneur', 'Bangladesh'].filter(Boolean)}
         breadcrumbs={[
           { name: 'Home', path: '/' },
@@ -223,6 +239,69 @@ const EntrepreneurDetail = () => {
                   className="tiptap-content text-stone-700 leading-relaxed"
                   dangerouslySetInnerHTML={{ __html: profile.content }}
                 />
+              </div>
+            )}
+
+            {/* Dynamic FAQs Section */}
+            {profile.faqs?.length > 0 && (
+              <div className="mt-12 pt-8 border-t border-stone-200">
+                <h2 className="text-xl font-bold text-stone-900 mb-6 flex items-center gap-2">
+                  <CheckCircle className="w-6 h-6 text-emerald-700" />
+                  Common Questions
+                </h2>
+                <div className="space-y-4">
+                  {profile.faqs.map((faq, index) => (
+                    <div key={index} className="bg-stone-50 border border-stone-200 rounded-xl overflow-hidden transition-all duration-200">
+                      <button
+                        onClick={() => setOpenFaqIndex(openFaqIndex === index ? null : index)}
+                        className="w-full flex items-center justify-between p-4 text-left hover:bg-stone-100 transition-colors"
+                      >
+                        <span className="font-bold text-stone-900 pr-4">{faq.question || faq.q}</span>
+                        {openFaqIndex === index ? (
+                          <Minus className="w-5 h-5 text-emerald-700 flex-shrink-0" />
+                        ) : (
+                          <Plus className="w-5 h-5 text-emerald-700 flex-shrink-0" />
+                        )}
+                      </button>
+                      {openFaqIndex === index && (
+                        <div className="px-4 pb-5 pt-0 text-stone-600 border-t border-stone-100 animate-in fade-in slide-in-from-top-1">
+                          <p className="mt-4 leading-relaxed whitespace-pre-wrap">{faq.answer || faq.a}</p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Profile Author Bio */}
+            {authorData && (
+              <div className="mt-12 pt-8 border-t border-stone-200">
+                <div className="bg-emerald-50/30 rounded-2xl p-6 flex flex-col md:flex-row gap-6 items-start">
+                  <Link to={`/author/${authorData.slug}`} className="flex-shrink-0">
+                    <div className="w-20 h-20 rounded-full overflow-hidden bg-white border-2 border-emerald-900 shadow-md">
+                      {authorData.photo ? (
+                        <img src={authorData.photo} alt={authorData.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-2xl font-bold text-emerald-900">
+                          {authorData.name.charAt(0)}
+                        </div>
+                      )}
+                    </div>
+                  </Link>
+                  <div className="flex-1">
+                    <div className="mb-2">
+                      <h4 className="font-bold text-stone-900">Profile written by: {authorData.name}</h4>
+                      <p className="text-xs text-emerald-700 font-medium">Verified Contributor</p>
+                    </div>
+                    <p className="text-sm text-stone-600 mb-4 line-clamp-2">
+                      {authorData.bio || "Passionate about documenting the journeys of Bangladesh's most innovative founders."}
+                    </p>
+                    <Link to={`/author/${authorData.slug}`} className="text-xs font-bold text-emerald-900 hover:underline">
+                      VIEW MORE BY THIS AUTHOR →
+                    </Link>
+                  </div>
+                </div>
               </div>
             )}
 

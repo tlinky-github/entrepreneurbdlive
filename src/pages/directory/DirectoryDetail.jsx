@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { listingAPI } from '../../lib/api';
+import { listingAPI, authorAPI } from '../../lib/api';
 import { SEO } from '../../components/SEO';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
@@ -18,7 +18,13 @@ import {
   Share2,
   ExternalLink,
   Eye,
-  Calendar
+  Calendar,
+  CheckCircle,
+  Plus,
+  Minus,
+  Linkedin,
+  Twitter,
+  Facebook
 } from 'lucide-react';
 
 const DirectoryDetail = () => {

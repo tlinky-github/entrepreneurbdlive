@@ -20,12 +20,12 @@ import { Badge } from '../../components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { toast } from 'sonner';
 import { Save, ChevronLeft, Eye, Settings, Star } from 'lucide-react';
-import { contentAPI, taxonomyAPI, categoryAPI, blogCategoryAPI } from '../../lib/api';
+import { contentAPI, taxonomyAPI, categoryAPI, blogCategoryAPI, authorAPI } from '../../lib/api';
 import ImageUploader from '../../components/common/ImageUploader';
 import LinkDialog from '../../components/admin/LinkDialog';
 import ImageEditorDialog from '../../components/admin/ImageEditorDialog';
 import { Label } from '../../components/ui/label';
-import { Pencil, Globe, Smartphone, Monitor } from 'lucide-react';
+import { Pencil, Globe, Smartphone, Monitor, Plus, X } from 'lucide-react';
 import './ContentEditorPanel.css';
 
 const ContentEditorPanel = () => {
@@ -65,6 +65,11 @@ const ContentEditorPanel = () => {
   const [socialFacebook, setSocialFacebook] = useState('');
   const [listingType, setListingType] = useState('');
   const [startupStage, setStartupStage] = useState('');
+  
+  // Author & FAQ State
+  const [authorId, setAuthorId] = useState('');
+  const [authorsList, setAuthorsList] = useState([]);
+  const [faqs, setFaqs] = useState([]); // Array of { q: '', a: '' }
 
   const [categories, setCategories] = useState([]);
   const [listingTypes, setListingTypes] = useState([]);
@@ -190,6 +195,8 @@ const ContentEditorPanel = () => {
             }
             setListingType(data.listing_type || '');
             setStartupStage(data.startup_stage || '');
+            setAuthorId(data.authorId || '');
+            setFaqs(data.faqs || []);
             setIsFeatured(data.is_featured || false);
             setContentLoaded(true);
           } catch (error) {
@@ -245,6 +252,19 @@ const ContentEditorPanel = () => {
       loadStages();
     }
   }, [type]);
+
+  // Load Authors
+  useEffect(() => {
+    const loadAuthorsList = async () => {
+      try {
+        const res = await authorAPI.list();
+        setAuthorsList(res.data || []);
+      } catch (error) {
+        console.error('Error loading authors list:', error);
+      }
+    };
+    loadAuthorsList();
+  }, []);
 
   // Auto-generate slug
   useEffect(() => {
@@ -310,6 +330,8 @@ const ContentEditorPanel = () => {
         is_featured: isFeatured,
         listing_type: listingType,
         startup_stage: startupStage,
+        authorId,
+        faqs,
         // Sync excerpt to fields used by the frontend for intro text
         details: type === 'entrepreneurs' ? excerpt : null,
         short_description: type === 'directory' ? excerpt : null
@@ -608,6 +630,21 @@ const ContentEditorPanel = () => {
                 </div>
               </div>
 
+              <div>
+                <label>Assigned Author</label>
+                <select
+                  value={authorId}
+                  onChange={(e) => setAuthorId(e.target.value)}
+                  className="input-select"
+                >
+                  <option value="">Select Author</option>
+                  {authorsList.map(a => (
+                    <option key={a.id} value={a.id}>{a.name}</option>
+                  ))}
+                </select>
+                <p className="text-[10px] text-stone-400 mt-1">Assign an official author for professional attribution.</p>
+              </div>
+
               {type === 'entrepreneurs' && (
                 <div className="space-y-4 pt-4 border-t border-stone-100">
                   <h4 className="font-semibold text-sm">Social Profiles</h4>
@@ -856,6 +893,78 @@ const ContentEditorPanel = () => {
                   </>
                 )}
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Dynamic FAQ Manager */}
+          <Card className="mt-6 border-stone-200 shadow-sm overflow-hidden">
+            <CardHeader className="bg-stone-50/50 border-b border-stone-100 py-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-lg">SEO FAQ Builder</CardTitle>
+                  <p className="text-xs text-stone-500 mt-1">Add Question & Answer pairs to boost Google rich snippets.</p>
+                </div>
+                <Button 
+                  onClick={() => setFaqs([...faqs, { q: '', a: '' }])}
+                  variant="outline"
+                  size="sm"
+                  className="border-emerald-600 text-emerald-900 hover:bg-emerald-50 bg-white"
+                >
+                  <Plus className="w-3.5 h-3.5 mr-2" />
+                  Add New FAQ
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="p-6">
+              {faqs.length === 0 ? (
+                <div className="text-center py-12 text-stone-400 border-2 border-dashed border-stone-100 rounded-xl bg-stone-50/30">
+                  <Plus className="w-8 h-8 mx-auto mb-3 opacity-20" />
+                  <p className="text-sm font-medium">No FAQs added yet.</p>
+                  <p className="text-xs mt-1">Helpful for SEO search results!</p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {faqs.map((faq, index) => (
+                    <div key={index} className="relative p-5 bg-white rounded-xl border border-stone-200 group transition-all hover:border-emerald-200 hover:shadow-md">
+                      <button 
+                        onClick={() => setFaqs(faqs.filter((_, i) => i !== index))}
+                        className="absolute -top-2 -right-2 w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md hover:bg-red-600 z-10"
+                        title="Remove FAQ"
+                      >
+                        <X size={14} />
+                      </button>
+                      <div className="space-y-4">
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 mb-1 block">Question {index + 1}</label>
+                          <Input 
+                            value={faq.q}
+                            onChange={(e) => {
+                              const newFaqs = [...faqs];
+                              newFaqs[index].q = e.target.value;
+                              setFaqs(newFaqs);
+                            }}
+                            placeholder="e.g. How does this service help entrepreneurs?"
+                            className="bg-stone-50/50 border-stone-200 focus:bg-white"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 mb-1 block">Answer {index + 1}</label>
+                          <textarea 
+                            value={faq.a}
+                            onChange={(e) => {
+                              const newFaqs = [...faqs];
+                              newFaqs[index].a = e.target.value;
+                              setFaqs(newFaqs);
+                            }}
+                            className="w-full min-h-[100px] rounded-md border border-stone-200 bg-stone-50/50 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-900 transition-all focus:bg-white"
+                            placeholder="Provide a detailed, helpful answer..."
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

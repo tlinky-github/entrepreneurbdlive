@@ -1,19 +1,36 @@
 // src/pages/resources/ResourceDetail.jsx
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { resourceAPI } from '../../lib/api';
+import { resourceAPI, authorAPI } from '../../lib/api';
 import { SEO } from '../../components/SEO';
 import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent } from '../../components/ui/card';
 import { PageLoader } from '../../components/ui/page-loader';
-import { ChevronLeft, Calendar, User, Eye, Download, BookOpen, Share2 } from 'lucide-react';
+import { 
+  ChevronLeft, 
+  Calendar, 
+  User, 
+  Eye, 
+  Download, 
+  BookOpen, 
+  Share2, 
+  CheckCircle, 
+  Plus, 
+  Minus,
+  Linkedin,
+  Twitter,
+  Facebook,
+  Globe
+} from 'lucide-react';
 import { toast } from 'sonner';
 
 const ResourceDetail = () => {
   const { slug } = useParams();
   const [resource, setResource] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [authorData, setAuthorData] = useState(null);
+  const [openFaqIndex, setOpenFaqIndex] = useState(null);
 
   useEffect(() => {
     const loadResource = async () => {
@@ -21,6 +38,16 @@ const ResourceDetail = () => {
       try {
         const res = await resourceAPI.get(slug);
         setResource(res.data);
+
+        // Fetch Author Data if exists
+        if (res.data?.authorId) {
+          try {
+            const authorRes = await authorAPI.get(res.data.authorId);
+            setAuthorData(authorRes.data);
+          } catch (err) {
+            console.error('Error fetching resource author:', err);
+          }
+        }
       } catch (error) {
         console.error('Error loading resource:', error);
       } finally {
@@ -61,7 +88,16 @@ const ResourceDetail = () => {
       <SEO 
         title={resource.seo_title || resource.title}
         description={resource.seo_description || resource.excerpt}
-        keywords={resource.seo_keywords}
+        image={resource.featured_image || '/images/resource-placeholder.jpg'}
+        type="article"
+        author={authorData?.name || "Entrepreneur BD"}
+        publishedTime={resource.created_at?.toISOString ? resource.created_at.toISOString() : resource.created_at}
+        faqs={resource.faqs}
+        breadcrumbs={[
+          { name: 'Home', path: '/' },
+          { name: 'Knowledge Hub', path: '/knowledge' },
+          { name: resource.title, path: `/knowledge/${resource.slug}` }
+        ]}
       />
 
       {/* Header */}
@@ -110,6 +146,80 @@ const ResourceDetail = () => {
                   className="tiptap-content"
                   dangerouslySetInnerHTML={{ __html: resource.content }}
                 />
+
+                {/* Resource Footer / FAQs */}
+                {resource.faqs?.length > 0 && (
+                  <div className="mt-12 pt-8 border-t border-stone-100">
+                    <h3 className="text-xl font-bold text-stone-900 mb-6 flex items-center gap-2">
+                      <CheckCircle className="w-5 h-5 text-emerald-700" />
+                      Resource FAQs
+                    </h3>
+                    <div className="space-y-3">
+                      {resource.faqs.map((faq, index) => (
+                        <div key={index} className="border border-stone-200 rounded-lg overflow-hidden">
+                          <button
+                            onClick={() => setOpenFaqIndex(openFaqIndex === index ? null : index)}
+                            className="w-full flex items-center justify-between p-4 text-left hover:bg-stone-50 transition-colors"
+                          >
+                            <span className="font-bold text-stone-900 text-sm">{faq.question || faq.q}</span>
+                            {openFaqIndex === index ? (
+                              <Minus className="w-4 h-4 text-emerald-700" />
+                            ) : (
+                              <Plus className="w-4 h-4 text-emerald-700" />
+                            )}
+                          </button>
+                          {openFaqIndex === index && (
+                            <div className="px-4 pb-4 pt-1 text-stone-600 text-sm border-t border-stone-50 bg-stone-50/30">
+                              <p className="mt-2 leading-relaxed">{faq.answer || faq.a}</p>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Meet The Author Section */}
+                {authorData && (
+                  <div className="mt-12 pt-8 border-t border-stone-100">
+                    <div className="bg-stone-50 rounded-2xl p-6 flex flex-col md:flex-row gap-6 items-start">
+                      <Link to={`/author/${authorData.slug}`} className="flex-shrink-0">
+                        <div className="w-20 h-20 rounded-full overflow-hidden bg-white border-2 border-emerald-900 shadow-sm">
+                          {authorData.photo ? (
+                            <img src={authorData.photo} alt={authorData.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-2xl font-bold text-emerald-900">
+                              {authorData.name.charAt(0)}
+                            </div>
+                          )}
+                        </div>
+                      </Link>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="font-bold text-stone-900">Contributor: {authorData.name}</h4>
+                          <div className="flex items-center gap-3">
+                            {authorData.linkedin && (
+                              <a href={authorData.linkedin} target="_blank" rel="noopener noreferrer" className="text-stone-400 hover:text-blue-700 transition-colors">
+                                <Linkedin className="w-4 h-4" />
+                              </a>
+                            )}
+                            {authorData.twitter && (
+                              <a href={authorData.twitter} target="_blank" rel="noopener noreferrer" className="text-stone-400 hover:text-sky-500 transition-colors">
+                                <Twitter className="w-4 h-4" />
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                        <p className="text-sm text-stone-600 mb-4 line-clamp-3">
+                          {authorData.bio || "Expert contributor to our knowledge base, helping community members thrive."}
+                        </p>
+                        <Link to={`/author/${authorData.slug}`} className="text-xs font-bold text-emerald-900 hover:underline">
+                          VIEW FULL PROFILE & GUIDES →
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>

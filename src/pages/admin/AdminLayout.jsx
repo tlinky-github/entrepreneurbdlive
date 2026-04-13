@@ -24,7 +24,8 @@ import {
   LogOut,
   Home,
   Tag,
-  Plus
+  Plus,
+  UserCircle
 } from 'lucide-react';
 
 const AdminLayout = () => {
@@ -59,6 +60,7 @@ const AdminLayout = () => {
     { href: '/admin', label: 'Dashboard', icon: LayoutDashboard, exact: true },
     { href: '/admin/content-manager', label: 'Content Manager', icon: BookOpen },
     { href: '/admin/posts', label: 'Blog Posts', icon: FileText, addType: 'blog' },
+    { href: '/admin/authors', label: 'Authors', icon: UserCircle },
     { href: '/admin/entrepreneurs', label: 'Entrepreneurs', icon: Users, addType: 'entrepreneurs' },
     { href: '/admin/directory', label: 'Directory', icon: Building2, addType: 'directory' },
     { href: '/admin/taxonomies', label: 'Taxonomies', icon: Tag },
