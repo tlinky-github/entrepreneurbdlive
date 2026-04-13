@@ -201,7 +201,7 @@ const DirectoryDetail = () => {
                 {listing.content && (
                   <div className="mt-8 pt-8 border-t border-stone-200">
                     <div 
-                      className="prose prose-stone max-w-none text-stone-700"
+                      className="tiptap-content text-stone-700"
                       dangerouslySetInnerHTML={{ __html: listing.content }}
                     />
                   </div>

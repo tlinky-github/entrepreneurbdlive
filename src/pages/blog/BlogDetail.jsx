@@ -247,7 +247,7 @@ const BlogDetail = () => {
         ) : (
           <div
             className="tiptap-content"
-            dangerouslySetInnerHTML={{ __html: post.content_html }}
+            dangerouslySetInnerHTML={{ __html: post.content || post.content_html }}
           />
         )}
 

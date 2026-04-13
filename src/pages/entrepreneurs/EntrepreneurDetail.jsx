@@ -220,7 +220,7 @@ const EntrepreneurDetail = () => {
             {profile.content && (
               <div className="mt-8 pt-8 border-t border-stone-200">
                 <div 
-                  className="prose prose-stone max-w-none text-stone-700 leading-relaxed"
+                  className="tiptap-content text-stone-700 leading-relaxed"
                   dangerouslySetInnerHTML={{ __html: profile.content }}
                 />
               </div>
