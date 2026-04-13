@@ -636,6 +636,26 @@ export const mediaAPI = {
       console.error('Error deleting media entry:', error);
       throw error;
     }
+  },
+  listR2: async () => {
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) throw new Error('Not authenticated');
+      
+      const response = await fetch('/api/list-r2', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) throw new Error('Failed to list R2 contents');
+      return await response.json();
+    } catch (error) {
+      console.error('R2 List API Error:', error);
+      throw error;
+    }
   }
 };
 
