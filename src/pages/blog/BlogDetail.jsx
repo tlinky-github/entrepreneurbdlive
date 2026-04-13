@@ -161,9 +161,9 @@ const BlogDetail = () => {
     }
   };
 
-  const readingTime = post?.content_html
-    ? Math.ceil(post.content_html.replace(/<[^>]+>/g, '').split(/\s+/).length / 200)
-    : 0;
+  const readingTime = (post?.content || post?.content_html)
+    ? Math.ceil((post.content || post.content_html).replace(/<[^>]+>/g, '').split(/\s+/).length / 200)
+    : 1; // Default to 1 min if content exists but is short
 
   if (loading) {
     return (

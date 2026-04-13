@@ -11,7 +11,8 @@ import {
   FileText,
   Users,
   Building2,
-  BookOpen
+  BookOpen,
+  Clock
 } from 'lucide-react';
 import { authorAPI, postAPI, profileAPI, listingAPI, resourceAPI } from '../lib/api';
 import { Card, CardContent } from '../components/ui/card';
@@ -228,6 +229,15 @@ const AuthorDetail = () => {
                                     ? new Date(item.created_at.seconds * 1000).toLocaleDateString()
                                     : 'Recently'}
                                 </span>
+                                {(item.content || item.content_html) && (
+                                  <>
+                                    <div className="w-1 h-1 rounded-full bg-stone-300 mx-1" />
+                                    <span className="text-[10px] text-stone-400 flex items-center gap-1">
+                                      <Clock className="w-3 h-3" />
+                                      {Math.ceil(((item.content || item.content_html).replace(/<[^>]+>/g, '').split(/\s+/).length) / 200)} min read
+                                    </span>
+                                  </>
+                                )}
                               </div>
                               <h3 className="text-lg font-bold text-stone-900 group-hover:text-emerald-900 transition-colors line-clamp-1">{item.title}</h3>
                               <p className="text-sm text-stone-500 line-clamp-2 mt-2">

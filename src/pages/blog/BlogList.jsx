@@ -6,7 +6,7 @@ import { Badge } from '../../components/ui/badge';
 import { Input } from '../../components/ui/input';
 import { Button } from '../../components/ui/button';
 import { PageLoader } from '../../components/ui/page-loader';
-import { Search, Calendar, User, Eye, Heart, ChevronRight, Filter } from 'lucide-react';
+import { Search, Calendar, User, Eye, Heart, ChevronRight, Filter, Clock } from 'lucide-react';
 import { SEO } from '../../components/SEO';
 import {
   Select,
@@ -162,6 +162,12 @@ const BlogList = () => {
                           <User className="w-4 h-4" />
                           {featuredPost.author_name}
                         </span>
+                        {(featuredPost.content || featuredPost.content_html) && (
+                          <span className="flex items-center gap-2 ml-4">
+                            <Clock className="w-4 h-4" />
+                            {Math.ceil(((featuredPost.content || featuredPost.content_html).replace(/<[^>]+>/g, '').split(/\s+/).length) / 200)} min read
+                          </span>
+                        )}
                       </div>
                     </CardContent>
                   </div>
@@ -204,6 +210,12 @@ const BlogList = () => {
                           <User className="w-3 h-3" />
                           {post.author_name}
                         </span>
+                        {(post.content || post.content_html) && (
+                          <span className="flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {Math.ceil(((post.content || post.content_html).replace(/<[^>]+>/g, '').split(/\s+/).length) / 200)} min read
+                          </span>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
