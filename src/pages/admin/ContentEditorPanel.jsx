@@ -22,7 +22,10 @@ import { toast } from 'sonner';
 import { Save, ChevronLeft, Eye, Settings, Star } from 'lucide-react';
 import { contentAPI, taxonomyAPI, categoryAPI } from '../../lib/api';
 import ImageUploader from '../../components/common/ImageUploader';
+import LinkDialog from '../../components/admin/LinkDialog';
+import ImageEditorDialog from '../../components/admin/ImageEditorDialog';
 import { Label } from '../../components/ui/label';
+import { Pencil, Globe, Smartphone, Monitor } from 'lucide-react';
 import './ContentEditorPanel.css';
 
 const ContentEditorPanel = () => {
@@ -67,15 +70,38 @@ const ContentEditorPanel = () => {
     { id: 3, name: 'Finance' }
   ]);
 
+  const [isEditingSlug, setIsEditingSlug] = useState(false);
+  const [linkDialogOpen, setLinkDialogOpen] = useState(false);
+  const [activeLinkData, setActiveLinkData] = useState(null);
+  const [imageDialogOpen, setImageDialogOpen] = useState(false);
+
   // 1. Shared Extensions to prevent duplicates
   const sharedExtensions = [
     StarterKit.configure({
       history: true,
     }),
-    Link.configure({ openOnClick: false }),
-    Image,
+    Image.extend({
+      addAttributes() {
+        return {
+          ...this.parent?.(),
+          alt: { default: null },
+          caption: { default: null },
+          title: { default: null },
+        };
+      },
+      renderHTML({ HTMLAttributes }) {
+        if (HTMLAttributes.caption) {
+          return [
+            'figure', 
+            { class: 'editor-figure' }, 
+            ['img', HTMLAttributes], 
+            ['figcaption', { class: 'editor-figcaption' }, ['span', {}, HTMLAttributes.caption]]
+          ];
+        }
+        return ['img', HTMLAttributes];
+      },
+    }),
     TextAlign.configure({ types: ['heading', 'paragraph'] }),
-    Underline,
     TextStyle,
     Color,
     Highlight,
@@ -321,7 +347,7 @@ const ContentEditorPanel = () => {
         <button onClick={() => navigate(-1)} className="back-btn">
           <ChevronLeft size={20} /> Back
         </button>
-        <h1 className="editor-title">Content Editor</h1>
+        <h1 className="editor-title" style={{ color: "#1c1917", opacity: 1 }}>Content Editor</h1>
         <div className="header-actions">
           <button onClick={() => window.open(getPreviewUrl(), '_blank')} style={{ marginRight: '4px' }}>
             <Eye size={18} /> Preview
@@ -505,9 +531,16 @@ const ContentEditorPanel = () => {
                    'Featured Image'}
                 </Label>
                 <div className="mt-1">
-                  <ImageUploader
-                    value={featuredImage}
-                    onChange={setFeaturedImage}
+                  <ImageUploader 
+                    value={featuredImage} 
+                    onChange={(url, meta) => {
+                      setFeaturedImage(url);
+                      if (meta) {
+                        console.log('Image Meta:', meta);
+                        // You could store these in the document state if needed
+                        // For now, they are available here.
+                      }
+                    }} 
                     entityType={type}
                     placeholder={`Upload ${type === 'entrepreneurs' ? 'photo' : 'image'}`}
                   />
@@ -702,25 +735,18 @@ const ContentEditorPanel = () => {
 
                 <div className="toolbar-group">
                   <button
-                    onClick={() => {
-                      const url = prompt('Enter image URL:');
-                      if (url) {
-                        console.log('Adding image:', url);
-                        editor?.chain().focus().setImage({ src: url }).run();
-                      }
-                    }}
+                    onClick={() => setImageDialogOpen(true)}
                     disabled={!editor}
                   >
                     Image
                   </button>
                   <button
                     onClick={() => {
-                      const url = prompt('Enter link URL:');
-                      if (url) {
-                        console.log('Adding link:', url);
-                        editor?.chain().focus().setLink({ href: url }).run();
-                      }
+                      const { href, target, rel } = editor.getAttributes('link');
+                      setActiveLinkData({ href, target, rel });
+                      setLinkDialogOpen(true);
                     }}
+                    className={editor?.isActive('link') ? 'is-active' : ''}
                     disabled={!editor}
                   >
                     Link
@@ -817,10 +843,32 @@ const ContentEditorPanel = () => {
               <div className="seo-preview">
                 <h4>Search Preview</h4>
                 <div className="preview-item">
-                  <div className="preview-title">{seoTitle || title || 'Your Title'}</div>
-                  <div className="preview-url">yoursite.com/{slug || 'url'}</div>
-                  <div className="preview-description">
-                    {seoDescription || 'Your meta description will appear here...'}
+                  <div className="preview-title text-blue-700 text-lg hover:underline cursor-pointer">
+                    {seoTitle || title || 'Your Title'}
+                  </div>
+                  <div className="preview-url flex items-center space-x-1 text-green-700 text-sm mt-1">
+                    <span>yoursite.com/</span>
+                    {isEditingSlug ? (
+                      <input
+                        type="text"
+                        value={slug}
+                        onChange={(e) => setSlug(e.target.value)}
+                        onBlur={() => setIsEditingSlug(false)}
+                        onKeyDown={(e) => e.key === 'Enter' && setIsEditingSlug(false)}
+                        className="border-b border-green-600 outline-none bg-transparent"
+                        autoFocus
+                      />
+                    ) : (
+                      <span 
+                        className="cursor-pointer hover:underline flex items-center"
+                        onClick={() => setIsEditingSlug(true)}
+                      >
+                        {slug || 'url'} <Pencil size={12} className="ml-1 opacity-40" />
+                      </span>
+                    )}
+                  </div>
+                  <div className="preview-description text-slate-600 text-sm mt-1">
+                    {seoDescription || 'Your meta description will appear here on Google search results...'}
                   </div>
                 </div>
               </div>
@@ -851,6 +899,27 @@ const ContentEditorPanel = () => {
           </Card>
         </div>
       </div>
+
+      <LinkDialog
+        open={linkDialogOpen}
+        onOpenChange={setLinkDialogOpen}
+        initialData={activeLinkData}
+        onApply={(data) => {
+          if (data.href) {
+            editor.chain().focus().setLink(data).run();
+          } else {
+            editor.chain().focus().unsetLink().run();
+          }
+        }}
+      />
+
+      <ImageEditorDialog
+        open={imageDialogOpen}
+        onOpenChange={setImageDialogOpen}
+        onInsert={(data) => {
+          editor.chain().focus().setImage(data).run();
+        }}
+      />
     </div>
   );
 };

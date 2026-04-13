@@ -19,6 +19,8 @@ if (fs.existsSync(envPath)) {
 const PORT = 5000;
 
 const server = http.createServer(async (req, res) => {
+  console.log(`[Bridge] ${req.method} ${req.url}`);
+
   // Add CORS headers for local development
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -30,12 +32,18 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  if (req.method === 'POST' && req.url === '/api/upload-url') {
-    let body = '';
-    req.on('data', chunk => { body += chunk; });
+  if (req.method === 'POST') {
+    let body = [];
+    req.on('data', chunk => { body.push(chunk); });
     req.on('end', async () => {
+      const payload = Buffer.concat(body).toString();
+      console.log(`[Bridge] Received payload: ${payload.substring(0, 100)}...`);
       try {
-        const { fileName, fileType } = JSON.parse(body);
+        if (!payload) {
+          throw new Error('Empty request body');
+        }
+        const { fileName, fileType } = JSON.parse(payload);
+        console.log(`[Bridge] Request for: ${fileName} (${fileType})`);
 
         if (!fileName || !fileType) {
           res.writeHead(400, { 'Content-Type': 'application/json' });

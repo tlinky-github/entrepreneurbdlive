@@ -40,11 +40,15 @@
 }
 
 .editor-title {
-  font-size: 20px;
-  font-weight: 600;
+  font-size: 1.25rem;
+  font-weight: 800;
   margin: 0;
   flex: 1;
-  color: #1f2937;
+  color: #064E3B; /* Primary Emerald Green */
+  letter-spacing: -0.025em;
+  text-transform: uppercase;
+  font-family: 'Manrope', sans-serif;
+  opacity: 1 !important; /* Force visibility */
 }
 
 .header-actions {
