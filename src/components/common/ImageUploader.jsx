@@ -56,6 +56,29 @@ const ImageUploader = ({
     }
   };
 
+  const deepExtractImages = (obj, foundUrls = new Set()) => {
+    if (!obj || typeof obj !== 'object') {
+      if (typeof obj === 'string') {
+        // Look for direct URLs
+        if (obj.match(/^https?:\/\/[^\s]+?\.(jpg|jpeg|png|gif|webp|svg)(\?[^\s]*)?$/i) || 
+            (obj.includes('cloudflare') && obj.includes('http'))) {
+          foundUrls.add(obj);
+        }
+        // Scrape embedded tags with a more flexible regex
+        const imgMatches = obj.matchAll(/src\s*=\s*["']([^"']+)["']/gi);
+        for (const match of imgMatches) {
+          if (match[1] && match[1].startsWith('http')) {
+            foundUrls.add(match[1]);
+          }
+        }
+      }
+      return foundUrls;
+    }
+
+    Object.values(obj).forEach(val => deepExtractImages(val, foundUrls));
+    return foundUrls;
+  };
+
   const syncGallery = async () => {
     setMediaLoading(true);
     toast.info('Deep scanning platform for images...');
@@ -77,57 +100,23 @@ const ImageUploader = ({
       
       const imagesToTrack = [];
       
-      // Process Blog Content & Featured
-      blogRes.data?.forEach(p => {
-        const urls = new Set();
-        if (p.featured_image) urls.add(p.featured_image);
-        
-        const content = p.content || p.content_html || '';
-        const imgMatches = [...content.matchAll(/<img[^>]+src="([^">]+)"/g)];
-        imgMatches.forEach(match => urls.add(match[1]));
-
+      const processItem = (item, defaultTitle) => {
+        if (!item) return;
+        const urls = deepExtractImages(item);
+        if (urls.size > 0) {
+          console.log(`Extracted ${urls.size} images from object:`, Object.keys(item));
+        }
         urls.forEach(url => {
           if (url && !existingUrls.has(url)) {
-            imagesToTrack.push({ url, name: p.title });
+            imagesToTrack.push({ url, name: item.title || item.name || item.business_name || defaultTitle });
             existingUrls.add(url);
           }
         });
-      });
-      
-      // Process Profile Content & Featured
-      profileRes.data?.forEach(p => {
-        const urls = new Set();
-        if (p.featured_image) urls.add(p.featured_image);
-        
-        const content = p.details || p.bio || '';
-        const imgMatches = [...content.matchAll(/<img[^>]+src="([^">]+)"/g)];
-        imgMatches.forEach(match => urls.add(match[1]));
+      };
 
-        urls.forEach(url => {
-          if (url && !existingUrls.has(url)) {
-            imagesToTrack.push({ url, name: p.name });
-            existingUrls.add(url);
-          }
-        });
-      });
-
-      // Process Listing Content & Featured
-      listingRes.data?.forEach(l => {
-        const urls = new Set();
-        if (l.featured_image) urls.add(l.featured_image);
-        if (l.logo) urls.add(l.logo);
-
-        const content = l.description || l.details || '';
-        const imgMatches = [...content.matchAll(/<img[^>]+src="([^">]+)"/g)];
-        imgMatches.forEach(match => urls.add(match[1]));
-
-        urls.forEach(url => {
-          if (url && !existingUrls.has(url)) {
-            imagesToTrack.push({ url, name: l.business_name });
-            existingUrls.add(url);
-          }
-        });
-      });
+      blogRes.data?.forEach(p => processItem(p, 'Blog Image'));
+      profileRes.data?.forEach(p => processItem(p, 'Profile Image'));
+      listingRes.data?.forEach(l => processItem(l, 'Listing Image'));
 
       console.log(`Unique NEW images found to sync: ${imagesToTrack.length}`);
 
@@ -136,7 +125,7 @@ const ImageUploader = ({
         try {
           await mediaAPI.create({
             url: img.url,
-            fileName: img.name ? `${img.name.substring(0, 20)}.jpg` : 'Discovered Asset',
+            fileName: img.name ? `${String(img.name).substring(0, 20)}.jpg` : 'Discovered Asset',
             entityType: 'imported',
             contentType: 'image/jpeg',
             uploaderId: auth.currentUser?.uid,
