@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { postAPI, categoryAPI } from '../../lib/api';
+import { postAPI, blogCategoryAPI } from '../../lib/api';
 import { Card, CardContent } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
 import { Input } from '../../components/ui/input';
@@ -31,7 +31,7 @@ const BlogList = () => {
       try {
         const [postsRes, catsRes] = await Promise.all([
           postAPI.list({ search, category_id: categoryId || undefined, limit: 20 }),
-          categoryAPI.list(),
+          blogCategoryAPI.list(),
         ]);
         setPosts(postsRes.data || []);
         setCategories(catsRes.data || []);

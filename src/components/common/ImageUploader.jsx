@@ -3,6 +3,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { toast } from 'sonner';
 import api from '../../lib/api';
+import { auth } from '../../lib/firebase';
 import { Upload, X, Image as ImageIcon, Loader2, Link as LinkIcon } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 
@@ -39,11 +40,18 @@ const ImageUploader = ({
 
     setUploading(true);
     try {
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) {
+        toast.error('You must be logged in to upload images');
+        setUploading(false);
+        return;
+      }
+
       const response = await fetch('/api/upload-url', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'x-api-secret': process.env.REACT_APP_R2_API_SECRET || ''
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           fileName: file.name,

@@ -1,5 +1,15 @@
 const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
+const admin = require('firebase-admin');
+
+// 0. Initialize Firebase Admin once
+if (!admin.apps.length) {
+  admin.initializeApp({
+    projectId: process.env.FIREBASE_PROJECT_ID,
+    // Note: Vercel environment should have GOOGLE_APPLICATION_CREDENTIALS 
+    // or FIREBASE_SERVICE_ACCOUNT env var configured for this to work in prod.
+  });
+}
 
 // Cloudflare R2 Configuration from Environment Variables
 const r2Client = new S3Client({
@@ -17,11 +27,21 @@ module.exports = async (req, res) => {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // 1b. Enhanced Security: Internal Secret Check
-  const clientSecret = req.headers['x-api-secret'];
-  if (!process.env.R2_API_SECRET || clientSecret !== process.env.R2_API_SECRET) {
-    console.warn('Unauthorized API access attempt to upload-url');
-    return res.status(401).json({ error: 'Unauthorized' });
+  // 1b. Enhanced Security: Firebase Auth Token Check
+  const authHeader = req.headers['authorization'];
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    console.warn('Unauthorized API access attempt: Missing or malformed token');
+    return res.status(401).json({ error: 'Unauthorized: Missing token' });
+  }
+
+  const idToken = authHeader.split('Bearer ')[1];
+  
+  try {
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    req.user = decodedToken; // Token is valid, store user for potential use
+  } catch (error) {
+    console.error('Firebase Auth Error:', error);
+    return res.status(401).json({ error: 'Unauthorized: Invalid token' });
   }
 
   // 2. Fetch filename and type from request

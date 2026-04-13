@@ -16,6 +16,10 @@ service cloud.firestore {
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'super_admin';
     }
 
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
     // Public Collections: Anyone can read, only Admin can write
     match /posts/{post} {
       allow read: if true;
@@ -52,10 +56,6 @@ service cloud.firestore {
     }
     match /bookmarks/{bookmarkId} {
       allow read: if isOwner(resource.data.userId);
-      allow write: if isOwner(request.resource.data.userId) || isOwner(resource.data.userId);
-    }
-    match /followers/{followId} {
-      allow read: if true;
       allow write: if isOwner(request.resource.data.userId) || isOwner(resource.data.userId);
     }
     match /site_settings/{id} { allow read: if true; allow write: if isAdmin(); }

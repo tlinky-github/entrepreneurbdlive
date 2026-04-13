@@ -29,7 +29,6 @@ const EntrepreneurDetail = () => {
   const { user, isAuthenticated } = useAuth();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [following, setFollowing] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
 
   useEffect(() => {
@@ -45,11 +44,6 @@ const EntrepreneurDetail = () => {
         }
 
         setProfile(res.data);
-
-        if (isAuthenticated) {
-          const followRes = await interactionAPI.checkFollow(res.data.id);
-          setFollowing(followRes.data.following);
-        }
       } catch (error) {
         console.error('Error loading profile:', error);
       } finally {
@@ -59,24 +53,6 @@ const EntrepreneurDetail = () => {
 
     loadProfile();
   }, [slug, isAuthenticated]);
-
-  const handleFollow = async () => {
-    if (!isAuthenticated) {
-      toast.error('Please login to follow');
-      return;
-    }
-    try {
-      const res = await interactionAPI.toggleFollow(profile.id);
-      setFollowing(res.data.following);
-      setProfile(prev => ({
-        ...prev,
-        follower_count: prev.follower_count + (res.data.following ? 1 : -1)
-      }));
-      toast.success(res.data.following ? 'Now following' : 'Unfollowed');
-    } catch (error) {
-      toast.error('Failed to follow');
-    }
-  };
 
   const handleShare = async () => {
     try {
@@ -195,24 +171,6 @@ const EntrepreneurDetail = () => {
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <Button
-                      variant={following ? 'outline' : 'default'}
-                      className={following ? '' : 'bg-emerald-900 hover:bg-emerald-800'}
-                      onClick={handleFollow}
-                      data-testid="follow-btn"
-                    >
-                      {following ? (
-                        <>
-                          <UserMinus className="w-4 h-4 mr-2" />
-                          Following
-                        </>
-                      ) : (
-                        <>
-                          <UserPlus className="w-4 h-4 mr-2" />
-                          Follow
-                        </>
-                      )}
-                    </Button>
                     <Button variant="outline" onClick={handleShare}>
                       <Share2 className="w-4 h-4" />
                     </Button>
@@ -221,10 +179,6 @@ const EntrepreneurDetail = () => {
 
                 {/* Stats */}
                 <div className="flex items-center gap-6 mt-6 pt-6 border-t border-stone-200">
-                  <div>
-                    <p className="text-2xl font-bold text-stone-900">{profile.follower_count}</p>
-                    <p className="text-sm text-stone-500">Followers</p>
-                  </div>
                   {profile.industry && (
                     <div>
                       <Badge className="bg-emerald-100 text-emerald-900">{profile.industry}</Badge>

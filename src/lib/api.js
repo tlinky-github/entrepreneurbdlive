@@ -19,7 +19,25 @@ import { db, auth } from './firebase';
 // Helper to convert Firestore doc to standard object
 const docToData = (doc) => {
   if (!doc.exists()) return null;
-  return { id: doc.id, ...doc.data() };
+  const data = { id: doc.id, ...doc.data() };
+  return convertTimestamps(data);
+};
+
+// Recursively convert Firestore Timestamps to JS Dates
+const convertTimestamps = (data) => {
+  if (!data || typeof data !== 'object') return data;
+  
+  const converted = Array.isArray(data) ? [...data] : { ...data };
+  
+  for (const key in converted) {
+    const value = converted[key];
+    if (value && typeof value === 'object' && typeof value.toDate === 'function') {
+      converted[key] = value.toDate();
+    } else if (value && typeof value === 'object') {
+      converted[key] = convertTimestamps(value);
+    }
+  }
+  return converted;
 };
 
 // --- Blog Posts API ---
@@ -266,7 +284,14 @@ export const interactionAPI = {
     const likeId = `${user.uid}_${id}`;
     const likeRef = doc(db, 'likes', likeId);
     const likeSnap = await getDoc(likeRef);
-    const postRef = doc(db, type === 'blog' ? 'posts' : 'listings', id);
+    const collectionMap = {
+      blog: 'posts',
+      entrepreneurs: 'profiles',
+      directory: 'listings',
+      knowledge: 'resources'
+    };
+    const colName = collectionMap[type] || type;
+    const postRef = doc(db, colName, id);
 
     if (likeSnap.exists()) {
       await deleteDoc(likeRef);
@@ -323,13 +348,16 @@ export const interactionAPI = {
     const user = auth.currentUser;
     if (!user) throw new Error('Must be logged in');
     const followRef = doc(db, 'followers', `${user.uid}_${profileId}`);
+    const profileRef = doc(db, 'profiles', profileId);
     const snap = await getDoc(followRef);
 
     if (snap.exists()) {
       await deleteDoc(followRef);
+      await updateDoc(profileRef, { follower_count: increment(-1) });
       return { data: { following: false } };
     } else {
       await setDoc(followRef, { userId: user.uid, profileId, created_at: serverTimestamp() });
+      await updateDoc(profileRef, { follower_count: increment(1) });
       return { data: { following: true } };
     }
   },

@@ -168,10 +168,11 @@ code {
   font-size: 0.9em;
 }
 
-/* Fix for Tiptap Text Align */
-.tiptap-content [style*="text-align: center"] { text-align: center; }
-.tiptap-content [style*="text-align: right"] { text-align: right; }
-.tiptap-content [style*="text-align: justify"] { text-align: justify; }
+/* Fix for Tiptap Text Align & Formatting */
+.tiptap-content [style*="text-align: center"], .tiptap-content .text-align-center { text-align: center; }
+.tiptap-content [style*="text-align: right"], .tiptap-content .text-align-right { text-align: right; }
+.tiptap-content [style*="text-align: justify"], .tiptap-content .text-align-justify { text-align: justify; }
+.tiptap-content u { text-decoration: underline; }
 
 /* Focus visible styles */
 .focus-visible:focus {

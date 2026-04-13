@@ -218,7 +218,7 @@ const ContentEditorPanel = () => {
       }
     };
     loadCategories();
-  }, []);
+  }, [type]);
 
   // Load Listing Types for Directory
   useEffect(() => {
