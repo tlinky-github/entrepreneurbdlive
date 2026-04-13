@@ -14,7 +14,8 @@ import {
   Tag, 
   ChevronRight,
   Globe,
-  Briefcase
+  Briefcase,
+  Star
 } from 'lucide-react';
 import { 
   Table, 
@@ -38,6 +39,8 @@ const AdminTaxonomies = () => {
     { id: 'industries', label: 'Industries', icon: Briefcase, color: 'emerald' },
     { id: 'cities', label: 'Cities', icon: MapPin, color: 'blue' },
     { id: 'categories', label: 'Business Categories', icon: Tag, color: 'purple' },
+    { id: 'listing_types', label: 'Listing Types', icon: Building2, color: 'orange' },
+    { id: 'startup_stages', label: 'Startup Stages', icon: Star, color: 'yellow' },
   ];
 
   const loadTaxonomy = useCallback(async () => {

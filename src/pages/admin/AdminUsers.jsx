@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { adminAPI } from '../../lib/api';
+import { useAuth } from '../../lib/auth';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
@@ -60,6 +61,7 @@ const roles = [
 ];
 
 const AdminUsers = () => {
+  const { isSuperAdmin } = useAuth();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -166,13 +168,15 @@ const AdminUsers = () => {
           <h1 className="text-2xl font-bold text-stone-900">Users</h1>
           <p className="text-stone-500">Manage user accounts and roles</p>
         </div>
-        <Button 
-          className="bg-emerald-900 hover:bg-emerald-800"
-          onClick={() => setShowAddModal(true)}
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Add User
-        </Button>
+        {isSuperAdmin && (
+          <Button 
+            className="bg-emerald-900 hover:bg-emerald-800"
+            onClick={() => setShowAddModal(true)}
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Add User
+          </Button>
+        )}
       </div>
 
       {/* Add User Modal */}
@@ -312,41 +316,51 @@ const AdminUsers = () => {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <p className="px-2 py-1.5 text-xs text-stone-500 font-medium">Change Role</p>
-                          {roles.map((role) => (
-                            <DropdownMenuItem
-                              key={role.value}
-                              onClick={(e) => handleRoleChange(e, user.id, role.value)}
-                              disabled={user.role === role.value}
-                            >
-                              {role.value === 'super_admin' && <ShieldCheck className="w-4 h-4 mr-2" />}
-                              {role.value === 'editor' && <Shield className="w-4 h-4 mr-2" />}
-                              {!['super_admin', 'editor'].includes(role.value) && <User className="w-4 h-4 mr-2" />}
-                              {role.label}
-                            </DropdownMenuItem>
-                          ))}
-                          <div className="border-t my-1" />
-                          <DropdownMenuItem onClick={(e) => handleToggleVerification(e, user)}>
-                            {user.is_verified ? (
-                              <span className="flex items-center text-yellow-600">
-                                <XCircle className="w-4 h-4 mr-2" />
-                                Unverify User
-                              </span>
-                            ) : (
-                              <span className="flex items-center text-green-600">
-                                <CheckCircle className="w-4 h-4 mr-2" />
-                                Verify User
-                              </span>
-                            )}
+                          <DropdownMenuItem onClick={() => window.location.href = `mailto:${user.email}`}>
+                            <Eye className="w-4 h-4 mr-2" />
+                            Contact User
                           </DropdownMenuItem>
-                          <div className="border-t my-1" />
-                          <DropdownMenuItem 
-                            className="text-red-600 focus:text-red-600"
-                            onClick={() => handleDeleteUser(user.id)}
-                          >
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            Delete User
-                          </DropdownMenuItem>
+
+                          {isSuperAdmin && (
+                            <>
+                              <div className="border-t my-1" />
+                              <p className="px-2 py-1.5 text-xs text-stone-500 font-medium">Change Role</p>
+                              {roles.map((role) => (
+                                <DropdownMenuItem
+                                  key={role.value}
+                                  onClick={(e) => handleRoleChange(e, user.id, role.value)}
+                                  disabled={user.role === role.value}
+                                >
+                                  {role.value === 'super_admin' && <ShieldCheck className="w-4 h-4 mr-2" />}
+                                  {role.value === 'editor' && <Shield className="w-4 h-4 mr-2" />}
+                                  {!['super_admin', 'editor'].includes(role.value) && <User className="w-4 h-4 mr-2" />}
+                                  {role.label}
+                                </DropdownMenuItem>
+                              ))}
+                              <div className="border-t my-1" />
+                              <DropdownMenuItem onClick={(e) => handleToggleVerification(e, user)}>
+                                {user.is_verified ? (
+                                  <span className="flex items-center text-yellow-600">
+                                    <XCircle className="w-4 h-4 mr-2" />
+                                    Unverify User
+                                  </span>
+                                ) : (
+                                  <span className="flex items-center text-green-600">
+                                    <CheckCircle className="w-4 h-4 mr-2" />
+                                    Verify User
+                                  </span>
+                                )}
+                              </DropdownMenuItem>
+                              <div className="border-t my-1" />
+                              <DropdownMenuItem 
+                                className="text-red-600 focus:text-red-600"
+                                onClick={() => handleDeleteUser(user.id)}
+                              >
+                                <Trash2 className="w-4 h-4 mr-2" />
+                                Delete User
+                              </DropdownMenuItem>
+                            </>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>

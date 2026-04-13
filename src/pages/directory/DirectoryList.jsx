@@ -35,14 +35,7 @@ import {
 const DirectoryList = () => {
   const [listings, setListings] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [listingTypes, setListingTypes] = useState([
-    { value: 'startup', label: 'Startups' },
-    { value: 'sme', label: 'SMEs' },
-    { value: 'entrepreneur', label: 'Entrepreneurs' },
-    { value: 'service_provider', label: 'Service Providers' },
-  ]);
-  // In a truly 'everything dynamic' system, these would also come from a 'listing_types' collection
-  // For now, we ensure they are handled as a state that can be easily linked to an API later.
+  const [listingTypes, setListingTypes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -54,8 +47,12 @@ const DirectoryList = () => {
   useEffect(() => {
     const loadFilters = async () => {
       try {
-        const catRes = await categoryAPI.list();
+        const [catRes, typeRes] = await Promise.all([
+          categoryAPI.list(),
+          taxonomyAPI.list('listing_types')
+        ]);
         setCategories(catRes.data || []);
+        setListingTypes(typeRes.data || []);
       } catch (error) {
         console.error('Error loading filters:', error);
       }
@@ -130,15 +127,15 @@ const DirectoryList = () => {
                 <TabsTrigger value="all" className="data-[state=active]:bg-emerald-900 data-[state=active]:text-white">
                   All
                 </TabsTrigger>
-                {listingTypes.map((type) => (
-                  <TabsTrigger
-                    key={type.value}
-                    value={type.value}
-                    className="data-[state=active]:bg-emerald-900 data-[state=active]:text-white"
-                  >
-                    {type.label}
-                  </TabsTrigger>
-                ))}
+                 {listingTypes.map((type) => (
+                   <TabsTrigger
+                     key={type.id}
+                     value={type.slug}
+                     className="data-[state=active]:bg-emerald-900 data-[state=active]:text-white"
+                   >
+                     {type.name}
+                   </TabsTrigger>
+                 ))}
               </TabsList>
             </Tabs>
           </div>
@@ -151,9 +148,9 @@ const DirectoryList = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All</SelectItem>
-                {listingTypes.map((type) => (
-                  <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
-                ))}
+                 {listingTypes.map((type) => (
+                   <SelectItem key={type.id} value={type.slug}>{type.name}</SelectItem>
+                 ))}
               </SelectContent>
             </Select>
           </div>

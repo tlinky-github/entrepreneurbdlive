@@ -63,8 +63,12 @@ const ContentEditorPanel = () => {
   const [socialLinkedin, setSocialLinkedin] = useState('');
   const [socialTwitter, setSocialTwitter] = useState('');
   const [socialFacebook, setSocialFacebook] = useState('');
+  const [listingType, setListingType] = useState('');
+  const [startupStage, setStartupStage] = useState('');
 
   const [categories, setCategories] = useState([]);
+  const [listingTypes, setListingTypes] = useState([]);
+  const [startupStages, setStartupStages] = useState([]);
 
   const [isEditingSlug, setIsEditingSlug] = useState(false);
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
@@ -174,6 +178,8 @@ const ContentEditorPanel = () => {
             if (data.life_at_company && lifeAtCompanyEditor) {
               lifeAtCompanyEditor.commands.setContent(data.life_at_company);
             }
+            setListingType(data.listing_type || '');
+            setStartupStage(data.startup_stage || '');
             setIsFeatured(data.is_featured || false);
             setContentLoaded(true);
           } catch (error) {
@@ -203,6 +209,32 @@ const ContentEditorPanel = () => {
     };
     loadCategories();
   }, []);
+
+  // Load Listing Types for Directory
+  useEffect(() => {
+    if (type === 'directory') {
+      const loadTypes = async () => {
+        try {
+          const res = await taxonomyAPI.list('listing_types');
+          setListingTypes(res.data || []);
+        } catch (error) {
+          console.error('Error loading listing types:', error);
+        }
+      };
+      loadTypes();
+    }
+    if (type === 'entrepreneurs') {
+      const loadStages = async () => {
+        try {
+          const res = await taxonomyAPI.list('startup_stages');
+          setStartupStages(res.data || []);
+        } catch (error) {
+          console.error('Error loading stages:', error);
+        }
+      };
+      loadStages();
+    }
+  }, [type]);
 
   // Auto-generate slug
   useEffect(() => {
@@ -266,6 +298,8 @@ const ContentEditorPanel = () => {
         social_twitter: socialTwitter,
         social_facebook: socialFacebook,
         is_featured: isFeatured,
+        listing_type: listingType,
+        startup_stage: startupStage,
         // Sync excerpt to fields used by the frontend for intro text
         details: type === 'entrepreneurs' ? excerpt : null,
         short_description: type === 'directory' ? excerpt : null
@@ -376,25 +410,40 @@ const ContentEditorPanel = () => {
               </div>
 
               {type === 'entrepreneurs' && (
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label>Designation</label>
-                    <Input
-                      value={designation}
-                      onChange={(e) => setDesignation(e.target.value)}
-                      placeholder="e.g. Founder & CEO"
-                    />
-                  </div>
-                  <div>
-                    <label>Company Name</label>
-                    <Input
-                      value={companyName}
-                      onChange={(e) => setCompanyName(e.target.value)}
-                      placeholder="Target Company"
-                    />
-                  </div>
-                </div>
-              )}
+                 <>
+                   <div className="grid grid-cols-2 gap-4">
+                     <div>
+                       <label>Designation</label>
+                       <Input
+                         value={designation}
+                         onChange={(e) => setDesignation(e.target.value)}
+                         placeholder="e.g. Founder & CEO"
+                       />
+                     </div>
+                     <div>
+                       <label>Company Name</label>
+                       <Input
+                         value={companyName}
+                         onChange={(e) => setCompanyName(e.target.value)}
+                         placeholder="Target Company"
+                       />
+                     </div>
+                   </div>
+                   <div>
+                     <label>Startup Stage</label>
+                     <select
+                       value={startupStage}
+                       onChange={(e) => setStartupStage(e.target.value)}
+                       className="input-select"
+                     >
+                       <option value="">Select Stage</option>
+                       {startupStages.map(s => (
+                         <option key={s.id} value={s.slug}>{s.name}</option>
+                       ))}
+                     </select>
+                   </div>
+                 </>
+               )}
 
               {type === 'directory' && (
                 <>
@@ -438,6 +487,19 @@ const ContentEditorPanel = () => {
                         <option value="51-200">51-200</option>
                         <option value="201-500">201-500</option>
                         <option value="500+">500+</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label>Listing Type *</label>
+                      <select
+                        value={listingType}
+                        onChange={(e) => setListingType(e.target.value)}
+                        className="input-select"
+                      >
+                        <option value="">Select Type</option>
+                        {listingTypes.map(t => (
+                          <option key={t.id} value={t.slug}>{t.name}</option>
+                        ))}
                       </select>
                     </div>
                   </div>
