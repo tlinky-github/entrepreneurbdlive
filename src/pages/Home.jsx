@@ -378,7 +378,9 @@ const Home = () => {
                               <Star className="w-4 h-4 text-yellow-500 fill-yellow-500 flex-shrink-0" />
                             )}
                           </div>
-                          <p className="text-sm text-stone-500 capitalize">{listing.listing_type?.replace('_', ' ')}</p>
+                          <p className="text-sm text-stone-500 capitalize">
+                            {listing.listing_type_name || listing.industry || listing.listing_type?.replace('_', ' ') || 'Business'}
+                          </p>
                           {listing.city && (
                             <p className="text-xs text-stone-400 mt-1 flex items-center gap-1">
                               <MapPin className="w-3 h-3" />

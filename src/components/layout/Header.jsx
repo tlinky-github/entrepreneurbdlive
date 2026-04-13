@@ -54,8 +54,6 @@ const Header = () => {
         { href: '/resources/glossary', label: 'Glossary', icon: FileText },
       ]
     },
-    { href: '/editorial', label: 'Editorial', icon: PenTool },
-    { href: '/contact', label: 'Contact', icon: Mail },
   ];
 
   const isActive = (path) => location.pathname.startsWith(path);
