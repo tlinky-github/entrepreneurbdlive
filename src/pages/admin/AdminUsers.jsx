@@ -60,6 +60,24 @@ const roles = [
   { value: 'user', label: 'User', color: 'bg-stone-100 text-stone-700' },
 ];
 
+const formatDate = (user) => {
+  if (!user) return 'N/A';
+  
+  // Check for any possible date field
+  const dateValue = user.created_at || user.lastLogin || user.joined_at;
+  if (!dateValue) return 'N/A';
+  
+  // Handle Firestore Timestamp objects (including both .seconds and ._seconds variants)
+  if (typeof dateValue === 'object' && (dateValue.seconds || dateValue._seconds)) {
+    const seconds = dateValue.seconds || dateValue._seconds;
+    return new Date(seconds * 1000).toLocaleDateString('en-GB');
+  }
+  
+  // Handle standard Date strings/objects
+  const date = new Date(dateValue);
+  return isNaN(date.getTime()) ? 'N/A' : date.toLocaleDateString('en-GB');
+};
+
 const AdminUsers = () => {
   const { isSuperAdmin } = useAuth();
   const [users, setUsers] = useState([]);
@@ -306,7 +324,7 @@ const AdminUsers = () => {
                       )}
                     </TableCell>
                     <TableCell className="text-stone-500 text-sm">
-                      {new Date(user.created_at).toLocaleDateString()}
+                      {formatDate(user)}
                     </TableCell>
                     <TableCell>
                       <DropdownMenu>

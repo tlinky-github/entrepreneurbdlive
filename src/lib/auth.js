@@ -76,7 +76,8 @@ export const AuthProvider = ({ children }) => {
           email: firebaseUser.email,
           photoURL: firebaseUser.photoURL,
           role: role,
-          lastLogin: serverTimestamp()
+          lastLogin: serverTimestamp(),
+          created_at: userDoc.exists() && userDoc.data().created_at ? userDoc.data().created_at : serverTimestamp()
         }, { merge: true });
       }
       
