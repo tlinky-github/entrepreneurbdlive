@@ -14,7 +14,8 @@ import {
   Trash2,
   Eye,
   MoreVertical,
-  FileText
+  FileText,
+  RefreshCw
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -96,12 +97,23 @@ const AdminPosts = () => {
           <h1 className="text-2xl font-bold text-stone-900">Blog Posts</h1>
           <p className="text-stone-500">Manage your website's news and articles</p>
         </div>
-        <Button asChild className="bg-emerald-900 group">
-          <Link to="/admin/content-editor?type=blog">
-            <Plus className="w-4 h-4 mr-2 group-hover:rotate-90 transition-transform" />
-            Add New Post
-          </Link>
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={loadPosts} 
+            disabled={loading}
+            className="border-stone-200"
+          >
+            <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+          <Button asChild className="bg-emerald-900 group">
+            <Link to="/admin/content-editor?type=blog">
+              <Plus className="w-4 h-4 mr-2 group-hover:rotate-90 transition-transform" />
+              Add New Post
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {/* Search */}
@@ -170,7 +182,11 @@ const AdminPosts = () => {
                     </TableCell>
                     <TableCell>{getStatusBadge(post.status)}</TableCell>
                     <TableCell className="text-stone-600">{post.author_name}</TableCell>
-                    <TableCell className="text-stone-600">{post.view_count}</TableCell>
+                    <TableCell className="text-stone-600">
+                      <span className="font-mono bg-stone-100 px-2 py-0.5 rounded text-xs">
+                        {(post.view_count || 0).toLocaleString()}
+                      </span>
+                    </TableCell>
                     <TableCell className="text-stone-500 text-sm">
                       {new Date(post.created_at).toLocaleDateString()}
                     </TableCell>

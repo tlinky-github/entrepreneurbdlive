@@ -4,7 +4,7 @@ import { Input } from '../ui/input';
 import { toast } from 'sonner';
 import api, { mediaAPI } from '../../lib/api';
 import { auth } from '../../lib/firebase';
-import { Upload, X, Image as ImageIcon, Loader2, Link as LinkIcon, Grid, RefreshCw } from 'lucide-react';
+import { Upload, X, Image as ImageIcon, Loader2, Link as LinkIcon, Grid, RefreshCw, Search } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Skeleton } from '../ui/skeleton';
 
@@ -22,6 +22,8 @@ const ImageUploader = ({
   const [title, setTitle] = useState('');
   const [mediaList, setMediaList] = useState([]);
   const [mediaLoading, setMediaLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [visibleCount, setVisibleCount] = useState(15);
   const fileInputRef = useRef(null);
 
   // Sync with value prop
@@ -236,21 +238,37 @@ const ImageUploader = ({
         </TabsList>
 
         <TabsContent value="gallery" className="mt-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold text-stone-400 uppercase tracking-wider">Your Library</span>
-            <button 
-              onClick={syncGallery}
-              disabled={mediaLoading}
-              className="p-1.5 hover:bg-stone-100 rounded-lg text-stone-400 hover:text-emerald-600 transition-colors disabled:opacity-50"
-              title="Sync images from content"
-            >
-              <RefreshCw className={`w-4 h-4 ${mediaLoading ? 'animate-spin' : ''}`} />
-            </button>
+          <div className="flex flex-col gap-3 mb-4">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-stone-400 uppercase tracking-wider">Your Library</span>
+              <button 
+                onClick={syncGallery}
+                disabled={mediaLoading}
+                className="p-1.5 hover:bg-stone-100 rounded-lg text-stone-400 hover:text-emerald-600 transition-colors disabled:opacity-50 flex items-center gap-2"
+                title="Sync images from content"
+              >
+                <span className="text-[10px] font-bold">Resync Bucket</span>
+                <RefreshCw className={`w-3 h-3 ${mediaLoading ? 'animate-spin' : ''}`} />
+              </button>
+            </div>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+              <Input 
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setVisibleCount(15); // Reset limit on search
+                }}
+                placeholder="Search images by name..."
+                className="pl-9 bg-white border-stone-200"
+              />
+            </div>
           </div>
+          
           <div className="bg-stone-50 rounded-xl p-4 border border-stone-100 min-h-[250px]">
             {mediaLoading ? (
-              <div className="grid grid-cols-3 gap-2">
-                {[...Array(6)].map((_, i) => (
+              <div className="grid grid-cols-5 gap-2">
+                {[...Array(10)].map((_, i) => (
                   <Skeleton key={i} className="aspect-square rounded-lg" />
                 ))}
               </div>
@@ -274,27 +292,47 @@ const ImageUploader = ({
                 </div>
               </div>
             ) : (
-              <div className="grid grid-cols-3 gap-2 max-h-[400px] overflow-y-auto pr-1 custom-scrollbar">
-                {mediaList.map((item) => (
-                  <div 
-                    key={item.id}
-                    onClick={() => {
-                      setPreviewUrl(item.url);
-                      setAlt(item.fileName?.split('.')[0].replace(/[-_]/g, ' ') || '');
-                      setActiveTab('upload'); // Switch to upload tab to see the preview/form
-                    }}
-                    className={`aspect-square rounded-lg overflow-hidden border-2 cursor-pointer transition-all hover:scale-[1.02] active:scale-95 ${
-                      previewUrl === item.url ? 'border-emerald-600 shadow-md' : 'border-transparent hover:border-stone-200'
-                    }`}
-                  >
-                    <img 
-                      src={item.url} 
-                      alt={item.fileName} 
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                    />
+              <div className="space-y-4">
+                <div className="grid grid-cols-5 gap-2 max-h-[400px] overflow-y-auto pr-1 custom-scrollbar">
+                  {mediaList
+                    .filter(item => item.fileName?.toLowerCase().includes(searchTerm.toLowerCase()))
+                    .slice(0, visibleCount)
+                    .map((item) => (
+                      <div 
+                        key={item.id}
+                        onClick={() => {
+                          setPreviewUrl(item.url);
+                          setAlt(item.fileName?.split('.')[0].replace(/[-_]/g, ' ') || '');
+                          setActiveTab('upload');
+                        }}
+                        className={`aspect-square rounded-lg overflow-hidden border-2 cursor-pointer transition-all hover:scale-[1.05] active:scale-95 group relative ${
+                          previewUrl === item.url ? 'border-emerald-600 shadow-md ring-2 ring-emerald-100' : 'border-transparent hover:border-stone-200'
+                        }`}
+                      >
+                        <img 
+                          src={item.url} 
+                          alt={item.fileName} 
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                        />
+                        <div className="absolute inset-x-0 bottom-0 bg-black/60 p-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <p className="text-[8px] text-white truncate text-center">{item.fileName}</p>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+                {mediaList.filter(item => item.fileName?.toLowerCase().includes(searchTerm.toLowerCase())).length > visibleCount && (
+                  <div className="flex justify-center pt-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => setVisibleCount(prev => prev + 15)}
+                      className="text-xs text-stone-500 border-stone-200 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200"
+                    >
+                      Load More Images
+                    </Button>
                   </div>
-                ))}
+                )}
               </div>
             )}
           </div>

@@ -410,18 +410,39 @@ const ContentEditorPanel = () => {
   }
 
   return (
-    <div className="content-editor-panel">
-      {/* Header */}
-      <div className="editor-header">
-        <button onClick={() => navigate(-1)} className="back-btn">
-          <ChevronLeft size={20} /> Back
-        </button>
-        <h1 className="editor-title" style={{ color: "#1c1917", opacity: 1 }}>Content Editor</h1>
+    <div className="content-editor-panel p-6">
+      {/* Header Section */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+        <div className="flex items-center gap-4">
+          <Button 
+            variant="ghost" 
+            onClick={() => navigate('/admin/content-manager?type=' + type)}
+            className="text-stone-500 hover:text-stone-900"
+          >
+            <ChevronLeft className="w-5 h-5 mr-1" />
+            Back
+          </Button>
+          <div>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold text-stone-900 uppercase tracking-tight">Content Editor</h1>
+              {itemId && (
+                <Badge className={
+                  status === 'published' 
+                    ? 'bg-emerald-100 text-emerald-700 border-emerald-200' 
+                    : 'bg-amber-100 text-amber-700 border-amber-200'
+                }>
+                  {status === 'published' ? 'Live' : 'Draft'}
+                </Badge>
+              )}
+            </div>
+            <p className="text-stone-500 text-sm">Create and refine your platform content</p>
+          </div>
+        </div>
         <div className="header-actions">
           <button onClick={() => window.open(getPreviewUrl(), '_blank')} style={{ marginRight: '4px' }}>
             <Eye size={18} /> Preview
           </button>
-          <button onClick={handleSave} disabled={saving || publishing}>
+          <button onClick={() => handleSave()} disabled={saving || publishing}>
             <Save size={18} /> {saving ? 'Saving...' : 'Save Draft'}
           </button>
           <button 
@@ -607,17 +628,27 @@ const ContentEditorPanel = () => {
                 <label>Status</label>
                 <div className="status-buttons gap-2 flex">
                   <button
-                    onClick={() => setStatus('draft')}
-                    className={`status-btn transition-all px-3 py-1 rounded border ${status === 'draft' ? 'bg-stone-200 border-stone-400' : 'bg-white border-stone-200'}`}
-                  >
-                    Draft
-                  </button>
-                  <button
-                    onClick={() => setStatus('published')}
-                    className={`status-btn transition-all px-3 py-1 rounded border ${status === 'published' ? 'bg-emerald-100 border-emerald-400 text-emerald-900' : 'bg-white border-stone-200'}`}
-                  >
-                    Published
-                  </button>
+                  type="button"
+                  onClick={() => setStatus('draft')}
+                  className={`py-3 px-4 rounded-xl border-2 font-bold transition-all ${
+                    status === 'draft' 
+                      ? 'border-stone-900 bg-stone-900 text-white shadow-lg scale-[1.02]' 
+                      : 'border-stone-100 bg-white text-stone-400 hover:border-stone-200'
+                  }`}
+                >
+                  Draft
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStatus('published')}
+                  className={`py-3 px-4 rounded-xl border-2 font-bold transition-all ${
+                    status === 'published' 
+                      ? 'border-emerald-600 bg-emerald-600 text-white shadow-lg shadow-emerald-200 scale-[1.02]' 
+                      : 'border-stone-100 bg-white text-stone-400 hover:border-stone-200'
+                  }`}
+                >
+                  Published
+                </button>
                 </div>
               </div>
 
