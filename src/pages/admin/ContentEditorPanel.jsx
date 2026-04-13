@@ -371,7 +371,12 @@ const ContentEditorPanel = () => {
         >
           <option value="">{placeholder}</option>
           {options.map(opt => (
-            <option key={opt.id || opt.slug || opt} value={opt.id || opt.slug || opt}>{opt.name || opt}</option>
+            <option 
+              key={opt.id || opt.slug || opt} 
+              value={(taxType === 'city' || taxType === 'industry') ? (opt.name || opt) : (opt.id || opt.slug || opt)}
+            >
+              {opt.name || opt}
+            </option>
           ))}
         </select>
       )}
@@ -463,6 +468,13 @@ const ContentEditorPanel = () => {
         industry,
         city,
         authorId,
+        // MIRROR FIELDS for frontend compatibility
+        business_name: type === 'directory' ? title : companyName,
+        name: type === 'entrepreneurs' ? title : null,
+        role_title: designation,
+        // Extra human-readable metadata for fast rendering
+        listing_type_name: type === 'directory' ? (listingTypes.find(t => t.id === listingType || t.slug === listingType)?.name || listingType) : null,
+        category_name: categories.find(c => c.id === parseInt(category) || c.id === category)?.name || '',
         // Sync excerpt to fields used by the frontend for intro text
         details: type === 'entrepreneurs' ? excerpt : null,
         short_description: type === 'directory' ? excerpt : null

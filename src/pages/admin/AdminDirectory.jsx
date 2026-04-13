@@ -244,13 +244,17 @@ const AdminDirectory = () => {
                           )}
                         </div>
                         <div>
-                          <p className="font-medium text-stone-900">{listing.business_name}</p>
-                          <p className="text-xs text-stone-500">{listing.city}</p>
+                          <p className="font-medium text-stone-900">{listing.business_name || listing.title || 'Untitled'}</p>
+                          <p className="text-xs text-stone-500">{listing.city || listing.headquarters || '-'}</p>
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell className="text-stone-600 capitalize">{listing.listing_type?.replace('_', ' ')}</TableCell>
-                    <TableCell className="text-stone-600">{listing.category || '-'}</TableCell>
+                    <TableCell className="text-stone-600 capitalize">
+                      {listing.listing_type_name || listing.listing_type?.replace('_', ' ') || '-'}
+                    </TableCell>
+                    <TableCell className="text-stone-600">
+                      {listing.category_name || listing.category || '-'}
+                    </TableCell>
                     <TableCell>{getStatusBadge(listing.status)}</TableCell>
                     <TableCell>
                       <div className="flex gap-1">

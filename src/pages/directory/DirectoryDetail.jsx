@@ -24,7 +24,8 @@ import {
   Minus,
   Linkedin,
   Twitter,
-  Facebook
+  Facebook,
+  Users
 } from 'lucide-react';
 
 const DirectoryDetail = () => {
@@ -146,7 +147,7 @@ const DirectoryDetail = () => {
                       )}
                     </div>
                     <p className="text-lg text-stone-600 capitalize mb-2">
-                      {listing.listing_type?.replace('_', ' ')}
+                      {listing.listing_type_name || listing.listing_type?.replace('_', ' ') || '-'}
                     </p>
                     {listing.headquarters || listing.city ? (
                       <p className="text-sm text-stone-500 flex items-center gap-1">

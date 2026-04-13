@@ -270,12 +270,12 @@ const ListingCard = ({ listing, featured }) => (
               )}
             </div>
             <p className="text-sm text-stone-500 capitalize mb-2">
-              {listing.listing_type?.replace('_', ' ')}
+              {listing.listing_type_name || listing.listing_type?.replace('_', ' ') || '-'}
             </p>
             {listing.city && (
               <p className="text-xs text-stone-400 flex items-center gap-1">
                 <MapPin className="w-3 h-3" />
-                {listing.city}, {listing.country}
+                {listing.city}{listing.country ? `, ${listing.country}` : ''}
               </p>
             )}
           </div>

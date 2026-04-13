@@ -221,13 +221,13 @@ const AdminEntrepreneurs = () => {
                           )}
                         </div>
                         <div>
-                          <p className="font-medium text-stone-900">{profile.name}</p>
-                          <p className="text-xs text-stone-500">{profile.role_title}</p>
+                          <p className="font-medium text-stone-900">{profile.name || profile.title || 'Untitled'}</p>
+                          <p className="text-xs text-stone-500">{profile.role_title || profile.designation || '-'}</p>
                         </div>
                       </div>
                     </TableCell>
                     <TableCell className="text-stone-600">{profile.company_name || '-'}</TableCell>
-                    <TableCell className="text-stone-600">{profile.industry || '-'}</TableCell>
+                    <TableCell className="text-stone-600">{profile.industry_name || profile.industry || '-'}</TableCell>
                     <TableCell>{getStatusBadge(profile.status)}</TableCell>
                     <TableCell>
                       {profile.is_featured && <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />}
