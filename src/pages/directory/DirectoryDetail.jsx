@@ -94,8 +94,8 @@ const DirectoryDetail = () => {
   return (
     <div className="bg-stone-50 min-h-screen" data-testid="directory-detail-page">
       <SEO
-        title={listing.business_name}
-        description={listing.short_description}
+        title={listing.seoTitle || listing.business_name}
+        description={listing.metaDescription || listing.short_description}
         image={listing.logo}
         type="business.business"
         keywords={[listing.category, listing.city, listing.listing_type, 'Business Directory', 'Bangladesh'].filter(Boolean)}

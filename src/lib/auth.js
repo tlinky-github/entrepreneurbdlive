@@ -20,9 +20,9 @@ export const AuthProvider = ({ children }) => {
           if (userDoc.exists()) {
             role = userDoc.data().role || 'user';
           } else {
-            // Fallback for first-time admin setup
-            if (firebaseUser.email === 'admin@entrepreneurs-bd.com' || 
-                firebaseUser.email === 'firebase-adminsdk-fbsvc@entrepreneurs-bd.iam.gserviceaccount.com') {
+            // Fallback for first-time admin setup using environment variable
+            const masterAdminEmail = process.env.REACT_APP_ADMIN_EMAIL;
+            if (masterAdminEmail && firebaseUser.email === masterAdminEmail) {
               role = 'super_admin';
             }
           }
@@ -64,7 +64,8 @@ export const AuthProvider = ({ children }) => {
         role = userDoc.data().role || 'user';
       } else {
         // First login or specific override
-        if (!roleOverride && firebaseUser.email === 'admin@entrepreneurs-bd.com') {
+        const masterAdminEmail = process.env.REACT_APP_ADMIN_EMAIL;
+        if (!roleOverride && masterAdminEmail && firebaseUser.email === masterAdminEmail) {
           role = 'super_admin';
         }
         
@@ -95,10 +96,11 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const isAdmin = user?.role === 'super_admin' || user?.role === 'editor' || user?.email === 'admin@entrepreneurs.bd'; // Added a fallback admin mechanism
-  const isSuperAdmin = user?.role === 'super_admin' || user?.email === 'admin@entrepreneurs.bd';
+  const masterAdminEmail = process.env.REACT_APP_ADMIN_EMAIL;
+  const isAdmin = user?.role === 'super_admin' || user?.role === 'editor' || (masterAdminEmail && user?.email === masterAdminEmail);
+  const isSuperAdmin = user?.role === 'super_admin' || (masterAdminEmail && user?.email === masterAdminEmail);
   const isEntrepreneur = user?.role === 'entrepreneur';
-  const canCreatePost = ['super_admin', 'editor', 'contributor'].includes(user?.role) || user?.email === 'admin@entrepreneurs.bd';
+  const canCreatePost = ['super_admin', 'editor', 'contributor'].includes(user?.role) || (masterAdminEmail && user?.email === masterAdminEmail);
 
   return (
     <AuthContext.Provider

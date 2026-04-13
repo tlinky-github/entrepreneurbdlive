@@ -238,13 +238,6 @@ const ContentEditorPanel = () => {
     try {
       const content = editor?.getHTML() || '';
 
-      console.log('Editor state:', {
-        hasEditor: !!editor,
-        content: content.substring(0, 100),
-        contentLength: content.length,
-        isEditable: editor?.isEditable,
-      });
-
       if (!content || content === '<p></p>') {
         toast.warning('Please add some content before saving');
         setSaving(false);

@@ -168,8 +168,8 @@ const BlogDetail = () => {
   return (
     <div className="bg-stone-50 min-h-screen" data-testid="blog-detail-page">
       <SEO
-        title={post.title}
-        description={post.excerpt}
+        title={post.seoTitle || post.title}
+        description={post.metaDescription || post.excerpt}
         image={post.featured_image}
         type="article"
         author={post.author_name}

@@ -64,81 +64,56 @@ ${urlEntries}
 }
 
 /**
- * Fetch dynamic routes from API
+ * Fetch dynamic routes from Firestore
  */
 async function fetchDynamicRoutes() {
   const dynamicRoutes = [];
+  
+  // Initialize Firebase
+  const { initializeApp } = require('firebase/app');
+  const { getFirestore, collection, getDocs, query, where } = require('firebase/firestore');
+  
+  const firebaseConfig = {
+    apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
+    authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
+    projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
+    storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
+    appId: process.env.REACT_APP_FIREBASE_APP_ID
+  };
 
   try {
-    // Fetch blog posts
-    console.log('  Fetching blog posts...');
-    const postsResponse = await fetch(`${API_URL}/posts?limit=1000`);
-    if (postsResponse.ok) {
-      const posts = await postsResponse.json();
-      const postRoutes = (posts.data || []).map(post => ({
-        url: `/blog/${post.slug}`,
-        changefreq: 'weekly',
-        priority: 0.8
-      }));
-      dynamicRoutes.push(...postRoutes);
-      console.log(`    ✓ Added ${postRoutes.length} blog posts`);
-    }
-  } catch (error) {
-    console.warn('  ⚠ Could not fetch blog posts:', error.message);
-  }
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-  try {
-    // Fetch entrepreneurs
-    console.log('  Fetching entrepreneurs...');
-    const entrepreneursResponse = await fetch(`${API_URL}/profiles?limit=1000`);
-    if (entrepreneursResponse.ok) {
-      const entrepreneurs = await entrepreneursResponse.json();
-      const entrepreneurRoutes = (entrepreneurs.data || []).map(entrepreneur => ({
-        url: `/entrepreneurs/${entrepreneur.slug}`,
-        changefreq: 'weekly',
-        priority: 0.7
-      }));
-      dynamicRoutes.push(...entrepreneurRoutes);
-      console.log(`    ✓ Added ${entrepreneurRoutes.length} entrepreneurs`);
-    }
-  } catch (error) {
-    console.warn('  ⚠ Could not fetch entrepreneurs:', error.message);
-  }
+    const collections = [
+      { name: 'posts', path: '/blog/', priority: 0.8 },
+      { name: 'profiles', path: '/entrepreneurs/', priority: 0.7 },
+      { name: 'listings', path: '/directory/', priority: 0.7 },
+      { name: 'resources', path: '/knowledge/', priority: 0.7 }
+    ];
 
-  try {
-    // Fetch directory listings
-    console.log('  Fetching directory listings...');
-    const listingsResponse = await fetch(`${API_URL}/listings?limit=1000`);
-    if (listingsResponse.ok) {
-      const listings = await listingsResponse.json();
-      const listingRoutes = (listings.data || []).map(listing => ({
-        url: `/directory/${listing.slug}`,
-        changefreq: 'weekly',
-        priority: 0.7
-      }));
-      dynamicRoutes.push(...listingRoutes);
-      console.log(`    ✓ Added ${listingRoutes.length} directory listings`);
+    for (const col of collections) {
+      console.log(`  Fetching ${col.name} from Firestore...`);
+      const q = query(collection(db, col.name), where('status', '==', 'published'));
+      const querySnapshot = await getDocs(q);
+      
+      let count = 0;
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        const slug = data.slug || doc.id;
+        dynamicRoutes.push({
+          url: `${col.path}${slug}`,
+          changefreq: 'weekly',
+          priority: col.priority
+        });
+        count++;
+      });
+      console.log(`    ✓ Added ${count} ${col.name}`);
     }
-  } catch (error) {
-    console.warn('  ⚠ Could not fetch directory listings:', error.message);
-  }
 
-  try {
-    // Fetch knowledge articles
-    console.log('  Fetching knowledge articles...');
-    const knowledgeResponse = await fetch(`${API_URL}/knowledge?limit=1000`);
-    if (knowledgeResponse.ok) {
-      const knowledge = await knowledgeResponse.json();
-      const knowledgeRoutes = (knowledge.data || []).map(article => ({
-        url: `/knowledge/${article.slug}`,
-        changefreq: 'weekly',
-        priority: 0.7
-      }));
-      dynamicRoutes.push(...knowledgeRoutes);
-      console.log(`    ✓ Added ${knowledgeRoutes.length} knowledge articles`);
-    }
   } catch (error) {
-    console.warn('  ⚠ Could not fetch knowledge articles:', error.message);
+    console.warn('  ⚠ Could not fetch from Firestore:', error.message);
   }
 
   return dynamicRoutes;

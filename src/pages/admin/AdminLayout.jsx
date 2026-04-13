@@ -36,11 +36,7 @@ const AdminLayout = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check for development bypass
-    const urlParams = new URLSearchParams(window.location.search);
-    const skipAuth = urlParams.get('bypass') === 'true' || sessionStorage.getItem('admin_bypass') === 'true';
-
-    if (!isAdmin && !skipAuth) {
+    if (!isAdmin) {
       navigate('/');
       return;
     }
@@ -80,11 +76,7 @@ const AdminLayout = () => {
     navigate('/');
   };
 
-  const isBypassed = new URLSearchParams(window.location.search).get('bypass') === 'true' || 
-                   location.search.includes('bypass=true') ||
-                   sessionStorage.getItem('admin_bypass') === 'true';
-
-  if (!isAdmin && !isBypassed) return null;
+  if (!isAdmin) return null;
 
   return (
     <div className="min-h-screen bg-stone-100" data-testid="admin-layout">
@@ -95,7 +87,7 @@ const AdminLayout = () => {
             {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </Button>
           <span className="font-semibold text-stone-900">Admin Dashboard</span>
-          <Link to={isBypassed ? "/?bypass=true" : "/"}>
+          <Link to="/">
             <Button variant="ghost" size="sm">
               <Home className="w-5 h-5" />
             </Button>
@@ -124,7 +116,7 @@ const AdminLayout = () => {
             {menuItems.map((item) => (
               <Link
                 key={item.href}
-                to={isBypassed ? `${item.href}?bypass=true` : item.href}
+                to={item.href}
                 onClick={() => setSidebarOpen(false)}
                 className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
                   isActive(item.href, item.exact)
@@ -144,7 +136,7 @@ const AdminLayout = () => {
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
-                      navigate(isBypassed ? `/admin/content-editor?type=${item.addType}&bypass=true` : `/admin/content-editor?type=${item.addType}`);
+                      navigate(`/admin/content-editor?type=${item.addType}`);
                     }}
                     className={`ml-auto p-1 rounded-md hover:bg-stone-200 transition-colors ${
                       isActive(item.href) ? 'hover:bg-emerald-800 text-white' : 'text-stone-400 hover:text-stone-700'
@@ -226,8 +218,6 @@ export const AdminDashboard = () => {
     loadPending();
   }, []);
 
-  const isBypassed = new URLSearchParams(window.location.search).get('bypass') === 'true' || 
-                     sessionStorage.getItem('admin_bypass') === 'true';
 
   const statCards = [
     { label: 'Total Users', value: stats?.total_users || 0, icon: Users, color: 'bg-blue-100 text-blue-700' },
@@ -346,31 +336,31 @@ export const AdminDashboard = () => {
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-3">
-            <Link to={isBypassed ? "/admin/content-editor?type=blog&bypass=true" : "/admin/content-editor?type=blog"}>
+            <Link to="/admin/content-editor?type=blog">
               <Button className="bg-emerald-900 hover:bg-emerald-800">
                 <FileText className="w-4 h-4 mr-2" />
                 New Blog Post
               </Button>
             </Link>
-            <Link to={isBypassed ? "/admin/content-editor?type=entrepreneurs&bypass=true" : "/admin/content-editor?type=entrepreneurs"}>
+            <Link to="/admin/content-editor?type=entrepreneurs">
               <Button variant="outline" className="border-emerald-600 text-emerald-900 hover:bg-emerald-50">
                 <Users className="w-4 h-4 mr-2" />
                 New Entrepreneur
               </Button>
             </Link>
-            <Link to={isBypassed ? "/admin/content-editor?type=directory&bypass=true" : "/admin/content-editor?type=directory"}>
+            <Link to="/admin/content-editor?type=directory">
               <Button variant="outline" className="border-stone-400 text-stone-900 hover:bg-stone-50">
                 <Building2 className="w-4 h-4 mr-2" />
                 New Directory
               </Button>
             </Link>
-            <Link to={isBypassed ? "/admin/content-editor?type=knowledge&bypass=true" : "/admin/content-editor?type=knowledge"}>
+            <Link to="/admin/content-editor?type=knowledge">
               <Button variant="outline">
                 <BookOpen className="w-4 h-4 mr-2" />
                 New Resource
               </Button>
             </Link>
-            <Link to={isBypassed ? "/admin/settings?bypass=true" : "/admin/settings"}>
+            <Link to="/admin/settings">
               <Button variant="outline">
                 <Settings className="w-4 h-4 mr-2" />
                 Site Settings

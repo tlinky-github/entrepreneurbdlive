@@ -26,6 +26,7 @@ VISUAL_EDITOR_OPTIONS.md
 VISUAL_EDITOR_QUICKSTART.md
 VISUAL_EDITOR_README.md
 VISUAL_EDITOR_SETUP.md
+DISABLED_FEATURES.md
 
 # ==================== FRONTEND DEPENDENCIES ====================
 /node_modules
@@ -49,6 +50,7 @@ VISUAL_EDITOR_SETUP.md
 .env.test.local
 .env.production.local
 /backend/.env.example
+VERCEL_ENV_VARS.txt
 
 # ==================== BUILD & DIST ====================
 /build

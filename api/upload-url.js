@@ -17,6 +17,13 @@ module.exports = async (req, res) => {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  // 1b. Enhanced Security: Internal Secret Check
+  const clientSecret = req.headers['x-api-secret'];
+  if (!process.env.R2_API_SECRET || clientSecret !== process.env.R2_API_SECRET) {
+    console.warn('Unauthorized API access attempt to upload-url');
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
   // 2. Fetch filename and type from request
   const { fileName, fileType, contentType } = req.body;
   const bucketName = process.env.R2_BUCKET_NAME;

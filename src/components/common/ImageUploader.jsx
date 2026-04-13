@@ -39,13 +39,12 @@ const ImageUploader = ({
 
     setUploading(true);
     try {
-      const bridgeUrl = window.location.hostname === 'localhost' 
-        ? 'http://localhost:5000/api/upload-url' 
-        : '/api/upload-url';
-
-      const response = await fetch(bridgeUrl, {
+      const response = await fetch('/api/upload-url', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-api-secret': process.env.REACT_APP_R2_API_SECRET || ''
+        },
         body: JSON.stringify({
           fileName: file.name,
           fileType: entityType,

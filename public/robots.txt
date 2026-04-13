@@ -7,5 +7,7 @@ Disallow: /register
 Disallow: /forgot-password
 Disallow: /reset-password
 Disallow: /verify-email
+Disallow: /api
+Disallow: /api/*
 
 Sitemap: https://entrepreneurs.bd/sitemap.xml

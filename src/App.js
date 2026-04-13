@@ -5,6 +5,41 @@ import Layout from './components/layout/Layout';
 import { Toaster } from './components/ui/sonner';
 import './index.css';
 
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error("Layout Error caught by boundary:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-stone-50 p-4">
+          <div className="text-center max-w-md">
+            <h1 className="text-2xl font-bold text-stone-900 mb-2">Something went wrong</h1>
+            <p className="text-stone-600 mb-6">The application encountered an unexpected error. Please try refreshing the page.</p>
+            <button 
+              onClick={() => window.location.reload()}
+              className="px-6 py-2 bg-emerald-900 text-white rounded-md hover:bg-emerald-800 transition-colors"
+            >
+              Refresh Page
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 // Public Pages
 import Home from './pages/Home';
 import BlogList from './pages/blog/BlogList';
@@ -55,18 +90,6 @@ import VisualEditor from './pages/VisualEditor/VisualEditor';
 const ProtectedRoute = ({ children, adminOnly = false }) => {
   const { isAuthenticated, isAdmin, loading } = useAuth();
   
-  // Temporary bypass for the user to check the admin panel
-  const urlParams = new URLSearchParams(window.location.search);
-  const skipAuth = urlParams.get('bypass') === 'true' || sessionStorage.getItem('admin_bypass') === 'true';
-
-  if (urlParams.get('bypass') === 'true') {
-    sessionStorage.setItem('admin_bypass', 'true');
-  }
-
-  if (skipAuth) {
-    return children;
-  }
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-stone-50">
@@ -285,6 +308,14 @@ const DynamicPage = () => {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-16">
+      <SEO 
+        title={page.seoTitle || page.title}
+        description={page.metaDescription || page.content_html?.replace(/<[^>]+>/g, '').substring(0, 160)}
+        breadcrumbs={[
+          { name: 'Home', path: '/' },
+          { name: page.title, path: `/page/${slug}` }
+        ]}
+      />
       <h1 className="text-4xl font-bold text-stone-900 mb-6">{page.title}</h1>
       <div
         className="prose prose-lg max-w-none"
@@ -323,11 +354,13 @@ function App() {
   return (
     <Router>
       <HelmetProvider>
-        <ScrollToTop />
-        <AuthProvider>
-          <AppRoutes />
-          <Toaster position="top-right" richColors />
-        </AuthProvider>
+        <ErrorBoundary>
+          <ScrollToTop />
+          <AuthProvider>
+            <AppRoutes />
+            <Toaster position="top-right" richColors />
+          </AuthProvider>
+        </ErrorBoundary>
       </HelmetProvider>
     </Router>
   );

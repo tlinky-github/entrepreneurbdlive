@@ -10,6 +10,7 @@ export default function PreviewPanel({
 }) {
   useEffect(() => {
     if (iframeRef.current) {
+      const API_HOST = process.env.REACT_APP_EDITOR_HOST || (typeof window !== 'undefined' ? window.location.origin : '');
       const iframe = iframeRef.current;
       iframe.addEventListener('load', onIframeLoad);
       return () => iframe.removeEventListener('load', onIframeLoad);
@@ -28,7 +29,7 @@ export default function PreviewPanel({
       </div>
       <iframe
         ref={iframeRef}
-        src="http://localhost:3000"
+        src={typeof window !== 'undefined' ? window.location.origin : '/'}
         title="Live Preview"
         className="preview-iframe"
       />

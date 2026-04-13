@@ -124,8 +124,8 @@ const EntrepreneurDetail = () => {
   return (
     <div className="bg-stone-50 min-h-screen" data-testid="entrepreneur-detail-page">
       <SEO
-        title={profile.name}
-        description={profile.short_bio}
+        title={profile.seoTitle || profile.name}
+        description={profile.metaDescription || profile.short_bio}
         image={profile.photo}
         type="profile"
         keywords={[profile.industry, profile.city, profile.role_title, profile.company_name, 'Entrepreneur', 'Bangladesh'].filter(Boolean)}

@@ -1,7 +1,7 @@
 // src/lib/editorAPI.js
 // API utilities for communicating with the visual editor dev server
 
-const API_HOST = process.env.REACT_APP_EDITOR_HOST || 'http://localhost:3000';
+const API_HOST = process.env.REACT_APP_EDITOR_HOST || (typeof window !== 'undefined' ? window.location.origin : '');
 const API_KEY = process.env.REACT_APP_EDITOR_KEY || '';
 
 /**
