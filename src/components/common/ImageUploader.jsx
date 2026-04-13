@@ -4,7 +4,7 @@ import { Input } from '../ui/input';
 import { toast } from 'sonner';
 import api, { mediaAPI } from '../../lib/api';
 import { auth } from '../../lib/firebase';
-import { Upload, X, Image as ImageIcon, Loader2, Link as LinkIcon, Grid } from 'lucide-react';
+import { Upload, X, Image as ImageIcon, Loader2, Link as LinkIcon, Grid, RefreshCw } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Skeleton } from '../ui/skeleton';
 
@@ -73,28 +73,63 @@ const ImageUploader = ({
       
       const imagesToTrack = [];
       
-      // Process Blogs
+      // Process Blog Content & Featured
       blogRes.data?.forEach(p => {
-        if (p.featured_image && !existingUrls.has(p.featured_image)) {
-          imagesToTrack.push({ url: p.featured_image, name: p.title });
-          existingUrls.add(p.featured_image);
+        const urls = new Set();
+        if (p.featured_image) urls.add(p.featured_image);
+        
+        // Scrape embedded images from content/content_html
+        const content = p.content || p.content_html || '';
+        const imgMatches = content.matchAll(/<img[^>]+src="([^">]+)"/g);
+        for (const match of imgMatches) {
+          urls.add(match[1]);
         }
-      });
 
-      // Process Profiles
+        urls.forEach(url => {
+          if (!existingUrls.has(url)) {
+            imagesToTrack.push({ url, name: p.title });
+            existingUrls.add(url);
+          }
+        });
+      });
+      
+      // Process Profile Content & Featured
       profileRes.data?.forEach(p => {
-        if (p.featured_image && !existingUrls.has(p.featured_image)) {
-          imagesToTrack.push({ url: p.featured_image, name: p.name });
-          existingUrls.add(p.featured_image);
+        const urls = new Set();
+        if (p.featured_image) urls.add(p.featured_image);
+        
+        const content = p.details || p.bio || '';
+        const imgMatches = content.matchAll(/<img[^>]+src="([^">]+)"/g);
+        for (const match of imgMatches) {
+          urls.add(match[1]);
         }
+
+        urls.forEach(url => {
+          if (!existingUrls.has(url)) {
+            imagesToTrack.push({ url, name: p.name });
+            existingUrls.add(url);
+          }
+        });
       });
 
-      // Process Listings
+      // Process Listing Content & Featured
       listingRes.data?.forEach(l => {
-        if (l.featured_image && !existingUrls.has(l.featured_image)) {
-          imagesToTrack.push({ url: l.featured_image, name: l.business_name });
-          existingUrls.add(l.featured_image);
+        const urls = new Set();
+        if (l.featured_image) urls.add(l.featured_image);
+        if (l.logo) urls.add(l.logo);
+
+        const content = l.description || l.details || '';
+        const imgMatches = content.matchAll(/<img[^>]+src="([^">]+)"/g);
+        for (const match of imgMatches) {
+          urls.add(match[1]);
         }
+
+        urls.forEach(url => {
+          if (!existingUrls.has(url)) {
+            imagesToTrack.push({ url, name: l.business_name });
+            existingUrls.add(url);
+          }
+        });
       });
 
       let syncCount = 0;
@@ -232,6 +267,17 @@ const ImageUploader = ({
         </TabsList>
 
         <TabsContent value="gallery" className="mt-4">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-bold text-stone-400 uppercase tracking-wider">Your Library</span>
+            <button 
+              onClick={syncGallery}
+              disabled={mediaLoading}
+              className="p-1.5 hover:bg-stone-100 rounded-lg text-stone-400 hover:text-emerald-600 transition-colors disabled:opacity-50"
+              title="Sync images from content"
+            >
+              <RefreshCw className={`w-4 h-4 ${mediaLoading ? 'animate-spin' : ''}`} />
+            </button>
+          </div>
           <div className="bg-stone-50 rounded-xl p-4 border border-stone-100 min-h-[250px]">
             {mediaLoading ? (
               <div className="grid grid-cols-3 gap-2">
