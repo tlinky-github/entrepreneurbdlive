@@ -140,28 +140,30 @@ const DirectoryDetail = () => {
           <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
         </div>
 
-        {/* Profile Identity Bar */}
-        <div className="relative -mt-12 md:-mt-16 flex flex-col md:flex-row items-center md:items-end gap-4 md:gap-8 px-4 md:px-12">
-          <div className="w-24 h-24 md:w-36 md:h-36 bg-white rounded-2xl md:rounded-3xl shadow-xl border-4 md:border-[6px] border-white flex items-center justify-center overflow-hidden flex-shrink-0 z-10 transition-transform hover:scale-105 duration-300">
+        {/* Profile Identity Bar - Decoupled Overlap */}
+        <div className="relative flex flex-col md:flex-row items-center md:items-start gap-5 md:gap-10 px-4 md:px-12">
+          {/* Logo with specific negative margin */}
+          <div className="-mt-12 md:-mt-20 w-24 h-24 md:w-40 md:h-40 bg-white rounded-2xl md:rounded-[2.5rem] shadow-2xl border-4 md:border-[8px] border-white flex items-center justify-center overflow-hidden flex-shrink-0 z-10 transition-all hover:scale-105 duration-300">
             {listing.logo ? (
-              <img src={listing.logo} alt={listing.business_name} className="w-full h-full object-contain p-3 md:p-4" />
+              <img src={listing.logo} alt={listing.business_name} className="w-full h-full object-contain p-3 md:p-6" />
             ) : (
-              <Building2 className="w-12 h-12 md:w-16 md:h-16 text-stone-200" />
+              <Building2 className="w-12 h-12 md:w-20 md:h-20 text-stone-200" />
             )}
           </div>
           
-          <div className="md:pb-4 flex-1 w-full text-center md:text-left">
-            <div className="flex flex-wrap items-center gap-2 md:gap-3 justify-center md:justify-start">
-              <h1 className="text-2xl md:text-4xl font-black text-stone-900 tracking-tight">
+          {/* Text content now starts naturally below the banner */}
+          <div className="flex-1 w-full text-center md:text-left pt-4 md:pt-8">
+            <div className="flex flex-wrap items-center gap-3 md:gap-4 justify-center md:justify-start">
+              <h1 className="text-3xl md:text-5xl font-black text-stone-900 tracking-tight leading-tight">
                 {listing.business_name}
               </h1>
               {listing.is_featured && (
-                <div className="bg-yellow-100 p-1 rounded-full ring-2 ring-white shadow-sm">
-                   <Star className="w-4 h-4 text-yellow-600 fill-yellow-600" />
+                <div className="bg-yellow-100 p-1.5 rounded-full ring-2 ring-white shadow-md">
+                   <Star className="w-5 h-5 text-yellow-600 fill-yellow-600" />
                 </div>
               )}
             </div>
-            <p className="text-xs md:text-sm text-stone-500 font-bold mt-1 uppercase tracking-[0.15em] opacity-70">
+            <p className="text-xs md:text-md text-stone-400 font-bold mt-2 uppercase tracking-[0.2em] opacity-80">
               {listing.listing_type_name || listing.listing_type?.replace('_', ' ') || 'Registered Business'}
             </p>
           </div>

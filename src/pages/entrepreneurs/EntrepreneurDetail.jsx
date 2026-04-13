@@ -165,7 +165,7 @@ const EntrepreneurDetail = () => {
               </div>
 
               {/* Info */}
-              <div className="flex-1 pt-4 md:pt-8">
+              <div className="flex-1 pt-6 md:pt-10">
                 <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                   <div>
                     <div className="flex items-center gap-2 mb-1">
@@ -179,6 +179,34 @@ const EntrepreneurDetail = () => {
                         {profile.designation || profile.role_title} at <span className="font-medium">{profile.company_name}</span>
                       </p>
                     )}
+                    
+                    {/* Social Media Links - Clean layout without line breaks */}
+                    <div className="flex flex-wrap items-center gap-6 mt-3">
+                      {(profile.linkedin || profile.social_linkedin) && (
+                        <a href={profile.linkedin || profile.social_linkedin} target="_blank" rel="noopener noreferrer" className="text-stone-400 hover:text-blue-600 transition-all hover:scale-110 flex items-center gap-2 font-medium text-sm">
+                          <Linkedin className="w-5 h-5 opacity-70" />
+                          <span className="hidden sm:inline">LinkedIn</span>
+                        </a>
+                      )}
+                      {(profile.twitter || profile.social_twitter) && (
+                        <a href={profile.twitter || profile.social_twitter} target="_blank" rel="noopener noreferrer" className="text-stone-400 hover:text-sky-500 transition-all hover:scale-110 flex items-center gap-2 font-medium text-sm">
+                          <Twitter className="w-5 h-5 opacity-70" />
+                          <span className="hidden sm:inline">Twitter</span>
+                        </a>
+                      )}
+                      {(profile.facebook || profile.social_facebook) && (
+                        <a href={profile.facebook || profile.social_facebook} target="_blank" rel="noopener noreferrer" className="text-stone-400 hover:text-blue-700 transition-all hover:scale-110 flex items-center gap-2 font-medium text-sm">
+                          <Facebook className="w-5 h-5 opacity-70" />
+                          <span className="hidden sm:inline">Facebook</span>
+                        </a>
+                      )}
+                      {(profile.website || profile.company_page_url) && (
+                        <a href={profile.website || profile.company_page_url} target="_blank" rel="noopener noreferrer" className="text-stone-400 hover:text-emerald-700 transition-all hover:scale-110 flex items-center gap-2 font-medium text-sm">
+                          <Globe className="w-5 h-5 opacity-70" />
+                          <span className="hidden sm:inline">Website</span>
+                        </a>
+                      )}
+                    </div>
                     {(profile.city || profile.headquarters) && (
                       <p className="text-sm text-stone-500 flex items-center gap-1 mt-2">
                         <MapPin className="w-4 h-4" />
@@ -194,8 +222,8 @@ const EntrepreneurDetail = () => {
                   </div>
                 </div>
 
-                {/* Snapshot Stats */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6 pt-6 border-t border-stone-200">
+                {/* Snapshot Stats - Removed Border */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6 pt-6">
                   {profile.startup_stage && (
                     <div className="flex flex-col">
                       <span className="text-[10px] uppercase font-bold text-stone-400">Stage</span>
@@ -224,9 +252,9 @@ const EntrepreneurDetail = () => {
               </div>
             </div>
 
-            {/* About / Bio */}
+            {/* About / Bio - Removed Border */}
             {(profile.details || profile.short_bio) && (
-              <div className="mt-8 pt-8 border-t border-stone-200">
+              <div className="mt-8 pt-4">
                 <h2 className="text-lg font-semibold text-stone-900 mb-4">About</h2>
                 <div className="relative">
                   <p className="text-stone-700 leading-relaxed">
@@ -338,87 +366,35 @@ const EntrepreneurDetail = () => {
               </div>
             )}
 
-            {/* Profile Author Bio */}
+            {/* Profile Author Bio - Moved to Last */}
             {authorData && (
               <div className="mt-12 pt-8 border-t border-stone-200">
-                <div className="bg-emerald-50/30 rounded-2xl p-6 flex flex-col md:flex-row gap-6 items-start">
+                <div className="bg-stone-50 rounded-2xl p-6 flex flex-col md:flex-row gap-6 items-start">
                   <Link to={`/author/${authorData.slug}`} className="flex-shrink-0">
-                    <div className="w-20 h-20 rounded-full overflow-hidden bg-white border-2 border-emerald-900 shadow-md">
+                    <div className="w-16 h-16 rounded-full overflow-hidden bg-white border border-stone-200">
                       {authorData.photo ? (
                         <img src={authorData.photo} alt={authorData.name} className="w-full h-full object-cover" />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-2xl font-bold text-emerald-900">
+                        <div className="w-full h-full flex items-center justify-center text-xl font-bold text-stone-300">
                           {authorData.name.charAt(0)}
                         </div>
                       )}
                     </div>
                   </Link>
                   <div className="flex-1">
-                    <div className="mb-2">
-                      <h4 className="font-bold text-stone-900">Profile written by: {authorData.name}</h4>
-                      <p className="text-xs text-emerald-700 font-medium">Verified Contributor</p>
+                    <div className="mb-1">
+                      <h4 className="font-bold text-stone-900 leading-none">Profile written by: {authorData.name}</h4>
                     </div>
-                    <p className="text-sm text-stone-600 mb-4 line-clamp-2">
-                      {authorData.bio || "Passionate about documenting the journeys of Bangladesh's most innovative founders."}
+                    <p className="text-xs text-stone-500 mb-3 italic">
+                      {authorData.bio || "Verified Contributor at Entrepreneurs BD"}
                     </p>
-                    <Link to={`/author/${authorData.slug}`} className="text-xs font-bold text-emerald-900 hover:underline">
-                      VIEW MORE BY THIS AUTHOR →
+                    <Link to={`/author/${authorData.slug}`} className="text-[10px] font-black uppercase tracking-widest text-emerald-900 hover:underline">
+                      View all posts by this author →
                     </Link>
                   </div>
                 </div>
               </div>
             )}
-
-            {/* Social Links */}
-            <div className="mt-8 pt-8 border-t border-stone-200">
-              <h2 className="text-lg font-semibold text-stone-900 mb-4">Connect</h2>
-              <div className="flex flex-wrap gap-3">
-                {(profile.company_page_url || profile.website) && (
-                  <a
-                    href={profile.company_page_url || profile.website}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 px-4 py-2 bg-stone-100 hover:bg-emerald-100 rounded-lg text-stone-700 hover:text-emerald-900 transition-colors"
-                  >
-                    <Globe className="w-4 h-4" />
-                    Official Website
-                  </a>
-                )}
-                {(profile.linkedin || profile.social_linkedin) && (
-                  <a
-                    href={profile.linkedin || profile.social_linkedin}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 px-4 py-2 bg-stone-100 hover:bg-blue-100 rounded-lg text-stone-700 hover:text-blue-700 transition-colors"
-                  >
-                    <Linkedin className="w-4 h-4" />
-                    LinkedIn
-                  </a>
-                )}
-                {(profile.twitter || profile.social_twitter) && (
-                  <a
-                    href={profile.twitter || profile.social_twitter}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 px-4 py-2 bg-stone-100 hover:bg-sky-100 rounded-lg text-stone-700 hover:text-sky-600 transition-colors"
-                  >
-                    <Twitter className="w-4 h-4" />
-                    Twitter
-                  </a>
-                )}
-                {(profile.facebook || profile.social_facebook) && (
-                  <a
-                    href={profile.facebook || profile.social_facebook}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 px-4 py-2 bg-stone-100 hover:bg-blue-100 rounded-lg text-stone-700 hover:text-blue-600 transition-colors"
-                  >
-                    <Facebook className="w-4 h-4" />
-                    Facebook
-                  </a>
-                )}
-              </div>
-            </div>
           </CardContent>
         </Card>
       </div>
