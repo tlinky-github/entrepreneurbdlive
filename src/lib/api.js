@@ -56,7 +56,9 @@ export const postAPI = {
         q = query(q, where('status', '==', 'published'));
       }
 
-      q = query(q, orderBy('created_at', 'desc'));
+      if (!params.noSort) {
+        q = query(q, orderBy('created_at', 'desc'));
+      }
       
       if (params.limit) {
         q = query(q, limit(params.limit));
@@ -593,9 +595,12 @@ export const mediaAPI = {
     try {
       let q = collection(db, 'media');
       
-      // Try with ordering first (requires index)
+      // Try with ordering first (requires index) unless noSort is requested
       try {
-        let sortedQ = query(q, orderBy('created_at', 'desc'));
+        let sortedQ = q;
+        if (!params.noSort) {
+          sortedQ = query(q, orderBy('created_at', 'desc'));
+        }
         if (params.limit) {
           sortedQ = query(sortedQ, limit(params.limit));
         }

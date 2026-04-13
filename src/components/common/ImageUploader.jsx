@@ -61,15 +61,19 @@ const ImageUploader = ({
     toast.info('Deep scanning platform for images...');
     try {
       // 1. Get current media URLs to avoid duplicates
-      const currentRes = await mediaAPI.list();
+      const currentRes = await mediaAPI.list({ noSort: true });
       const existingUrls = new Set((currentRes.data || []).map(m => m.url));
+      console.log(`Current items in gallery: ${existingUrls.size}`);
 
       // 2. Aggregate images from all major collections
+      console.log('Fetching records from Firestore...');
       const [blogRes, profileRes, listingRes] = await Promise.all([
-        api.postAPI.list({ limit: 40, isAdmin: true }),
-        api.profileAPI.list({ status: 'all' }),
-        api.listingAPI.list({ status: 'all' })
+        api.postAPI.list({ limit: 100, isAdmin: true, noSort: true }),
+        api.profileAPI.list({ status: 'all', limit: 100, noSort: true }),
+        api.listingAPI.list({ status: 'all', limit: 100, noSort: true })
       ]);
+      
+      console.log(`Found: ${blogRes.data?.length || 0} posts, ${profileRes.data?.length || 0} profiles, ${listingRes.data?.length || 0} listings`);
       
       const imagesToTrack = [];
       
@@ -78,15 +82,12 @@ const ImageUploader = ({
         const urls = new Set();
         if (p.featured_image) urls.add(p.featured_image);
         
-        // Scrape embedded images from content/content_html
         const content = p.content || p.content_html || '';
-        const imgMatches = content.matchAll(/<img[^>]+src="([^">]+)"/g);
-        for (const match of imgMatches) {
-          urls.add(match[1]);
-        }
+        const imgMatches = [...content.matchAll(/<img[^>]+src="([^">]+)"/g)];
+        imgMatches.forEach(match => urls.add(match[1]));
 
         urls.forEach(url => {
-          if (!existingUrls.has(url)) {
+          if (url && !existingUrls.has(url)) {
             imagesToTrack.push({ url, name: p.title });
             existingUrls.add(url);
           }
@@ -99,13 +100,11 @@ const ImageUploader = ({
         if (p.featured_image) urls.add(p.featured_image);
         
         const content = p.details || p.bio || '';
-        const imgMatches = content.matchAll(/<img[^>]+src="([^">]+)"/g);
-        for (const match of imgMatches) {
-          urls.add(match[1]);
-        }
+        const imgMatches = [...content.matchAll(/<img[^>]+src="([^">]+)"/g)];
+        imgMatches.forEach(match => urls.add(match[1]));
 
         urls.forEach(url => {
-          if (!existingUrls.has(url)) {
+          if (url && !existingUrls.has(url)) {
             imagesToTrack.push({ url, name: p.name });
             existingUrls.add(url);
           }
@@ -119,18 +118,18 @@ const ImageUploader = ({
         if (l.logo) urls.add(l.logo);
 
         const content = l.description || l.details || '';
-        const imgMatches = content.matchAll(/<img[^>]+src="([^">]+)"/g);
-        for (const match of imgMatches) {
-          urls.add(match[1]);
-        }
+        const imgMatches = [...content.matchAll(/<img[^>]+src="([^">]+)"/g)];
+        imgMatches.forEach(match => urls.add(match[1]));
 
         urls.forEach(url => {
-          if (!existingUrls.has(url)) {
+          if (url && !existingUrls.has(url)) {
             imagesToTrack.push({ url, name: l.business_name });
             existingUrls.add(url);
           }
         });
       });
+
+      console.log(`Unique NEW images found to sync: ${imagesToTrack.length}`);
 
       let syncCount = 0;
       for (const img of imagesToTrack) {
