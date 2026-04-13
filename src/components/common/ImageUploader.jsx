@@ -119,6 +119,7 @@ const ImageUploader = ({
               placeholder={placeholder}
             />
             <Button 
+              type="button"
               onClick={handleUseImage}
               className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold"
             >
@@ -144,6 +145,7 @@ const ImageUploader = ({
                 <p className="text-sm font-medium text-stone-600">Drop image or click to browse</p>
                 <p className="text-xs text-stone-400 mt-1">PNG, JPG, WebP up to 10MB</p>
                 <Button
+                  type="button"
                   size="sm"
                   variant="outline"
                   className="mt-4"
@@ -162,7 +164,13 @@ const ImageUploader = ({
             <div className="bg-stone-50 rounded-xl p-4 border border-stone-100 space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-stone-400 uppercase">Selected Image</span>
-                <button onClick={() => setPreviewUrl('')} className="text-xs text-red-500 hover:underline">Change</button>
+                <button 
+                  type="button" 
+                  onClick={() => setPreviewUrl('')} 
+                  className="text-xs text-red-500 hover:underline"
+                >
+                  Change
+                </button>
               </div>
               <div className="aspect-video rounded-lg overflow-hidden border border-stone-200 relative">
                 <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
@@ -197,6 +205,7 @@ const ImageUploader = ({
                 </div>
               </div>
               <Button 
+                type="button"
                 onClick={handleUseImage} 
                 className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-6 shadow-lg transition-all active:scale-[0.98]"
               >
