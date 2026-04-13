@@ -149,6 +149,7 @@ const Home = () => {
               <img
                 src="https://images.unsplash.com/photo-1627599936744-51d288f89af4?w=600&h=400&fit=crop"
                 alt="Bangladeshi entrepreneurs collaborating"
+                decoding="async"
                 className="rounded-2xl shadow-2xl"
               />
             </div>
@@ -284,7 +285,13 @@ const Home = () => {
                     <CardContent className="p-6">
                       <div className="w-20 h-20 bg-emerald-100 rounded-full mx-auto mb-4 flex items-center justify-center overflow-hidden">
                         {entrepreneur.photo ? (
-                          <img src={entrepreneur.photo} alt={entrepreneur.photo_alt || entrepreneur.name} className="w-full h-full object-cover" />
+                          <img 
+                            src={entrepreneur.photo} 
+                            alt={entrepreneur.photo_alt || entrepreneur.name} 
+                            loading="lazy"
+                            decoding="async"
+                            className="w-full h-full object-cover" 
+                          />
                         ) : (
                           <span className="text-2xl font-bold text-emerald-900">
                             {entrepreneur.name?.charAt(0)}
@@ -343,7 +350,13 @@ const Home = () => {
                       <div className="flex items-start gap-4">
                         <div className="w-14 h-14 bg-stone-100 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
                           {listing.logo ? (
-                            <img src={listing.logo} alt={listing.logo_alt || listing.business_name} className="w-full h-full object-cover" />
+                            <img 
+                              src={listing.logo} 
+                              alt={listing.logo_alt || listing.business_name} 
+                              loading="lazy"
+                              decoding="async"
+                              className="w-full h-full object-cover" 
+                            />
                           ) : (
                             <Building2 className="w-6 h-6 text-stone-400" />
                           )}
@@ -401,6 +414,8 @@ const Home = () => {
                         <img
                           src={post.featured_image}
                           alt={post.featured_image_alt || post.title}
+                          loading="lazy"
+                          decoding="async"
                           className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                         />
                       </div>
