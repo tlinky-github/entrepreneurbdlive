@@ -87,7 +87,11 @@ const AdminUsers = () => {
     loadUsers();
   }, [loadUsers]);
 
-  const handleRoleChange = async (userId, newRole) => {
+  const handleRoleChange = async (e, userId, newRole) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     try {
       await adminAPI.updateUserRole(userId, newRole);
       toast.success('User role updated');
@@ -125,7 +129,11 @@ const AdminUsers = () => {
     }
   };
 
-  const handleToggleVerification = async (user) => {
+  const handleToggleVerification = async (e, user) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     try {
       await adminAPI.updateUserStatus(user.id, !user.is_verified);
       toast.success(user.is_verified ? 'User unverified' : 'User verified');
@@ -308,7 +316,7 @@ const AdminUsers = () => {
                           {roles.map((role) => (
                             <DropdownMenuItem
                               key={role.value}
-                              onClick={() => handleRoleChange(user.id, role.value)}
+                              onClick={(e) => handleRoleChange(e, user.id, role.value)}
                               disabled={user.role === role.value}
                             >
                               {role.value === 'super_admin' && <ShieldCheck className="w-4 h-4 mr-2" />}
@@ -318,7 +326,7 @@ const AdminUsers = () => {
                             </DropdownMenuItem>
                           ))}
                           <div className="border-t my-1" />
-                          <DropdownMenuItem onClick={() => handleToggleVerification(user)}>
+                          <DropdownMenuItem onClick={(e) => handleToggleVerification(e, user)}>
                             {user.is_verified ? (
                               <span className="flex items-center text-yellow-600">
                                 <XCircle className="w-4 h-4 mr-2" />
