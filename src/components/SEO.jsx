@@ -6,6 +6,7 @@ export const SEO = ({
     title,
     description,
     image,
+    ogImage, // New custom Social Media image
     type = 'website',
     author,
     publishedTime,
@@ -17,10 +18,11 @@ export const SEO = ({
     const defaultConfig = SEO_CONFIG.default;
 
     // Merge: Props > Static Config > Default Config
+    // Prioritize ogImage for social sharing if provided
     const meta = {
         title: title || staticConfig.title || defaultConfig.title,
         description: description || staticConfig.description || defaultConfig.description,
-        image: image || staticConfig.image || defaultConfig.image,
+        image: ogImage || image || staticConfig.image || defaultConfig.image,
         type: type || staticConfig.type || defaultConfig.type,
         keywords: props.keywords || staticConfig.keywords || defaultConfig.keywords || [],
     };

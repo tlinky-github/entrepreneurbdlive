@@ -71,6 +71,10 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isAdmin();
     }
+    match /media/{item} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
 
     // Settings: Public read, Super Admin write
     match /settings/{setting} {

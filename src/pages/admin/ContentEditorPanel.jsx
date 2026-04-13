@@ -19,13 +19,14 @@ import { Input } from '../../components/ui/input';
 import { Badge } from '../../components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { toast } from 'sonner';
-import { Save, ChevronLeft, Eye, Settings, Star } from 'lucide-react';
+import { Save, ChevronLeft, Eye, Settings, Star, HelpCircle } from 'lucide-react';
 import { contentAPI, taxonomyAPI, categoryAPI, blogCategoryAPI, authorAPI } from '../../lib/api';
 import ImageUploader from '../../components/common/ImageUploader';
 import LinkDialog from '../../components/admin/LinkDialog';
 import ImageEditorDialog from '../../components/admin/ImageEditorDialog';
 import { Label } from '../../components/ui/label';
 import { Pencil, Globe, Smartphone, Monitor, Plus, X } from 'lucide-react';
+import FaqExtension from '../../components/editor/FaqExtension';
 import './ContentEditorPanel.css';
 
 const ContentEditorPanel = () => {
@@ -50,6 +51,7 @@ const ContentEditorPanel = () => {
   const [seoTitle, setSeoTitle] = useState('');
   const [seoDescription, setSeoDescription] = useState('');
   const [seoKeywords, setSeoKeywords] = useState('');
+  const [ogImage, setOgImage] = useState('');
 
   // Specialized Fields
   const [designation, setDesignation] = useState('');
@@ -109,7 +111,12 @@ const ContentEditorPanel = () => {
     TextAlign.configure({ types: ['heading', 'paragraph'] }),
     TextStyle,
     Color,
-    Highlight,
+    Highlight.configure({
+      multicolor: true,
+    }),
+    FaqExtension,
+    Link,
+    Underline,
   ];
 
   // Main Content Editor
@@ -173,6 +180,7 @@ const ContentEditorPanel = () => {
             setSeoTitle(data.seo_title || '');
             setSeoDescription(data.seo_description || '');
             setSeoKeywords(data.seo_keywords || '');
+            setOgImage(data.og_image || '');
 
             // Load specialized fields
             setDesignation(data.designation || '');
@@ -294,27 +302,45 @@ const ContentEditorPanel = () => {
 
     setSaving(true);
     try {
-      const content = editor?.getHTML() || '';
+      const contentHtml = editor?.getHTML() || '';
 
-      if (!content || content === '<p></p>') {
+      if (!contentHtml || contentHtml === '<p></p>') {
         toast.warning('Please add some content before saving');
         setSaving(false);
         return;
       }
+
+      // Extract FAQs from content
+      const faqBlocks = document.createElement('div');
+      faqBlocks.innerHTML = contentHtml;
+      const faqNodes = faqBlocks.querySelectorAll('faq-section');
+      let extractedFaqs = [];
+      faqNodes.forEach(node => {
+        try {
+          const data = node.getAttribute('data-faqs');
+          if (data) {
+            extractedFaqs = [...extractedFaqs, ...JSON.parse(data)];
+          }
+        } catch (e) {
+          console.error('Error parsing FAQs from content:', e);
+        }
+      });
 
       const payload = {
         type,
         title,
         slug,
         excerpt,
-        content,
+        content: contentHtml,
         category_id: parseInt(category),
-        // If editing existing content, force status to pending for re-approval
-        status: itemId ? 'pending' : status,
+        // If already published, maintain that status. If draft/new, use current status.
+        status: (itemId && status === 'published') ? 'published' : status,
         featured_image: featuredImage,
         seo_title: seoTitle,
         seo_description: seoDescription,
         seo_keywords: seoKeywords,
+        og_image: ogImage,
+        faqs: extractedFaqs, // Keep array in sync for SEO component
         // Include all specialized fields in payload
         designation,
         company_name: companyName,
@@ -331,7 +357,6 @@ const ContentEditorPanel = () => {
         listing_type: listingType,
         startup_stage: startupStage,
         authorId,
-        faqs,
         // Sync excerpt to fields used by the frontend for intro text
         details: type === 'entrepreneurs' ? excerpt : null,
         short_description: type === 'directory' ? excerpt : null
@@ -689,15 +714,14 @@ const ContentEditorPanel = () => {
                 )}
               </div>
 
-              <div className="flex items-center gap-2 pt-4">
+              <div className="featured-toggle-container">
                 <input 
                   type="checkbox" 
                   id="featured-toggle"
                   checked={isFeatured}
                   onChange={(e) => setIsFeatured(e.target.checked)}
-                  className="w-4 h-4 accent-emerald-600"
                 />
-                <label htmlFor="featured-toggle" className="flex items-center gap-1 cursor-pointer font-medium">
+                <label htmlFor="featured-toggle" className="featured-label">
                   <Star className={`w-4 h-4 ${isFeatured ? 'fill-yellow-500 text-yellow-500' : 'text-stone-400'}`} />
                   Set as Featured Content
                 </label>
@@ -705,8 +729,9 @@ const ContentEditorPanel = () => {
             </CardContent>
           </Card>
 
-          {/* Content Editor with Toolbar */}
-          <Card className="mt-6">
+          {/* Dynamic FAQ Manager - Removed (now inline) */}
+
+          <Card>
             <CardHeader>
               <CardTitle>Content</CardTitle>
             </CardHeader>
@@ -849,6 +874,14 @@ const ContentEditorPanel = () => {
                   >
                     Link
                   </button>
+                  <button
+                    onClick={() => editor.chain().focus().insertContent({ type: 'faqSection', attrs: { faqs: [{ q: '', a: '' }] } }).run()}
+                    disabled={!editor}
+                    title="Insert FAQ Section"
+                    className="flex items-center gap-1"
+                  >
+                    <HelpCircle size={14} /> FAQ
+                  </button>
                 </div>
 
                 <div className="toolbar-divider" />
@@ -896,77 +929,6 @@ const ContentEditorPanel = () => {
             </CardContent>
           </Card>
 
-          {/* Dynamic FAQ Manager */}
-          <Card className="mt-6 border-stone-200 shadow-sm overflow-hidden">
-            <CardHeader className="bg-stone-50/50 border-b border-stone-100 py-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-lg">SEO FAQ Builder</CardTitle>
-                  <p className="text-xs text-stone-500 mt-1">Add Question & Answer pairs to boost Google rich snippets.</p>
-                </div>
-                <Button 
-                  onClick={() => setFaqs([...faqs, { q: '', a: '' }])}
-                  variant="outline"
-                  size="sm"
-                  className="border-emerald-600 text-emerald-900 hover:bg-emerald-50 bg-white"
-                >
-                  <Plus className="w-3.5 h-3.5 mr-2" />
-                  Add New FAQ
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="p-6">
-              {faqs.length === 0 ? (
-                <div className="text-center py-12 text-stone-400 border-2 border-dashed border-stone-100 rounded-xl bg-stone-50/30">
-                  <Plus className="w-8 h-8 mx-auto mb-3 opacity-20" />
-                  <p className="text-sm font-medium">No FAQs added yet.</p>
-                  <p className="text-xs mt-1">Helpful for SEO search results!</p>
-                </div>
-              ) : (
-                <div className="space-y-6">
-                  {faqs.map((faq, index) => (
-                    <div key={index} className="relative p-5 bg-white rounded-xl border border-stone-200 group transition-all hover:border-emerald-200 hover:shadow-md">
-                      <button 
-                        onClick={() => setFaqs(faqs.filter((_, i) => i !== index))}
-                        className="absolute -top-2 -right-2 w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md hover:bg-red-600 z-10"
-                        title="Remove FAQ"
-                      >
-                        <X size={14} />
-                      </button>
-                      <div className="space-y-4">
-                        <div className="space-y-1.5">
-                          <label className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 mb-1 block">Question {index + 1}</label>
-                          <Input 
-                            value={faq.q}
-                            onChange={(e) => {
-                              const newFaqs = [...faqs];
-                              newFaqs[index].q = e.target.value;
-                              setFaqs(newFaqs);
-                            }}
-                            placeholder="e.g. How does this service help entrepreneurs?"
-                            className="bg-stone-50/50 border-stone-200 focus:bg-white"
-                          />
-                        </div>
-                        <div className="space-y-1.5">
-                          <label className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 mb-1 block">Answer {index + 1}</label>
-                          <textarea 
-                            value={faq.a}
-                            onChange={(e) => {
-                              const newFaqs = [...faqs];
-                              newFaqs[index].a = e.target.value;
-                              setFaqs(newFaqs);
-                            }}
-                            className="w-full min-h-[100px] rounded-md border border-stone-200 bg-stone-50/50 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-900 transition-all focus:bg-white"
-                            placeholder="Provide a detailed, helpful answer..."
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
         </div>
 
         {/* Right: SEO & Preview */}
@@ -1008,6 +970,17 @@ const ContentEditorPanel = () => {
                   placeholder="Comma-separated keywords"
                   className="textarea-small"
                 />
+              </div>
+
+              <div className="space-y-2 pt-2 border-t border-stone-100">
+                <label className="text-xs font-bold uppercase tracking-wider text-stone-500">Social Media Image (OpenGraph)</label>
+                <ImageUploader 
+                  value={ogImage}
+                  onChange={(url) => setOgImage(url)}
+                  entityType="seo"
+                  placeholder="Custom image for social sharing"
+                />
+                <p className="text-[10px] text-stone-400">Controls how your link appears on Facebook, Twitter, and LinkedIn.</p>
               </div>
 
               <div className="seo-preview">

@@ -287,7 +287,7 @@ const BlogDetail = () => {
           </div>
         )}
 
-        {/* Article Content */}
+        {/* Article Content with Inline FAQs */}
         {post.content_component ? (
           <div className="prose prose-lg max-w-none prose-headings:font-bold prose-headings:text-stone-900 prose-p:text-stone-700 prose-a:text-emerald-900 prose-strong:text-stone-900 prose-blockquote:border-emerald-900 prose-blockquote:text-stone-600">
             <MDXProvider>
@@ -295,57 +295,62 @@ const BlogDetail = () => {
             </MDXProvider>
           </div>
         ) : (
-          <div
-            className="tiptap-content"
-            dangerouslySetInnerHTML={{ __html: post.content || post.content_html }}
-          />
-        )}
-
-        {/* Tags */}
-        {post.tags?.length > 0 && (
-          <div className="mt-10 pt-6 border-t border-stone-200">
-            <div className="flex flex-wrap gap-2">
-              {post.tags.map((tag, index) => (
-                <Badge key={index} variant="outline" className="text-stone-600">
-                  #{tag}
-                </Badge>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Dynamic FAQs Section */}
-        {post.faqs?.length > 0 && (
-          <div className="mt-16 pt-8 border-t border-stone-200 bg-emerald-50/30 rounded-2xl p-6 md:p-8">
-            <h2 className="text-2xl font-bold text-stone-900 mb-6 flex items-center gap-2">
-              <CheckCircle className="w-6 h-6 text-emerald-700" />
-              Frequently Asked Questions
-            </h2>
-            <div className="space-y-4">
-              {post.faqs.map((faq, index) => (
-                <div 
-                  key={index}
-                  className="bg-white border border-stone-200 rounded-xl overflow-hidden transition-all duration-200 shadow-sm"
-                >
-                  <button
-                    onClick={() => setOpenFaqIndex(openFaqIndex === index ? null : index)}
-                    className="w-full flex items-center justify-between p-4 text-left hover:bg-stone-50 transition-colors"
-                  >
-                    <span className="font-bold text-stone-900 pr-4">{faq.question || faq.q}</span>
-                    {openFaqIndex === index ? (
-                      <Minus className="w-5 h-5 text-emerald-700 flex-shrink-0" />
-                    ) : (
-                      <Plus className="w-5 h-5 text-emerald-700 flex-shrink-0" />
-                    )}
-                  </button>
-                  {openFaqIndex === index && (
-                    <div className="px-4 pb-4 pt-0 text-stone-600 border-t border-stone-100 animate-in fade-in slide-in-from-top-1 duration-200">
-                      <p className="mt-4 leading-relaxed whitespace-pre-wrap">{faq.answer || faq.a}</p>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
+          <div className="tiptap-content">
+            {(() => {
+              const content = post.content || post.content_html || '';
+              // Split content by our custom FAQ tag
+              const parts = content.split(/(<faq-section[^>]*><\/faq-section>)/g);
+              
+              return parts.map((part, index) => {
+                if (part.startsWith('<faq-section')) {
+                  // Extract data-faqs attribute
+                  try {
+                    const match = part.match(/data-faqs='([^']*)'/);
+                    if (match && match[1]) {
+                      const faqs = JSON.parse(match[1]);
+                      return (
+                        <div key={index} className="my-12 pt-8 border-t border-stone-200 bg-emerald-50/30 rounded-2xl p-6 md:p-8">
+                          <h2 className="text-2xl font-bold text-stone-900 mb-6 flex items-center gap-2">
+                            <CheckCircle className="w-6 h-6 text-emerald-700" />
+                            Frequently Asked Questions
+                          </h2>
+                          <div className="space-y-4">
+                            {faqs.map((faq, fIndex) => (
+                              <div 
+                                key={fIndex}
+                                className="bg-white border border-stone-200 rounded-xl overflow-hidden transition-all duration-200 shadow-sm"
+                              >
+                                <button
+                                  onClick={() => setOpenFaqIndex(openFaqIndex === `inline-${index}-${fIndex}` ? null : `inline-${index}-${fIndex}`)}
+                                  className="w-full flex items-center justify-between p-4 text-left hover:bg-stone-50 transition-colors"
+                                >
+                                  <strong className="font-bold text-stone-900 pr-4">{faq.question || faq.q}</strong>
+                                  {openFaqIndex === `inline-${index}-${fIndex}` ? (
+                                    <Minus className="w-5 h-5 text-emerald-700 flex-shrink-0" />
+                                  ) : (
+                                    <Plus className="w-5 h-5 text-emerald-700 flex-shrink-0" />
+                                  )}
+                                </button>
+                                {openFaqIndex === `inline-${index}-${fIndex}` && (
+                                  <div className="px-4 pb-4 pt-0 text-stone-600 border-t border-stone-100 animate-in fade-in slide-in-from-top-1 duration-200">
+                                    <p className="mt-4 leading-relaxed whitespace-pre-wrap">{faq.answer || faq.a}</p>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    }
+                  } catch (e) {
+                    console.error('Error parsing inline FAQs:', e);
+                  }
+                  return null;
+                }
+                
+                return <div key={index} dangerouslySetInnerHTML={{ __html: part }} />;
+              })
+            })()}
           </div>
         )}
 

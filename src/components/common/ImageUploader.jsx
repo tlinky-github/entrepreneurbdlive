@@ -2,10 +2,11 @@ import { useState, useEffect, useRef } from 'react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { toast } from 'sonner';
-import api from '../../lib/api';
+import api, { mediaAPI } from '../../lib/api';
 import { auth } from '../../lib/firebase';
-import { Upload, X, Image as ImageIcon, Loader2, Link as LinkIcon } from 'lucide-react';
+import { Upload, X, Image as ImageIcon, Loader2, Link as LinkIcon, Grid } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
+import { Skeleton } from '../ui/skeleton';
 
 const ImageUploader = ({ 
   value, 
@@ -19,13 +20,35 @@ const ImageUploader = ({
   const [alt, setAlt] = useState('');
   const [caption, setCaption] = useState('');
   const [title, setTitle] = useState('');
+  const [mediaList, setMediaList] = useState([]);
+  const [mediaLoading, setMediaLoading] = useState(false);
   const fileInputRef = useRef(null);
+
   // Sync with value prop
   useEffect(() => {
     if (value) {
       setPreviewUrl(value);
     }
   }, [value]);
+
+  // Load media when gallery tab is opened
+  useEffect(() => {
+    if (activeTab === 'gallery') {
+      loadMedia();
+    }
+  }, [activeTab]);
+
+  const loadMedia = async () => {
+    setMediaLoading(true);
+    try {
+      const res = await mediaAPI.list();
+      setMediaList(res.data || []);
+    } catch (error) {
+      console.error('Error loading media gallery:', error);
+    } finally {
+      setMediaLoading(false);
+    }
+  };
 
   const handleFileSelect = async (e) => {
     const file = e.target.files?.[0];
@@ -71,8 +94,23 @@ const ImageUploader = ({
 
       if (!uploadRes.ok) throw new Error('Cloudflare upload failed');
 
+      // 1. Set local state for preview
       setPreviewUrl(publicUrl);
       setAlt(file.name.split('.')[0].replace(/[-_]/g, ' '));
+      
+      // 2. Track in Firestore Media collection for the Gallery
+      try {
+        await mediaAPI.create({
+          url: publicUrl,
+          fileName: file.name,
+          entityType,
+          contentType: file.type,
+          uploaderId: auth.currentUser?.uid
+        });
+      } catch (trackError) {
+        console.warn('Image uploaded to R2 but failed to track in Firestore:', trackError);
+      }
+
       toast.success('Upload successful!');
     } catch (error) {
       console.error('Upload error:', error);
@@ -100,7 +138,7 @@ const ImageUploader = ({
   return (
     <div className="space-y-4" data-testid="image-uploader">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="url">
             <LinkIcon className="w-4 h-4 mr-2" />
             URL
@@ -109,7 +147,57 @@ const ImageUploader = ({
             <Upload className="w-4 h-4 mr-2" />
             Upload
           </TabsTrigger>
+          <TabsTrigger value="gallery">
+            <Grid className="w-4 h-4 mr-2" />
+            Gallery
+          </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="gallery" className="mt-4">
+          <div className="bg-stone-50 rounded-xl p-4 border border-stone-100 min-h-[250px]">
+            {mediaLoading ? (
+              <div className="grid grid-cols-3 gap-2">
+                {[...Array(6)].map((_, i) => (
+                  <Skeleton key={i} className="aspect-square rounded-lg" />
+                ))}
+              </div>
+            ) : mediaList.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <ImageIcon className="w-10 h-10 text-stone-200 mb-2" />
+                <p className="text-sm text-stone-500">No images in your library yet.</p>
+                <button 
+                  onClick={() => setActiveTab('upload')}
+                  className="text-xs text-emerald-600 font-bold mt-2 hover:underline"
+                >
+                  Upload your first image
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-3 gap-2 max-h-[400px] overflow-y-auto pr-1 custom-scrollbar">
+                {mediaList.map((item) => (
+                  <div 
+                    key={item.id}
+                    onClick={() => {
+                      setPreviewUrl(item.url);
+                      setAlt(item.fileName?.split('.')[0].replace(/[-_]/g, ' ') || '');
+                      setActiveTab('upload'); // Switch to upload tab to see the preview/form
+                    }}
+                    className={`aspect-square rounded-lg overflow-hidden border-2 cursor-pointer transition-all hover:scale-[1.02] active:scale-95 ${
+                      previewUrl === item.url ? 'border-emerald-600 shadow-md' : 'border-transparent hover:border-stone-200'
+                    }`}
+                  >
+                    <img 
+                      src={item.url} 
+                      alt={item.fileName} 
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </TabsContent>
 
         <TabsContent value="url" className="mt-4">
           <div className="flex space-x-2">

@@ -2,13 +2,25 @@ const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 const admin = require('firebase-admin');
 
-// 0. Initialize Firebase Admin once
+// 0. Initialize Firebase Admin once with enhanced credential detection
 if (!admin.apps.length) {
-  admin.initializeApp({
-    projectId: process.env.FIREBASE_PROJECT_ID,
-    // Note: Vercel environment should have GOOGLE_APPLICATION_CREDENTIALS 
-    // or FIREBASE_SERVICE_ACCOUNT env var configured for this to work in prod.
-  });
+  const projectId = process.env.FIREBASE_PROJECT_ID;
+  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+  const privateKey = process.env.FIREBASE_PRIVATE_KEY;
+
+  if (projectId && clientEmail && privateKey) {
+    admin.initializeApp({
+      credential: admin.credential.cert({
+        projectId,
+        clientEmail,
+        privateKey: privateKey.replace(/\\n/g, '\n'),
+      }),
+    });
+  } else {
+    admin.initializeApp({
+      projectId: projectId || process.env.REACT_APP_FIREBASE_PROJECT_ID,
+    });
+  }
 }
 
 // Cloudflare R2 Configuration from Environment Variables
@@ -29,19 +41,22 @@ module.exports = async (req, res) => {
 
   // 1b. Enhanced Security: Firebase Auth Token Check
   const authHeader = req.headers['authorization'];
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  if (!authHeader || !authHeader.toLowerCase().startsWith('bearer ')) {
     console.warn('Unauthorized API access attempt: Missing or malformed token');
     return res.status(401).json({ error: 'Unauthorized: Missing token' });
   }
 
-  const idToken = authHeader.split('Bearer ')[1];
+  const idToken = authHeader.split(/\s+/)[1];
   
   try {
     const decodedToken = await admin.auth().verifyIdToken(idToken);
-    req.user = decodedToken; // Token is valid, store user for potential use
+    req.user = decodedToken;
   } catch (error) {
-    console.error('Firebase Auth Error:', error);
-    return res.status(401).json({ error: 'Unauthorized: Invalid token' });
+    console.error('Firebase Auth Error:', error.message);
+    return res.status(401).json({ 
+      error: 'Unauthorized: Invalid token',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined 
+    });
   }
 
   // 2. Fetch filename and type from request

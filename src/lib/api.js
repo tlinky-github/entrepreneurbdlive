@@ -589,6 +589,47 @@ export const authorAPI = {
   }
 };
 
+// --- Media Library API ---
+export const mediaAPI = {
+  list: async (params = {}) => {
+    try {
+      let q = collection(db, 'media');
+      q = query(q, orderBy('created_at', 'desc'));
+      
+      if (params.limit) {
+        q = query(q, limit(params.limit));
+      }
+      
+      const snapshot = await getDocs(q);
+      return { data: snapshot.docs.map(docToData) };
+    } catch (error) {
+      console.error('Error listing media:', error);
+      return { data: [] };
+    }
+  },
+  create: async (data) => {
+    try {
+      const res = await addDoc(collection(db, 'media'), {
+        ...data,
+        created_at: serverTimestamp()
+      });
+      return { id: res.id, ...data };
+    } catch (error) {
+      console.error('Error creating media entry:', error);
+      throw error;
+    }
+  },
+  delete: async (id) => {
+    try {
+      await deleteDoc(doc(db, 'media', id));
+      return { success: true };
+    } catch (error) {
+      console.error('Error deleting media entry:', error);
+      throw error;
+    }
+  }
+};
+
 // Exporting actual implementations
 export const categoryAPI = { 
   list: () => taxonomyAPI.list('categories'),
@@ -627,5 +668,5 @@ export const settingsAPI = {
 export default { 
   postAPI, profileAPI, listingAPI, contentAPI, interactionAPI, 
   adminAPI, commentAPI, resourceAPI, authAPI, categoryAPI, 
-  blogCategoryAPI, industryAPI, cityAPI, taxonomyAPI, settingsAPI, authorAPI
+  blogCategoryAPI, industryAPI, cityAPI, taxonomyAPI, settingsAPI, authorAPI, mediaAPI
 };

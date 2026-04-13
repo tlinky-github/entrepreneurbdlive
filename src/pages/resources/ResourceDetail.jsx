@@ -142,42 +142,62 @@ const ResourceDetail = () => {
                 </div>
               )}
               <CardContent className="p-8 lg:p-12">
-                <div 
-                  className="tiptap-content"
-                  dangerouslySetInnerHTML={{ __html: resource.content }}
-                />
-
-                {/* Resource Footer / FAQs */}
-                {resource.faqs?.length > 0 && (
-                  <div className="mt-12 pt-8 border-t border-stone-100">
-                    <h3 className="text-xl font-bold text-stone-900 mb-6 flex items-center gap-2">
-                      <CheckCircle className="w-5 h-5 text-emerald-700" />
-                      Resource FAQs
-                    </h3>
-                    <div className="space-y-3">
-                      {resource.faqs.map((faq, index) => (
-                        <div key={index} className="border border-stone-200 rounded-lg overflow-hidden">
-                          <button
-                            onClick={() => setOpenFaqIndex(openFaqIndex === index ? null : index)}
-                            className="w-full flex items-center justify-between p-4 text-left hover:bg-stone-50 transition-colors"
-                          >
-                            <span className="font-bold text-stone-900 text-sm">{faq.question || faq.q}</span>
-                            {openFaqIndex === index ? (
-                              <Minus className="w-4 h-4 text-emerald-700" />
-                            ) : (
-                              <Plus className="w-4 h-4 text-emerald-700" />
-                            )}
-                          </button>
-                          {openFaqIndex === index && (
-                            <div className="px-4 pb-4 pt-1 text-stone-600 text-sm border-t border-stone-50 bg-stone-50/30">
-                              <p className="mt-2 leading-relaxed">{faq.answer || faq.a}</p>
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                {/* Article Content with Inline FAQs */}
+                <div className="tiptap-content">
+                  {(() => {
+                    const content = resource.content || resource.content_html || '';
+                    // Split content by our custom FAQ tag
+                    const parts = content.split(/(<faq-section[^>]*><\/faq-section>)/g);
+                    
+                    return parts.map((part, index) => {
+                      if (part.startsWith('<faq-section')) {
+                        // Extract data-faqs attribute
+                        try {
+                          const match = part.match(/data-faqs='([^']*)'/);
+                          if (match && match[1]) {
+                            const faqs = JSON.parse(match[1].replace(/&quot;/g, '"'));
+                            return (
+                              <div key={index} className="my-12 pt-8 border-t border-stone-200 bg-emerald-50/30 rounded-2xl p-6 md:p-8">
+                                <h2 className="text-2xl font-bold text-stone-900 mb-6 flex items-center gap-2">
+                                  <CheckCircle className="w-6 h-6 text-emerald-700" />
+                                  Frequently Asked Questions
+                                </h2>
+                                <div className="space-y-4">
+                                  {faqs.map((faq, fIndex) => (
+                                    <div 
+                                      key={fIndex}
+                                      className="bg-white border border-stone-200 rounded-xl overflow-hidden shadow-sm"
+                                    >
+                                      <button
+                                        onClick={() => setOpenFaqIndex(openFaqIndex === `inline-${index}-${fIndex}` ? null : `inline-${index}-${fIndex}`)}
+                                        className="w-full flex items-center justify-between p-4 text-left hover:bg-stone-50"
+                                      >
+                                        <strong className="font-bold text-stone-900 pr-4">{faq.question || faq.q}</strong>
+                                        <div className="text-emerald-700">
+                                          {openFaqIndex === `inline-${index}-${fIndex}` ? <Minus className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
+                                        </div>
+                                      </button>
+                                      {openFaqIndex === `inline-${index}-${fIndex}` && (
+                                        <div className="px-4 pb-4 pt-0 text-stone-600 border-t border-stone-100 animate-in fade-in slide-in-from-top-1 duration-200">
+                                          <p className="mt-4 leading-relaxed whitespace-pre-wrap">{faq.answer || faq.a}</p>
+                                        </div>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            );
+                          }
+                        } catch (e) {
+                          console.error('Error parsing inline FAQs:', e);
+                        }
+                        return null;
+                      }
+                      
+                      return <div key={index} dangerouslySetInnerHTML={{ __html: part }} />;
+                    })
+                  })()}
+                </div>
 
                 {/* Meet The Author Section */}
                 {authorData && (
