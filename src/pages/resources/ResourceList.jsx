@@ -39,10 +39,7 @@ const resourceTypes = [
   { value: 'external_tool', label: 'Tools', icon: ExternalLink },
 ];
 
-const categories = [
-  'Business Planning', 'Marketing', 'Finance', 'Legal', 'Operations',
-  'Technology', 'HR & Team', 'Sales', 'Funding', 'Growth', 'Other'
-];
+// Categories will be loaded dynamically from the database
 
 const ResourceList = () => {
   const [resources, setResources] = useState([]);
@@ -52,6 +49,7 @@ const ResourceList = () => {
   const search = searchParams.get('search') || '';
   const resourceType = searchParams.get('type') || '';
   const category = searchParams.get('category') || '';
+  const [categories, setCategories] = useState([]);
 
   useEffect(() => {
     const loadResources = async () => {
@@ -73,6 +71,19 @@ const ResourceList = () => {
 
     loadResources();
   }, [search, resourceType, category]);
+
+  // Load dynamic categories
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const res = await require('../../lib/api').categoryAPI.list();
+        setCategories(res.data || []);
+      } catch (error) {
+        console.error('Error loading categories:', error);
+      }
+    };
+    loadCategories();
+  }, []);
 
   const updateFilters = (key, value) => {
     const params = new URLSearchParams(searchParams);
@@ -166,7 +177,7 @@ const ResourceList = () => {
             <SelectContent>
               <SelectItem value="all">All Categories</SelectItem>
               {categories.map((cat) => (
-                <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                <SelectItem key={cat.id} value={cat.slug}>{cat.name}</SelectItem>
               ))}
             </SelectContent>
           </Select>

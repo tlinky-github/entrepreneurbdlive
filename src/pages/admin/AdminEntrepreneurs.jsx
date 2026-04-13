@@ -15,7 +15,8 @@ import {
   Users,
   Star,
   Filter,
-  Plus
+  Plus,
+  Pencil
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -241,9 +242,15 @@ const AdminEntrepreneurs = () => {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem asChild>
+                            <Link to={`/admin/content-editor?type=entrepreneurs&id=${profile.id}`} className="flex items-center gap-2">
+                              <Pencil className="w-4 h-4" />
+                              Edit Profile
+                            </Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem asChild>
                             <Link to={`/entrepreneurs/${profile.slug}`} target="_blank" className="flex items-center gap-2">
                               <Eye className="w-4 h-4" />
-                              View
+                              View Public
                             </Link>
                           </DropdownMenuItem>
                           {profile.status === 'pending' && (

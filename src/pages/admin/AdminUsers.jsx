@@ -8,6 +8,7 @@ import { Skeleton } from '../../components/ui/skeleton';
 import { toast } from 'sonner';
 import {
   Search,
+  Eye,
   MoreVertical,
   Users,
   Shield,
@@ -15,7 +16,9 @@ import {
   User,
   Filter,
   Plus,
-  Trash2
+  Trash2,
+  CheckCircle,
+  XCircle
 } from 'lucide-react';
 import {
   Dialog,
@@ -100,14 +103,35 @@ const AdminUsers = () => {
       return;
     }
     try {
-      // In a real app, this would call adminAPI.addUser
-      // For now, we'll simulate it since Firebase handles auth separately
-      toast.success('User invitation sent successfully');
+      const userId = newUser.email.replace(/[@.]/g, '_');
+      await adminAPI.updateUserRole(userId, newUser.role);
+      // Also set the basic info
+      const { setDoc, doc, serverTimestamp } = await import('firebase/firestore');
+      const { db } = await import('../../lib/firebase');
+      await setDoc(doc(db, 'users', userId), {
+        name: newUser.name,
+        email: newUser.email,
+        role: newUser.role,
+        is_verified: false,
+        created_at: serverTimestamp()
+      }, { merge: true });
+
+      toast.success('User created successfully');
       setShowAddModal(false);
       setNewUser({ name: '', email: '', role: 'user' });
       loadUsers();
     } catch (error) {
       toast.error('Failed to add user');
+    }
+  };
+
+  const handleToggleVerification = async (user) => {
+    try {
+      await adminAPI.updateUserStatus(user.id, !user.is_verified);
+      toast.success(user.is_verified ? 'User unverified' : 'User verified');
+      loadUsers();
+    } catch (error) {
+      toast.error('Failed to update verification status');
     }
   };
 
@@ -293,6 +317,20 @@ const AdminUsers = () => {
                               {role.label}
                             </DropdownMenuItem>
                           ))}
+                          <div className="border-t my-1" />
+                          <DropdownMenuItem onClick={() => handleToggleVerification(user)}>
+                            {user.is_verified ? (
+                              <span className="flex items-center text-yellow-600">
+                                <XCircle className="w-4 h-4 mr-2" />
+                                Unverify User
+                              </span>
+                            ) : (
+                              <span className="flex items-center text-green-600">
+                                <CheckCircle className="w-4 h-4 mr-2" />
+                                Verify User
+                              </span>
+                            )}
+                          </DropdownMenuItem>
                           <div className="border-t my-1" />
                           <DropdownMenuItem 
                             className="text-red-600 focus:text-red-600"

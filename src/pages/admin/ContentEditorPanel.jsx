@@ -64,11 +64,7 @@ const ContentEditorPanel = () => {
   const [socialTwitter, setSocialTwitter] = useState('');
   const [socialFacebook, setSocialFacebook] = useState('');
 
-  const [categories, setCategories] = useState([
-    { id: 1, name: 'Technology' },
-    { id: 2, name: 'Marketing' },
-    { id: 3, name: 'Finance' }
-  ]);
+  const [categories, setCategories] = useState([]);
 
   const [isEditingSlug, setIsEditingSlug] = useState(false);
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
@@ -271,8 +267,8 @@ const ContentEditorPanel = () => {
         social_facebook: socialFacebook,
         is_featured: isFeatured,
         // Sync excerpt to fields used by the frontend for intro text
-        details: type === 'entrepreneurs' ? excerpt : undefined,
-        short_description: type === 'directory' ? excerpt : undefined
+        details: type === 'entrepreneurs' ? excerpt : null,
+        short_description: type === 'directory' ? excerpt : null
       };
 
       console.log('Saving content to database:', payload);

@@ -21,12 +21,12 @@
 }
 
 .title-icon {
-  color: #667eea;
+  color: hsl(var(--primary));
 }
 
 .page-subtitle {
   margin: 0;
-  color: #6b7280;
+  color: hsl(var(--muted-foreground));
   font-size: 14px;
 }
 
@@ -43,25 +43,27 @@
   align-items: center;
   gap: 8px;
   padding: 10px 16px;
-  border: 2px solid #e5e7eb;
+  border: 1px solid hsl(var(--border));
   border-radius: 8px;
-  background: white;
+  background: hsl(var(--card));
   cursor: pointer;
   font-size: 14px;
   font-weight: 500;
-  color: #6b7280;
+  color: hsl(var(--muted-foreground));
   transition: all 0.2s ease;
 }
 
 .type-btn:hover {
-  border-color: #667eea;
-  color: #667eea;
+  border-color: hsl(var(--primary));
+  color: hsl(var(--primary));
+  background: hsl(var(--muted) / 0.5);
 }
 
 .type-btn.active {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
   border-color: transparent;
+  box-shadow: 0 4px 12px hsl(var(--primary) / 0.2);
 }
 
 /* Manager Controls */
@@ -81,17 +83,17 @@
   font-weight: 500;
   padding: 10px 16px;
   border-radius: 6px;
-  border: 1px solid #d1d5db;
-  background: white;
-  color: #374151;
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--card));
+  color: hsl(var(--foreground));
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .manager-controls button:hover {
-  background: #667eea;
-  color: white;
-  border-color: #667eea;
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  border-color: hsl(var(--primary));
 }
 
 .search-box {

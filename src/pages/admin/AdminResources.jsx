@@ -219,13 +219,13 @@ const AdminResources = () => {
                             <DropdownMenuItem asChild>
                               <Link to={`/resources/${resource.slug}`} target="_blank" className="flex items-center gap-2">
                                 <Eye className="w-4 h-4" />
-                                View
+                                View Public
                               </Link>
                             </DropdownMenuItem>
                             <DropdownMenuItem asChild>
-                              <Link to={`/admin/resources/${resource.id}/edit`} className="flex items-center gap-2">
+                              <Link to={`/admin/content-editor?type=resources&id=${resource.id}`} className="flex items-center gap-2">
                                 <Edit className="w-4 h-4" />
-                                Edit
+                                Edit Resource
                               </Link>
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => setDeleteId(resource.id)} className="text-red-600">

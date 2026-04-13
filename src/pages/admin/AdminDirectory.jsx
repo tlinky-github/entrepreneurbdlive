@@ -15,7 +15,8 @@ import {
   Building2,
   Star,
   Filter,
-  Plus
+  Plus,
+  Pencil
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -267,9 +268,15 @@ const AdminDirectory = () => {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem asChild>
+                            <Link to={`/admin/content-editor?type=directory&id=${listing.id}`} className="flex items-center gap-2">
+                              <Pencil className="w-4 h-4" />
+                              Edit Listing
+                            </Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem asChild>
                             <Link to={`/directory/${listing.slug}`} target="_blank" className="flex items-center gap-2">
                               <Eye className="w-4 h-4" />
-                              View
+                              View Public
                             </Link>
                           </DropdownMenuItem>
                           {listing.status === 'pending' && (

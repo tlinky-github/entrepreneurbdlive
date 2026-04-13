@@ -43,22 +43,38 @@ const Home = () => {
   const [featuredEntrepreneurs, setFeaturedEntrepreneurs] = useState([]);
   const [featuredListings, setFeaturedListings] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  // Combine pillars for the section
-  const knowledgeItems = [...pillarPages, ...pillarPagesPart2].slice(0, 6);
+  const [knowledgeItems, setKnowledgeItems] = useState([]);
+  const [stats, setStats] = useState([
+    { label: 'Entrepreneurs', value: '0+', icon: Users },
+    { label: 'Businesses', value: '0+', icon: Building2 },
+    { label: 'Articles', value: '0+', icon: FileText },
+    { label: 'Resources', value: '0+', icon: BookOpen },
+  ]);
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [postsRes, profilesRes, listingsRes] = await Promise.all([
+        const [postsRes, profilesRes, listingsRes, statsRes, resourcesRes] = await Promise.all([
           postAPI.list({ is_featured: true, limit: 3 }).catch(() => ({ data: [] })),
           profileAPI.list({ is_featured: true, limit: 4 }).catch(() => ({ data: [] })),
           listingAPI.list({ is_featured: true, limit: 4 }).catch(() => ({ data: [] })),
+          require('../lib/api').adminAPI.getStats().catch(() => ({ data: {} })),
+          require('../lib/api').resourceAPI.list({ limit: 6 }).catch(() => ({ data: [] }))
         ]);
 
         setFeaturedPosts(postsRes.data || []);
         setFeaturedEntrepreneurs(profilesRes.data || []);
         setFeaturedListings(listingsRes.data || []);
+        setKnowledgeItems(resourcesRes.data || []);
+        
+        if (statsRes.data) {
+          setStats([
+            { label: 'Entrepreneurs', value: `${statsRes.data.total_entrepreneurs || 0}+`, icon: Users },
+            { label: 'Businesses', value: `${statsRes.data.total_listings || 0}+`, icon: Building2 },
+            { label: 'Articles', value: `${statsRes.data.total_blog_posts || 0}+`, icon: FileText },
+            { label: 'Resources', value: `${resourcesRes.data?.length || 0}+`, icon: BookOpen },
+          ]);
+        }
       } catch (error) {
         console.error('Error loading homepage data:', error);
       } finally {
@@ -69,12 +85,6 @@ const Home = () => {
     loadData();
   }, []);
 
-  const stats = [
-    { label: 'Entrepreneurs', value: '500+', icon: Users },
-    { label: 'Businesses', value: '200+', icon: Building2 },
-    { label: 'Articles', value: '150+', icon: FileText },
-    { label: 'Resources', value: '50+', icon: BookOpen },
-  ];
 
   const features = [
     {

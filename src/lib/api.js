@@ -5,6 +5,7 @@ import {
   doc, 
   addDoc, 
   updateDoc, 
+  setDoc,
   deleteDoc, 
   query, 
   where, 
@@ -370,6 +371,10 @@ export const adminAPI = {
   },
   deleteUser: async (userId) => {
     await deleteDoc(doc(db, 'users', userId));
+    return { success: true };
+  },
+  updateUserStatus: async (userId, isVerified) => {
+    await updateDoc(doc(db, 'users', userId), { is_verified: isVerified });
     return { success: true };
   }
 };

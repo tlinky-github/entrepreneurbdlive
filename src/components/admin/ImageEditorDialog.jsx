@@ -18,6 +18,9 @@ const ImageEditorDialog = ({ open, onOpenChange, onInsert }) => {
               <Dialog.Title className="text-lg font-bold text-stone-800">
                 Media Manager
               </Dialog.Title>
+              <Dialog.Description className="sr-only">
+                Upload and manage your images stored on Cloudflare R2.
+              </Dialog.Description>
             </div>
             <Dialog.Close asChild>
               <button className="p-2 hover:bg-stone-200/50 rounded-full text-stone-400 hover:text-stone-600 transition-colors">

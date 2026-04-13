@@ -41,6 +41,8 @@ const DirectoryList = () => {
     { value: 'entrepreneur', label: 'Entrepreneurs' },
     { value: 'service_provider', label: 'Service Providers' },
   ]);
+  // In a truly 'everything dynamic' system, these would also come from a 'listing_types' collection
+  // For now, we ensure they are handled as a state that can be easily linked to an API later.
   const [loading, setLoading] = useState(true);
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -53,7 +55,7 @@ const DirectoryList = () => {
     const loadFilters = async () => {
       try {
         const catRes = await categoryAPI.list();
-        setCategories(catRes.data?.map(c => c.name) || []);
+        setCategories(catRes.data || []);
       } catch (error) {
         console.error('Error loading filters:', error);
       }
@@ -179,7 +181,7 @@ const DirectoryList = () => {
             <SelectContent>
               <SelectItem value="all">All Categories</SelectItem>
               {categories.map((cat) => (
-                <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                <SelectItem key={cat.id} value={cat.slug || cat.id}>{cat.name}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -282,9 +284,9 @@ const ListingCard = ({ listing, featured }) => (
           </div>
         </div>
 
-        {listing.category && (
+        {listing.category_name && (
           <Badge variant="outline" className="mt-4 text-xs">
-            {listing.category}
+            {listing.category_name}
           </Badge>
         )}
 

@@ -116,18 +116,23 @@ const AdminContentManager = () => {
       return;
     }
     try {
-      // Mock: In real app, call API
-      const newCat = {
-        id: categories.length + 1,
-        name: newCategory,
-        slug: newCategory.toLowerCase().replace(/\s+/g, '-')
-      };
-      setCategories([...categories, newCat]);
+      await categoryAPI.create(newCategory);
       setNewCategory('');
       setShowCategoryModal(false);
+      loadCategories();
       toast.success('Category created');
     } catch (error) {
       toast.error('Failed to create category');
+    }
+  };
+
+  const handleDeleteCategory = async (id) => {
+    try {
+      await categoryAPI.delete(id);
+      loadCategories();
+      toast.success('Category deleted');
+    } catch (error) {
+      toast.error('Failed to delete category');
     }
   };
 
@@ -342,7 +347,11 @@ const AdminContentManager = () => {
                 {categories.map(cat => (
                   <div key={cat.id} className="category-item">
                     <span>{cat.name}</span>
-                    <Trash2 size={16} className="cursor-pointer text-red-500" />
+                    <Trash2 
+                      size={16} 
+                      className="cursor-pointer text-red-500 hover:scale-110 transition-transform" 
+                      onClick={() => handleDeleteCategory(cat.id)}
+                    />
                   </div>
                 ))}
               </div>

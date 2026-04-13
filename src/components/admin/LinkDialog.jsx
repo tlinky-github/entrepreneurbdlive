@@ -41,6 +41,9 @@ const LinkDialog = ({ open, onOpenChange, initialData, onApply }) => {
             <Dialog.Title className="text-xl font-bold text-slate-800">
               Link Settings
             </Dialog.Title>
+            <Dialog.Description className="sr-only">
+              Enter the URL and configure link attributes like target and follow.
+            </Dialog.Description>
             <Dialog.Close asChild>
               <button className="text-slate-400 hover:text-slate-600 outline-none">
                 <X size={20} />

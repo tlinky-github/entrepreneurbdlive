@@ -49,6 +49,7 @@ import EntrepreneurDetail from './pages/entrepreneurs/EntrepreneurDetail';
 import DirectoryList from './pages/directory/DirectoryList';
 import DirectoryDetail from './pages/directory/DirectoryDetail';
 import ResourceList from './pages/resources/ResourceList';
+import ResourceDetail from './pages/resources/ResourceDetail';
 
 // Auth Pages
 import Login from './pages/auth/Login';
@@ -133,6 +134,7 @@ function AppRoutes() {
       <Route path="/directory" element={<PublicLayout><DirectoryList /></PublicLayout>} />
       <Route path="/directory/:slug" element={<PublicLayout><DirectoryDetail /></PublicLayout>} />
       <Route path="/resources" element={<PublicLayout><ResourceList /></PublicLayout>} />
+      <Route path="/resources/:slug" element={<PublicLayout><ResourceDetail /></PublicLayout>} />
 
       {/* Auth Routes */}
       <Route path="/login" element={<AuthLayout><Login /></AuthLayout>} />
@@ -153,13 +155,13 @@ function AppRoutes() {
         <Route path="content-editor" element={<ContentEditorPanel />} />
         <Route path="test-editor" element={<TestEditor />} />
         <Route path="posts" element={<AdminPosts />} />
-        <Route path="posts/new" element={<PostEditor />} />
-        <Route path="posts/:id/edit" element={<PostEditor />} />
+        <Route path="posts/new" element={<ContentEditorPanel />} />
+        <Route path="posts/:id/edit" element={<ContentEditorPanel />} />
         <Route path="entrepreneurs" element={<AdminEntrepreneurs />} />
         <Route path="directory" element={<AdminDirectory />} />
         <Route path="resources" element={<AdminResources />} />
-        <Route path="resources/new" element={<ResourceEditor />} />
-        <Route path="resources/:id/edit" element={<ResourceEditor />} />
+        <Route path="resources/new" element={<ContentEditorPanel />} />
+        <Route path="resources/:id/edit" element={<ContentEditorPanel />} />
         <Route path="users" element={<AdminUsers />} />
         <Route path="taxonomies" element={<AdminTaxonomies />} />
         <Route path="pages" element={<AdminPages />} />
@@ -169,7 +171,6 @@ function AppRoutes() {
         <Route path="analytics" element={<AdminAnalytics />} />
       </Route>
 
-      {/* Visual Editor Route */}
       <Route
         path="/visual-editor"
         element={

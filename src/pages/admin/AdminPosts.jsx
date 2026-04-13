@@ -132,7 +132,7 @@ const AdminPosts = () => {
             <div className="text-center py-16">
               <FileText className="w-16 h-16 text-stone-300 mx-auto mb-4" />
               <p className="text-lg text-stone-500">No posts found</p>
-              <Link to="/admin/posts/new">
+              <Link to="/admin/content-editor?type=blog">
                 <Button className="mt-4 bg-emerald-900 hover:bg-emerald-800">
                   Create your first post
                 </Button>
@@ -189,7 +189,7 @@ const AdminPosts = () => {
                             </Link>
                           </DropdownMenuItem>
                           <DropdownMenuItem asChild>
-                            <Link to={`/admin/posts/${post.id}/edit`} className="flex items-center gap-2">
+                            <Link to={`/admin/content-editor?type=blog&id=${post.id}`} className="flex items-center gap-2">
                               <Edit className="w-4 h-4" />
                               Edit
                             </Link>
