@@ -34,6 +34,24 @@ const r2Client = new S3Client({
 });
 
 module.exports = async (req, res) => {
+  // 0. Configuration Guard: Ensure all required environment variables are present
+  const requiredEnvVars = [
+    'R2_ACCOUNT_ID', 
+    'R2_ACCESS_KEY_ID', 
+    'R2_SECRET_ACCESS_KEY', 
+    'R2_BUCKET_NAME', 
+    'R2_PUBLIC_URL'
+  ];
+  const missingVars = requiredEnvVars.filter(v => !process.env[v]);
+  
+  if (missingVars.length > 0) {
+    console.error('Critical Error: Missing environment variables:', missingVars);
+    return res.status(500).json({ 
+      error: 'Backend Configuration Error', 
+      message: `The server is missing the following variables: ${missingVars.join(', ')}` 
+    });
+  }
+
   // 1. Basic Security: Only allow POST
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -49,13 +67,21 @@ module.exports = async (req, res) => {
   const idToken = authHeader.split(/\s+/)[1];
   
   try {
-    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    console.log('Verifying ID Token...');
+    // Add a race to prevent infinite hang if Firebase Admin is misconfigured
+    const decodedToken = await Promise.race([
+      admin.auth().verifyIdToken(idToken),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Auth verification timeout')), 5000))
+    ]);
+    console.log('ID Token verified for:', decodedToken.email);
     req.user = decodedToken;
   } catch (error) {
     console.error('Firebase Auth Error:', error.message);
+    // If we're missing credentials, we should fail fast
+    const isMissingCreds = !process.env.FIREBASE_PRIVATE_KEY || !process.env.FIREBASE_CLIENT_EMAIL;
     return res.status(401).json({ 
-      error: 'Unauthorized: Invalid token',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      error: 'Unauthorized: Authentication Bridge Failed',
+      message: isMissingCreds ? 'Backend is missing FIREBASE_PRIVATE_KEY or CLIENT_EMAIL' : error.message
     });
   }
 

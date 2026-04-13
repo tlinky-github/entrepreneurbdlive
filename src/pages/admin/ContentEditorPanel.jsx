@@ -115,8 +115,6 @@ const ContentEditorPanel = () => {
       multicolor: true,
     }),
     FaqExtension,
-    Link,
-    Underline,
   ];
 
   // Main Content Editor
@@ -152,19 +150,12 @@ const ContentEditorPanel = () => {
 
   // Debug editor state
   useEffect(() => {
-    if (editor) {
-      console.log('✓ Editor created');
-      console.log('  - Editable:', editor.isEditable);
-      console.log('  - Can Bold:', editor.can().toggleBold().value);
-      console.log('  - View:', !!editor.view);
-    }
   }, [editor]);
 
   // Load existing content if editing
   useEffect(() => {
     if (editor) {
       setEditorReady(true);
-      console.log('Editor is ready', editor.isEditable);
 
       if (itemId) {
         const loadContent = async () => {

@@ -42,9 +42,87 @@ const ImageUploader = ({
     setMediaLoading(true);
     try {
       const res = await mediaAPI.list();
-      setMediaList(res.data || []);
+      console.log('Media API Response:', res);
+      if (res && res.data) {
+        setMediaList(res.data);
+      } else {
+        setMediaList([]);
+      }
     } catch (error) {
       console.error('Error loading media gallery:', error);
+      toast.error('Could not load gallery images');
+    } finally {
+      setMediaLoading(false);
+    }
+  };
+
+  const syncGallery = async () => {
+    setMediaLoading(true);
+    toast.info('Deep scanning platform for images...');
+    try {
+      // 1. Get current media URLs to avoid duplicates
+      const currentRes = await mediaAPI.list();
+      const existingUrls = new Set((currentRes.data || []).map(m => m.url));
+
+      // 2. Aggregate images from all major collections
+      const [blogRes, profileRes, listingRes] = await Promise.all([
+        api.postAPI.list({ limit: 40, isAdmin: true }),
+        api.profileAPI.list({ status: 'all' }),
+        api.listingAPI.list({ status: 'all' })
+      ]);
+      
+      const imagesToTrack = [];
+      
+      // Process Blogs
+      blogRes.data?.forEach(p => {
+        if (p.featured_image && !existingUrls.has(p.featured_image)) {
+          imagesToTrack.push({ url: p.featured_image, name: p.title });
+          existingUrls.add(p.featured_image);
+        }
+      });
+
+      // Process Profiles
+      profileRes.data?.forEach(p => {
+        if (p.featured_image && !existingUrls.has(p.featured_image)) {
+          imagesToTrack.push({ url: p.featured_image, name: p.name });
+          existingUrls.add(p.featured_image);
+        }
+      });
+
+      // Process Listings
+      listingRes.data?.forEach(l => {
+        if (l.featured_image && !existingUrls.has(l.featured_image)) {
+          imagesToTrack.push({ url: l.featured_image, name: l.business_name });
+          existingUrls.add(l.featured_image);
+        }
+      });
+
+      let syncCount = 0;
+      for (const img of imagesToTrack) {
+        try {
+          await mediaAPI.create({
+            url: img.url,
+            fileName: img.name ? `${img.name.substring(0, 20)}.jpg` : 'Discovered Asset',
+            entityType: 'imported',
+            contentType: 'image/jpeg',
+            uploaderId: auth.currentUser?.uid,
+            isImported: true
+          });
+          syncCount++;
+        } catch (e) {
+          console.warn('Failed to sync individual image:', img.url, e);
+        }
+      }
+
+      if (syncCount > 0) {
+        toast.success(`Synced ${syncCount} existing images to your library!`);
+        loadMedia();
+      } else {
+        toast.info('Your library is already up to date!');
+      }
+    } catch (err) {
+      console.error('Deep sync failed:', err);
+      toast.error('Library deep sync failed.');
     } finally {
       setMediaLoading(false);
     }
@@ -165,12 +243,20 @@ const ImageUploader = ({
               <div className="flex flex-col items-center justify-center py-12 text-center">
                 <ImageIcon className="w-10 h-10 text-stone-200 mb-2" />
                 <p className="text-sm text-stone-500">No images in your library yet.</p>
-                <button 
-                  onClick={() => setActiveTab('upload')}
-                  className="text-xs text-emerald-600 font-bold mt-2 hover:underline"
-                >
-                  Upload your first image
-                </button>
+                <div className="flex flex-col gap-2 mt-4">
+                  <button 
+                    onClick={() => setActiveTab('upload')}
+                    className="text-xs text-emerald-600 font-bold hover:underline"
+                  >
+                    Upload your first image
+                  </button>
+                  <button 
+                    onClick={syncGallery}
+                    className="text-xs text-stone-400 hover:text-emerald-600 transition-colors"
+                  >
+                    or Sync Existing Post Images
+                  </button>
+                </div>
               </div>
             ) : (
               <div className="grid grid-cols-3 gap-2 max-h-[400px] overflow-y-auto pr-1 custom-scrollbar">

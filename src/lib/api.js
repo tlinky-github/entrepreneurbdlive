@@ -594,14 +594,20 @@ export const mediaAPI = {
   list: async (params = {}) => {
     try {
       let q = collection(db, 'media');
-      q = query(q, orderBy('created_at', 'desc'));
       
-      if (params.limit) {
-        q = query(q, limit(params.limit));
+      // Try with ordering first (requires index)
+      try {
+        let sortedQ = query(q, orderBy('created_at', 'desc'));
+        if (params.limit) {
+          sortedQ = query(sortedQ, limit(params.limit));
+        }
+        const snapshot = await getDocs(sortedQ);
+        return { data: snapshot.docs.map(docToData) };
+      } catch (sortError) {
+        console.warn('Media list sort failed (possibly missing index), falling back to unsorted:', sortError);
+        const snapshot = await getDocs(q);
+        return { data: snapshot.docs.map(docToData) };
       }
-      
-      const snapshot = await getDocs(q);
-      return { data: snapshot.docs.map(docToData) };
     } catch (error) {
       console.error('Error listing media:', error);
       return { data: [] };
