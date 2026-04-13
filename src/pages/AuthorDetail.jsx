@@ -130,9 +130,11 @@ const AuthorDetail = () => {
               )}
             </div>
             <div className="pb-4 pt-12 md:pt-0">
-              <h1 className="text-3xl md:text-4xl font-bold text-stone-900 drop-shadow-sm md:text-white md:drop-shadow-none xl:text-stone-900">{author.name}</h1>
+              <h1 className="text-3xl md:text-4xl font-bold text-white drop-shadow-md">{author.name}</h1>
               <div className="flex flex-wrap items-center gap-4 mt-2">
-                <Badge className="bg-emerald-100 text-emerald-900 hover:bg-emerald-100 border-none px-3">Official Author</Badge>
+                <Badge className="bg-emerald-100 text-emerald-900 hover:bg-emerald-100 border-none px-3">
+                  {author.designation || 'Official Author'}
+                </Badge>
                 {contents.length > 0 && (
                    <span className="text-sm text-stone-500 font-medium flex items-center gap-1">
                       <TrendingUp className="w-4 h-4" />
@@ -228,7 +230,9 @@ const AuthorDetail = () => {
                                 </span>
                               </div>
                               <h3 className="text-lg font-bold text-stone-900 group-hover:text-emerald-900 transition-colors line-clamp-1">{item.title}</h3>
-                              <p className="text-sm text-stone-500 line-clamp-2 mt-2">{item.excerpt}</p>
+                              <p className="text-sm text-stone-500 line-clamp-2 mt-2">
+                                {item.excerpt || item.details || item.short_description || (item.content ? item.content.replace(/<[^>]*>/g, '').substring(0, 160) + '...' : '')}
+                              </p>
                             </div>
                             <div className="mt-4 flex items-center text-xs font-bold text-emerald-900 opacity-0 group-hover:opacity-100 transition-opacity">
                               READ MORE <ChevronRight className="w-3 h-3 ml-1" />

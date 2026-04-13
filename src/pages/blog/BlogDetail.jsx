@@ -245,7 +245,7 @@ const BlogDetail = () => {
                    </Avatar>
                    <div>
                      <p className="font-medium text-stone-900 group-hover:text-emerald-900 transition-colors">{authorData.name}</p>
-                     <p className="text-xs">Professional Author</p>
+                     <p className="text-xs">{authorData.designation || 'Professional Author'}</p>
                    </div>
                  </Link>
                ) : (
@@ -373,7 +373,7 @@ const BlogDetail = () => {
                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
                     <div>
                        <h3 className="text-xl font-bold text-stone-900">About the Author: {authorData.name}</h3>
-                       <p className="text-sm text-emerald-700 font-medium">Professional Contributor</p>
+                       <p className="text-sm text-emerald-700 font-medium">{authorData.designation || 'Professional Contributor'}</p>
                     </div>
                     <div className="flex items-center gap-3">
                        {authorData.website && (

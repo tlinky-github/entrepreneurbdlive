@@ -138,7 +138,6 @@ export const profileAPI = {
   create: async (data) => {
     const res = await addDoc(collection(db, 'profiles'), {
       ...data,
-      status: 'pending',
       created_at: serverTimestamp(),
       follower_count: 0
     });
@@ -200,7 +199,6 @@ export const listingAPI = {
   create: async (data) => {
     const res = await addDoc(collection(db, 'listings'), {
       ...data,
-      status: 'pending',
       created_at: serverTimestamp(),
       view_count: 0
     });

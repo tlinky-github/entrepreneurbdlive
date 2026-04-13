@@ -36,6 +36,7 @@ const AdminAuthors = () => {
   const [linkedin, setLinkedin] = useState('');
   const [twitter, setTwitter] = useState('');
   const [facebook, setFacebook] = useState('');
+  const [designation, setDesignation] = useState('');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -64,6 +65,7 @@ const AdminAuthors = () => {
     setLinkedin(author.linkedin || '');
     setTwitter(author.twitter || '');
     setFacebook(author.facebook || '');
+    setDesignation(author.designation || '');
     setIsFormOpen(true);
   };
 
@@ -76,6 +78,7 @@ const AdminAuthors = () => {
     setLinkedin('');
     setTwitter('');
     setFacebook('');
+    setDesignation('');
     setIsFormOpen(false);
   };
 
@@ -94,7 +97,8 @@ const AdminAuthors = () => {
       website,
       linkedin,
       twitter,
-      facebook
+      facebook,
+      designation
     };
 
     try {
@@ -174,6 +178,14 @@ const AdminAuthors = () => {
                       onChange={(e) => setBio(e.target.value)}
                       className="w-full min-h-[120px] rounded-md border border-stone-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-900"
                       placeholder="Brief professional background..."
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-stone-700 mb-1 block">Professional Designation</label>
+                    <Input 
+                      value={designation} 
+                      onChange={(e) => setDesignation(e.target.value)} 
+                      placeholder="e.g. Editor-in-Chief or Digital Marketer"
                     />
                   </div>
                 </div>
@@ -270,7 +282,9 @@ const AdminAuthors = () => {
                     <div>
                       <h3 className="font-semibold text-stone-900">{author.name}</h3>
                       <div className="flex items-center gap-2 mt-1">
-                        <Badge variant="outline" className="text-xs font-normal">Author</Badge>
+                        <Badge variant="outline" className="text-xs font-normal">
+                          {author.designation || 'Author'}
+                        </Badge>
                         <div className="flex items-center gap-1.5 ml-2">
                           {author.website && <Globe className="w-3.5 h-3.5 text-stone-400" />}
                           {author.linkedin && <Linkedin className="w-3.5 h-3.5 text-stone-400" />}

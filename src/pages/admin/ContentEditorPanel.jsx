@@ -281,7 +281,7 @@ const ContentEditorPanel = () => {
     }
   }, [title, seoTitle]);
 
-  const handleSave = async () => {
+  const handleSave = async (overrideStatus = null) => {
     if (!title.trim()) {
       toast.error('Title is required');
       return;
@@ -324,8 +324,8 @@ const ContentEditorPanel = () => {
         excerpt,
         content: contentHtml,
         category_id: parseInt(category),
-        // If already published, maintain that status. If draft/new, use current status.
-        status: (itemId && status === 'published') ? 'published' : status,
+        // Priority: overrideStatus > current state status
+        status: overrideStatus || status,
         featured_image: featuredImage,
         seo_title: seoTitle,
         seo_description: seoDescription,
@@ -383,11 +383,9 @@ const ContentEditorPanel = () => {
   const handlePublish = async () => {
     setPublishing(true);
     setStatus('published');
-    // Ensure the status update is reflected in handleSave
-    setTimeout(async () => {
-      await handleSave();
-      setPublishing(false);
-    }, 0);
+    // Pass 'published' directly to handleSave to avoid state update race condition
+    await handleSave('published');
+    setPublishing(false);
   };
 
   // Generate preview URL based on content type
