@@ -14,7 +14,7 @@ import {
   serverTimestamp,
   increment
 } from 'firebase/firestore';
-import { db } from './firebase';
+import { db, auth } from './firebase';
 
 // Helper to convert Firestore doc to standard object
 const docToData = (doc) => {
@@ -259,12 +259,86 @@ export const contentAPI = {
 
 // --- Interaction API ---
 export const interactionAPI = {
-  toggleFollow: async (profileId) => {
-    // Basic implementation - ideally uses a subcollection or separate followers collection
-    return { data: { following: true } };
+  toggleLike: async (type, id) => {
+    const user = auth.currentUser;
+    if (!user) throw new Error('Must be logged in');
+    
+    const likeId = `${user.uid}_${id}`;
+    const likeRef = doc(db, 'likes', likeId);
+    const likeSnap = await getDoc(likeRef);
+    const postRef = doc(db, type === 'blog' ? 'posts' : 'listings', id);
+
+    if (likeSnap.exists()) {
+      await deleteDoc(likeRef);
+      await updateDoc(postRef, { like_count: increment(-1) });
+      return { data: { liked: false } };
+    } else {
+      await setDoc(likeRef, {
+        userId: user.uid,
+        contentId: id,
+        type,
+        created_at: serverTimestamp()
+      });
+      await updateDoc(postRef, { like_count: increment(1) });
+      return { data: { liked: true } };
+    }
   },
+
+  checkLike: async (type, id) => {
+    const user = auth.currentUser;
+    if (!user) return { data: { liked: false } };
+    const likeSnap = await getDoc(doc(db, 'likes', `${user.uid}_${id}`));
+    return { data: { liked: likeSnap.exists() } };
+  },
+
+  toggleBookmark: async (type, id) => {
+    const user = auth.currentUser;
+    if (!user) throw new Error('Must be logged in');
+    
+    const bookmarkRef = doc(db, 'bookmarks', `${user.uid}_${id}`);
+    const snap = await getDoc(bookmarkRef);
+
+    if (snap.exists()) {
+      await deleteDoc(bookmarkRef);
+      return { data: { bookmarked: false } };
+    } else {
+      await setDoc(bookmarkRef, {
+        userId: user.uid,
+        contentId: id,
+        type,
+        created_at: serverTimestamp()
+      });
+      return { data: { bookmarked: true } };
+    }
+  },
+
+  checkBookmark: async (type, id) => {
+    const user = auth.currentUser;
+    if (!user) return { data: { bookmarked: false } };
+    const snap = await getDoc(doc(db, 'bookmarks', `${user.uid}_${id}`));
+    return { data: { bookmarked: snap.exists() } };
+  },
+
+  toggleFollow: async (profileId) => {
+    const user = auth.currentUser;
+    if (!user) throw new Error('Must be logged in');
+    const followRef = doc(db, 'followers', `${user.uid}_${profileId}`);
+    const snap = await getDoc(followRef);
+
+    if (snap.exists()) {
+      await deleteDoc(followRef);
+      return { data: { following: false } };
+    } else {
+      await setDoc(followRef, { userId: user.uid, profileId, created_at: serverTimestamp() });
+      return { data: { following: true } };
+    }
+  },
+
   checkFollow: async (profileId) => {
-    return { data: { following: false } };
+    const user = auth.currentUser;
+    if (!user) return { data: { following: false } };
+    const snap = await getDoc(doc(db, 'followers', `${user.uid}_${profileId}`));
+    return { data: { following: snap.exists() } };
   }
 };
 
@@ -384,6 +458,7 @@ export const taxonomyAPI = {
   list: async (type) => {
     const colMap = {
       categories: 'categories',
+      blog_categories: 'blog_categories',
       industries: 'industries',
       cities: 'cities'
     };
@@ -412,6 +487,11 @@ export const categoryAPI = {
   create: (name) => taxonomyAPI.create('categories', name),
   delete: (id) => taxonomyAPI.delete('categories', id)
 };
+export const blogCategoryAPI = { 
+  list: () => taxonomyAPI.list('blog_categories'),
+  create: (name) => taxonomyAPI.create('blog_categories', name),
+  delete: (id) => taxonomyAPI.delete('blog_categories', id)
+};
 export const industryAPI = { 
   list: () => taxonomyAPI.list('industries'),
   create: (name) => taxonomyAPI.create('industries', name),
@@ -439,5 +519,5 @@ export const settingsAPI = {
 export default { 
   postAPI, profileAPI, listingAPI, contentAPI, interactionAPI, 
   adminAPI, commentAPI, resourceAPI, authAPI, categoryAPI, 
-  industryAPI, cityAPI, taxonomyAPI, settingsAPI 
+  blogCategoryAPI, industryAPI, cityAPI, taxonomyAPI, settingsAPI 
 };

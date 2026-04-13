@@ -37,6 +37,13 @@ const EntrepreneurDetail = () => {
       setLoading(true);
       try {
         const res = await profileAPI.get(slug);
+        
+        if (!res.data) {
+          setProfile(null);
+          setLoading(false);
+          return;
+        }
+
         setProfile(res.data);
 
         if (isAuthenticated) {

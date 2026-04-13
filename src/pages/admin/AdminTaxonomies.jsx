@@ -15,7 +15,9 @@ import {
   ChevronRight,
   Globe,
   Briefcase,
-  Star
+  Star,
+  Rocket,
+  BookOpen
 } from 'lucide-react';
 import { 
   Table, 
@@ -36,9 +38,10 @@ const AdminTaxonomies = () => {
   const [adding, setAdding] = useState(false);
 
   const taxonomyTypes = [
-    { id: 'industries', label: 'Industries', icon: Briefcase, color: 'emerald' },
-    { id: 'cities', label: 'Cities', icon: MapPin, color: 'blue' },
-    { id: 'categories', label: 'Business Categories', icon: Tag, color: 'purple' },
+    { id: 'blog_categories', label: 'Blog Categories', icon: Tag, color: 'purple' },
+    { id: 'categories', label: 'Business Categories', icon: Tag, color: 'emerald' },
+    { id: 'industries', label: 'Industries', icon: Briefcase, color: 'blue' },
+    { id: 'cities', label: 'Cities', icon: MapPin, color: 'stone' },
     { id: 'listing_types', label: 'Listing Types', icon: Building2, color: 'orange' },
     { id: 'startup_stages', label: 'Startup Stages', icon: Star, color: 'yellow' },
   ];

@@ -107,7 +107,7 @@ const ResourceDetail = () => {
               )}
               <CardContent className="p-8 lg:p-12">
                 <div 
-                  className="prose prose-emerald prose-lg max-w-none prose-headings:font-bold prose-a:text-emerald-700"
+                  className="tiptap-content"
                   dangerouslySetInnerHTML={{ __html: resource.content }}
                 />
               </CardContent>

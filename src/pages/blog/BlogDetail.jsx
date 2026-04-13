@@ -39,6 +39,13 @@ const BlogDetail = () => {
       setLoading(true);
       try {
         const postRes = await postAPI.get(slug);
+        
+        if (!postRes.data) {
+          setPost(null);
+          setLoading(false);
+          return;
+        }
+
         setPost(postRes.data);
 
         // Load comments
@@ -239,7 +246,7 @@ const BlogDetail = () => {
           </div>
         ) : (
           <div
-            className="prose prose-lg max-w-none prose-headings:font-bold prose-headings:text-stone-900 prose-p:text-stone-700 prose-a:text-emerald-900 prose-strong:text-stone-900 prose-blockquote:border-emerald-900 prose-blockquote:text-stone-600"
+            className="tiptap-content"
             dangerouslySetInnerHTML={{ __html: post.content_html }}
           />
         )}

@@ -20,7 +20,7 @@ import { Badge } from '../../components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { toast } from 'sonner';
 import { Save, ChevronLeft, Eye, Settings, Star } from 'lucide-react';
-import { contentAPI, taxonomyAPI, categoryAPI } from '../../lib/api';
+import { contentAPI, taxonomyAPI, categoryAPI, blogCategoryAPI } from '../../lib/api';
 import ImageUploader from '../../components/common/ImageUploader';
 import LinkDialog from '../../components/admin/LinkDialog';
 import ImageEditorDialog from '../../components/admin/ImageEditorDialog';
@@ -116,6 +116,11 @@ const ContentEditorPanel = () => {
     content: '<p>Start typing here...</p>',
     autofocus: true,
     editable: true,
+    editorProps: {
+      attributes: {
+        class: 'tiptap-content focus:outline-none min-height: 400px;',
+      },
+    },
   });
 
   // Second Editor for "Life at Company" (Directory Only)
@@ -126,6 +131,11 @@ const ContentEditorPanel = () => {
     ],
     content: '',
     editable: true,
+    editorProps: {
+      attributes: {
+        class: 'tiptap-content focus:outline-none min-height: 200px;',
+      },
+    },
   });
 
   // Debug editor state
@@ -199,7 +209,7 @@ const ContentEditorPanel = () => {
   useEffect(() => {
     const loadCategories = async () => {
       try {
-        const res = await categoryAPI.list();
+        const res = type === 'blog' ? await blogCategoryAPI.list() : await categoryAPI.list();
         if (res.data && res.data.length > 0) {
           setCategories(res.data);
         }

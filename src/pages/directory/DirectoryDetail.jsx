@@ -247,7 +247,7 @@ const DirectoryDetail = () => {
                   Life at {listing.business_name}
                 </h2>
                 <div 
-                  className="prose prose-stone max-w-none text-stone-700 bg-emerald-50/30 p-6 rounded-2xl border border-emerald-100"
+                  className="tiptap-content bg-emerald-50/30 p-6 rounded-2xl border border-emerald-100"
                   dangerouslySetInnerHTML={{ __html: listing.life_at_company }}
                 />
               </div>

@@ -111,8 +111,8 @@ const DirectoryList = () => {
             Business Directory
           </h1>
           <p className="text-lg text-emerald-100 max-w-2xl">
-            Discover startups, SMEs, and service providers across Bangladesh.
-            Find your next business partner or investment opportunity.
+            Discover the most ambitious businesses and entrepreneurs across Bangladesh.
+            Connect, collaborate, and grow with our verified community.
           </p>
         </div>
       </div>
