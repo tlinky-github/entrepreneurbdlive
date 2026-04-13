@@ -1,7 +1,7 @@
 // src/pages/admin/ContentEditorPanel.jsx
 // Advanced Content Editor with SEO, Categories, Rich Text
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -222,56 +222,56 @@ const ContentEditorPanel = () => {
 
 
   // Metadata Refreshers
-  const refreshCategories = async () => {
+  const refreshCategories = useCallback(async () => {
     try {
       const res = type === 'blog' ? await blogCategoryAPI.list() : await categoryAPI.list();
       if (res.data) setCategories(res.data);
     } catch (error) { console.error('Error loading categories:', error); }
-  };
+  }, [type]);
 
-  const refreshAuthors = async () => {
+  const refreshAuthors = useCallback(async () => {
     try {
       const res = await authorAPI.list();
       if (res.data) setAuthorsList(res.data);
     } catch (error) { console.error('Error loading authors:', error); }
-  };
+  }, []);
 
-  const refreshListingTypes = async () => {
+  const refreshListingTypes = useCallback(async () => {
     try {
       const res = await taxonomyAPI.list('listing_types');
       if (res.data) setListingTypes(res.data);
     } catch (error) { console.error('Error loading types:', error); }
-  };
+  }, []);
 
-  const refreshStartupStages = async () => {
+  const refreshStartupStages = useCallback(async () => {
     try {
       const res = await taxonomyAPI.list('startup_stages');
       if (res.data) setStartupStages(res.data);
     } catch (error) { console.error('Error loading stages:', error); }
-  };
+  }, []);
 
-  const refreshIndustries = async () => {
+  const refreshIndustries = useCallback(async () => {
     try {
       const res = await taxonomyAPI.list('industries');
       if (res.data) setIndustries(res.data);
     } catch (error) { console.error('Error loading industries:', error); }
-  };
+  }, []);
 
-  const refreshCities = async () => {
+  const refreshCities = useCallback(async () => {
     try {
       const res = await taxonomyAPI.list('cities');
       if (res.data) setCities(res.data);
     } catch (error) { console.error('Error loading cities:', error); }
-  };
+  }, []);
 
   // Initial Data Loads
   useEffect(() => {
     refreshAuthors();
-  }, []);
+  }, [refreshAuthors]);
 
   useEffect(() => {
     refreshCategories();
-  }, [type]);
+  }, [type, refreshCategories]);
 
   useEffect(() => {
     if (type === 'directory') {
@@ -282,7 +282,7 @@ const ContentEditorPanel = () => {
       refreshStartupStages();
       refreshIndustries();
     }
-  }, [type]);
+  }, [type, refreshListingTypes, refreshCities, refreshStartupStages, refreshIndustries]);
 
   const handleQuickAdd = async (taxType) => {
     if (!quickAddValue.trim()) return;
