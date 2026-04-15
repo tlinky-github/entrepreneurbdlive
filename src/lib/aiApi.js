@@ -10,8 +10,8 @@ import { auth } from './firebase';
  */
 
 // Base API URL - configurable via environment variable
-// Production: https://entrepreneurs.bd/api/ai (same domain, via vercel.json rewrites)
-// Local dev: http://localhost:8001/api/ai (for local testing)
+// Production: https://entrepreneurs.bd/api/ai (serverless functions on Vercel)
+// Can override with REACT_APP_AI_API_BASE environment variable
 const API_BASE = process.env.REACT_APP_AI_API_BASE || 'https://entrepreneurs.bd/api/ai';
 
 // Get Firebase auth token for API requests
