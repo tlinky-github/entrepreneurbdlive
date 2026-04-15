@@ -22,6 +22,8 @@ export const ProviderSetup = ({ refreshTrigger }) => {
   const [editingProfileId, setEditingProfileId] = useState(null);
   const [deletingProfileId, setDeletingProfileId] = useState(null);
   const [allProfiles, setAllProfiles] = useState([]);
+  const [globalSettings, setGlobalSettings] = useState({ minFaqCount: 3 });
+  const [savingSettings, setSavingSettings] = useState(false);
 
   const PROVIDERS = [
     { name: 'openai', label: 'OpenAI (ChatGPT/GPT-4)', icon: '🤖' },
@@ -39,6 +41,7 @@ export const ProviderSetup = ({ refreshTrigger }) => {
       setLoading(true);
       const config = await aiAPI.getProvidersConfig();
       setProviders(config.providers || {});
+      setGlobalSettings(config.settings || { minFaqCount: 3 });
       
       // Convert to flat list of profiles with provider info
       const profilesList = [];
@@ -230,6 +233,22 @@ export const ProviderSetup = ({ refreshTrigger }) => {
       toast.error(error.message || 'Failed to delete profile');
     } finally {
       setSettingUp(false);
+    }
+  };
+
+  const handleSaveSettings = async (e) => {
+    e.preventDefault();
+    try {
+      setSavingSettings(true);
+      const result = await aiAPI.updateSettings(globalSettings);
+      if (result.success) {
+        toast.success('Global settings updated successfully');
+      }
+    } catch (error) {
+      console.error('Failed to save settings:', error);
+      toast.error('Failed to update global settings');
+    } finally {
+      setSavingSettings(false);
     }
   };
 

@@ -20,7 +20,23 @@ module.exports = async (req, res) => {
     await initializeFirebase();
     const user = await authenticateUser(req);
 
-    const { provider, profileIndex, model, topics, tone, keywords, temperature, maxTokens, language } = req.body;
+    const { 
+      provider, 
+      profileIndex, 
+      model, 
+      topics, 
+      tone, 
+      keywords, 
+      targetLength,
+      temperature, 
+      maxTokens, 
+      language,
+      targetDestination,
+      targetStatus,
+      includeSEO,
+      minFaqCount,
+      tokenMode
+    } = req.body;
 
     if (!provider || !model) {
       return errorResponse(res, 400, 'Provider and model are required');
@@ -34,9 +50,15 @@ module.exports = async (req, res) => {
       topics: topics || [],
       tone: tone || 'informative',
       keywords: keywords || [],
-      temperature: temperature || 0.7,
-      maxTokens: maxTokens || 1500,
+      targetLength: targetLength || '1000',
+      temperature: parseFloat(temperature) || 0.7,
+      maxTokens: parseInt(maxTokens) || 2000,
       language: language || 'en',
+      targetDestination: targetDestination || 'blog',
+      targetStatus: targetStatus || 'draft',
+      includeSEO: includeSEO !== false,
+      minFaqCount: parseInt(minFaqCount) || 3,
+      tokenMode: tokenMode || 'auto',
     });
 
     return successResponse(res, { post: result.post });

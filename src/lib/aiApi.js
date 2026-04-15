@@ -118,6 +118,13 @@ const aiAPI = {
   },
 
   /**
+   * Update global AI settings (e.g., FAQ count)
+   */
+  updateSettings: async (settings) => {
+    return apiCall('/providers-handler?action=settings', 'POST', { settings });
+  },
+
+  /**
    * Post Generation
    */
 

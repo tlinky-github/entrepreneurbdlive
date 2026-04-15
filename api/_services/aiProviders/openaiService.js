@@ -9,18 +9,13 @@ const openaiService = {
       // List available models
       const models = await openai.models.list();
       
-      console.log(`[DEBUG] OpenAI models.list() returned ${models.data?.length || 0} models`);
-      if (models.data?.length > 0) {
-        console.log(`[DEBUG] First 5 models: ${models.data.slice(0, 5).map(m => m.id).join(', ')}`);
-      }
-      
-      // Filter GPT models
+      // Filter GPT models that support chat/completions (exclude "instruct" models)
       const gptModels = (models.data || [])
-        .filter((m) => m && m.id && m.id.includes('gpt'))
+        .filter((m) => m && m.id && (m.id.startsWith('gpt-') || m.id.startsWith('o1-') || m.id.startsWith('o3-')) && !m.id.includes('instruct'))
         .map((m) => m.id)
         .sort()
         .reverse()
-        .slice(0, 10); // Get latest 10
+        .slice(0, 10);
       
       const finalModels = gptModels.length > 0 ? gptModels : [];
 
@@ -45,12 +40,35 @@ const openaiService = {
     try {
       const openai = new OpenAI({ apiKey });
 
-      const response = await openai.chat.completions.create({
+      const tokenMode = options.tokenMode || 'auto';
+      let useCompletionTokens = false;
+
+      if (tokenMode === 'auto') {
+        const isReasoning = /o[13]|o-?\d/i.test(model);
+        useCompletionTokens = isReasoning;
+      } else if (tokenMode === 'max_completion_tokens') {
+        useCompletionTokens = true;
+      }
+
+      const params = {
         model,
         messages: [{ role: 'user', content: prompt }],
-        temperature: options.temperature || 0.7,
-        max_tokens: options.maxTokens || 2000,
-      });
+      };
+
+      if (useCompletionTokens) {
+        // Reasoning models (o1, o3, etc) or forced completion tokens mode
+        params.max_completion_tokens = options.maxTokens || 2000;
+        // Temperature and top_p are NOT supported by reasoning models yet
+        if (tokenMode === 'auto' && /^o\d/.test(model)) {
+          // Only omit if we are in auto mode and it is a reasoning model
+          // If the user manually chose this mode for a non-reasoning model, we might still send temperature if they want
+        }
+      } else {
+        params.max_tokens = options.maxTokens || 2000;
+        params.temperature = options.temperature || 0.7;
+      }
+
+      const response = await openai.chat.completions.create(params);
 
       const content = response.choices[0]?.message?.content;
       const tokensUsed = response.usage?.total_tokens || 0;
@@ -62,7 +80,8 @@ const openaiService = {
         model,
       };
     } catch (error) {
-      throw new Error(`OpenAI generation failed: ${error.message}`);
+      const debugInfo = `Model: ${model}, Params: ${Object.keys(params).join(',')}`;
+      throw new Error(`OpenAI generation failed: ${error.message} [DEBUG: ${debugInfo}]`);
     }
   },
 
@@ -99,18 +118,15 @@ const openaiService = {
       const openai = new OpenAI({ apiKey });
       const models = await openai.models.list();
 
-      console.log(`[DEBUG] OpenAI getAvailableModels returned ${models.data?.length || 0} models`);
-
       const availableModels = (models.data || [])
-        .filter((m) => m && m.id && (m.id.includes('gpt') || m.id.includes('o1') || m.id.includes('o3')))
+        .filter((m) => m && m.id && (m.id.startsWith('gpt-') || m.id.startsWith('o1-') || m.id.startsWith('o3-')) && !m.id.includes('instruct'))
         .map((m) => m.id)
         .sort()
         .reverse()
         .slice(0, 30);
 
       if (!availableModels || availableModels.length === 0) {
-        const foundSample = (models.data || []).slice(0, 5).map(m => m.id).join(', ');
-        throw new Error(`No GPT models found. Found these instead: ${foundSample || 'none'}. Ensure your key has model access.`);
+        throw new Error(`No compatible chat models found. Ensure your key has GPT model access.`);
       }
 
       return availableModels;

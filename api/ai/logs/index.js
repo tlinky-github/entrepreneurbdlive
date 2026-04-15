@@ -34,10 +34,20 @@ module.exports = async (req, res) => {
 
     const logsSnapshot = await query.orderBy('timestamp', 'desc').limit(limitNum).get();
 
-    const logs = logsSnapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
+    const logs = logsSnapshot.docs.map((doc) => {
+      const data = doc.data();
+      // Normalize timestamp
+      if (data.timestamp && typeof data.timestamp.toDate === 'function') {
+        data.timestamp = data.timestamp.toDate().toISOString();
+      } else if (data.timestamp && data.timestamp._seconds) {
+        // Handle case where it's a plain object (common in Vercel/JSON)
+        data.timestamp = new Date(data.timestamp._seconds * 1000).toISOString();
+      }
+      return {
+        id: doc.id,
+        ...data,
+      };
+    });
 
     return successResponse(res, { logs });
   } catch (error) {

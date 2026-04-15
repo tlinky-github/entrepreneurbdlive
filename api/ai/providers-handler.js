@@ -38,10 +38,13 @@ module.exports = async (req, res) => {
       if (action === 'config') {
         // GET: Returns provider configuration
         const configDoc = await db.collection('ai_configs').doc(user.uid).get();
-        const config = configDoc.exists ? configDoc.data() : { providers: {} };
+        const config = configDoc.exists ? configDoc.data() : { providers: {}, settings: { minFaqCount: 3 } };
 
         // Sanitize: don't send API keys
-        const sanitizedConfig = { providers: {} };
+        const sanitizedConfig = { 
+          providers: {}, 
+          settings: config.settings || { minFaqCount: 3 } 
+        };
         Object.entries(config.providers || {}).forEach(([provider, data]) => {
           sanitizedConfig.providers[provider] = {
             enabled: data.enabled,
@@ -194,31 +197,32 @@ module.exports = async (req, res) => {
           profile: newProfile,
           message: 'Profile configured successfully',
         });
-      } else if (action === 'test') {
-        // POST: Test provider connection without storing
-        const { provider, apiKey } = req.body;
+      } else if (action === 'settings') {
+        // POST: Update global AI settings
+        const { settings } = req.body;
 
-        if (!provider || !apiKey) {
-          return errorResponse(res, 400, 'Provider and API key are required');
+        if (!settings) {
+          return errorResponse(res, 400, 'Settings object is required');
         }
 
-        const providerService = getProviderService(provider);
-        if (!providerService) {
-          return errorResponse(res, 400, 'Unknown provider');
-        }
+        const configDoc = await db.collection('ai_configs').doc(user.uid).get();
+        const currentConfig = configDoc.exists ? configDoc.data() : { providers: {} };
 
-        try {
-          await providerService.testConnection(apiKey);
-          return successResponse(res, {
-            success: true,
-            provider: provider.toLowerCase(),
-            message: 'Provider connection successful',
-          });
-        } catch (testError) {
-          return errorResponse(res, 400, testError.message);
-        }
+        currentConfig.settings = {
+          ...(currentConfig.settings || {}),
+          ...settings,
+          updatedAt: new Date(),
+        };
+
+        await db.collection('ai_configs').doc(user.uid).set(currentConfig, { merge: true });
+
+        return successResponse(res, {
+          success: true,
+          settings: currentConfig.settings,
+          message: 'Global settings updated successfully',
+        });
       } else {
-        return errorResponse(res, 400, 'Invalid action. Use ?action=setup or ?action=test');
+        return errorResponse(res, 400, 'Invalid action. Use ?action=setup, ?action=test or ?action=settings');
       }
     } else if (req.method === 'PUT') {
       if (action === 'update') {

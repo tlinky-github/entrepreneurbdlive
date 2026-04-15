@@ -19,17 +19,28 @@ export const AIGenerateForm = ({ onPostGenerated, onClose }) => {
   const [formData, setFormData] = useState({
     provider: 'openai',
     profileIndex: 0,
-    model: '',
+    isBulk: false,
+    bulkTopics: '',
+    targetDestination: 'blog',
+    targetStatus: 'draft',
     topics: [],
     topicInput: '',
     tone: 'professional',
     targetLength: '1000',
+    customLength: '',
+    minFaqCount: 3,
     keywords: [],
     keywordInput: '',
     includeSEO: true,
-    autoPublish: false,
     temperature: 0.7,
     maxTokens: 2000,
+  });
+
+  const [bulkProgress, setBulkProgress] = useState({ 
+    active: false, 
+    total: 0, 
+    current: 0, 
+    logs: [] 
   });
 
   const TONES = [
@@ -74,9 +85,14 @@ export const AIGenerateForm = ({ onPostGenerated, onClose }) => {
       }
 
       setProviders(enabled);
-      // Set first provider as default
-      const firstProvider = Object.keys(enabled)[0];
-      setFormData((prev) => ({ ...prev, provider: firstProvider }));
+      setFormData(prev => ({ 
+        ...prev, 
+        provider: Object.keys(enabled)[0],
+        // Set admin defaults
+        targetDestination: config.settings?.defaultDestination || 'blog',
+        targetStatus: config.settings?.defaultStatus || 'draft',
+        minFaqCount: config.settings?.minFaqCount || 3
+      }));
     } catch (error) {
       console.error('Failed to load providers:', error);
       toast.error('Failed to load AI providers');
@@ -148,8 +164,76 @@ export const AIGenerateForm = ({ onPostGenerated, onClose }) => {
     }
   };
 
+  const runBulkGeneration = async () => {
+    const lines = formData.bulkTopics.split('\n').map(l => l.trim()).filter(Boolean);
+    if (lines.length === 0) {
+      toast.error('No topics found in bulk list');
+      return;
+    }
+
+    setBulkProgress({
+      active: true,
+      total: lines.length,
+      current: 0,
+      logs: []
+    });
+
+    setGenerating(true);
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      // Format: Topic | Keyword1, Keyword2
+      const [topic, kwString] = line.split('|').map(s => s.trim());
+      const keywords = kwString ? kwString.split(',').map(s => s.trim()).filter(Boolean) : [];
+
+      setBulkProgress(prev => ({ ...prev, current: i + 1 }));
+
+      try {
+        const profile = providerConfig?.profiles?.[formData.profileIndex];
+        const model = profile?.selectedModel || 'gpt-4-turbo';
+
+        const targetLength = formData.targetLength === 'custom' ? formData.customLength : formData.targetLength;
+
+        await aiAPI.generatePost({
+          provider: formData.provider,
+          profileIndex: parseInt(formData.profileIndex),
+          model,
+          topics: [topic],
+          tone: formData.tone,
+          targetLength,
+          keywords: keywords,
+          includeSEO: formData.includeSEO,
+          minFaqCount: formData.minFaqCount,
+          targetDestination: formData.targetDestination,
+          targetStatus: formData.targetStatus,
+          temperature: parseFloat(formData.temperature),
+          maxTokens: parseInt(formData.maxTokens),
+        });
+
+        setBulkProgress(prev => ({
+          ...prev,
+          logs: [...prev.logs, { topic, status: 'success' }]
+        }));
+      } catch (error) {
+        console.error(`Bulk item ${i} failed:`, error);
+        setBulkProgress(prev => ({
+          ...prev,
+          logs: [...prev.logs, { topic, status: 'error', message: error.message }]
+        }));
+      }
+    }
+
+    setGenerating(false);
+    toast.success(`Bulk generation completed! ${lines.length} items processed.`);
+  };
+
   const handleGenerate = async (e) => {
     e.preventDefault();
+
+    if (formData.isBulk) {
+      runBulkGeneration();
+      return;
+    }
 
     if (formData.topics.length === 0) {
       toast.error('Please add at least one topic');
@@ -158,16 +242,23 @@ export const AIGenerateForm = ({ onPostGenerated, onClose }) => {
 
     try {
       setGenerating(true);
+      const profile = providerConfig?.profiles?.[formData.profileIndex];
+      const model = profile?.selectedModel || 'gpt-4-turbo';
+
+      const targetLength = formData.targetLength === 'custom' ? formData.customLength : formData.targetLength;
+
       const result = await aiAPI.generatePost({
         provider: formData.provider,
         profileIndex: parseInt(formData.profileIndex),
-        model: formData.model,
+        model,
         topics: formData.topics,
         tone: formData.tone,
-        targetLength: formData.targetLength,
+        targetLength,
         keywords: formData.keywords,
         includeSEO: formData.includeSEO,
-        autoPublish: formData.autoPublish,
+        minFaqCount: formData.minFaqCount,
+        targetDestination: formData.targetDestination,
+        targetStatus: formData.targetStatus,
         temperature: parseFloat(formData.temperature),
         maxTokens: parseInt(formData.maxTokens),
       });
@@ -235,96 +326,101 @@ export const AIGenerateForm = ({ onPostGenerated, onClose }) => {
 
         <div>
           <label className="block text-sm font-medium text-stone-700 mb-2">
-            Model
+            Selected Profile
           </label>
           <select
-            value={formData.model}
-            onChange={(e) => setFormData({ ...formData, model: e.target.value })}
-            className="w-full px-3 py-2 border border-stone-300 rounded-lg"
+            value={formData.profileIndex}
+            onChange={(e) => setFormData({ ...formData, profileIndex: e.target.value })}
+            className="w-full px-3 py-2 border border-stone-300 rounded-lg bg-emerald-50"
           >
-            {providerConfig?.models?.length > 0 ? (
-              providerConfig.models.map((model) => (
-                <option key={model} value={model}>
-                  {model}
-                </option>
-              ))
-            ) : (
-              <option value="">No models available - fetch models first</option>
-            )}
+            {providerConfig?.profiles?.map((profile, idx) => (
+              <option key={idx} value={idx}>
+                {profile.profileName || `Profile ${idx + 1}`} ({profile.selectedModel || 'No default model'})
+              </option>
+            ))}
           </select>
+        </div>
+      </div>
+
+      {/* Bulk Mode Toggle */}
+      <div className="flex items-center justify-between bg-emerald-50 p-3 rounded-lg border border-emerald-100">
+        <div className="flex items-center gap-2">
+           <div className={`w-2 h-2 rounded-full ${formData.isBulk ? 'bg-emerald-500 animate-pulse' : 'bg-stone-300'}`}></div>
+           <span className="text-sm font-semibold text-stone-700">Bulk Generation Mode</span>
+        </div>
+        <button
+          type="button"
+          onClick={() => setFormData({ ...formData, isBulk: !formData.isBulk })}
+          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${formData.isBulk ? 'bg-emerald-600' : 'bg-stone-300'}`}
+        >
+          <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${formData.isBulk ? 'translate-x-6' : 'translate-x-1'}`} />
+        </button>
+      </div>
+
+      {/* Topics or Bulk Input */}
+      {formData.isBulk ? (
+        <div>
+          <label className="block text-sm font-medium text-stone-700 mb-2">
+            Bulk Topics (one per line)
+          </label>
+          <textarea
+            value={formData.bulkTopics}
+            onChange={(e) => setFormData({ ...formData, bulkTopics: e.target.value })}
+            placeholder={"Topic 1 | Keywords...\nTopic 2\nTopic 3 | SEO, Marketing"}
+            className="w-full h-32 px-3 py-2 border border-stone-300 rounded-lg font-mono text-sm"
+          />
           <p className="text-xs text-stone-500 mt-1">
-            {providerConfig?.models?.length || 0} models available
+             Format: <strong>Topic | Keyword1, Keyword2</strong> (Keywords are optional)
           </p>
         </div>
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-stone-700 mb-2">
-          Selected Profile
-        </label>
-        <select
-          value={formData.profileIndex}
-          onChange={(e) => setFormData({ ...formData, profileIndex: e.target.value })}
-          className="w-full px-3 py-2 border border-stone-300 rounded-lg bg-emerald-50"
-        >
-          {providerConfig?.profiles?.map((profile, idx) => (
-            <option key={idx} value={idx}>
-              {profile.profileName || `Profile ${idx + 1}`} ({profile.selectedModel || 'No default model'})
-            </option>
-          ))}
-        </select>
-        <p className="text-xs text-stone-500 mt-1">
-          Profiles allow you to switch between different API keys and settings.
-        </p>
-      </div>
-
-      {/* Topics */}
-      <div>
-        <label className="block text-sm font-medium text-stone-700 mb-2">
-          Topics (minimum 1)
-        </label>
-        <div className="flex gap-2 mb-2">
-          <Input
-            value={formData.topicInput}
-            onChange={(e) => setFormData({ ...formData, topicInput: e.target.value })}
-            onKeyPress={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                addTopic();
-              }
-            }}
-            placeholder="e.g., AI trends, Future of work"
-            className="flex-1"
-          />
-          <Button
-            type="button"
-            onClick={addTopic}
-            variant="outline"
-            className="text-xs"
-          >
-            <Plus className="w-4 h-4 mr-1" />
-            Add
-          </Button>
-        </div>
-
-        <div className="flex flex-wrap gap-2">
-          {formData.topics.map((topic, idx) => (
-            <div
-              key={idx}
-              className="flex items-center gap-2 bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-sm"
+      ) : (
+        <div>
+          <label className="block text-sm font-medium text-stone-700 mb-2">
+            Topics (minimum 1)
+          </label>
+          <div className="flex gap-2 mb-2">
+            <Input
+              value={formData.topicInput}
+              onChange={(e) => setFormData({ ...formData, topicInput: e.target.value })}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  addTopic();
+                }
+              }}
+              placeholder="e.g., AI trends, Future of work"
+              className="flex-1"
+            />
+            <Button
+              type="button"
+              onClick={addTopic}
+              variant="outline"
+              className="text-xs"
             >
-              {topic}
-              <button
-                type="button"
-                onClick={() => removeTopic(idx)}
-                className="hover:text-emerald-900"
+              <Plus className="w-4 h-4 mr-1" />
+              Add
+            </Button>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {formData.topics.map((topic, idx) => (
+              <div
+                key={idx}
+                className="flex items-center gap-2 bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-sm"
               >
-                <X className="w-3 h-3" />
-              </button>
-            </div>
-          ))}
+                {topic}
+                <button
+                  type="button"
+                  onClick={() => removeTopic(idx)}
+                  className="hover:text-emerald-900"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Tone & Length */}
       <div className="grid grid-cols-2 gap-4">
@@ -350,7 +446,7 @@ export const AIGenerateForm = ({ onPostGenerated, onClose }) => {
             Target Length
           </label>
           <select
-            value={formData.targetLength}
+            value={formData.targetLength === 'custom' ? 'custom' : formData.targetLength}
             onChange={(e) => setFormData({ ...formData, targetLength: e.target.value })}
             className="w-full px-3 py-2 border border-stone-300 rounded-lg"
           >
@@ -358,9 +454,23 @@ export const AIGenerateForm = ({ onPostGenerated, onClose }) => {
             <option value="1000">Standard (~1000 words)</option>
             <option value="1500">Long-Form (~1500 words)</option>
             <option value="2000">Deep-Dive (~2000 words)</option>
+            <option value="custom">Custom...</option>
           </select>
+          {formData.targetLength === 'custom' && (
+            <div className="mt-2 animate-in slide-in-from-top-1">
+              <Input
+                type="number"
+                value={formData.customLength}
+                onChange={(e) => setFormData({ ...formData, customLength: e.target.value })}
+                placeholder="Target word count (e.g., 850)"
+                className="w-full"
+                min="100"
+                max="10000"
+              />
+            </div>
+          )}
           <p className="text-xs text-stone-500 mt-1">
-            Long-form posts are generated in multiple batches.
+            {formData.targetLength === 'custom' ? 'Specify your desired word count.' : 'Long-form posts are generated in multiple batches.'}
           </p>
         </div>
       </div>
@@ -413,7 +523,63 @@ export const AIGenerateForm = ({ onPostGenerated, onClose }) => {
         </div>
       </div>
 
-      {/* Options */}
+      {/* Content Engine Settings */}
+      <div className="bg-emerald-50 p-5 rounded-xl border border-emerald-100 shadow-sm space-y-4">
+        <div className="flex items-center gap-2 mb-1">
+          <span className="text-lg">⚙️</span>
+          <h3 className="font-bold text-emerald-900">Content Engine Settings</h3>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-semibold text-emerald-800 mb-2">
+              Target Destination
+            </label>
+            <select
+              value={formData.targetDestination}
+              onChange={(e) => setFormData({ ...formData, targetDestination: e.target.value })}
+              className="w-full px-3 py-2 border border-emerald-200 rounded-lg bg-white text-stone-900 focus:ring-2 focus:ring-emerald-500 outline-none"
+            >
+              <option value="blog">Main Blog Feed</option>
+              <option value="knowledge">Knowledge Hub Articles</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-emerald-800 mb-2">
+              Content Status
+            </label>
+            <select
+              value={formData.targetStatus}
+              onChange={(e) => setFormData({ ...formData, targetStatus: e.target.value })}
+              className="w-full px-3 py-2 border border-emerald-200 rounded-lg bg-white text-stone-900 focus:ring-2 focus:ring-emerald-500 outline-none"
+            >
+              <option value="draft">Save as Draft</option>
+              <option value="published">Live Immediately</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="pt-2 border-t border-emerald-100">
+          <label className="block text-sm font-semibold text-emerald-800 mb-2">
+            Minimum FAQ Generation
+          </label>
+          <div className="flex items-center gap-3">
+            <input
+              type="number"
+              min="1"
+              max="15"
+              value={formData.minFaqCount}
+              onChange={(e) => setFormData({ ...formData, minFaqCount: parseInt(e.target.value) || 1 })}
+              className="w-20 px-3 py-2 border border-emerald-200 rounded-lg text-emerald-900 focus:ring-2 focus:ring-emerald-500 outline-none"
+            />
+            <span className="text-sm text-emerald-700 italic">
+              AI will generate exactly {formData.minFaqCount} questions and answers for this post.
+            </span>
+          </div>
+        </div>
+      </div>
+
       <div className="space-y-3 bg-stone-50 p-4 rounded-lg">
         <div className="flex items-center gap-2">
           <input
@@ -427,19 +593,9 @@ export const AIGenerateForm = ({ onPostGenerated, onClose }) => {
             Include SEO Optimization
           </label>
         </div>
-
-        <div className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            id="autoPublish"
-            checked={formData.autoPublish}
-            onChange={(e) => setFormData({ ...formData, autoPublish: e.target.checked })}
-            className="w-4 h-4"
-          />
-          <label htmlFor="autoPublish" className="text-sm font-medium text-stone-700">
-            Auto-publish to blog (otherwise save as draft)
-          </label>
-        </div>
+        {!formData.isBulk && (
+          <p className="text-xs text-stone-500 italic">Individual settings can be adjusted in Advanced Settings below.</p>
+        )}
       </div>
 
       {/* Advanced Settings */}
@@ -466,6 +622,26 @@ export const AIGenerateForm = ({ onPostGenerated, onClose }) => {
             </p>
           </div>
 
+          <div className="pt-2 border-t border-stone-200">
+            <label className="block text-sm font-medium text-stone-700 mb-2">
+              Token Parameter Mode
+            </label>
+            <select
+              value={formData.tokenMode || 'auto'}
+              onChange={(e) => setFormData({ ...formData, tokenMode: e.target.value })}
+              className="w-full px-3 py-2 border border-stone-300 rounded-lg bg-white text-stone-900"
+            >
+              <option value="auto">Auto-Detect (Recommended)</option>
+              <option value="max_tokens">Legacy (max_tokens)</option>
+              <option value="max_completion_tokens">Reasoning (max_completion_tokens)</option>
+            </select>
+            <p className="text-xs text-stone-500 mt-1">
+              "Auto" detects reasoning models like o1/o3. 
+              <br/>
+              <span className="text-amber-600 font-medium">⚠️ If you see a "max_tokens" error, switch this manually to "Reasoning".</span>
+            </p>
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-stone-700 mb-2">
               Max Tokens
@@ -482,29 +658,68 @@ export const AIGenerateForm = ({ onPostGenerated, onClose }) => {
       </details>
 
       {/* Submit */}
-      <div className="flex gap-3">
-        <Button
-          type="submit"
-          disabled={generating || formData.topics.length === 0}
-          className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white"
-        >
-          {generating ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              {parseInt(formData.targetLength) >= 1500 
-                ? 'Building Long-Form Post (Batch 1/4)...' 
-                : 'Generating Content...'}
-            </>
-          ) : (
-            '✨ Generate Post'
-          )}
-        </Button>
+      {/* Bulk Progress Indicator */}
+      {bulkProgress.active && (
+        <div className="bg-stone-50 border border-stone-200 rounded-lg p-6 space-y-4 shadow-inner">
+          <div className="flex justify-between items-center mb-1">
+            <span className="text-sm font-semibold text-emerald-800">
+              Bulk Generation Progress
+            </span>
+            <span className="text-sm font-mono bg-emerald-100 px-2 py-0.5 rounded text-emerald-800">
+              {bulkProgress.current} / {bulkProgress.total}
+            </span>
+          </div>
+          <div className="w-full bg-stone-200 rounded-full h-3 overflow-hidden shadow-inner">
+            <div 
+              className="bg-emerald-600 h-full transition-all duration-500 ease-out flex items-center justify-center text-[8px] text-white font-bold"
+              style={{ width: `${(bulkProgress.current / bulkProgress.total) * 100}%` }}
+            >
+              {Math.round((bulkProgress.current / bulkProgress.total) * 100)}%
+            </div>
+          </div>
+          
+          <div className="max-h-40 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
+            {bulkProgress.logs.map((log, i) => (
+              <div key={i} className="flex items-center justify-between text-xs p-2 bg-white rounded border border-stone-100 shadow-sm animate-in fade-in slide-in-from-bottom-1">
+                <span className="truncate font-medium text-stone-700 max-w-[70%]">
+                  {i + 1}. {log.topic}
+                </span>
+                <span className={`px-2 py-0.5 rounded-full font-bold uppercase text-[10px] ${
+                  log.status === 'success' 
+                    ? 'bg-emerald-100 text-emerald-700' 
+                    : 'bg-red-100 text-red-700'
+                }`}>
+                  {log.status === 'success' ? 'Ready' : 'Failed'}
+                </span>
+              </div>
+            )).reverse()}
+          </div>
+        </div>
+      )}
+
+      <div className="flex gap-4 pt-4 sticky bottom-0 bg-white/95 backdrop-blur-sm p-4 border-t border-stone-100 -mx-6 -mb-6 rounded-b-xl shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
         <Button
           type="button"
           variant="outline"
           onClick={onClose}
+          disabled={generating}
+          className="flex-1 py-6 text-lg"
         >
           Cancel
+        </Button>
+        <Button
+          type="submit"
+          disabled={generating}
+          className="flex-[2] bg-emerald-600 hover:bg-emerald-700 py-6 text-lg shadow-lg active:scale-95 transition-all"
+        >
+          {generating ? (
+            <>
+              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+              {formData.isBulk ? 'Processing Queue...' : 'Generating Post...'}
+            </>
+          ) : (
+            `✨ ${formData.isBulk ? 'Generate Batch' : 'Generate Post'}`
+          )}
         </Button>
       </div>
     </form>

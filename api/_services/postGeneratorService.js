@@ -21,10 +21,13 @@ const postGeneratorService = {
       model,
       topics = [],
       tone = 'informative',
+      targetLength = '1000',
       keywords = [],
       temperature = 0.7,
       maxTokens = 1500,
       language = 'en',
+      targetDestination = 'blog', // 'blog' or 'knowledge'
+      targetStatus = 'draft',      // 'draft' or 'published'
     } = options;
 
     const db = getFirestore();
@@ -150,7 +153,7 @@ Next Section of Post:`;
           apiKey,
           currentPrompt,
           model,
-          { temperature, maxTokens }
+          { temperature, maxTokens, tokenMode: options.tokenMode }
         );
 
         fullContent += (iterations > 1 ? '\n\n' : '') + result.content.trim();
@@ -171,39 +174,81 @@ Next Section of Post:`;
 
       // Extract title and excerpt
       const titlePrompt = `Extract a compelling title for this blog post (max 80 chars):\n\n${fullContent.substring(0, 500)}`;
-      const titleResult = await providerService.generateContent(apiKey, titlePrompt, model, {
-        maxTokens: 50,
+      const titleResult = await providerService.generateContent(apiKey, titlePrompt, model, { 
+        maxTokens: 100,
+        tokenMode: options.tokenMode
       });
+
       const title = titleResult.content.trim().replace(/^["']|["']$/g, '');
 
       // Create post document
-      const postData = {
+      // Create post document with destination-specific data
+      const isKnowledge = targetDestination === 'knowledge';
+      const destinationCollection = isKnowledge ? 'resources' : 'posts';
+      
+      const contentDoc = {
         userId,
         title: title || 'Untitled Post',
         content: fullContent,
         excerpt: fullContent.substring(0, 200) + '...',
+        slug: (title || 'untitled').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
+        status: targetStatus || 'draft',
         provider: provider.toLowerCase(),
         model,
-        topics,
-        keywords,
-        tone,
-        language,
-        status: 'draft',
         tokensUsed: totalTokensUsed,
         generationTime,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        created_at: new Date(),
+        updated_at: new Date(),
       };
 
-      // Save to Firestore
-      const postRef = await db.collection('ai_posts').add(postData);
+      // Add Knowledge-specific fields if needed
+      if (isKnowledge) {
+        contentDoc.type = 'knowledge';
+        contentDoc.category = 'General';
+      } else {
+        contentDoc.topics = topics;
+        contentDoc.keywords = keywords;
+        contentDoc.tone = tone;
+        contentDoc.language = language;
+      }
+
+      // SEO Enrichment
+      if (options.includeSEO) {
+        // Determine FAQ count: passed option > global settings > default (3)
+        let minFaqCount = options.minFaqCount;
+        if (!minFaqCount) {
+          const configDoc = await db.collection('ai_configs').doc(userId).get();
+          const settings = configDoc.exists ? (configDoc.data().settings || {}) : {};
+          minFaqCount = settings.minFaqCount || 3;
+        }
+
+        const seoData = await this.generateSEOEnrichment(apiKey, providerService, model, title, fullContent, minFaqCount, options.tokenMode);
+        contentDoc.faqs = seoData.faqs || [];
+        contentDoc.custom_head_html = seoData.customHeadHtml || '';
+        
+        // Ensure SEO title/desc are also populated if not already
+        contentDoc.seo_title = title;
+        contentDoc.seo_description = fullContent.substring(0, 160).replace(/<[^>]*>?/gm, '') + '...';
+      }
+
+      // Save to AI History (ai_posts) for tracking
+      const historyRef = await db.collection('ai_posts').add({
+        ...contentDoc,
+        originalTopics: topics,
+        originalKeywords: keywords
+      });
+
+      // Also save to the actual destination collection for live site
+      const liveRef = await db.collection(destinationCollection).add(contentDoc);
 
       // Log generation
       await db.collection('ai_logs').add({
         userId,
-        postId: postRef.id,
+        postId: historyRef.id,
+        liveId: liveRef.id,
         action: 'generate',
         status: 'success',
+        destination: targetDestination,
         provider: provider.toLowerCase(),
         model,
         tokensUsed: totalTokensUsed,
@@ -214,8 +259,9 @@ Next Section of Post:`;
       return {
         success: true,
         post: {
-          id: postRef.id,
-          ...postData,
+          id: liveRef.id,
+          historyId: historyRef.id,
+          ...contentDoc,
         },
       };
     } catch (error) {
@@ -264,7 +310,63 @@ Next Section of Post:`;
         currentPage: pageNum,
       };
     } catch (error) {
-      throw new Error(`Failed to get posts: ${error.message}`);
+      console.error('Title extraction failed:', error);
+      return { success: false, content: 'Untitled Post' };
+    }
+  },
+
+  async generateSEOEnrichment(apiKey, providerService, model, title, content, minFaqCount = 3, tokenMode = 'auto') {
+    try {
+      const seoPrompt = `Analyze the following title and content of a blog post, then generate high-quality SEO metadata.
+      
+TITLE: ${title}
+CONTENT: ${content.substring(0, 3000)}
+
+REQUEST:
+1. Generate exactly ${minFaqCount} high-value FAQs (Question and Answer pairs) related to this topic.
+2. Generate a valid Article/FAQPage JSON-LD Schema (Schema.org) for this content.
+
+FORMAT: Use the following markers to wrap your response:
+[FAQ_START]
+JSON Array of objects { "q": "Question", "a": "Answer" }
+[FAQ_END]
+
+[SCHEMA_START]
+Raw JSON-LD object (do not include script tags yet)
+[SCHEMA_END]`;
+
+      const result = await providerService.generateContent(apiKey, seoPrompt, model, { 
+        maxTokens: 1500,
+        tokenMode
+      });
+
+      const responseText = result.content;
+      
+      // Extract FAQs
+      let faqs = [];
+      const faqMatch = responseText.match(/\[FAQ_START\]([\s\S]*?)\[FAQ_END\]/);
+      if (faqMatch && faqMatch[1]) {
+        try {
+          faqs = JSON.parse(faqMatch[1].trim());
+        } catch (e) {
+          console.error('Failed to parse AI FAQs:', e);
+        }
+      }
+
+      // Extract Schema
+      let schemaJson = '';
+      const schemaMatch = responseText.match(/\[SCHEMA_START\]([\s\S]*?)\[SCHEMA_END\]/);
+      if (schemaMatch && schemaMatch[1]) {
+        schemaJson = schemaMatch[1].trim();
+      }
+
+      return {
+        faqs,
+        customHeadHtml: schemaJson ? `<script type="application/ld+json">\n${schemaJson}\n</script>` : ''
+      };
+    } catch (error) {
+      console.error('SEO Enrichment failed:', error);
+      return { faqs: [], customHeadHtml: '' };
     }
   },
 
