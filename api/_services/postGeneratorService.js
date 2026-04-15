@@ -37,16 +37,31 @@ const postGeneratorService = {
       }
 
       const config = configDoc.data();
-      const providerConfig = config.providers?.[provider.toLowerCase()];
+      const providerLower = provider.toLowerCase();
+      const providerConfig = config.providers?.[providerLower];
 
       if (!providerConfig) {
         throw new Error(`Provider ${provider} not configured`);
       }
 
-      // Decrypt API key
+      // Get the correct API key based on profileIndex
       let apiKey;
+      const profileIndex = options.profileIndex || 0;
+      
+      if (providerConfig.profiles && providerConfig.profiles[profileIndex]) {
+        apiKey = providerConfig.profiles[profileIndex].apiKey;
+      } else {
+        // Fallback to legacy single key if profiles don't exist
+        apiKey = providerConfig.apiKey;
+      }
+
+      if (!apiKey) {
+        throw new Error(`No API key found for ${provider} profile ${profileIndex}`);
+      }
+
+      // Decrypt API key
       try {
-        apiKey = decrypt(providerConfig.apiKey);
+        apiKey = decrypt(apiKey);
       } catch (e) {
         throw new Error('Failed to decrypt API key');
       }

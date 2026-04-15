@@ -18,6 +18,7 @@ export const AIGenerateForm = ({ onPostGenerated, onClose }) => {
 
   const [formData, setFormData] = useState({
     provider: 'openai',
+    profileIndex: 0,
     model: '',
     topics: [],
     topicInput: '',
@@ -159,6 +160,7 @@ export const AIGenerateForm = ({ onPostGenerated, onClose }) => {
       setGenerating(true);
       const result = await aiAPI.generatePost({
         provider: formData.provider,
+        profileIndex: parseInt(formData.profileIndex),
         model: formData.model,
         topics: formData.topics,
         tone: formData.tone,
@@ -203,12 +205,12 @@ export const AIGenerateForm = ({ onPostGenerated, onClose }) => {
           <div className="flex gap-2">
             <select
               value={formData.provider}
-              onChange={(e) => setFormData({ ...formData, provider: e.target.value })}
+              onChange={(e) => setFormData({ ...formData, provider: e.target.value, profileIndex: 0 })}
               className="flex-1 px-3 py-2 border border-stone-300 rounded-lg"
             >
               {Object.entries(providers).map(([name, config]) => (
                 <option key={name} value={name}>
-                  {name.charAt(0).toUpperCase() + name.slice(1)}
+                  {name.charAt(0).toUpperCase() + name.slice(1)} ({config.profiles?.length || 0} Profiles)
                 </option>
               ))}
             </select>
@@ -254,6 +256,26 @@ export const AIGenerateForm = ({ onPostGenerated, onClose }) => {
             {providerConfig?.models?.length || 0} models available
           </p>
         </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-stone-700 mb-2">
+          Selected Profile
+        </label>
+        <select
+          value={formData.profileIndex}
+          onChange={(e) => setFormData({ ...formData, profileIndex: e.target.value })}
+          className="w-full px-3 py-2 border border-stone-300 rounded-lg bg-emerald-50"
+        >
+          {providerConfig?.profiles?.map((profile, idx) => (
+            <option key={idx} value={idx}>
+              {profile.profileName || `Profile ${idx + 1}`} ({profile.selectedModel || 'No default model'})
+            </option>
+          ))}
+        </select>
+        <p className="text-xs text-stone-500 mt-1">
+          Profiles allow you to switch between different API keys and settings.
+        </p>
       </div>
 
       {/* Topics */}

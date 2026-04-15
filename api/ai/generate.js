@@ -20,7 +20,7 @@ module.exports = async (req, res) => {
     await initializeFirebase();
     const user = await authenticateUser(req);
 
-    const { provider, model, topics, tone, keywords, temperature, maxTokens, language } = req.body;
+    const { provider, profileIndex, model, topics, tone, keywords, temperature, maxTokens, language } = req.body;
 
     if (!provider || !model) {
       return errorResponse(res, 400, 'Provider and model are required');
@@ -29,6 +29,7 @@ module.exports = async (req, res) => {
     // Generate post using orchestration service
     const result = await postGeneratorService.generatePost(user.uid, {
       provider,
+      profileIndex: parseInt(profileIndex) || 0,
       model,
       topics: topics || [],
       tone: tone || 'informative',
@@ -38,7 +39,7 @@ module.exports = async (req, res) => {
       language: language || 'en',
     });
 
-    return successResponse(res, result.post);
+    return successResponse(res, { post: result.post });
   } catch (error) {
     const statusCode = error.message.includes('Unauthorized') ? 401 : 500;
     return errorResponse(res, statusCode, error.message);

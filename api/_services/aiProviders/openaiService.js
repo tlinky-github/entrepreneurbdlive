@@ -9,6 +9,11 @@ const openaiService = {
       // List available models
       const models = await openai.models.list();
       
+      console.log(`[DEBUG] OpenAI models.list() returned ${models.data?.length || 0} models`);
+      if (models.data?.length > 0) {
+        console.log(`[DEBUG] First 5 models: ${models.data.slice(0, 5).map(m => m.id).join(', ')}`);
+      }
+      
       // Filter GPT models
       const gptModels = (models.data || [])
         .filter((m) => m && m.id && m.id.includes('gpt'))
@@ -94,20 +99,23 @@ const openaiService = {
       const openai = new OpenAI({ apiKey });
       const models = await openai.models.list();
 
+      console.log(`[DEBUG] OpenAI getAvailableModels returned ${models.data?.length || 0} models`);
+
       const availableModels = (models.data || [])
-        .filter((m) => m && m.id && m.id.includes('gpt'))
+        .filter((m) => m && m.id && (m.id.includes('gpt') || m.id.includes('o1') || m.id.includes('o3')))
         .map((m) => m.id)
         .sort()
         .reverse()
-        .slice(0, 20);
+        .slice(0, 30);
 
       if (!availableModels || availableModels.length === 0) {
-        throw new Error('No GPT models found for this account. Ensure you have an active subscription or project access.');
+        const foundSample = (models.data || []).slice(0, 5).map(m => m.id).join(', ');
+        throw new Error(`No GPT models found. Found these instead: ${foundSample || 'none'}. Ensure your key has model access.`);
       }
 
       return availableModels;
     } catch (error) {
-      console.error('OpenAI getAvailableModels error:', error.message);
+      console.error('OpenAI getAvailableModels error:', error);
       throw new Error(`OpenAI API Error: ${error.message}`);
     }
   },

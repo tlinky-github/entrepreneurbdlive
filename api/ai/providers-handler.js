@@ -80,11 +80,17 @@ module.exports = async (req, res) => {
         if (configDoc.exists) {
           const config = configDoc.data();
           const providerConfig = config.providers?.[provider.toLowerCase()];
-          if (providerConfig?.apiKey) {
+          let apiKey = providerConfig?.apiKey;
+          if (apiKey) {
             try {
-              apiKey = decrypt(providerConfig.apiKey);
+              apiKey = decrypt(apiKey);
+              console.log(`[DEBUG] Decrypted API key for ${provider}. Length: ${apiKey.length}. Starts with: ${apiKey.substring(0, 7)}...`);
+              if (apiKey.length < 10) {
+                 console.warn(`[DEBUG] API key for ${provider} seems unusually short.`);
+              }
             } catch (e) {
-              console.warn('Failed to decrypt saved API key:', e.message);
+              console.error(`[DEBUG] Failed to decrypt API key for ${provider}:`, e.message);
+              apiKey = null;
             }
           }
         }
@@ -92,6 +98,7 @@ module.exports = async (req, res) => {
         // If no saved API key, try using the one from query params (for setup phase)
         if (!apiKey && apiKeyInput) {
           apiKey = apiKeyInput;
+          console.log(`[DEBUG] Using provided apiKeyInput for ${provider}. Length: ${apiKey.length}`);
         }
 
         // If still no API key, return error

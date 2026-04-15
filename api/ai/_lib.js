@@ -87,11 +87,11 @@ function errorResponse(res, statusCode, message) {
 
 // Success response handler
 function successResponse(res, data, message = '') {
-  return res.status(200).json({
-    success: true,
-    data,
-    message,
-  });
+  const responseData = typeof data === 'object' && data !== null && !Array.isArray(data) 
+    ? { success: true, ...data, message }
+    : { success: true, data, message };
+
+  return res.status(200).json(responseData);
 }
 
 module.exports = {

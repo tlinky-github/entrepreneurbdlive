@@ -47,7 +47,7 @@ export const AISettings = () => {
         <Tabs defaultValue="providers" className="w-full">
           <TabsList className="grid w-full grid-cols-3 bg-stone-200">
             <TabsTrigger value="providers" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
-              🔑 Providers
+              🔑 Provider Profiles
             </TabsTrigger>
             <TabsTrigger value="queue" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
               📝 Post Queue

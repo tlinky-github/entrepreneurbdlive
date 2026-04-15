@@ -39,7 +39,7 @@ module.exports = async (req, res) => {
       ...doc.data(),
     }));
 
-    return successResponse(res, logs);
+    return successResponse(res, { logs });
   } catch (error) {
     console.error('Error fetching logs:', error);
     return errorResponse(res, error.message.includes('Unauthorized') ? 401 : 500, error.message);
