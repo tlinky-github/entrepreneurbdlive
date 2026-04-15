@@ -39,6 +39,7 @@ export const AIGenerateForm = ({ onPostGenerated, onClose }) => {
     'persuasive',
   ];
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     loadProviders();
   }, []);

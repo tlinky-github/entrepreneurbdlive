@@ -32,6 +32,7 @@ export const AIPostQueue = ({ refreshTrigger }) => {
 
   const LIMIT = 10;
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     loadPosts();
   }, [statusFilter, currentPage, refreshTrigger]);
