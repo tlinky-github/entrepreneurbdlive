@@ -5,6 +5,9 @@ const admin = require('firebase-admin');
 let db = null;
 let initialized = false;
 
+// Force rebuild marker
+const BUILD_VERSION = '2';
+
 function initializeFirebase() {
   if (initialized) return db;
   
