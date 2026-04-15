@@ -30,7 +30,7 @@ const BlogList = () => {
       setLoading(true);
       try {
         const [postsRes, catsRes] = await Promise.all([
-          postAPI.list({ search, category_id: categoryId || undefined, limit: 20 }),
+          postAPI.list({ search, category_id: categoryId || undefined, status: 'published', limit: 20 }),
           blogCategoryAPI.list(),
         ]);
         setPosts(postsRes.data || []);

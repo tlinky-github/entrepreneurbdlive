@@ -62,6 +62,7 @@ const EntrepreneurList = () => {
           search: search || undefined,
           industry: industry || undefined,
           city: city || undefined,
+          status: 'published',
           limit: 24
         });
         setProfiles(res.data || []);

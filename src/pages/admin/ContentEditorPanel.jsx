@@ -73,6 +73,9 @@ const ContentEditorPanel = () => {
   const [socialLinkedin, setSocialLinkedin] = useState('');
   const [socialTwitter, setSocialTwitter] = useState('');
   const [socialFacebook, setSocialFacebook] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [website, setWebsite] = useState('');
   const [listingType, setListingType] = useState('');
   const [startupStage, setStartupStage] = useState('');
   const [logo, setLogo] = useState('');
@@ -216,6 +219,9 @@ const ContentEditorPanel = () => {
             setSocialLinkedin(data.social_linkedin || '');
             setSocialTwitter(data.social_twitter || '');
             setSocialFacebook(data.social_facebook || '');
+            setEmail(data.email || '');
+            setPhone(data.phone || '');
+            setWebsite(data.website || '');
 
             if (data.content) {
               editor.commands.setContent(data.content);
@@ -489,6 +495,9 @@ const ContentEditorPanel = () => {
         social_linkedin: socialLinkedin,
         social_twitter: socialTwitter,
         social_facebook: socialFacebook,
+        email,
+        phone,
+        website,
         is_featured: isFeatured,
         listing_type: listingType,
         startup_stage: startupStage,
@@ -738,6 +747,47 @@ const ContentEditorPanel = () => {
                       onChange={(e) => setCompanyPageUrl(e.target.value)}
                       placeholder="https://company.com"
                     />
+                  </div>
+                  <div className="space-y-4 pt-4 border-t border-stone-100">
+                    <h4 className="font-semibold text-sm">Contact Information</h4>
+                    <div className="grid grid-cols-1 gap-3">
+                      <Input
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        type="email"
+                        placeholder="Contact Email"
+                      />
+                      <Input
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        placeholder="Contact Phone"
+                      />
+                      <Input
+                        value={website}
+                        onChange={(e) => setWebsite(e.target.value)}
+                        placeholder="Website URL"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-4 pt-4 border-t border-stone-100">
+                    <h4 className="font-semibold text-sm">Social Media Profiles</h4>
+                    <div className="grid grid-cols-1 gap-3">
+                      <Input
+                        value={socialLinkedin}
+                        onChange={(e) => setSocialLinkedin(e.target.value)}
+                        placeholder="LinkedIn URL"
+                      />
+                      <Input
+                        value={socialTwitter}
+                        onChange={(e) => setSocialTwitter(e.target.value)}
+                        placeholder="Twitter URL"
+                      />
+                      <Input
+                        value={socialFacebook}
+                        onChange={(e) => setSocialFacebook(e.target.value)}
+                        placeholder="Facebook URL"
+                      />
+                    </div>
                   </div>
                    <div>
                     <label>Life at Company (Rich Text)</label>

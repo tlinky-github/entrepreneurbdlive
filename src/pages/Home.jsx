@@ -55,9 +55,9 @@ const Home = () => {
     const loadData = async () => {
       try {
         const [postsRes, profilesRes, listingsRes, statsRes, resourcesRes] = await Promise.all([
-          postAPI.list({ is_featured: true, limit: 3 }).catch(() => ({ data: [] })),
-          profileAPI.list({ is_featured: true, limit: 4 }).catch(() => ({ data: [] })),
-          listingAPI.list({ is_featured: true, limit: 4 }).catch(() => ({ data: [] })),
+          postAPI.list({ is_featured: true, status: 'published', limit: 3 }).catch(() => ({ data: [] })),
+          profileAPI.list({ is_featured: true, status: 'published', limit: 4 }).catch(() => ({ data: [] })),
+          listingAPI.list({ is_featured: true, status: 'published', limit: 4 }).catch(() => ({ data: [] })),
           require('../lib/api').adminAPI.getStats().catch(() => ({ data: {} })),
           require('../lib/api').resourceAPI.list({ limit: 6 }).catch(() => ({ data: [] }))
         ]);

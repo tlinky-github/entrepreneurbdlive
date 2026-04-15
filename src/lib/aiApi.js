@@ -65,12 +65,30 @@ const aiAPI = {
    */
 
   /**
-   * Setup/configure an AI provider with API key
+   * Setup/configure an AI provider with API key and profile name
    */
-  setupProvider: async (provider, apiKey) => {
-    return apiCall('/providers-handler?action=setup', 'POST', {
+  setupProvider: async (config) => {
+    return apiCall('/providers-handler?action=setup', 'POST', config);
+  },
+
+  /**
+   * Update an existing provider profile
+   */
+  updateProfile: async (provider, profileIndex, updates) => {
+    return apiCall('/providers-handler?action=update', 'PUT', {
       provider,
-      apiKey,
+      profileIndex,
+      ...updates,
+    });
+  },
+
+  /**
+   * Delete a provider profile
+   */
+  deleteProfile: async (provider, profileIndex) => {
+    return apiCall('/providers-handler?action=delete', 'DELETE', {
+      provider,
+      profileIndex,
     });
   },
 

@@ -3,7 +3,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { toast } from 'sonner';
 import aiAPI from '../../lib/aiApi';
-import { Loader2, Eye, EyeOff, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
+import { Loader2, Eye, EyeOff, CheckCircle, XCircle, RefreshCw, Trash2, Edit2, Plus } from 'lucide-react';
 
 /**
  * Provider Setup Component
@@ -13,11 +13,15 @@ import { Loader2, Eye, EyeOff, CheckCircle, XCircle, RefreshCw } from 'lucide-re
 export const ProviderSetup = ({ refreshTrigger }) => {
   const [providers, setProviders] = useState({});
   const [loading, setLoading] = useState(true);
-  const [setupForm, setSetupForm] = useState({ provider: '', apiKey: '' });
+  const [setupForm, setSetupForm] = useState({ provider: '', profile: '', apiKey: '', selectedModel: '' });
   const [settingUp, setSettingUp] = useState(false);
   const [testingProvider, setTestingProvider] = useState(null);
   const [fetchingModels, setFetchingModels] = useState(null);
   const [showApiKey, setShowApiKey] = useState(false);
+  const [availableModels, setAvailableModels] = useState({});
+  const [editingProfileId, setEditingProfileId] = useState(null);
+  const [deletingProfileId, setDeletingProfileId] = useState(null);
+  const [allProfiles, setAllProfiles] = useState([]);
 
   const PROVIDERS = [
     { name: 'openai', label: 'OpenAI (ChatGPT/GPT-4)', icon: '🤖' },
@@ -35,6 +39,21 @@ export const ProviderSetup = ({ refreshTrigger }) => {
       setLoading(true);
       const config = await aiAPI.getProvidersConfig();
       setProviders(config.providers || {});
+      
+      // Convert to flat list of profiles with provider info
+      const profilesList = [];
+      Object.entries(config.providers || {}).forEach(([providerName, providerConfig]) => {
+        if (providerConfig.profiles) {
+          providerConfig.profiles.forEach((profile, idx) => {
+            profilesList.push({
+              id: `${providerName}-${idx}`,
+              provider: providerName,
+              ...profile
+            });
+          });
+        }
+      });
+      setAllProfiles(profilesList);
     } catch (error) {
       console.error('Failed to load providers:', error);
       toast.error('Failed to load provider configuration');
@@ -46,24 +65,65 @@ export const ProviderSetup = ({ refreshTrigger }) => {
   const handleSetupProvider = async (e) => {
     e.preventDefault();
 
-    if (!setupForm.provider || !setupForm.apiKey) {
-      toast.error('Please select a provider and enter API key');
+    if (!setupForm.provider || !setupForm.profile || !setupForm.apiKey) {
+      toast.error('Please fill in all fields: provider, profile name, and API key');
       return;
     }
 
     try {
       setSettingUp(true);
-      const result = await aiAPI.setupProvider(setupForm.provider, setupForm.apiKey);
+      const result = await aiAPI.setupProvider({
+        provider: setupForm.provider,
+        apiKey: setupForm.apiKey,
+        profileName: setupForm.profile,
+        selectedModel: setupForm.selectedModel
+      });
 
       if (result.success) {
-        toast.success(`${setupForm.provider} configured successfully!`);
-        setSetupForm({ provider: '', apiKey: '' });
+        toast.success(`${setupForm.provider} profile "${setupForm.profile}" configured successfully!${setupForm.selectedModel ? ` (Default model: ${setupForm.selectedModel})` : ''}`);
+        setSetupForm({ provider: '', profile: '', apiKey: '', selectedModel: '' });
+        setAvailableModels({});
         await loadProviders();
       }
     } catch (error) {
       toast.error(error.message || 'Failed to setup provider');
     } finally {
       setSettingUp(false);
+    }
+  };
+
+  const handleFetchModelsForSetup = async () => {
+    if (!setupForm.provider || !setupForm.apiKey) {
+      toast.error('Please select a provider and enter API key first');
+      return;
+    }
+
+    try {
+      setFetchingModels(setupForm.provider);
+      
+      // Call API to fetch actual models from the provider
+      const result = await aiAPI.getProviderModels(setupForm.provider);
+      
+      setAvailableModels(prev => ({
+        ...prev,
+        [setupForm.provider]: result.models || []
+      }));
+      
+      if (result.models?.length > 0) {
+        // Auto-select first model
+        setSetupForm(prev => ({
+          ...prev,
+          selectedModel: result.models[0]
+        }));
+        toast.success(`Fetched ${result.models.length} models for ${setupForm.provider}`);
+      } else {
+        toast.warning(`No models found for ${setupForm.provider}. Check your API key.`);
+      }
+    } catch (error) {
+      console.error('Failed to fetch models:', error);
+      toast.error(`Failed to fetch models: ${error.message || 'API error'}`);
+    } finally {
+      setFetchingModels(null);
     }
   };
 
@@ -106,6 +166,73 @@ export const ProviderSetup = ({ refreshTrigger }) => {
     }
   };
 
+  const handleEditProfile = async (profile) => {
+    setEditingProfileId(profile.id);
+    setSetupForm({
+      provider: profile.provider,
+      profile: profile.profileName || profile.profile || '',
+      apiKey: '',
+      selectedModel: profile.selectedModel || ''
+    });
+  };
+
+  const handleSaveEditProfile = async (e) => {
+    e.preventDefault();
+    
+    if (!setupForm.profile) {
+      toast.error('Please enter a profile name');
+      return;
+    }
+
+    try {
+      setSettingUp(true);
+      const profileIndex = parseInt(editingProfileId.split('-')[1]);
+      
+      const result = await aiAPI.updateProfile(setupForm.provider, profileIndex, {
+        profileName: setupForm.profile,
+        apiKey: setupForm.apiKey,
+        selectedModel: setupForm.selectedModel
+      });
+
+      if (result.success) {
+        toast.success('Profile updated successfully!');
+        setEditingProfileId(null);
+        setSetupForm({ provider: '', profile: '', apiKey: '', selectedModel: '' });
+        await loadProviders();
+      }
+    } catch (error) {
+      console.error('Update profile error:', error);
+      toast.error(error.message || 'Failed to update profile');
+    } finally {
+      setSettingUp(false);
+    }
+  };
+
+  const handleDeleteProfile = async (profile) => {
+    if (!window.confirm(`Are you sure you want to delete the profile "${profile.profileName || profile.profile}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      setSettingUp(true);
+      const profileIndex = parseInt(profile.id.split('-')[1]);
+      
+      const result = await aiAPI.deleteProfile(profile.provider, profileIndex);
+
+      if (result.success) {
+        toast.success('Profile deleted successfully');
+        setEditingProfileId(null);
+        setSetupForm({ provider: '', profile: '', apiKey: '', selectedModel: '' });
+        await loadProviders();
+      }
+    } catch (error) {
+      console.error('Delete profile error:', error);
+      toast.error(error.message || 'Failed to delete profile');
+    } finally {
+      setSettingUp(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -142,6 +269,23 @@ export const ProviderSetup = ({ refreshTrigger }) => {
 
           <div>
             <label className="block text-sm font-medium text-stone-700 mb-2">
+              Profile Name (e.g., "Primary Account", "Team Account")
+            </label>
+            <input
+              type="text"
+              value={setupForm.profile}
+              onChange={(e) => setSetupForm({ ...setupForm, profile: e.target.value })}
+              placeholder="E.g., Production, Testing, Client Account..."
+              className="w-full px-3 py-2 border border-stone-300 rounded-lg"
+              maxLength="50"
+            />
+            <p className="text-xs text-stone-500 mt-1">
+              Give this configuration a memorable name to identify it later. You can have multiple profiles per provider.
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-stone-700 mb-2">
               API Key
             </label>
             <div className="relative">
@@ -165,9 +309,49 @@ export const ProviderSetup = ({ refreshTrigger }) => {
             </p>
           </div>
 
+          <div>
+            <label className="block text-sm font-medium text-stone-700 mb-2">
+              Default Model for This Profile
+            </label>
+            <div className="flex gap-2">
+              <select
+                value={setupForm.selectedModel}
+                onChange={(e) => setSetupForm({ ...setupForm, selectedModel: e.target.value })}
+                className="flex-1 px-3 py-2 border border-stone-300 rounded-lg bg-white text-stone-900"
+                disabled={!availableModels[setupForm.provider]?.length}
+              >
+                <option value="">Select a model (optional)</option>
+                {availableModels[setupForm.provider]?.map((model) => (
+                  <option key={model} value={model}>
+                    {model}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={handleFetchModelsForSetup}
+                disabled={!setupForm.provider || !setupForm.apiKey || fetchingModels === setupForm.provider}
+                className="px-3 py-2 bg-stone-200 hover:bg-stone-300 text-stone-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+                title="Load available models"
+              >
+                {fetchingModels === setupForm.provider ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin inline mr-1" />
+                    Loading...
+                  </>
+                ) : (
+                  'Load Models'
+                )}
+              </button>
+            </div>
+            <p className="text-xs text-stone-500 mt-1">
+              Click "Load Models" to see available models for this provider. You can change it later when generating posts.
+            </p>
+          </div>
+
           <Button
             type="submit"
-            disabled={settingUp || !setupForm.provider || !setupForm.apiKey}
+            disabled={settingUp || !setupForm.provider || !setupForm.profile || !setupForm.apiKey}
             className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
           >
             {settingUp ? (
@@ -287,6 +471,154 @@ export const ProviderSetup = ({ refreshTrigger }) => {
           );
         })}
       </div>
+
+      {/* Your Configured Profiles */}
+      {allProfiles.length > 0 && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-stone-900">Your Configured Profiles</h3>
+            <span className="text-sm text-stone-600 bg-stone-100 px-2 py-1 rounded">
+              {allProfiles.length} profile{allProfiles.length !== 1 ? 's' : ''}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {allProfiles.map((profile) => (
+              <div
+                key={profile.id}
+                className={`border rounded-lg p-4 transition ${
+                  editingProfileId === profile.id
+                    ? 'bg-emerald-50 border-emerald-300'
+                    : 'bg-white border-stone-200 hover:border-stone-300'
+                }`}
+              >
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <p className="font-semibold text-stone-900">
+                      {PROVIDERS.find(p => p.name === profile.provider)?.icon}{' '}
+                      {profile.profileName || profile.profile}
+                    </p>
+                    <p className="text-xs text-stone-500">
+                      {PROVIDERS.find(p => p.name === profile.provider)?.label}
+                    </p>
+                  </div>
+                  <div className="flex gap-1">
+                    <button
+                      onClick={() => handleEditProfile(profile)}
+                      className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition"
+                      title="Edit profile"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteProfile(profile)}
+                      className="p-1.5 text-red-600 hover:bg-red-50 rounded transition"
+                      title="Delete profile"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+
+                {profile.selectedModel && (
+                  <div className="mb-2 flex items-center gap-2">
+                    <span className="text-xs font-medium text-stone-600">Default Model:</span>
+                    <span className="text-xs bg-stone-100 text-stone-700 px-2 py-0.5 rounded">
+                      {profile.selectedModel}
+                    </span>
+                  </div>
+                )}
+
+                {editingProfileId === profile.id && (
+                  <form onSubmit={handleSaveEditProfile} className="mt-3 border-t border-emerald-200 pt-3 space-y-2">
+                    <div>
+                      <label className="block text-xs font-medium text-stone-700 mb-1">
+                        Profile Name
+                      </label>
+                      <input
+                        type="text"
+                        value={setupForm.profile}
+                        onChange={(e) => setSetupForm({ ...setupForm, profile: e.target.value })}
+                        className="w-full px-2 py-1 border border-stone-300 rounded text-sm"
+                        maxLength="50"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-stone-700 mb-1">
+                        API Key (leave blank to keep current)
+                      </label>
+                      <div className="relative">
+                        <input
+                          type={showApiKey ? 'text' : 'password'}
+                          value={setupForm.apiKey}
+                          onChange={(e) => setSetupForm({ ...setupForm, apiKey: e.target.value })}
+                          className="w-full px-2 py-1 border border-stone-300 rounded text-sm pr-7"
+                          placeholder="Leave blank to keep current"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowApiKey(!showApiKey)}
+                          className="absolute right-2 top-1.5 text-stone-500 hover:text-stone-700"
+                        >
+                          {showApiKey ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-stone-700 mb-1">
+                        Default Model
+                      </label>
+                      <div className="flex gap-1">
+                        <select
+                          value={setupForm.selectedModel}
+                          onChange={(e) => setSetupForm({ ...setupForm, selectedModel: e.target.value })}
+                          className="flex-1 px-2 py-1 border border-stone-300 rounded bg-white text-sm"
+                        >
+                          <option value="">Select a model (optional)</option>
+                          {availableModels[profile.provider]?.map((model) => (
+                            <option key={model} value={model}>
+                              {model}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2 pt-2">
+                      <button
+                        type="submit"
+                        disabled={settingUp}
+                        className="flex-1 px-2 py-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded text-sm font-medium"
+                      >
+                        {settingUp ? (
+                          <>
+                            <Loader2 className="w-3 h-3 mr-1 animate-spin inline" />
+                            Saving...
+                          </>
+                        ) : (
+                          'Save Changes'
+                        )}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingProfileId(null);
+                          setSetupForm({ provider: '', profile: '', apiKey: '', selectedModel: '' });
+                        }}
+                        className="flex-1 px-2 py-1.5 border border-stone-300 hover:bg-stone-50 text-stone-700 rounded text-sm font-medium"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Info */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">

@@ -3,7 +3,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { toast } from 'sonner';
 import aiAPI from '../../lib/aiApi';
-import { Loader2, Plus, X } from 'lucide-react';
+import { Loader2, Plus, X, RefreshCw } from 'lucide-react';
 
 /**
  * AI Generate Form Component
@@ -14,6 +14,7 @@ export const AIGenerateForm = ({ onPostGenerated, onClose }) => {
   const [providers, setProviders] = useState({});
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [fetchingModels, setFetchingModels] = useState(null);
 
   const [formData, setFormData] = useState({
     provider: 'openai',
@@ -115,6 +116,37 @@ export const AIGenerateForm = ({ onPostGenerated, onClose }) => {
     }));
   };
 
+  const handleFetchModels = async () => {
+    try {
+      setFetchingModels(formData.provider);
+      const result = await aiAPI.getProviderModels(formData.provider);
+      
+      // Update the providers state with new models
+      setProviders(prev => ({
+        ...prev,
+        [formData.provider]: {
+          ...prev[formData.provider],
+          models: result.models || []
+        }
+      }));
+      
+      // Set first model as default
+      if (result.models?.length > 0) {
+        setFormData(prev => ({
+          ...prev,
+          model: result.models[0]
+        }));
+      }
+      
+      toast.success(`Fetched ${result.models?.length || 0} models for ${formData.provider}`);
+    } catch (error) {
+      console.error('Failed to fetch models:', error);
+      toast.error(`Failed to fetch models: ${error.message}`);
+    } finally {
+      setFetchingModels(null);
+    }
+  };
+
   const handleGenerate = async (e) => {
     e.preventDefault();
 
@@ -168,17 +200,35 @@ export const AIGenerateForm = ({ onPostGenerated, onClose }) => {
           <label className="block text-sm font-medium text-stone-700 mb-2">
             AI Provider
           </label>
-          <select
-            value={formData.provider}
-            onChange={(e) => setFormData({ ...formData, provider: e.target.value })}
-            className="w-full px-3 py-2 border border-stone-300 rounded-lg"
-          >
-            {Object.entries(providers).map(([name, config]) => (
-              <option key={name} value={name}>
-                {name.charAt(0).toUpperCase() + name.slice(1)}
-              </option>
-            ))}
-          </select>
+          <div className="flex gap-2">
+            <select
+              value={formData.provider}
+              onChange={(e) => setFormData({ ...formData, provider: e.target.value })}
+              className="flex-1 px-3 py-2 border border-stone-300 rounded-lg"
+            >
+              {Object.entries(providers).map(([name, config]) => (
+                <option key={name} value={name}>
+                  {name.charAt(0).toUpperCase() + name.slice(1)}
+                </option>
+              ))}
+            </select>
+            <Button
+              type="button"
+              onClick={handleFetchModels}
+              disabled={fetchingModels === formData.provider}
+              variant="outline"
+              className="text-xs px-3"
+              title="Refresh available models from provider"
+            >
+              {fetchingModels === formData.provider ? (
+                <>
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                </>
+              ) : (
+                <RefreshCw className="w-3 h-3" />
+              )}
+            </Button>
+          </div>
         </div>
 
         <div>
@@ -190,12 +240,19 @@ export const AIGenerateForm = ({ onPostGenerated, onClose }) => {
             onChange={(e) => setFormData({ ...formData, model: e.target.value })}
             className="w-full px-3 py-2 border border-stone-300 rounded-lg"
           >
-            {providerConfig?.models?.map((model) => (
-              <option key={model} value={model}>
-                {model}
-              </option>
-            ))}
+            {providerConfig?.models?.length > 0 ? (
+              providerConfig.models.map((model) => (
+                <option key={model} value={model}>
+                  {model}
+                </option>
+              ))
+            ) : (
+              <option value="">No models available - fetch models first</option>
+            )}
           </select>
+          <p className="text-xs text-stone-500 mt-1">
+            {providerConfig?.models?.length || 0} models available
+          </p>
         </div>
       </div>
 

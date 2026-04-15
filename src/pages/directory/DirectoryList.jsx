@@ -68,6 +68,7 @@ const DirectoryList = () => {
           search: search || undefined,
           listing_type: listingType || undefined,
           category: category || undefined,
+          status: 'published',
           limit: 24
         });
         setListings(res.data || []);

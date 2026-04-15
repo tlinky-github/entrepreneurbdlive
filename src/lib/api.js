@@ -59,18 +59,27 @@ const fileToBase64 = (file) => new Promise((resolve, reject) => {
 export const postAPI = {
   list: async (params = {}) => {
     try {
-      let q = collection(db, 'posts');
+      let constraints = [];
       
       if (params.category_id && params.category_id !== 'all') {
-        q = query(q, where('category_id', '==', parseInt(params.category_id)));
+        constraints.push(where('category_id', '==', parseInt(params.category_id)));
       }
       
+      // Status: explicitly provided, or default to 'published' unless admin
       if (params.status && params.status !== 'all') {
-        q = query(q, where('status', '==', params.status));
+        constraints.push(where('status', '==', params.status));
       } else if (!params.isAdmin) {
-        q = query(q, where('status', '==', 'published'));
+        constraints.push(where('status', '==', 'published'));
+      }
+      
+      if (params.is_featured === true) {
+        constraints.push(where('is_featured', '==', true));
       }
 
+      let q = constraints.length > 0 
+        ? query(collection(db, 'posts'), ...constraints)
+        : collection(db, 'posts');
+      
       if (!params.noSort) {
         q = query(q, orderBy('created_at', 'desc'));
       }
@@ -110,15 +119,22 @@ export const postAPI = {
 export const profileAPI = {
   list: async (params = {}) => {
     try {
-      let q = collection(db, 'profiles');
+      let constraints = [];
       
+      // Status: explicitly provided or default to 'published' unless admin
       if (params.status && params.status !== 'all') {
-        q = query(q, where('status', '==', params.status));
+        constraints.push(where('status', '==', params.status));
+      } else if (!params.isAdmin) {
+        constraints.push(where('status', '==', 'published'));
       }
       
-      if (params.is_featured) {
-        q = query(q, where('is_featured', '==', true));
+      if (params.is_featured === true) {
+        constraints.push(where('is_featured', '==', true));
       }
+
+      let q = constraints.length > 0 
+        ? query(collection(db, 'profiles'), ...constraints)
+        : collection(db, 'profiles');
 
       const snapshot = await getDocs(q);
       let data = snapshot.docs.map(docToData);
@@ -175,11 +191,26 @@ export const profileAPI = {
 export const listingAPI = {
   list: async (params = {}) => {
     try {
-      let q = collection(db, 'listings');
+      let constraints = [];
       
+      // Status: explicitly provided or default to 'published' unless admin
       if (params.status && params.status !== 'all') {
-        q = query(q, where('status', '==', params.status));
+        constraints.push(where('status', '==', params.status));
+      } else if (!params.isAdmin) {
+        constraints.push(where('status', '==', 'published'));
       }
+      
+      if (params.is_featured === true) {
+        constraints.push(where('is_featured', '==', true));
+      }
+      
+      if (params.listing_type) {
+        constraints.push(where('listing_type', '==', params.listing_type));
+      }
+
+      let q = constraints.length > 0 
+        ? query(collection(db, 'listings'), ...constraints)
+        : collection(db, 'listings');
 
       const snapshot = await getDocs(q);
       let data = snapshot.docs.map(docToData);

@@ -22,7 +22,10 @@ import {
   CheckCircle,
   Plus,
   Minus,
-  Users
+  Users,
+  Linkedin as LinkedinIcon,
+  Twitter as TwitterIcon,
+  Facebook as FacebookIcon
 } from 'lucide-react';
 
 const DirectoryDetail = () => {
@@ -386,6 +389,38 @@ const DirectoryDetail = () => {
                         </div>
                         <span className="text-sm font-bold text-stone-300 group-hover:text-white transition-colors">{listing.phone}</span>
                       </a>
+                    )}
+                    {listing.website && (
+                      <a href={listing.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-4 group">
+                        <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center group-hover:bg-emerald-600 transition-colors">
+                          <Globe className="w-5 h-5" />
+                        </div>
+                        <span className="text-sm font-bold text-stone-300 group-hover:text-white transition-colors">Visit Website</span>
+                      </a>
+                    )}
+                    
+                    {/* Social Media Section */}
+                    {(listing.social_linkedin || listing.social_twitter || listing.social_facebook) && (
+                      <div className="pt-4 border-t border-white/10">
+                        <p className="text-xs font-bold text-stone-400 mb-3">Follow Us</p>
+                        <div className="flex items-center gap-3">
+                          {listing.social_linkedin && (
+                            <a href={listing.social_linkedin} target="_blank" rel="noopener noreferrer" className="p-2 bg-white/10 rounded-lg hover:bg-emerald-600 transition-colors group">
+                              <LinkedinIcon className="w-4 h-4 text-stone-300 group-hover:text-white" />
+                            </a>
+                          )}
+                          {listing.social_twitter && (
+                            <a href={listing.social_twitter} target="_blank" rel="noopener noreferrer" className="p-2 bg-white/10 rounded-lg hover:bg-emerald-600 transition-colors group">
+                              <TwitterIcon className="w-4 h-4 text-stone-300 group-hover:text-white" />
+                            </a>
+                          )}
+                          {listing.social_facebook && (
+                            <a href={listing.social_facebook} target="_blank" rel="noopener noreferrer" className="p-2 bg-white/10 rounded-lg hover:bg-emerald-600 transition-colors group">
+                              <FacebookIcon className="w-4 h-4 text-stone-300 group-hover:text-white" />
+                            </a>
+                          )}
+                        </div>
+                      </div>
                     )}
                   </div>
                </CardContent>
