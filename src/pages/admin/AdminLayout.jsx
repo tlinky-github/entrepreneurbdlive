@@ -68,6 +68,7 @@ const AdminLayout = () => {
     { href: '/admin/taxonomies', label: 'Taxonomies', icon: Tag },
     { href: '/admin/media', label: 'Media', icon: ImageIcon },
     { href: '/admin/users', label: 'Users', icon: Users },
+    { href: '/admin/ai-settings', label: '✨ AI Generator', icon: TrendingUp },
     { href: '/admin/settings', label: 'Settings', icon: Settings },
   ];
 

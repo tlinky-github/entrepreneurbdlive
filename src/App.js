@@ -67,6 +67,7 @@ import AdminDirectory from './pages/admin/AdminDirectory';
 import AdminResources from './pages/admin/AdminResources';
 import AdminUsers from './pages/admin/AdminUsers';
 import AdminSettings from './pages/admin/AdminSettings';
+import AISettings from './pages/admin/AISettings';
 import AdminPages from './pages/admin/AdminPages';
 import AdminAnalytics from './pages/admin/AdminAnalytics';
 import AdminContentManager from './pages/admin/AdminContentManager';
@@ -176,6 +177,7 @@ function AppRoutes() {
         <Route path="pages/new" element={<PageEditor />} />
         <Route path="pages/:id/edit" element={<PageEditor />} />
         <Route path="settings" element={<AdminSettings />} />
+        <Route path="ai-settings" element={<AISettings />} />
         <Route path="analytics" element={<AdminAnalytics />} />
       </Route>
 

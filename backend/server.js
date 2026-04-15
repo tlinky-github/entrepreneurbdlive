@@ -181,6 +181,10 @@ app.get('/api/admin/stats', (req, res) => {
   });
 });
 
+// AI Routes (Phase 1)
+const aiRoutes = require('./routes/ai');
+app.use('/api/ai', aiRoutes);
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'Backend API is running' });
