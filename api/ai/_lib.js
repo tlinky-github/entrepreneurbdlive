@@ -1,37 +1,33 @@
 // Shared utilities for AI API routes
 const admin = require('firebase-admin');
-const path = require('path');
 
 // Initialize Firebase Admin SDK (reuse singleton)
 let db = null;
+let initialized = false;
 
 function initializeFirebase() {
-  if (admin.apps.length === 0) {
-    let serviceAccount;
+  if (initialized) return db;
+  
+  try {
+    if (admin.apps.length === 0) {
+      const serviceAccount = JSON.parse(process.env.FIREBASE_CREDENTIALS_JSON || '{}');
+      
+      if (!serviceAccount.project_id) {
+        throw new Error('FIREBASE_CREDENTIALS_JSON environment variable not set or invalid');
+      }
 
-    // Try different credential sources (same as backend)
-    if (process.env.FIREBASE_CREDENTIALS_JSON) {
-      serviceAccount = JSON.parse(process.env.FIREBASE_CREDENTIALS_JSON);
-      console.log('ℹ️ Using Firebase credentials from FIREBASE_CREDENTIALS_JSON');
-    } else if (process.env.FIREBASE_CREDENTIALS_PATH) {
-      serviceAccount = require(process.env.FIREBASE_CREDENTIALS_PATH);
-      console.log('ℹ️ Using Firebase credentials from FIREBASE_CREDENTIALS_PATH');
-    } else {
-      const credentialsPath = path.join(process.cwd(), 'firebase-credentials.json');
-      serviceAccount = require(credentialsPath);
-      console.log('ℹ️ Using Firebase credentials from firebase-credentials.json');
+      admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount),
+      });
     }
 
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
-    });
-  }
-
-  if (!db) {
     db = admin.firestore();
+    initialized = true;
+    return db;
+  } catch (error) {
+    console.error('Firebase initialization failed:', error.message);
+    throw error;
   }
-
-  return db;
 }
 
 // Authentication middleware
@@ -48,7 +44,7 @@ async function authenticateUser(req) {
   }
 }
 
-// Error response handler
+// Error response handler (statusCode, message) - consistent order
 function errorResponse(res, statusCode, message) {
   return res.status(statusCode).json({
     success: false,

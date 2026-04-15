@@ -1,5 +1,5 @@
 // GET /api/ai/stats - Get generation statistics
-const { initializeFirebase, authenticateUser, errorResponse, successResponse } = require('../_lib');
+const { initializeFirebase, authenticateUser, errorResponse, successResponse } = require('./_lib');
 
 module.exports = async (req, res) => {
   // Enable CORS

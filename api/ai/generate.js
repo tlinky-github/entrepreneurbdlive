@@ -1,6 +1,6 @@
 // POST /api/ai/generate - Generate AI post
-const { authenticateUser, errorResponse, successResponse, initializeFirebase } = require('../_lib');
-const postGeneratorService = require('../../_services/postGeneratorService');
+const { authenticateUser, errorResponse, successResponse, initializeFirebase } = require('./_lib');
+const postGeneratorService = require('../_services/postGeneratorService');
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -14,7 +14,7 @@ module.exports = async (req, res) => {
 
   try {
     if (req.method !== 'POST') {
-      return errorResponse(res, 'Method not allowed', 405);
+      return errorResponse(res, 405, 'Method not allowed');
     }
 
     await initializeFirebase();
@@ -23,7 +23,7 @@ module.exports = async (req, res) => {
     const { provider, model, topics, tone, keywords, temperature, maxTokens, language } = req.body;
 
     if (!provider || !model) {
-      return errorResponse(res, 'Provider and model are required', 400);
+      return errorResponse(res, 400, 'Provider and model are required');
     }
 
     // Generate post using orchestration service
@@ -41,6 +41,6 @@ module.exports = async (req, res) => {
     return successResponse(res, result.post);
   } catch (error) {
     const statusCode = error.message.includes('Unauthorized') ? 401 : 500;
-    return errorResponse(res, error.message, statusCode);
+    return errorResponse(res, statusCode, error.message);
   }
 };

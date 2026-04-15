@@ -27,11 +27,11 @@ module.exports = async (req, res) => {
         const postDoc = await db.collection('ai_posts').doc(postId).get();
 
         if (!postDoc.exists) {
-          return errorResponse(res, 'Post not found', 404);
+          return errorResponse(res, 404, 'Post not found');
         }
 
         if (postDoc.data().userId !== userId) {
-          return errorResponse(res, 'Unauthorized: You can only view your own posts', 403);
+          return errorResponse(res, 403, 'Unauthorized: You can only view your own posts');
         }
 
         return successResponse(res, {
@@ -76,18 +76,18 @@ module.exports = async (req, res) => {
     } else if (req.method === 'PUT') {
       // PUT /api/ai/posts-handler?id=postId - Update post
       if (!postId) {
-        return errorResponse(res, 'Post ID is required for update', 400);
+        return errorResponse(res, 400, 'Post ID is required for update');
       }
 
       const postRef = db.collection('ai_posts').doc(postId);
       const postDoc = await postRef.get();
 
       if (!postDoc.exists) {
-        return errorResponse(res, 'Post not found', 404);
+        return errorResponse(res, 404, 'Post not found');
       }
 
       if (postDoc.data().userId !== userId) {
-        return errorResponse(res, 'Unauthorized: You can only update your own posts', 403);
+        return errorResponse(res, 403, 'Unauthorized: You can only update your own posts');
       }
 
       const updates = req.body;
@@ -102,18 +102,18 @@ module.exports = async (req, res) => {
     } else if (req.method === 'DELETE') {
       // DELETE /api/ai/posts-handler?id=postId - Delete post
       if (!postId) {
-        return errorResponse(res, 'Post ID is required for deletion', 400);
+        return errorResponse(res, 400, 'Post ID is required for deletion');
       }
 
       const postRef = db.collection('ai_posts').doc(postId);
       const postDoc = await postRef.get();
 
       if (!postDoc.exists) {
-        return errorResponse(res, 'Post not found', 404);
+        return errorResponse(res, 404, 'Post not found');
       }
 
       if (postDoc.data().userId !== userId) {
-        return errorResponse(res, 'Unauthorized: You can only delete your own posts', 403);
+        return errorResponse(res, 403, 'Unauthorized: You can only delete your own posts');
       }
 
       await postRef.delete();
@@ -132,10 +132,11 @@ module.exports = async (req, res) => {
         message: 'Post deleted',
       });
     } else {
-      return errorResponse(res, 'Method not allowed', 405);
+      return errorResponse(res, 405, 'Method not allowed');
     }
   } catch (error) {
     console.error('Error handling posts:', error);
-    return errorResponse(res, error.message.includes('Unauthorized') ? 401 : 500, error.message);
+    const statusCode = error.message.includes('Unauthorized') ? 401 : 500;
+    return errorResponse(res, statusCode, error.message);
   }
 };
