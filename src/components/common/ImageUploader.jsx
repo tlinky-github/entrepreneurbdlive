@@ -22,10 +22,11 @@ const ImageUploader = ({
   value, 
   onChange, 
   entityType = 'blog',
-  placeholder = 'Enter image URL or upload'
+  placeholder = 'Enter image URL or upload',
+  defaultTab = 'url'
 }) => {
   const [uploading, setUploading] = useState(false);
-  const [activeTab, setActiveTab] = useState('url');
+  const [activeTab, setActiveTab] = useState(defaultTab);
   const [previewUrl, setPreviewUrl] = useState('');
   const [alt, setAlt] = useState('');
   const [caption, setCaption] = useState('');

@@ -25,7 +25,8 @@ import {
   Home,
   Tag,
   Plus,
-  UserCircle
+  UserCircle,
+  Image as ImageIcon
 } from 'lucide-react';
 
 const AdminLayout = () => {
@@ -65,6 +66,7 @@ const AdminLayout = () => {
     { href: '/admin/entrepreneurs', label: 'Entrepreneurs', icon: Users, addType: 'entrepreneurs' },
     { href: '/admin/directory', label: 'Directory', icon: Building2, addType: 'directory' },
     { href: '/admin/taxonomies', label: 'Taxonomies', icon: Tag },
+    { href: '/admin/media', label: 'Media', icon: ImageIcon },
     { href: '/admin/users', label: 'Users', icon: Users },
     { href: '/admin/settings', label: 'Settings', icon: Settings },
   ];

@@ -72,6 +72,7 @@ import AdminAnalytics from './pages/admin/AdminAnalytics';
 import AdminContentManager from './pages/admin/AdminContentManager';
 import ContentEditorPanel from './pages/admin/ContentEditorPanel';
 import AdminTaxonomies from './pages/admin/AdminTaxonomies';
+import AdminMedia from './pages/admin/AdminMedia';
 import AdminKnowledgeHub from './pages/admin/AdminKnowledgeHub';
 import TestEditor from './pages/admin/TestEditor';
 
@@ -167,6 +168,7 @@ function AppRoutes() {
         <Route path="resources" element={<AdminResources />} />
         <Route path="resources/new" element={<ContentEditorPanel />} />
         <Route path="resources/:id/edit" element={<ContentEditorPanel />} />
+        <Route path="media" element={<AdminMedia />} />
         <Route path="users" element={<AdminUsers />} />
         <Route path="taxonomies" element={<AdminTaxonomies />} />
         <Route path="knowledge-hub" element={<AdminKnowledgeHub />} />
