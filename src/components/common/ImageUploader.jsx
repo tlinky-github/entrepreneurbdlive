@@ -4,8 +4,6 @@ import { Input } from '../ui/input';
 import { toast } from 'sonner';
 import api, { mediaAPI } from '../../lib/api';
 import { auth } from '../../lib/firebase';
-import { openDefaultEditor } from '@pqina/pintura';
-import '@pqina/pintura/pintura.css';
 import { Upload, X, Image as ImageIcon, Loader2, Link as LinkIcon, Grid, RefreshCw, Search, Trash2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Skeleton } from '../ui/skeleton';
@@ -19,6 +17,20 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '../ui/alert-dialog';
+import ImageEditor from 'tui-image-editor';
+import 'tui-image-editor/dist/tui-image-editor.css';
+
+// Hide Tui Image Editor branding
+const tuiEditorStyles = document.createElement('style');
+tuiEditorStyles.textContent = `
+  .tui-image-editor-header-logo {
+    display: none !important;
+  }
+`;
+if (typeof document !== 'undefined' && !document.querySelector('[data-tui-branding-hidden]')) {
+  tuiEditorStyles.setAttribute('data-tui-branding-hidden', 'true');
+  document.head.appendChild(tuiEditorStyles);
+}
 
 const ImageUploader = ({ 
   value, 
@@ -50,7 +62,10 @@ const ImageUploader = ({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [selectedDeleteItem, setSelectedDeleteItem] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [showImageEditor, setShowImageEditor] = useState(false);
   const fileInputRef = useRef(null);
+  const editorContainerRef = useRef(null);
+  const editorInstanceRef = useRef(null);
 
   // Sync with value prop
   useEffect(() => {
@@ -219,56 +234,136 @@ const ImageUploader = ({
 
   const handleEditImage = async () => {
     if (!previewUrl) return;
+    setShowImageEditor(true);
+  };
 
-    try {
-      const editor = openDefaultEditor({
-        src: previewUrl,
-        imageWriter: {
-          format: format === 'auto' ? undefined : format,
-          quality,
-        },
-        enableAutoHide: false,
-        enableAutoDestroy: true,
-      });
+  useEffect(() => {
+    if (!showImageEditor || !editorContainerRef.current) return;
 
-      editor.on('process', async (result) => {
-        const file = result?.dest;
-        if (file instanceof File) {
+    let isMounted = true;
+    const initEditor = async () => {
+      try {
+        if (!isMounted) return;
+        
+        // Clear previous editor if exists
+        if (editorInstanceRef.current) {
           try {
-            setUploading(true);
-            const { publicUrl } = await uploadFileToCloudflare(file);
-            try {
-              await mediaAPI.create({
-                url: publicUrl,
-                fileName: file.name,
-                entityType,
-                contentType: file.type,
-                uploaderId: auth.currentUser?.uid,
-              });
-            } catch (trackError) {
-              console.warn('Edited image uploaded but failed to track in Firestore:', trackError);
-            }
-            setPreviewUrl(publicUrl);
-            setSourceSize(file.size);
-            setOptimizedSize(null);
-            toast.success('Image edited and uploaded');
-          } catch (uploadError) {
-            console.error('Edited image upload failed:', uploadError);
-            toast.error('Could not upload edited image.');
-          } finally {
-            setUploading(false);
+            editorInstanceRef.current.destroy();
+          } catch (e) {
+            console.warn('Error destroying previous editor:', e);
           }
         }
+
+        // Fetch image and convert to data URL to avoid CORS issues
+        let imageSource = previewUrl;
+        try {
+          const response = await fetch(previewUrl);
+          const blob = await response.blob();
+          const reader = new FileReader();
+          imageSource = await new Promise((resolve, reject) => {
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          });
+        } catch (fetchError) {
+          console.warn('Failed to fetch image as blob, using URL directly:', fetchError);
+          // Fall back to original URL
+        }
+
+        // Initialize editor with proper options
+        editorInstanceRef.current = new ImageEditor(editorContainerRef.current, {
+          includeUI: {
+            loadImage: {
+              path: imageSource,
+              name: 'Image',
+            },
+            initMenu: '',
+            menuBarPosition: 'bottom',
+            locale: 'en',
+          },
+        });
+      } catch (error) {
+        console.error('Failed to initialize Tui Image Editor:', error);
+        if (isMounted) {
+          toast.error('Could not open image editor. Invalid image or format.');
+          setShowImageEditor(false);
+        }
+      }
+    };
+
+    // Small delay to ensure DOM is ready
+    const timer = setTimeout(initEditor, 100);
+
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+      if (editorInstanceRef.current) {
+        try {
+          editorInstanceRef.current.destroy();
+          editorInstanceRef.current = null;
+        } catch (error) {
+          console.warn('Error destroying editor:', error);
+        }
+      }
+    };
+  }, [showImageEditor, previewUrl]);
+
+  const handleSaveEditedImage = async () => {
+    if (!editorInstanceRef.current) {
+      toast.error('Editor not ready. Please try again.');
+      return;
+    }
+
+    try {
+      setUploading(true);
+      
+      // Get the edited image as data URL
+      const editedDataUrl = editorInstanceRef.current.toDataURL({
+        format: 'png',
+        multiplier: 1,
+        quality: 0.95,
       });
 
-      editor.on('processerror', (error) => {
-        console.error('Pintura edit failed:', error);
-        toast.error('Image editing failed.');
-      });
+      // Convert data URL to Blob
+      const response = await fetch(editedDataUrl);
+      const blob = await response.blob();
+      const file = new File([blob], `edited-${Date.now()}.png`, { type: 'image/png' });
+
+      const { publicUrl } = await uploadFileToCloudflare(file);
+      try {
+        await mediaAPI.create({
+          url: publicUrl,
+          fileName: file.name,
+          entityType,
+          contentType: file.type,
+          uploaderId: auth.currentUser?.uid,
+        });
+      } catch (trackError) {
+        console.warn('Edited image uploaded but failed to track in Firestore:', trackError);
+      }
+      setPreviewUrl(publicUrl);
+      setSourceSize(file.size);
+      setOptimizedSize(null);
+      setShowImageEditor(false);
+      toast.success('Image edited and saved');
     } catch (error) {
-      console.error('Failed to launch image editor:', error);
-      toast.error('Could not open the image editor.');
+      console.error('Failed to save edited image:', error);
+      toast.error('Could not save edited image.');
+    } finally {
+      setUploading(false);
     }
+  };
+
+  const handleCancelEdit = () => {
+    if (editorInstanceRef.current) {
+      try {
+        editorInstanceRef.current.destroy();
+        editorInstanceRef.current = null;
+      } catch (error) {
+        console.warn('Error destroying editor:', error);
+      }
+    }
+    setShowImageEditor(false);
   };
 
   const syncGallery = async () => {
@@ -969,6 +1064,116 @@ const ImageUploader = ({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Tui Image Editor Modal */}
+      {showImageEditor && (
+        <div className="fixed inset-0 z-50 bg-black/50" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'white',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+          }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              padding: '16px',
+              borderBottom: '1px solid #e5e7eb',
+              backgroundColor: 'white',
+              zIndex: 10,
+            }}>
+              <h2 style={{ fontSize: '18px', fontWeight: 'bold', color: '#111827', margin: 0 }}>Edit Image</h2>
+              <button
+                onClick={handleCancelEdit}
+                disabled={uploading}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: uploading ? 'not-allowed' : 'pointer',
+                  padding: '4px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  opacity: uploading ? 0.5 : 1,
+                }}
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div
+              ref={editorContainerRef}
+              style={{
+                flex: 1,
+                overflow: 'hidden',
+                backgroundColor: '#f9fafb',
+                width: '100%',
+                height: '100%',
+              }}
+            />
+            <div style={{
+              display: 'flex',
+              justifyContent: 'flex-end',
+              gap: '12px',
+              padding: '16px',
+              borderTop: '1px solid #e5e7eb',
+              backgroundColor: '#f3f4f6',
+              zIndex: 10,
+            }}>
+              <button
+                type="button"
+                onClick={handleCancelEdit}
+                disabled={uploading}
+                style={{
+                  padding: '10px 20px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '6px',
+                  backgroundColor: 'white',
+                  cursor: uploading ? 'not-allowed' : 'pointer',
+                  opacity: uploading ? 0.5 : 1,
+                  fontSize: '14px',
+                  fontWeight: '500',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveEditedImage}
+                disabled={uploading}
+                style={{
+                  padding: '10px 20px',
+                  borderRadius: '6px',
+                  backgroundColor: '#059669',
+                  color: 'white',
+                  border: 'none',
+                  cursor: uploading ? 'not-allowed' : 'pointer',
+                  opacity: uploading ? 0.7 : 1,
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                }}
+              >
+                {uploading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  'Save & Upload'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
