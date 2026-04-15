@@ -15,14 +15,11 @@ module.exports = async (req, res) => {
 
   try {
     // Initialize Firebase first
-    initializeFirebase();
+    const db = initializeFirebase();
     
     // Then authenticate user
     const user = await authenticateUser(req);
     const userId = user.uid;
-
-    // Get Firebase instance
-    const db = initializeFirebase();
 
     // Get generation logs for stats
     const logsSnapshot = await db

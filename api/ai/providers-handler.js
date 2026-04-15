@@ -106,6 +106,10 @@ module.exports = async (req, res) => {
           return errorResponse(res, 500, `Failed to fetch models: ${e.message}`);
         }
 
+        if (!models || models.length === 0) {
+          return errorResponse(res, 404, `No models found for ${provider}. Check your API key and permissions.`);
+        }
+
         return successResponse(res, {
           provider: provider.toLowerCase(),
           models: models || [],

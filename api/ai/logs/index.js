@@ -14,12 +14,12 @@ module.exports = async (req, res) => {
   }
 
   try {
+    // Get Firebase instance (Initializes if needed)
+    const db = initializeFirebase();
+
     // Authenticate user
     const user = await authenticateUser(req);
     const userId = user.uid;
-
-    // Get Firebase instance
-    const db = initializeFirebase();
 
     // Parse query params
     const { limit = 100, filter = 'all' } = req.query;

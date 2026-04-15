@@ -98,8 +98,7 @@ const claudeService = {
       ];
       return availableModels;
     } catch (error) {
-      // Return default models if API calls fail
-      return ['claude-3-5-sonnet-20241022', 'claude-3-5-haiku-20241022', 'claude-3-opus-20240229'];
+      throw new Error(`Claude API Error: ${error.message}`);
     }
   },
 };

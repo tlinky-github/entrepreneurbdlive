@@ -10,16 +10,22 @@ const openaiService = {
       const models = await openai.models.list();
       
       // Filter GPT models
-      const gptModels = models.data
-        .filter((m) => m.id.includes('gpt'))
+      const gptModels = (models.data || [])
+        .filter((m) => m && m.id && m.id.includes('gpt'))
         .map((m) => m.id)
         .sort()
         .reverse()
         .slice(0, 10); // Get latest 10
+      
+      const finalModels = gptModels.length > 0 ? gptModels : [];
+
+      if (finalModels.length === 0) {
+        throw new Error('No GPT models found for this account.');
+      }
 
       return {
         success: true,
-        models: gptModels.length > 0 ? gptModels : ['gpt-4-turbo', 'gpt-4', 'gpt-3.5-turbo'],
+        models: finalModels,
         message: 'OpenAI API key is valid',
       };
     } catch (error) {
@@ -88,22 +94,21 @@ const openaiService = {
       const openai = new OpenAI({ apiKey });
       const models = await openai.models.list();
 
-      const availableModels = models.data
-        .filter((m) => m.id.includes('gpt'))
+      const availableModels = (models.data || [])
+        .filter((m) => m && m.id && m.id.includes('gpt'))
         .map((m) => m.id)
         .sort()
         .reverse()
         .slice(0, 20);
 
-      // Ensure some models exist
-      if (availableModels.length === 0) {
-        return ['gpt-4-turbo', 'gpt-4', 'gpt-3.5-turbo'];
+      if (!availableModels || availableModels.length === 0) {
+        throw new Error('No GPT models found for this account. Ensure you have an active subscription or project access.');
       }
 
       return availableModels;
     } catch (error) {
-      // Return default models if API calls fail
-      return ['gpt-4-turbo', 'gpt-4', 'gpt-3.5-turbo'];
+      console.error('OpenAI getAvailableModels error:', error.message);
+      throw new Error(`OpenAI API Error: ${error.message}`);
     }
   },
 };

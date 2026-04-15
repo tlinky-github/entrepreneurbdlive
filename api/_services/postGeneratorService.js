@@ -57,38 +57,105 @@ const postGeneratorService = {
         throw new Error(`Unknown provider: ${provider}`);
       }
 
-      // Build prompt
+      // Parse target word count from options
+      let targetWordCount = 800;
+      if (typeof options.targetLength === 'string') {
+        const matches = options.targetLength.match(/\d+/g);
+        if (matches && matches.length > 0) {
+          // Use the higher number if it's a range (e.g., "800-1000" -> 1000)
+          targetWordCount = Math.max(...matches.map(Number));
+        }
+      } else if (typeof options.targetLength === 'number') {
+        targetWordCount = options.targetLength;
+      }
+
+      const startTime = Date.now();
+      let fullContent = '';
+      let totalTokensUsed = 0;
+      let iterations = 0;
+      const MAX_ITERATIONS = 4; // Prevent infinite loops
       const topicsStr = topics.join(', ');
       const keywordsStr = keywords.join(', ');
 
-      const prompt = `Generate a ${tone} blog post about: ${topicsStr}
-Keywords to include: ${keywordsStr}
-Language: ${language}
+      while (iterations < MAX_ITERATIONS) {
+        iterations++;
+        
+        let currentPrompt = '';
+        const currentWordCount = fullContent.split(/\s+/).filter(w => w.length > 0).length;
+
+        if (iterations === 1) {
+          // Initial prompt
+          currentPrompt = `Act as an expert content creator and professional blogger. Your goal is to generate a comprehensive, high-quality, and highly engaging blog post in ${language}.
+          
+Topic: ${topicsStr}
+Keywords to include naturally: ${keywordsStr}
 Tone: ${tone}
+Target Language: ${language}
+Target Word Count: ${targetWordCount} words
 
-Write a comprehensive, engaging post suitable for a blog. Include:
-- Engaging introduction
-- Main content sections
-- Practical tips/insights
-- Conclusion
+STRUCTURAL REQUIREMENTS:
+1. OVERVIEW/HOOK: Start with a powerful, attention-grabbing introduction that clearly states the value proposition.
+2. SUBHEADINGS: Use SEO-friendly, descriptive H2 and H3 subheadings.
+3. CONTENT DEPTH: Provide actionable insights and deep value.
+4. FORMATTING: Use Markdown formatting (bold, italics, lists, blockquotes).
+5. ENGAGEMENT: Maintain the "${tone}" voice consistently.
 
-Keep it informative and scannable.`;
+TECHNICAL SPECIFICATIONS:
+- Output only the Markdown content of the post.
+- Ensure the keyword integration is seamless.
+- This is PART 1 of the generation. Focus on the Introduction and the first few major sections.
+- Goal for this batch: ~500-700 words.
 
-      const startTime = Date.now();
+Post Content:`;
+        } else {
+          // Continuation prompt
+          currentPrompt = `Act as a professional blogger. You are continuing a blog post.
+          
+Original Topic: ${topicsStr}
+Current Word Count: ${currentWordCount} words
+Target Word Count: ${targetWordCount} words
 
-      // Generate content
-      const result = await providerService.generateContent(
-        apiKey,
-        prompt,
-        model,
-        { temperature, maxTokens }
-      );
+The content already generated is:
+---
+${fullContent.substring(Math.max(0, fullContent.length - 1500))} 
+---
+
+CONTINUATION REQUIREMENTS:
+1. PICK UP EXACTLY where the previous text left off.
+2. Do NOT repeat the introduction or previously covered points.
+3. Focus on expanding the remaining sections or adding new depth to reach the ${targetWordCount} word goal.
+4. Maintain the "${tone}" tone and Markdown formatting.
+5. If you have covered everything and reached near ${targetWordCount} words, provide a strong Conclusion & CTA.
+
+Next Section of Post:`;
+        }
+
+        // Generate content for this batch
+        const result = await providerService.generateContent(
+          apiKey,
+          currentPrompt,
+          model,
+          { temperature, maxTokens }
+        );
+
+        fullContent += (iterations > 1 ? '\n\n' : '') + result.content.trim();
+        totalTokensUsed += result.tokensUsed || 0;
+
+        // Check if we reached the target or if the AI signaled completion
+        const newWordCount = fullContent.split(/\s+/).filter(w => w.length > 0).length;
+        
+        // If we are within 10% of target or AI seems to have finished (contains Conclusion header/CTA)
+        const hasFinished = /conclusion|final thoughts|summary|call to action|cta/i.test(result.content.toLowerCase());
+        
+        if (newWordCount >= targetWordCount * 0.9 || hasFinished) {
+          break;
+        }
+      }
 
       const generationTime = Date.now() - startTime;
-      const tokensUsed = result.tokensUsed || 0;
 
       // Extract title and excerpt
-      const titlePrompt = `Extract a compelling title for this blog post (max 80 chars):\n\n${result.content.substring(0, 500)}`;
+      const titlePrompt = `Extract a compelling title for this blog post (max 80 chars):\n\n${fullContent.substring(0, 500)}`;
       const titleResult = await providerService.generateContent(apiKey, titlePrompt, model, {
         maxTokens: 50,
       });
@@ -98,8 +165,8 @@ Keep it informative and scannable.`;
       const postData = {
         userId,
         title: title || 'Untitled Post',
-        content: result.content,
-        excerpt: result.content.substring(0, 200) + '...',
+        content: fullContent,
+        excerpt: fullContent.substring(0, 200) + '...',
         provider: provider.toLowerCase(),
         model,
         topics,
@@ -107,7 +174,7 @@ Keep it informative and scannable.`;
         tone,
         language,
         status: 'draft',
-        tokensUsed,
+        tokensUsed: totalTokensUsed,
         generationTime,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -124,7 +191,7 @@ Keep it informative and scannable.`;
         status: 'success',
         provider: provider.toLowerCase(),
         model,
-        tokensUsed,
+        tokensUsed: totalTokensUsed,
         generationTime,
         timestamp: new Date(),
       });

@@ -22,7 +22,7 @@ export const AIGenerateForm = ({ onPostGenerated, onClose }) => {
     topics: [],
     topicInput: '',
     tone: 'professional',
-    targetLength: '800-1000',
+    targetLength: '1000',
     keywords: [],
     keywordInput: '',
     includeSEO: true,
@@ -325,13 +325,21 @@ export const AIGenerateForm = ({ onPostGenerated, onClose }) => {
 
         <div>
           <label className="block text-sm font-medium text-stone-700 mb-2">
-            Target Length (words)
+            Target Length
           </label>
-          <Input
+          <select
             value={formData.targetLength}
             onChange={(e) => setFormData({ ...formData, targetLength: e.target.value })}
-            placeholder="e.g., 800-1000"
-          />
+            className="w-full px-3 py-2 border border-stone-300 rounded-lg"
+          >
+            <option value="500">Short (~500 words)</option>
+            <option value="1000">Standard (~1000 words)</option>
+            <option value="1500">Long-Form (~1500 words)</option>
+            <option value="2000">Deep-Dive (~2000 words)</option>
+          </select>
+          <p className="text-xs text-stone-500 mt-1">
+            Long-form posts are generated in multiple batches.
+          </p>
         </div>
       </div>
 
@@ -461,7 +469,9 @@ export const AIGenerateForm = ({ onPostGenerated, onClose }) => {
           {generating ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Generating... (this may take 30 seconds)
+              {parseInt(formData.targetLength) >= 1500 
+                ? 'Building Long-Form Post (Batch 1/4)...' 
+                : 'Generating Content...'}
             </>
           ) : (
             '✨ Generate Post'

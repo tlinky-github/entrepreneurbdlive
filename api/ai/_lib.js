@@ -49,11 +49,27 @@ function initializeFirebase() {
 
 // Authentication middleware
 async function authenticateUser(req) {
+  // Ensure Firebase is initialized before using admin
+  initializeFirebase();
+  
   try {
-    const token = req.headers.authorization?.split('Bearer ')[1];
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      throw new Error('No token provided');
+    }
+    
+    // Support case-insensitive Bearer check
+    let token = null;
+    if (authHeader.toLowerCase().startsWith('bearer ')) {
+      token = authHeader.substring(7);
+    } else {
+      throw new Error('Invalid authorization format. Use "Bearer <token>"');
+    }
+
     if (!token) {
       throw new Error('No token provided');
     }
+    
     const decodedToken = await admin.auth().verifyIdToken(token);
     return decodedToken;
   } catch (error) {

@@ -15,10 +15,9 @@ module.exports = async (req, res) => {
   }
 
   try {
-    initializeFirebase();
+    const db = initializeFirebase();
     const user = await authenticateUser(req);
     const userId = user.uid;
-    const db = initializeFirebase();
     const postId = req.query.id; // Get post ID from query param
 
     if (req.method === 'GET') {
