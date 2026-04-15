@@ -13,10 +13,23 @@ function initializeFirebase() {
   
   try {
     if (admin.apps.length === 0) {
-      const serviceAccount = JSON.parse(process.env.FIREBASE_CREDENTIALS_JSON || '{}');
+      const credsJson = process.env.FIREBASE_CREDENTIALS_JSON;
+      
+      if (!credsJson) {
+        throw new Error('FIREBASE_CREDENTIALS_JSON environment variable is not set');
+      }
+      
+      let serviceAccount;
+      try {
+        serviceAccount = JSON.parse(credsJson);
+      } catch (parseErr) {
+        console.error('Failed to parse FIREBASE_CREDENTIALS_JSON:', parseErr.message);
+        console.error('First 100 chars:', credsJson.substring(0, 100));
+        throw new Error(`Invalid JSON in FIREBASE_CREDENTIALS_JSON: ${parseErr.message}`);
+      }
       
       if (!serviceAccount.project_id) {
-        throw new Error('FIREBASE_CREDENTIALS_JSON environment variable not set or invalid');
+        throw new Error('FIREBASE_CREDENTIALS_JSON missing project_id field');
       }
 
       admin.initializeApp({
@@ -29,6 +42,7 @@ function initializeFirebase() {
     return db;
   } catch (error) {
     console.error('Firebase initialization failed:', error.message);
+    console.error('Stack:', error.stack);
     throw error;
   }
 }
