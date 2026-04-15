@@ -4,9 +4,19 @@ import { Input } from '../ui/input';
 import { toast } from 'sonner';
 import api, { mediaAPI } from '../../lib/api';
 import { auth } from '../../lib/firebase';
-import { Upload, X, Image as ImageIcon, Loader2, Link as LinkIcon, Grid, RefreshCw, Search } from 'lucide-react';
+import { Upload, X, Image as ImageIcon, Loader2, Link as LinkIcon, Grid, RefreshCw, Search, Trash2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Skeleton } from '../ui/skeleton';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '../ui/alert-dialog';
 
 const ImageUploader = ({ 
   value, 
@@ -24,6 +34,7 @@ const ImageUploader = ({
   const [mediaLoading, setMediaLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [visibleCount, setVisibleCount] = useState(15);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const fileInputRef = useRef(null);
 
   // Sync with value prop
@@ -212,11 +223,26 @@ const ImageUploader = ({
     }
   };
 
-  const handleRemove = () => {
+  const handleRemove = async () => {
+    // Try to find and delete the media record from Firestore
+    try {
+      const currentUrl = value || previewUrl;
+      if (currentUrl) {
+        const res = await mediaAPI.list();
+        const match = (res.data || []).find(m => m.url === currentUrl);
+        if (match) {
+          await mediaAPI.delete(match.id);
+        }
+      }
+    } catch (err) {
+      console.warn('Could not delete media record:', err);
+    }
     onChange('');
     setPreviewUrl('');
     setAlt('');
     setCaption('');
+    setShowDeleteConfirm(false);
+    toast.success('Image removed');
   };
 
   return (
@@ -399,8 +425,8 @@ const ImageUploader = ({
                   Change
                 </button>
               </div>
-              <div className="aspect-video rounded-lg overflow-hidden border border-stone-200 relative">
-                <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
+              <div className="rounded-lg overflow-hidden border border-stone-200 relative bg-stone-100">
+                <img src={previewUrl} alt="Preview" className="w-full max-h-[300px] object-contain" />
               </div>
               <div className="grid gap-3">
                 <div className="space-y-1">
@@ -445,19 +471,37 @@ const ImageUploader = ({
 
       {/* Persistence Preview (always visible if value exists) */}
       {value && !previewUrl && (
-        <div className="relative rounded-lg overflow-hidden border border-stone-200">
-          <img src={value} alt="Current" className="w-full h-48 object-cover" />
+        <div className="relative rounded-lg overflow-hidden border border-stone-200 bg-stone-100">
+          <img src={value} alt="Current" className="w-full max-h-[250px] object-contain" />
           <Button
             type="button"
             variant="destructive"
             size="sm"
             className="absolute top-2 right-2"
-            onClick={handleRemove}
+            onClick={() => setShowDeleteConfirm(true)}
           >
-            <X className="w-4 h-4" />
+            <Trash2 className="w-4 h-4 mr-1" /> Remove
           </Button>
         </div>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove Image?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will remove the image from this content. The image file will be kept in your media library.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleRemove} className="bg-red-600 hover:bg-red-700">
+              Remove Image
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

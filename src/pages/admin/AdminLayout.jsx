@@ -59,6 +59,7 @@ const AdminLayout = () => {
   const menuItems = [
     { href: '/admin', label: 'Dashboard', icon: LayoutDashboard, exact: true },
     { href: '/admin/content-manager', label: 'Content Manager', icon: BookOpen },
+    { href: '/admin/knowledge-hub', label: 'Knowledge Hub', icon: BookOpen },
     { href: '/admin/posts', label: 'Blog Posts', icon: FileText, addType: 'blog' },
     { href: '/admin/authors', label: 'Authors', icon: UserCircle },
     { href: '/admin/entrepreneurs', label: 'Entrepreneurs', icon: Users, addType: 'entrepreneurs' },

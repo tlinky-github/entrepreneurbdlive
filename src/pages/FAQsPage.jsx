@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { SEO } from '../components/SEO';
 import { HelpCircle, ChevronRight } from 'lucide-react';
@@ -9,9 +9,32 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '../components/ui/accordion';
-import { faqs } from '../data/mock';
+import { faqs as mockFaqs } from '../data/mock';
+import { faqCategoriesAPI } from '../lib/api';
 
 const FAQsPage = () => {
+  const [firestoreFaqs, setFirestoreFaqs] = useState([]);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await faqCategoriesAPI.list();
+        const published = (res.data || []).filter(f => f.status === 'published');
+        // Map Firestore format to mock format
+        setFirestoreFaqs(published.map(f => ({
+          category: f.name,
+          icon: f.icon || '❓',
+          questions: f.questions || []
+        })));
+      } catch (err) {
+        console.error('Failed to load FAQs from Firestore:', err);
+      }
+    };
+    load();
+  }, []);
+
+  const allFaqs = [...firestoreFaqs, ...mockFaqs];
+
   return (
     <>
       <SEO
@@ -45,7 +68,7 @@ const FAQsPage = () => {
       <section className="py-20 lg:py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl mx-auto space-y-12">
-            {faqs.map((category, categoryIndex) => (
+            {allFaqs.map((category, categoryIndex) => (
               <div key={categoryIndex}>
                 <h2 className="text-2xl font-bold text-stone-900 mb-6 pb-3 border-b border-stone-200">
                   {category.category}

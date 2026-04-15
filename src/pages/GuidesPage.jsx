@@ -1,12 +1,29 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { SEO } from '../components/SEO';
 import { ArrowRight, BookOpen, ChevronRight } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
-import { guides } from '../data/mock';
+import { guides as mockGuides } from '../data/mock';
+import { guidesAPI } from '../lib/api';
 
 const GuidesPage = () => {
+  const [firestoreGuides, setFirestoreGuides] = useState([]);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await guidesAPI.list();
+        setFirestoreGuides((res.data || []).filter(g => g.status === 'published'));
+      } catch (err) {
+        console.error('Failed to load guides from Firestore:', err);
+      }
+    };
+    load();
+  }, []);
+
+  const allGuides = [...firestoreGuides, ...mockGuides];
+
   return (
     <>
       <SEO
@@ -41,7 +58,7 @@ const GuidesPage = () => {
       <section className="py-20 lg:py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto space-y-8">
-            {guides.map((guide, guideIndex) => (
+            {allGuides.map((guide, guideIndex) => (
               <Card key={guide.id} className="border-stone-200 overflow-hidden shadow-md">
                 <CardHeader className="bg-stone-50 border-b border-stone-200">
                   <div className="flex items-center gap-4">

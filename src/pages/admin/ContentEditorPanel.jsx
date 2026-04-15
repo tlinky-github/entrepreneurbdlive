@@ -19,12 +19,20 @@ import { Input } from '../../components/ui/input';
 import { Badge } from '../../components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { toast } from 'sonner';
-import { Save, ChevronLeft, Eye, Settings, Star, HelpCircle } from 'lucide-react';
+import { Save, ChevronLeft, Eye, Settings, Star, HelpCircle, Code, ChevronDown, ChevronUp, FileCode } from 'lucide-react';
 import { contentAPI, taxonomyAPI, categoryAPI, blogCategoryAPI, authorAPI } from '../../lib/api';
 import ImageUploader from '../../components/common/ImageUploader';
 import LinkDialog from '../../components/admin/LinkDialog';
 import ImageEditorDialog from '../../components/admin/ImageEditorDialog';
 import { Label } from '../../components/ui/label';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '../../components/ui/dialog';
 import { Pencil, Globe, Smartphone, Monitor, Plus, X, Check } from 'lucide-react';
 import FaqExtension from '../../components/editor/FaqExtension';
 import './ContentEditorPanel.css';
@@ -91,6 +99,16 @@ const ContentEditorPanel = () => {
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
   const [activeLinkData, setActiveLinkData] = useState(null);
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
+
+  // Per-post custom code
+  const [customCss, setCustomCss] = useState('');
+  const [customJs, setCustomJs] = useState('');
+  const [customHeadHtml, setCustomHeadHtml] = useState('');
+  const [showCustomCode, setShowCustomCode] = useState(false);
+
+  // Custom HTML block dialog
+  const [htmlDialogOpen, setHtmlDialogOpen] = useState(false);
+  const [customHtmlInput, setCustomHtmlInput] = useState('');
 
   // 1. Shared Extensions to prevent duplicates
   const sharedExtensions = [
@@ -212,6 +230,9 @@ const ContentEditorPanel = () => {
             setAuthorId(data.authorId || '');
             setFaqs(data.faqs || []);
             setIsFeatured(data.is_featured || false);
+            setCustomCss(data.custom_css || '');
+            setCustomJs(data.custom_js || '');
+            setCustomHeadHtml(data.custom_head_html || '');
             setContentLoaded(true);
           } catch (error) {
             console.error('Error loading content:', error);
@@ -486,7 +507,11 @@ const ContentEditorPanel = () => {
         category_name: categories.find(c => c.id === parseInt(category) || c.id === category)?.name || '',
         // Sync excerpt to fields used by the frontend for intro text
         details: type === 'entrepreneurs' ? excerpt : null,
-        short_description: type === 'directory' ? excerpt : null
+        short_description: type === 'directory' ? excerpt : null,
+        // Per-post custom code
+        custom_css: customCss,
+        custom_js: customJs,
+        custom_head_html: customHeadHtml
       };
 
       console.log('Saving content to database:', payload);
@@ -1028,6 +1053,14 @@ const ContentEditorPanel = () => {
                   >
                     <HelpCircle size={14} /> FAQ
                   </button>
+                  <button
+                    onClick={() => { setCustomHtmlInput(''); setHtmlDialogOpen(true); }}
+                    disabled={!editor}
+                    title="Insert Custom HTML Block"
+                    className="flex items-center gap-1"
+                  >
+                    <FileCode size={14} /> HTML
+                  </button>
                 </div>
 
                 <div className="toolbar-divider" />
@@ -1228,6 +1261,58 @@ const ContentEditorPanel = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Per-Post Custom Code */}
+          <Card className="mt-6">
+            <CardHeader 
+              className="cursor-pointer" 
+              onClick={() => setShowCustomCode(!showCustomCode)}
+            >
+              <CardTitle className="flex items-center justify-between text-sm">
+                <span className="flex items-center gap-2">
+                  <Code className="w-4 h-4" /> Custom Code
+                </span>
+                {showCustomCode ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              </CardTitle>
+            </CardHeader>
+            {showCustomCode && (
+              <CardContent className="space-y-4">
+                <div className="p-2 bg-amber-50 border border-amber-200 rounded text-xs text-amber-800">
+                  ⚠️ Code here only loads on this specific post/page.
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-stone-500">Custom CSS</label>
+                  <textarea
+                    value={customCss}
+                    onChange={(e) => setCustomCss(e.target.value)}
+                    placeholder=".post-content { ... }"
+                    className="w-full min-h-[80px] p-2 border rounded font-mono text-xs bg-stone-900 text-green-400 placeholder-stone-600 mt-1"
+                    spellCheck={false}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-stone-500">Custom JavaScript</label>
+                  <textarea
+                    value={customJs}
+                    onChange={(e) => setCustomJs(e.target.value)}
+                    placeholder="document.addEventListener('DOMContentLoaded', () => { ... });"
+                    className="w-full min-h-[80px] p-2 border rounded font-mono text-xs bg-stone-900 text-green-400 placeholder-stone-600 mt-1"
+                    spellCheck={false}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-stone-500">Custom Head HTML</label>
+                  <textarea
+                    value={customHeadHtml}
+                    onChange={(e) => setCustomHeadHtml(e.target.value)}
+                    placeholder='<meta property="article:tag" content="startup" />'
+                    className="w-full min-h-[60px] p-2 border rounded font-mono text-xs bg-stone-900 text-green-400 placeholder-stone-600 mt-1"
+                    spellCheck={false}
+                  />
+                </div>
+              </CardContent>
+            )}
+          </Card>
         </div>
       </div>
 
@@ -1251,6 +1336,59 @@ const ContentEditorPanel = () => {
           editor.chain().focus().setImage(data).run();
         }}
       />
+
+      {/* Custom HTML Block Dialog */}
+      <Dialog open={htmlDialogOpen} onOpenChange={setHtmlDialogOpen}>
+        <DialogContent className="sm:max-w-[700px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileCode className="w-5 h-5" /> Insert Custom HTML Block
+            </DialogTitle>
+            <DialogDescription>
+              Paste raw HTML code below. It will be inserted at the cursor position in the editor, just like WordPress's Custom HTML block.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="p-2 bg-amber-50 border border-amber-200 rounded text-xs text-amber-800">
+              ⚠️ Only add trusted HTML. Incorrect code may break your content layout.
+            </div>
+            <textarea
+              value={customHtmlInput}
+              onChange={(e) => setCustomHtmlInput(e.target.value)}
+              placeholder={'<!-- Paste your HTML here -->\n<div class="custom-block">\n  <h3>My Custom Section</h3>\n  <p>Custom content goes here...</p>\n</div>'}
+              className="w-full min-h-[250px] p-3 border rounded-lg font-mono text-sm bg-stone-900 text-green-400 placeholder-stone-600"
+              spellCheck={false}
+              autoFocus
+            />
+            {customHtmlInput.trim() && (
+              <div>
+                <p className="text-xs font-semibold text-stone-500 mb-2">Preview:</p>
+                <div 
+                  className="p-4 border border-stone-200 rounded-lg bg-white max-h-[200px] overflow-auto prose prose-sm max-w-none"
+                  dangerouslySetInnerHTML={{ __html: customHtmlInput }}
+                />
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setHtmlDialogOpen(false)}>Cancel</Button>
+            <Button 
+              className="bg-emerald-900 hover:bg-emerald-800"
+              disabled={!customHtmlInput.trim()}
+              onClick={() => {
+                if (editor && customHtmlInput.trim()) {
+                  editor.chain().focus().insertContent(customHtmlInput).run();
+                  toast.success('HTML block inserted');
+                  setHtmlDialogOpen(false);
+                  setCustomHtmlInput('');
+                }
+              }}
+            >
+              <FileCode className="w-4 h-4 mr-2" /> Insert HTML
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

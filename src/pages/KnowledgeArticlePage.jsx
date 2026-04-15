@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { SEO } from '../components/SEO';
-import { ArrowLeft, ArrowRight, BookOpen, ChevronRight } from 'lucide-react';
+import { ArrowLeft, ArrowRight, BookOpen, ChevronRight, Loader2 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import {
@@ -11,22 +11,54 @@ import {
   AccordionTrigger,
 } from '../components/ui/accordion';
 import { pillarPages, pillarPagesPart2 } from '../data/mock';
+import { contentAPI } from '../lib/api';
+import CustomCodeInjector from '../components/common/CustomCodeInjector';
 
 const KnowledgeArticlePage = () => {
   const { slug } = useParams();
+  const [firestoreArticle, setFirestoreArticle] = useState(null);
+  const [loading, setLoading] = useState(true);
+
   const allPillarPages = [...pillarPages, ...pillarPagesPart2];
-  const article = allPillarPages.find(p => p.id === slug);
+  const pillarArticle = allPillarPages.find(p => p.id === slug);
+
+  useEffect(() => {
+    const loadFromFirestore = async () => {
+      try {
+        const res = await contentAPI.list('knowledge');
+        const match = (res.data || []).find(a => a.slug === slug);
+        if (match) setFirestoreArticle(match);
+      } catch (err) {
+        console.error('Firestore lookup failed:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadFromFirestore();
+  }, [slug]);
+
+  const article = firestoreArticle || pillarArticle;
+  const isFirestore = !!firestoreArticle;
 
   const currentIndex = allPillarPages.findIndex(p => p.id === slug);
   const prevArticle = currentIndex > 0 ? allPillarPages[currentIndex - 1] : null;
   const nextArticle = currentIndex < allPillarPages.length - 1 ? allPillarPages[currentIndex + 1] : null;
 
+  if (loading) {
+    return (
+      <div className="py-24 text-center">
+        <Loader2 className="w-8 h-8 animate-spin text-emerald-600 mx-auto" />
+        <p className="text-stone-500 mt-4">Loading article...</p>
+      </div>
+    );
+  }
+
   if (!article) {
     return (
       <>
         <div className="py-24 text-center">
-          <h1 className="text-2xl font-bold text-[hsl(215,55%,22%)] mb-4">Article Not Found</h1>
-          <p className="text-[hsl(215,35%,45%)] mb-8">The requested article could not be found.</p>
+          <h1 className="text-2xl font-bold text-stone-900 mb-4">Article Not Found</h1>
+          <p className="text-stone-500 mb-8">The requested article could not be found.</p>
           <Button asChild>
             <Link to="/knowledge">Back to Knowledge Hub</Link>
           </Button>
@@ -37,9 +69,16 @@ const KnowledgeArticlePage = () => {
 
   return (
     <>
+      {isFirestore && (
+        <CustomCodeInjector
+          pageCss={article.custom_css}
+          pageJs={article.custom_js}
+          pageHeadHtml={article.custom_head_html}
+        />
+      )}
       <SEO
         title={article.title}
-        description={article.description}
+        description={isFirestore ? (article.seo_description || article.excerpt) : article.description}
         type="article"
         keywords={[article.title, article.subtitle, 'Entrepreneurship Knowledge', 'Business Guide'].filter(Boolean)}
         breadcrumbs={[
@@ -126,43 +165,51 @@ const KnowledgeArticlePage = () => {
             {/* Main Content */}
             <article className="lg:col-span-3">
               <div className="prose-entrepreneurship max-w-none">
-                {/* Introduction */}
-                <section id="introduction" className="mb-12 scroll-mt-28">
-                  <p className="text-lg text-stone-700 leading-relaxed">
-                    {article.content.introduction}
-                  </p>
-                </section>
+                {isFirestore ? (
+                  /* Firestore rich HTML content */
+                  <div 
+                    className="prose prose-stone max-w-none"
+                    dangerouslySetInnerHTML={{ __html: article.content }}
+                  />
+                ) : (
+                  /* Legacy pillar page structured content */
+                  <>
+                    <section id="introduction" className="mb-12 scroll-mt-28">
+                      <p className="text-lg text-stone-700 leading-relaxed">
+                        {article.content.introduction}
+                      </p>
+                    </section>
 
-                {/* Main Sections */}
-                {article.content.sections.map((section, index) => (
-                  <section key={index} id={`section-${index}`} className="mb-12 scroll-mt-28">
-                    <h2 className="text-2xl font-bold text-stone-900 mb-4 pb-2 border-b border-stone-200">
-                      {section.heading}
-                    </h2>
-                    <p className="text-stone-700 leading-relaxed whitespace-pre-line">
-                      {section.content}
-                    </p>
-                  </section>
-                ))}
-
-                {/* FAQs Section */}
-                <section id="faqs" className="mt-16 bg-stone-50 rounded-2xl p-8 scroll-mt-28">
-                  <h2 className="text-2xl font-bold text-stone-900 mb-6 pb-2 border-b border-stone-200">
-                    Frequently Asked Questions
-                  </h2>
-                  <Accordion type="single" collapsible className="w-full">
-                    {article.content.faqs.map((faq, index) => (
-                      <AccordionItem key={index} value={`faq-${index}`} className="border-b border-stone-200">
-                        <AccordionTrigger className="text-left text-stone-900 hover:text-emerald-900 hover:no-underline py-4 font-medium">
-                          {faq.q}
-                        </AccordionTrigger>
-                        <AccordionContent className="text-stone-600 pb-4 leading-relaxed">
-                          {faq.a}
-                        </AccordionContent>
-                      </AccordionItem>
+                    {article.content.sections.map((section, index) => (
+                      <section key={index} id={`section-${index}`} className="mb-12 scroll-mt-28">
+                        <h2 className="text-2xl font-bold text-stone-900 mb-4 pb-2 border-b border-stone-200">
+                          {section.heading}
+                        </h2>
+                        <p className="text-stone-700 leading-relaxed whitespace-pre-line">
+                          {section.content}
+                        </p>
+                      </section>
                     ))}
-                  </Accordion>
-                </section>
+
+                    <section id="faqs" className="mt-16 bg-stone-50 rounded-2xl p-8 scroll-mt-28">
+                      <h2 className="text-2xl font-bold text-stone-900 mb-6 pb-2 border-b border-stone-200">
+                        Frequently Asked Questions
+                      </h2>
+                      <Accordion type="single" collapsible className="w-full">
+                        {article.content.faqs.map((faq, index) => (
+                          <AccordionItem key={index} value={`faq-${index}`} className="border-b border-stone-200">
+                            <AccordionTrigger className="text-left text-stone-900 hover:text-emerald-900 hover:no-underline py-4 font-medium">
+                              {faq.q}
+                            </AccordionTrigger>
+                            <AccordionContent className="text-stone-600 pb-4 leading-relaxed">
+                              {faq.a}
+                            </AccordionContent>
+                          </AccordionItem>
+                        ))}
+                      </Accordion>
+                    </section>
+                  </>
+                )}
               </div>
             </article>
           </div>

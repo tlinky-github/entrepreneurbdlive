@@ -72,6 +72,7 @@ import AdminAnalytics from './pages/admin/AdminAnalytics';
 import AdminContentManager from './pages/admin/AdminContentManager';
 import ContentEditorPanel from './pages/admin/ContentEditorPanel';
 import AdminTaxonomies from './pages/admin/AdminTaxonomies';
+import AdminKnowledgeHub from './pages/admin/AdminKnowledgeHub';
 import TestEditor from './pages/admin/TestEditor';
 
 // Migrated Pages
@@ -168,6 +169,7 @@ function AppRoutes() {
         <Route path="resources/:id/edit" element={<ContentEditorPanel />} />
         <Route path="users" element={<AdminUsers />} />
         <Route path="taxonomies" element={<AdminTaxonomies />} />
+        <Route path="knowledge-hub" element={<AdminKnowledgeHub />} />
         <Route path="pages" element={<AdminPages />} />
         <Route path="pages/new" element={<PageEditor />} />
         <Route path="pages/:id/edit" element={<PageEditor />} />

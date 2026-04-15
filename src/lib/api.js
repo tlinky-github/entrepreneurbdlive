@@ -411,24 +411,28 @@ export const commentAPI = {
 export const adminAPI = {
   getStats: async () => {
     try {
-      const postsSnap = await getDocs(collection(db, 'posts'));
-      const profilesSnap = await getDocs(collection(db, 'profiles'));
-      const listingsSnap = await getDocs(collection(db, 'listings'));
-      
-      const pendingProfiles = query(collection(db, 'profiles'), where('status', '==', 'pending'));
-      const pendingSnap = await getDocs(pendingProfiles);
+      const [postsSnap, profilesSnap, listingsSnap, resourcesSnap, usersSnap, pendingSnap] = await Promise.all([
+        getDocs(collection(db, 'posts')),
+        getDocs(collection(db, 'profiles')),
+        getDocs(collection(db, 'listings')),
+        getDocs(collection(db, 'resources')),
+        getDocs(collection(db, 'users')),
+        getDocs(query(collection(db, 'profiles'), where('status', '==', 'pending')))
+      ]);
 
       return {
         data: {
           total_blog_posts: postsSnap.size,
           total_entrepreneurs: profilesSnap.size,
           total_listings: listingsSnap.size,
+          total_resources: resourcesSnap.size,
+          total_users: usersSnap.size,
           pending_approvals: pendingSnap.size
         }
       };
     } catch (error) {
       console.error('Admin Stats Error:', error);
-      return { data: { total_blog_posts: 0, total_entrepreneurs: 0, total_listings: 0, pending_approvals: 0 } };
+      return { data: { total_blog_posts: 0, total_entrepreneurs: 0, total_listings: 0, total_resources: 0, total_users: 0, pending_approvals: 0 } };
     }
   },
   approve: async (type, id) => {
@@ -449,6 +453,19 @@ export const adminAPI = {
     };
     const colName = collectionMap[type] || type;
     await updateDoc(doc(db, colName, id), { status: 'rejected' });
+    return { success: true };
+  },
+  setStatus: async (type, id, status) => {
+    const collectionMap = {
+      blog: 'posts',
+      profile: 'profiles',
+      listing: 'listings',
+      knowledge: 'resources',
+      entrepreneurs: 'profiles',
+      directory: 'listings'
+    };
+    const colName = collectionMap[type] || type;
+    await updateDoc(doc(db, colName, id), { status, updated_at: serverTimestamp() });
     return { success: true };
   },
   getPending: async () => {
@@ -694,8 +711,124 @@ export const settingsAPI = {
   }
 };
 
+// --- Guides API ---
+export const guidesAPI = {
+  list: async () => {
+    try {
+      const snapshot = await getDocs(query(collection(db, 'guides'), orderBy('created_at', 'desc')));
+      return { data: snapshot.docs.map(docToData) };
+    } catch (error) {
+      console.error('Guides list error:', error);
+      const snapshot = await getDocs(collection(db, 'guides'));
+      return { data: snapshot.docs.map(docToData) };
+    }
+  },
+  get: async (id) => {
+    const docSnap = await getDoc(doc(db, 'guides', id));
+    return { data: docToData(docSnap) };
+  },
+  create: async (data) => {
+    const res = await addDoc(collection(db, 'guides'), { ...data, created_at: serverTimestamp() });
+    return { id: res.id, ...data };
+  },
+  update: async (id, data) => {
+    await updateDoc(doc(db, 'guides', id), { ...data, updated_at: serverTimestamp() });
+    return { id, ...data };
+  },
+  delete: async (id) => {
+    await deleteDoc(doc(db, 'guides', id));
+    return { success: true };
+  }
+};
+
+// --- FAQ Categories API ---
+export const faqCategoriesAPI = {
+  list: async () => {
+    try {
+      const snapshot = await getDocs(query(collection(db, 'faq_categories'), orderBy('created_at', 'desc')));
+      return { data: snapshot.docs.map(docToData) };
+    } catch (error) {
+      console.error('FAQ categories list error:', error);
+      const snapshot = await getDocs(collection(db, 'faq_categories'));
+      return { data: snapshot.docs.map(docToData) };
+    }
+  },
+  get: async (id) => {
+    const docSnap = await getDoc(doc(db, 'faq_categories', id));
+    return { data: docToData(docSnap) };
+  },
+  create: async (data) => {
+    const res = await addDoc(collection(db, 'faq_categories'), { ...data, created_at: serverTimestamp() });
+    return { id: res.id, ...data };
+  },
+  update: async (id, data) => {
+    await updateDoc(doc(db, 'faq_categories', id), { ...data, updated_at: serverTimestamp() });
+    return { id, ...data };
+  },
+  delete: async (id) => {
+    await deleteDoc(doc(db, 'faq_categories', id));
+    return { success: true };
+  }
+};
+
+// --- Glossary API ---
+export const glossaryAPI = {
+  list: async () => {
+    try {
+      const snapshot = await getDocs(query(collection(db, 'glossary'), orderBy('term', 'asc')));
+      return { data: snapshot.docs.map(docToData) };
+    } catch (error) {
+      console.error('Glossary list error:', error);
+      const snapshot = await getDocs(collection(db, 'glossary'));
+      return { data: snapshot.docs.map(docToData) };
+    }
+  },
+  get: async (id) => {
+    const docSnap = await getDoc(doc(db, 'glossary', id));
+    return { data: docToData(docSnap) };
+  },
+  create: async (data) => {
+    const res = await addDoc(collection(db, 'glossary'), { ...data, created_at: serverTimestamp() });
+    return { id: res.id, ...data };
+  },
+  update: async (id, data) => {
+    await updateDoc(doc(db, 'glossary', id), { ...data, updated_at: serverTimestamp() });
+    return { id, ...data };
+  },
+  delete: async (id) => {
+    await deleteDoc(doc(db, 'glossary', id));
+    return { success: true };
+  }
+};
+
+// --- Code Snippets API (Page-Targeted Custom Code) ---
+export const codeSnippetsAPI = {
+  list: async () => {
+    try {
+      const snapshot = await getDocs(collection(db, 'code_snippets'));
+      return { data: snapshot.docs.map(docToData) };
+    } catch (error) {
+      console.error('Code snippets list error:', error);
+      return { data: [] };
+    }
+  },
+  create: async (data) => {
+    const res = await addDoc(collection(db, 'code_snippets'), { ...data, created_at: serverTimestamp() });
+    return { id: res.id, ...data };
+  },
+  update: async (id, data) => {
+    await updateDoc(doc(db, 'code_snippets', id), { ...data, updated_at: serverTimestamp() });
+    return { id, ...data };
+  },
+  delete: async (id) => {
+    await deleteDoc(doc(db, 'code_snippets', id));
+    return { success: true };
+  }
+};
+
 export default { 
   postAPI, profileAPI, listingAPI, contentAPI, interactionAPI, 
   adminAPI, commentAPI, resourceAPI, authAPI, categoryAPI, 
-  blogCategoryAPI, industryAPI, cityAPI, taxonomyAPI, settingsAPI, authorAPI, mediaAPI
+  blogCategoryAPI, industryAPI, cityAPI, taxonomyAPI, settingsAPI, authorAPI, mediaAPI,
+  guidesAPI, faqCategoriesAPI, glossaryAPI, codeSnippetsAPI
 };

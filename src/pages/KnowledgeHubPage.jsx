@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { SEO } from '../components/SEO';
 import { ArrowRight, BookOpen, Lightbulb, MapPin, Users, Target, TrendingUp, Brain, DollarSign, AlertTriangle, Rocket, Laptop } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { pillarPages, pillarPagesPart2 } from '../data/mock';
+import { contentAPI } from '../lib/api';
 
 const iconMap = {
   Lightbulb: Lightbulb,
@@ -20,6 +21,21 @@ const iconMap = {
 };
 
 const KnowledgeHubPage = () => {
+  const [firestoreArticles, setFirestoreArticles] = useState([]);
+
+  useEffect(() => {
+    const loadArticles = async () => {
+      try {
+        const res = await contentAPI.list('knowledge');
+        const published = (res.data || []).filter(a => a.status === 'published');
+        setFirestoreArticles(published);
+      } catch (err) {
+        console.error('Failed to load knowledge articles:', err);
+      }
+    };
+    loadArticles();
+  }, []);
+
   const allPillarPages = [...pillarPages, ...pillarPagesPart2];
 
   return (
@@ -95,6 +111,47 @@ const KnowledgeHubPage = () => {
               );
             })}
           </div>
+
+          {/* Firestore-created articles */}
+          {firestoreArticles.length > 0 && (
+            <>
+              <div className="mt-12 mb-8 text-center">
+                <h2 className="text-2xl font-bold text-stone-900">More Articles</h2>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {firestoreArticles.map((article) => (
+                  <Card
+                    key={article.id}
+                    className="group hover:scale-105 transition-transform duration-300 border-stone-200 bg-white h-full shadow-sm hover:shadow-xl"
+                  >
+                    <CardHeader className="pb-4">
+                      {article.featured_image && (
+                        <img src={article.featured_image} alt={article.title} className="w-full h-40 object-cover rounded-lg mb-4" />
+                      )}
+                      <CardTitle className="text-xl text-stone-900 group-hover:text-emerald-900 transition-colors">
+                        <Link to={`/knowledge/${article.slug}`}>{article.title}</Link>
+                      </CardTitle>
+                      <CardDescription className="text-stone-500">
+                        {article.excerpt || article.seo_description || ''}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex flex-col flex-1">
+                      <div className="flex items-center justify-between pt-4 border-t border-stone-100">
+                        <span className="text-xs text-stone-400">Article</span>
+                        <Link
+                          to={`/knowledge/${article.slug}`}
+                          className="inline-flex items-center text-sm font-medium text-emerald-900 hover:text-emerald-700 transition-colors"
+                        >
+                          Read Article
+                          <ArrowRight className="ml-1 h-4 w-4" />
+                        </Link>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </section>
 

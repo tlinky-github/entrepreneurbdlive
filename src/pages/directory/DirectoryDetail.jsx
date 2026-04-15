@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { listingAPI } from '../../lib/api';
+import CustomCodeInjector from '../../components/common/CustomCodeInjector';
 import { SEO } from '../../components/SEO';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
@@ -97,6 +98,13 @@ const DirectoryDetail = () => {
 
   return (
     <div className="bg-stone-50 min-h-screen pb-12" data-testid="directory-detail-page">
+      {listing && (
+        <CustomCodeInjector
+          pageCss={listing.custom_css}
+          pageJs={listing.custom_js}
+          pageHeadHtml={listing.custom_head_html}
+        />
+      )}
       <SEO
         title={listing.seoTitle || listing.business_name}
         description={listing.metaDescription || listing.short_description}

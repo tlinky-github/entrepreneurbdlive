@@ -1,15 +1,31 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { SEO } from '../components/SEO';
 import { BookOpen, Search, ArrowRight } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
-import { glossaryTerms } from '../data/mock';
+import { glossaryTerms as mockGlossary } from '../data/mock';
+import { glossaryAPI } from '../lib/api';
 
 const GlossaryPage = () => {
   const [searchTerm, setSearchTerm] = React.useState('');
+  const [firestoreTerms, setFirestoreTerms] = useState([]);
 
-  const filteredTerms = glossaryTerms.filter(item =>
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await glossaryAPI.list();
+        setFirestoreTerms((res.data || []).filter(t => t.status === 'published'));
+      } catch (err) {
+        console.error('Failed to load glossary from Firestore:', err);
+      }
+    };
+    load();
+  }, []);
+
+  const allTerms = [...firestoreTerms, ...mockGlossary];
+
+  const filteredTerms = allTerms.filter(item =>
     item.term.toLowerCase().includes(searchTerm.toLowerCase()) ||
     item.definition.toLowerCase().includes(searchTerm.toLowerCase())
   );

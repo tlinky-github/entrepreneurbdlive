@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { MDXProvider } from '@mdx-js/react';
 import { postAPI, commentAPI, interactionAPI, authorAPI } from '../../lib/api';
+import CustomCodeInjector from '../../components/common/CustomCodeInjector';
 import { useAuth } from '../../lib/auth';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
@@ -193,6 +194,13 @@ const BlogDetail = () => {
 
   return (
     <div className="bg-stone-50 min-h-screen" data-testid="blog-detail-page">
+      {post && (
+        <CustomCodeInjector
+          pageCss={post.custom_css}
+          pageJs={post.custom_js}
+          pageHeadHtml={post.custom_head_html}
+        />
+      )}
       <SEO
         title={post.seoTitle || post.title}
         description={post.metaDescription || post.excerpt}

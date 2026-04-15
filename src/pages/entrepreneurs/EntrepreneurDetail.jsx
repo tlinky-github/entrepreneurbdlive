@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { profileAPI, interactionAPI, authorAPI } from '../../lib/api';
+import CustomCodeInjector from '../../components/common/CustomCodeInjector';
 import { SEO } from '../../components/SEO';
 import { useAuth } from '../../lib/auth';
 import { Button } from '../../components/ui/button';
@@ -121,6 +122,13 @@ const EntrepreneurDetail = () => {
 
   return (
     <div className="bg-stone-50 min-h-screen" data-testid="entrepreneur-detail-page">
+      {profile && (
+        <CustomCodeInjector
+          pageCss={profile.custom_css}
+          pageJs={profile.custom_js}
+          pageHeadHtml={profile.custom_head_html}
+        />
+      )}
       <SEO
         title={profile.seoTitle || profile.name}
         description={profile.metaDescription || profile.short_bio || profile.details}

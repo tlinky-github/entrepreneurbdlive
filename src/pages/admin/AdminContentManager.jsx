@@ -9,7 +9,7 @@ import { Input } from '../../components/ui/input';
 import { Badge } from '../../components/ui/badge';
 import { Skeleton } from '../../components/ui/skeleton';
 import { toast } from 'sonner';
-import { Plus, Search, Edit2, Trash2, Eye, Settings, BookOpen, Users, MapPin, Lightbulb, CheckCircle, XCircle } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, Eye, Settings, BookOpen, Users, MapPin, Lightbulb, CheckCircle, XCircle, MoreVertical, FileEdit, EyeOff, Ban } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -138,20 +138,8 @@ const AdminContentManager = () => {
 
   const handleStatusChange = async (id, newStatus) => {
     try {
-      const typeMap = {
-        blog: 'blog',
-        entrepreneurs: 'profile',
-        directory: 'listing'
-      };
-      const apiType = typeMap[contentType] || contentType;
-      
-      if (newStatus === 'published') {
-        await adminAPI.approve(apiType, id);
-      } else if (newStatus === 'rejected') {
-        await adminAPI.reject(apiType, id);
-      }
-      
-      toast.success(`Item ${newStatus} successfully`);
+      await adminAPI.setStatus(contentType, id, newStatus);
+      toast.success(`Status changed to ${newStatus}`);
       loadItems();
     } catch (error) {
       toast.error('Failed to update status');
@@ -292,22 +280,30 @@ const AdminContentManager = () => {
                         {contentType === 'blog' && <TableCell>{item.views || 0}</TableCell>}
                         <TableCell>
                           <div className="action-icons">
-                            {item.status !== 'published' && (
-                              <>
-                                <CheckCircle
-                                  size={18}
-                                  className="icon-btn text-green-600"
-                                  onClick={() => handleStatusChange(item.id, 'published')}
-                                  title="Approve"
-                                />
-                                <XCircle
-                                  size={18}
-                                  className="icon-btn text-red-600"
-                                  onClick={() => handleStatusChange(item.id, 'rejected')}
-                                  title="Reject"
-                                />
-                              </>
-                            )}
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <button className="p-1 rounded hover:bg-stone-100 transition-colors" title="Change Status">
+                                  <MoreVertical size={16} className="text-stone-500" />
+                                </button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                {item.status !== 'published' && (
+                                  <DropdownMenuItem onClick={() => handleStatusChange(item.id, 'published')} className="text-green-600">
+                                    <CheckCircle size={14} className="mr-2" /> Publish
+                                  </DropdownMenuItem>
+                                )}
+                                {item.status !== 'draft' && (
+                                  <DropdownMenuItem onClick={() => handleStatusChange(item.id, 'draft')} className="text-yellow-600">
+                                    <FileEdit size={14} className="mr-2" /> Move to Draft
+                                  </DropdownMenuItem>
+                                )}
+                                {item.status !== 'rejected' && (
+                                  <DropdownMenuItem onClick={() => handleStatusChange(item.id, 'rejected')} className="text-red-600">
+                                    <Ban size={14} className="mr-2" /> Reject
+                                  </DropdownMenuItem>
+                                )}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                             <Eye
                               size={18}
                               className="icon-btn"
