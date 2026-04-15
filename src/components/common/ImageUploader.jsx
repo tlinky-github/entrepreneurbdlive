@@ -199,12 +199,12 @@ const ImageUploader = ({
     };
   }, [localPreviewObjectUrl]);
 
-  useEffect(() => { // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
     // Reset optimized size when optimization parameters change
     if (optimizedSize != null) {
       setOptimizedSize(null);
     }
-  }, [format, quality, width, height, crop, optimizeBeforeInsert]);
+  }, [format, quality, width, height, crop, optimizeBeforeInsert]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handlePreviewOptimize = async () => {
     if (!previewUrl) return;

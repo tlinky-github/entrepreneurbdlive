@@ -4,6 +4,10 @@ const path = require('path');
 /**
  * Firebase Admin SDK Initialization
  * Initializes Firebase for Firestore access and authentication verification
+ * 
+ * Environment Variables:
+ * - FIREBASE_CREDENTIALS_PATH: Path to credentials.json file
+ * - FIREBASE_CREDENTIALS_JSON: Raw JSON string with credentials
  */
 
 let firebaseInitialized = false;
@@ -14,22 +18,38 @@ function initializeFirebase() {
   }
 
   try {
-    // Check if Firebase credentials file exists
-    const credentialsPath = process.env.FIREBASE_CREDENTIALS_PATH ||
-      path.join(__dirname, '../../firebase-credentials.json');
+    let serviceAccount;
 
-    const serviceAccount = require(credentialsPath);
+    // Try JSON string first (Vercel environment variable)
+    if (process.env.FIREBASE_CREDENTIALS_JSON) {
+      serviceAccount = JSON.parse(process.env.FIREBASE_CREDENTIALS_JSON);
+      console.log('ℹ️ Using Firebase credentials from FIREBASE_CREDENTIALS_JSON');
+    } 
+    // Try file path (local development)
+    else if (process.env.FIREBASE_CREDENTIALS_PATH) {
+      serviceAccount = require(process.env.FIREBASE_CREDENTIALS_PATH);
+      console.log('ℹ️ Using Firebase credentials from FIREBASE_CREDENTIALS_PATH');
+    }
+    // Default local file
+    else {
+      const credentialsPath = path.join(__dirname, '../../firebase-credentials.json');
+      serviceAccount = require(credentialsPath);
+      console.log('ℹ️ Using Firebase credentials from firebase-credentials.json');
+    }
 
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),
     });
 
     firebaseInitialized = true;
-    console.log('✓ Firebase Admin SDK initialized');
+    console.log('✓ Firebase Admin SDK initialized successfully');
     return admin;
   } catch (error) {
-    console.error('Failed to initialize Firebase Admin SDK:');
-    console.error('Make sure FIREBASE_CREDENTIALS_PATH is set or firebase-credentials.json exists in root');
+    console.error('❌ Failed to initialize Firebase Admin SDK');
+    console.error('Environment Variables to Set:');
+    console.error('  Option 1: FIREBASE_CREDENTIALS_JSON="{...json...}"');
+    console.error('  Option 2: FIREBASE_CREDENTIALS_PATH="/path/to/credentials.json"');
+    console.error('  Option 3: Place firebase-credentials.json in project root');
     console.error('Error:', error.message);
     process.exit(1);
   }

@@ -4,10 +4,15 @@ import { auth } from './firebase';
  * AI API Client
  * Frontend helper for AI endpoints
  * Makes HTTP requests to backend Express server with Firebase auth
+ * 
+ * Environment Variables:
+ * - REACT_APP_AI_API_BASE: Backend API base URL (default: https://entrepreneurs.bd/api/ai)
  */
 
-// Base API URL - adjust if your backend is on different port/host
-const API_BASE = 'http://localhost:5000/api/ai';
+// Base API URL - configurable via environment variable
+// Production: https://entrepreneurs.bd/api/ai (same domain, via vercel.json rewrites)
+// Local dev: http://localhost:8001/api/ai (for local testing)
+const API_BASE = process.env.REACT_APP_AI_API_BASE || 'https://entrepreneurs.bd/api/ai';
 
 // Get Firebase auth token for API requests
 const getAuthToken = async () => {

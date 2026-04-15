@@ -2,6 +2,7 @@
 
 # ==================== INTERNAL DOCUMENTATION ====================
 # Keep only README.md, ignore internal guides
+PHASE2_ENV_SETUP.md
 ARCHITECTURE.md
 CMS_COMPLETE.md
 CMS_IMPLEMENTATION.md
