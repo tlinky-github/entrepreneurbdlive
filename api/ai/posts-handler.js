@@ -15,6 +15,7 @@ module.exports = async (req, res) => {
   }
 
   try {
+    initializeFirebase();
     const user = await authenticateUser(req);
     const userId = user.uid;
     const db = initializeFirebase();
