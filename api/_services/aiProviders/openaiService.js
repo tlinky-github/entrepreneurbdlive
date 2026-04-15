@@ -36,7 +36,7 @@ const openaiService = {
     }
   },
 
-  async generateContent(apiKey, prompt, model = 'gpt-4-turbo', options = {}) {
+    let params = { model };
     try {
       const openai = new OpenAI({ apiKey });
 
@@ -50,7 +50,7 @@ const openaiService = {
         useCompletionTokens = true;
       }
 
-      const params = {
+      params = {
         model,
         messages: [{ role: 'user', content: prompt }],
       };
