@@ -199,8 +199,7 @@ const ImageUploader = ({
     };
   }, [localPreviewObjectUrl]);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => {
+  useEffect(() => { // eslint-disable-line react-hooks/exhaustive-deps
     // Reset optimized size when optimization parameters change
     if (optimizedSize != null) {
       setOptimizedSize(null);

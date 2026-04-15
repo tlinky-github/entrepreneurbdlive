@@ -39,12 +39,11 @@ export const AIGenerateForm = ({ onPostGenerated, onClose }) => {
     'persuasive',
   ];
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     loadProviders();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => {
+  useEffect(() => { // eslint-disable-line react-hooks/exhaustive-deps
     // Auto-select first model when provider changes
     const providerConfig = providers[formData.provider];
     if (providerConfig?.models?.length > 0) {
