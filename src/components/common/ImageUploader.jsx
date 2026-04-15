@@ -4,6 +4,8 @@ import { Input } from '../ui/input';
 import { toast } from 'sonner';
 import api, { mediaAPI } from '../../lib/api';
 import { auth } from '../../lib/firebase';
+import { openDefaultEditor } from '@pqina/pintura';
+import '@pqina/pintura/pintura.css';
 import { Upload, X, Image as ImageIcon, Loader2, Link as LinkIcon, Grid, RefreshCw, Search, Trash2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Skeleton } from '../ui/skeleton';
@@ -35,6 +37,16 @@ const ImageUploader = ({
   const [mediaLoading, setMediaLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [visibleCount, setVisibleCount] = useState(15);
+  const [optimizeBeforeInsert, setOptimizeBeforeInsert] = useState(false);
+  const [quality, setQuality] = useState(80);
+  const [format, setFormat] = useState('auto');
+  const [width, setWidth] = useState('');
+  const [height, setHeight] = useState('');
+  const [crop, setCrop] = useState(false);
+  const [sourceSize, setSourceSize] = useState(null);
+  const [optimizedSize, setOptimizedSize] = useState(null);
+  const [isOptimizingPreview, setIsOptimizingPreview] = useState(false);
+  const [localPreviewObjectUrl, setLocalPreviewObjectUrl] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [selectedDeleteItem, setSelectedDeleteItem] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
@@ -72,6 +84,36 @@ const ImageUploader = ({
     }
   };
 
+  const uploadFileToCloudflare = async (file) => {
+    const token = await auth.currentUser?.getIdToken();
+    if (!token) throw new Error('You must be logged in to upload images');
+
+    const response = await fetch('/api/upload-url', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        fileName: file.name,
+        fileType: entityType,
+        contentType: file.type
+      })
+    });
+
+    if (!response.ok) throw new Error('Failed to get upload URL');
+    const { uploadUrl, publicUrl } = await response.json();
+
+    const uploadRes = await fetch(uploadUrl, {
+      method: 'PUT',
+      body: file,
+      headers: { 'Content-Type': file.type }
+    });
+
+    if (!uploadRes.ok) throw new Error('Cloudflare upload failed');
+    return { publicUrl };
+  };
+
   const deepExtractImages = (obj, foundUrls = new Set()) => {
     if (!obj || typeof obj !== 'object') {
       if (typeof obj === 'string') {
@@ -93,6 +135,140 @@ const ImageUploader = ({
 
     Object.values(obj).forEach(val => deepExtractImages(val, foundUrls));
     return foundUrls;
+  };
+
+  const formatBytes = (bytes) => {
+    if (bytes == null) return 'Unknown';
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    if (bytes === 0) return '0 B';
+    const i = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), sizes.length - 1);
+    return `${(bytes / 1024 ** i).toFixed(1)} ${sizes[i]}`;
+  };
+
+  useEffect(() => {
+    let mounted = true;
+
+    const fetchRemoteFileSize = async (url) => {
+      try {
+        const response = await fetch(url, { method: 'HEAD' });
+        const length = response.headers.get('content-length');
+        return length ? Number(length) : null;
+      } catch (error) {
+        console.warn('Remote file size unavailable', error);
+        return null;
+      }
+    };
+
+    const updateSize = async () => {
+      if (!previewUrl || activeTab !== 'url') {
+        return;
+      }
+
+      setSourceSize(null);
+      setOptimizedSize(null);
+
+      const size = await fetchRemoteFileSize(previewUrl);
+      if (!mounted) return;
+      setSourceSize(size);
+    };
+
+    updateSize();
+    return () => { mounted = false; };
+  }, [previewUrl, activeTab]);
+
+  useEffect(() => {
+    return () => {
+      if (localPreviewObjectUrl) {
+        URL.revokeObjectURL(localPreviewObjectUrl);
+      }
+    };
+  }, [localPreviewObjectUrl]);
+
+  useEffect(() => {
+    if (optimizedSize != null) {
+      setOptimizedSize(null);
+    }
+  }, [format, quality, width, height, crop, optimizeBeforeInsert]);
+
+  const handlePreviewOptimize = async () => {
+    if (!previewUrl) return;
+    setIsOptimizingPreview(true);
+
+    try {
+      const optimizeRes = await mediaAPI.optimize(previewUrl, {
+        format,
+        quality,
+        width: width ? Number(width) : undefined,
+        height: height ? Number(height) : undefined,
+        crop,
+      });
+
+      if (optimizeRes.publicUrl) {
+        setPreviewUrl(optimizeRes.publicUrl);
+      }
+      setSourceSize(optimizeRes.originalSize || sourceSize);
+      setOptimizedSize(optimizeRes.optimizedSize || null);
+      toast.success('Optimized preview ready');
+    } catch (error) {
+      console.error('Preview optimization failed:', error);
+      toast.error('Could not generate optimized preview.');
+    } finally {
+      setIsOptimizingPreview(false);
+    }
+  };
+
+  const handleEditImage = async () => {
+    if (!previewUrl) return;
+
+    try {
+      const editor = openDefaultEditor({
+        src: previewUrl,
+        imageWriter: {
+          format: format === 'auto' ? undefined : format,
+          quality,
+        },
+        enableAutoHide: false,
+        enableAutoDestroy: true,
+      });
+
+      editor.on('process', async (result) => {
+        const file = result?.dest;
+        if (file instanceof File) {
+          try {
+            setUploading(true);
+            const { publicUrl } = await uploadFileToCloudflare(file);
+            try {
+              await mediaAPI.create({
+                url: publicUrl,
+                fileName: file.name,
+                entityType,
+                contentType: file.type,
+                uploaderId: auth.currentUser?.uid,
+              });
+            } catch (trackError) {
+              console.warn('Edited image uploaded but failed to track in Firestore:', trackError);
+            }
+            setPreviewUrl(publicUrl);
+            setSourceSize(file.size);
+            setOptimizedSize(null);
+            toast.success('Image edited and uploaded');
+          } catch (uploadError) {
+            console.error('Edited image upload failed:', uploadError);
+            toast.error('Could not upload edited image.');
+          } finally {
+            setUploading(false);
+          }
+        }
+      });
+
+      editor.on('processerror', (error) => {
+        console.error('Pintura edit failed:', error);
+        toast.error('Image editing failed.');
+      });
+    } catch (error) {
+      console.error('Failed to launch image editor:', error);
+      toast.error('Could not open the image editor.');
+    }
   };
 
   const syncGallery = async () => {
@@ -168,33 +344,13 @@ const ImageUploader = ({
         return;
       }
 
-      const response = await fetch('/api/upload-url', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          fileName: file.name,
-          fileType: entityType,
-          contentType: file.type
-        })
-      });
-
-      if (!response.ok) throw new Error('Failed to get upload URL');
-      const { uploadUrl, publicUrl } = await response.json();
-
-      const uploadRes = await fetch(uploadUrl, {
-        method: 'PUT',
-        body: file,
-        headers: { 'Content-Type': file.type }
-      });
-
-      if (!uploadRes.ok) throw new Error('Cloudflare upload failed');
+      const { publicUrl } = await uploadFileToCloudflare(file);
 
       // 1. Set local state for preview
       setPreviewUrl(publicUrl);
       setAlt(file.name.split('.')[0].replace(/[-_]/g, ' '));
+      setSourceSize(file.size);
+      setOptimizedSize(null);
       
       // 2. Track in Firestore Media collection for the Gallery
       try {
@@ -257,11 +413,34 @@ const ImageUploader = ({
     }
   };
 
-  const handleUseImage = () => {
-    if (previewUrl) {
-      onChange(previewUrl, { alt, caption, title });
-      toast.success('Image applied!');
+  const handleUseImage = async () => {
+    if (!previewUrl) return;
+
+    let insertUrl = previewUrl;
+
+    if (optimizeBeforeInsert) {
+      try {
+        toast.info('Optimizing image before insertion...');
+        const optimizeRes = await mediaAPI.optimize(previewUrl, {
+          format,
+          quality,
+          width: width ? Number(width) : undefined,
+          height: height ? Number(height) : undefined,
+          crop,
+        });
+        insertUrl = optimizeRes.publicUrl || previewUrl;
+        setPreviewUrl(insertUrl);
+        setOptimizedSize(optimizeRes.optimizedSize || null);
+        setSourceSize(optimizeRes.originalSize || sourceSize);
+        toast.success('Image optimized successfully!');
+      } catch (error) {
+        console.error('Image optimization failed:', error);
+        toast.error('Could not optimize image. Inserting original image instead.');
+      }
     }
+
+    onChange(insertUrl, { alt, caption, title });
+    setOptimizeBeforeInsert(false);
   };
 
   const handleRemove = async () => {
@@ -370,6 +549,8 @@ const ImageUploader = ({
                         onClick={() => {
                           setPreviewUrl(item.url);
                           setAlt(item.fileName?.split('.')[0].replace(/[-_]/g, ' ') || '');
+                          setSourceSize(item.size || null);
+                          setOptimizedSize(null);
                           setActiveTab('upload');
                         }}
                         className={`aspect-square rounded-lg overflow-hidden border-2 cursor-pointer transition-all hover:scale-[1.05] active:scale-95 group relative ${
@@ -417,19 +598,122 @@ const ImageUploader = ({
         </TabsContent>
 
         <TabsContent value="url" className="mt-4">
-          <div className="flex space-x-2">
-            <Input
-              value={previewUrl || ''}
-              onChange={(e) => setPreviewUrl(e.target.value)}
-              placeholder={placeholder}
-            />
-            <Button 
-              type="button"
-              onClick={handleUseImage}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold"
-            >
-              Apply
-            </Button>
+          <div className="space-y-3">
+            <div className="flex space-x-2">
+              <Input
+                value={previewUrl || ''}
+                onChange={(e) => setPreviewUrl(e.target.value)}
+                placeholder={placeholder}
+              />
+              <Button 
+                type="button"
+                onClick={handleUseImage}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold"
+              >
+                Apply
+              </Button>
+            </div>
+            {previewUrl && (
+              <div className="space-y-3">
+                <label className="inline-flex items-center gap-2 text-sm text-stone-600">
+                  <input
+                    type="checkbox"
+                    checked={optimizeBeforeInsert}
+                    onChange={(e) => setOptimizeBeforeInsert(e.target.checked)}
+                    className="form-checkbox h-4 w-4 text-emerald-600"
+                  />
+                  Optimize image before insert
+                </label>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-stone-500">Format</label>
+                    <select
+                      value={format}
+                      onChange={(e) => setFormat(e.target.value)}
+                      className="w-full rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm text-stone-700"
+                    >
+                      <option value="auto">Auto</option>
+                      <option value="jpeg">JPEG</option>
+                      <option value="png">PNG</option>
+                      <option value="webp">WebP</option>
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-stone-500">Quality (%)</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="range"
+                        min="50"
+                        max="100"
+                        value={quality}
+                        onChange={(e) => setQuality(Number(e.target.value))}
+                        className="w-full"
+                      />
+                      <span className="text-sm text-stone-500">{quality}%</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-stone-500">Max Width</label>
+                    <Input
+                      type="number"
+                      value={width}
+                      onChange={(e) => setWidth(e.target.value)}
+                      placeholder="e.g. 1200"
+                      size="sm"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-stone-500">Max Height</label>
+                    <Input
+                      type="number"
+                      value={height}
+                      onChange={(e) => setHeight(e.target.value)}
+                      placeholder="e.g. 800"
+                      size="sm"
+                    />
+                  </div>
+                  <div className="space-y-2 pt-6">
+                    <label className="inline-flex items-center gap-2 text-sm text-stone-600">
+                      <input
+                        type="checkbox"
+                        checked={crop}
+                        onChange={(e) => setCrop(e.target.checked)}
+                        className="form-checkbox h-4 w-4 text-emerald-600"
+                      />
+                      Crop to size
+                    </label>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    onClick={handlePreviewOptimize}
+                    disabled={isOptimizingPreview || !previewUrl}
+                    className="text-xs bg-emerald-600 hover:bg-emerald-700 text-white"
+                  >
+                    {isOptimizingPreview ? 'Optimizing...' : 'Optimize preview'}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleEditImage}
+                    className="text-xs border-stone-200 hover:bg-stone-50"
+                  >
+                    Edit image
+                  </Button>
+                </div>
+                <p className="text-xs text-stone-500">
+                  Source size: {sourceSize != null ? formatBytes(sourceSize) : 'Unavailable'}
+                  {optimizedSize != null
+                    ? ` · Optimized size: ${formatBytes(optimizedSize)}`
+                    : optimizeBeforeInsert
+                      ? ' · Optimized size: pending'
+                      : ''}
+                </p>
+              </div>
+            )}
           </div>
         </TabsContent>
 
@@ -491,6 +775,105 @@ const ImageUploader = ({
               </div>
               <div className="rounded-lg overflow-hidden border border-stone-200 relative bg-stone-100">
                 <img src={previewUrl} alt="Preview" className="w-full max-h-[300px] object-contain" />
+              </div>
+              <div className="space-y-3">
+                <label className="inline-flex items-center gap-2 text-sm text-stone-600">
+                  <input
+                    type="checkbox"
+                    checked={optimizeBeforeInsert}
+                    onChange={(e) => setOptimizeBeforeInsert(e.target.checked)}
+                    className="form-checkbox h-4 w-4 text-emerald-600"
+                  />
+                  Optimize before insert
+                </label>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-stone-500">Format</label>
+                    <select
+                      value={format}
+                      onChange={(e) => setFormat(e.target.value)}
+                      className="w-full rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm text-stone-700"
+                    >
+                      <option value="auto">Auto</option>
+                      <option value="jpeg">JPEG</option>
+                      <option value="png">PNG</option>
+                      <option value="webp">WebP</option>
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-stone-500">Quality (%)</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="range"
+                        min="50"
+                        max="100"
+                        value={quality}
+                        onChange={(e) => setQuality(Number(e.target.value))}
+                        className="w-full"
+                      />
+                      <span className="text-sm text-stone-500">{quality}%</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-stone-500">Max Width</label>
+                    <Input
+                      type="number"
+                      value={width}
+                      onChange={(e) => setWidth(e.target.value)}
+                      placeholder="e.g. 1200"
+                      size="sm"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-stone-500">Max Height</label>
+                    <Input
+                      type="number"
+                      value={height}
+                      onChange={(e) => setHeight(e.target.value)}
+                      placeholder="e.g. 800"
+                      size="sm"
+                    />
+                  </div>
+                  <div className="space-y-2 pt-6">
+                    <label className="inline-flex items-center gap-2 text-sm text-stone-600">
+                      <input
+                        type="checkbox"
+                        checked={crop}
+                        onChange={(e) => setCrop(e.target.checked)}
+                        className="form-checkbox h-4 w-4 text-emerald-600"
+                      />
+                      Crop to size
+                    </label>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    onClick={handlePreviewOptimize}
+                    disabled={isOptimizingPreview || !previewUrl}
+                    className="text-xs bg-emerald-600 hover:bg-emerald-700 text-white"
+                  >
+                    {isOptimizingPreview ? 'Optimizing...' : 'Optimize preview'}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleEditImage}
+                    className="text-xs border-stone-200 hover:bg-stone-50"
+                  >
+                    Edit image
+                  </Button>
+                </div>
+                <p className="text-xs text-stone-500">
+                  Source size: {sourceSize != null ? formatBytes(sourceSize) : 'Unavailable'}
+                  {optimizedSize != null
+                    ? ` · Optimized size: ${formatBytes(optimizedSize)}`
+                    : optimizeBeforeInsert
+                      ? ' · Optimized size: pending'
+                      : ''}
+                </p>
               </div>
               <div className="grid gap-3">
                 <div className="space-y-1">

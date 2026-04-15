@@ -40,6 +40,21 @@ const convertTimestamps = (data) => {
   return converted;
 };
 
+const fileToBase64 = (file) => new Promise((resolve, reject) => {
+  const reader = new FileReader();
+  reader.onload = () => {
+    const result = reader.result;
+    if (typeof result === 'string') {
+      const base64 = result.split(',')[1];
+      resolve(base64);
+    } else {
+      reject(new Error('Unable to convert file to base64'));
+    }
+  };
+  reader.onerror = reject;
+  reader.readAsDataURL(file);
+});
+
 // --- Blog Posts API ---
 export const postAPI = {
   list: async (params = {}) => {
@@ -696,6 +711,40 @@ export const mediaAPI = {
       return { success: true };
     } catch (error) {
       console.error('R2 Delete API Error:', error);
+      throw error;
+    }
+  },
+  optimize: async (source, options = {}) => {
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) throw new Error('Not authenticated');
+
+      const body = { ...options };
+      if (source instanceof File) {
+        body.fileBase64 = await fileToBase64(source);
+        body.contentType = source.type;
+        body.fileName = source.name;
+      } else {
+        body.sourceUrl = source;
+      }
+
+      const response = await fetch('/api/optimize-image', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(body)
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to optimize image: ${errorText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('R2 Optimize API Error:', error);
       throw error;
     }
   }
