@@ -204,7 +204,7 @@ const ImageUploader = ({
     if (optimizedSize != null) {
       setOptimizedSize(null);
     }
-  }, [format, quality, width, height, crop, optimizeBeforeInsert]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [format, quality, width, height, crop, optimizeBeforeInsert, optimizedSize]);
 
   const handlePreviewOptimize = async () => {
     if (!previewUrl) return;
