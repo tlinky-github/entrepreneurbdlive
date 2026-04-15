@@ -102,8 +102,12 @@ const aiAPI = {
   /**
    * Get available models for a provider
    */
-  getProviderModels: async (provider) => {
-    return apiCall(`/providers-handler?action=models&provider=${provider}`, 'GET');
+  getProviderModels: async (provider, apiKey = null) => {
+    let url = `/providers-handler?action=models&provider=${provider}`;
+    if (apiKey) {
+      url += `&apiKeyInput=${encodeURIComponent(apiKey)}`;
+    }
+    return apiCall(url, 'GET');
   },
 
   /**

@@ -61,7 +61,8 @@ module.exports = async (req, res) => {
         return successResponse(res, sanitizedConfig);
       } else if (action === 'models') {
         // GET: Fetch available models for a provider
-        const { provider } = req.query;
+        // Can either use saved config (if exists) or accept apiKey in body for setup phase
+        const { provider, apiKeyInput } = req.query;
 
         if (!provider) {
           return errorResponse(res, 400, 'Provider query parameter is required');
@@ -72,23 +73,30 @@ module.exports = async (req, res) => {
           return errorResponse(res, 400, 'Unknown provider');
         }
 
+        let apiKey = null;
+        
+        // Try to get API key from saved config first
         const configDoc = await db.collection('ai_configs').doc(user.uid).get();
-        if (!configDoc.exists) {
-          return errorResponse(res, 404, 'No provider configured');
+        if (configDoc.exists) {
+          const config = configDoc.data();
+          const providerConfig = config.providers?.[provider.toLowerCase()];
+          if (providerConfig?.apiKey) {
+            try {
+              apiKey = decrypt(providerConfig.apiKey);
+            } catch (e) {
+              console.warn('Failed to decrypt saved API key:', e.message);
+            }
+          }
         }
 
-        const config = configDoc.data();
-        const providerConfig = config.providers?.[provider.toLowerCase()];
-
-        if (!providerConfig) {
-          return errorResponse(res, 404, `Provider ${provider} not configured`);
+        // If no saved API key, try using the one from query params (for setup phase)
+        if (!apiKey && apiKeyInput) {
+          apiKey = apiKeyInput;
         }
 
-        let apiKey;
-        try {
-          apiKey = decrypt(providerConfig.apiKey);
-        } catch (e) {
-          return errorResponse(res, 500, 'Failed to decrypt API key');
+        // If still no API key, return error
+        if (!apiKey) {
+          return errorResponse(res, 400, 'No API key provided or configured. Pass apiKeyInput query parameter or configure provider first.');
         }
 
         let models = [];

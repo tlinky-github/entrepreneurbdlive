@@ -101,8 +101,8 @@ export const ProviderSetup = ({ refreshTrigger }) => {
     try {
       setFetchingModels(setupForm.provider);
       
-      // Call API to fetch actual models from the provider
-      const result = await aiAPI.getProviderModels(setupForm.provider);
+      // Call API to fetch actual models from the provider, passing the API key for setup phase
+      const result = await aiAPI.getProviderModels(setupForm.provider, setupForm.apiKey);
       
       setAvailableModels(prev => ({
         ...prev,
