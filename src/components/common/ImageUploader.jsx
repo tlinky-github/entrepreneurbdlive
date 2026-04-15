@@ -388,10 +388,10 @@ const ImageUploader = ({
                             event.stopPropagation();
                             setSelectedDeleteItem(item);
                           }}
-                          className="absolute right-2 top-2 z-10 rounded-full bg-black/70 text-white p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                          className="absolute right-2 top-2 z-10 rounded-full bg-black/80 text-white p-2 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-white"
                           title="Delete image from library"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
+                          <Trash2 className="w-4 h-4" />
                         </button>
                         <div className="absolute inset-x-0 bottom-0 bg-black/60 p-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <p className="text-[8px] text-white truncate text-center">{item.fileName}</p>
@@ -460,22 +460,34 @@ const ImageUploader = ({
                 </Button>
               </div>
             </div>
-          ) : uploading ? (
-            <div className="flex flex-col items-center justify-center p-8 bg-stone-50 rounded-xl border border-stone-100">
-              <Loader2 className="w-8 h-8 text-emerald-600 animate-spin mb-3" />
-              <p className="text-sm font-medium text-stone-500">Uploading to Cloudflare...</p>
-            </div>
           ) : (
             <div className="bg-stone-50 rounded-xl p-4 border border-stone-100 space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-3">
                 <span className="text-xs font-bold text-stone-400 uppercase">Selected Image</span>
-                <button 
-                  type="button" 
-                  onClick={() => setPreviewUrl('')} 
-                  className="text-xs text-red-500 hover:underline"
-                >
-                  Change
-                </button>
+                <div className="flex items-center gap-2">
+                  <button 
+                    type="button" 
+                    onClick={() => setPreviewUrl('')} 
+                    className="text-xs text-red-500 hover:underline"
+                  >
+                    Change
+                  </button>
+                  {mediaList.find(item => item.url === previewUrl) && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        const matchedItem = mediaList.find(item => item.url === previewUrl);
+                        if (matchedItem) {
+                          setSelectedDeleteItem(matchedItem);
+                        }
+                      }}
+                      className="text-xs text-white bg-red-600 hover:bg-red-700 px-3 py-1 rounded-full transition-all"
+                    >
+                      Delete
+                    </button>
+                  )}
+                </div>
               </div>
               <div className="rounded-lg overflow-hidden border border-stone-200 relative bg-stone-100">
                 <img src={previewUrl} alt="Preview" className="w-full max-h-[300px] object-contain" />
