@@ -45,6 +45,30 @@ service cloud.firestore {
       allow update: if isAdmin() || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['view_count']);
     }
 
+    match /guides/{guide} {
+      allow read: if true;
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin();
+    }
+
+    match /faq_categories/{category} {
+      allow read: if true;
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin();
+    }
+
+    match /glossary/{term} {
+      allow read: if true;
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin();
+    }
+
+    match /code_snippets/{snippet} {
+      allow read: if true;
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin();
+    }
+
     // Taxonomies: Public read, Admin write
     match /industries/{industry} {
       allow read: if true;

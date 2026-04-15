@@ -71,20 +71,20 @@ const FAQsPage = () => {
             {allFaqs.map((category, categoryIndex) => (
               <div key={categoryIndex}>
                 <h2 className="text-2xl font-bold text-stone-900 mb-6 pb-3 border-b border-stone-200">
-                  {category.category}
+                  {category.category || category.name || 'FAQ Category'}
                 </h2>
                 <Accordion type="single" collapsible className="w-full">
-                  {category.questions.map((faq, faqIndex) => (
+                  {(Array.isArray(category.questions) ? category.questions : []).map((faq, faqIndex) => (
                     <AccordionItem
                       key={faqIndex}
                       value={`${categoryIndex}-${faqIndex}`}
                       className="border-b border-stone-200"
                     >
                       <AccordionTrigger className="text-left text-stone-900 hover:text-emerald-900 hover:no-underline py-4 text-base font-medium">
-                        {faq.q}
+                        {faq.q || 'Question unavailable'}
                       </AccordionTrigger>
                       <AccordionContent className="text-stone-600 pb-4 leading-relaxed">
-                        {faq.a}
+                        {faq.a || 'Answer unavailable.'}
                       </AccordionContent>
                     </AccordionItem>
                   ))}

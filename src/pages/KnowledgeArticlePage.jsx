@@ -39,6 +39,9 @@ const KnowledgeArticlePage = () => {
 
   const article = firestoreArticle || pillarArticle;
   const isFirestore = !!firestoreArticle;
+  const articleContent = article?.content || {};
+  const articleSections = !isFirestore && Array.isArray(articleContent.sections) ? articleContent.sections : [];
+  const articleFaqs = !isFirestore && Array.isArray(articleContent.faqs) ? articleContent.faqs : [];
 
   const currentIndex = allPillarPages.findIndex(p => p.id === slug);
   const prevArticle = currentIndex > 0 ? allPillarPages[currentIndex - 1] : null;
@@ -143,7 +146,7 @@ const KnowledgeArticlePage = () => {
                   >
                     Introduction
                   </a>
-                  {article.content.sections.map((section, index) => (
+                  {articleSections.map((section, index) => (
                     <a
                       key={index}
                       href={`#section-${index}`}
@@ -176,11 +179,11 @@ const KnowledgeArticlePage = () => {
                   <>
                     <section id="introduction" className="mb-12 scroll-mt-28">
                       <p className="text-lg text-stone-700 leading-relaxed">
-                        {article.content.introduction}
+                        {articleContent.introduction || ''}
                       </p>
                     </section>
 
-                    {article.content.sections.map((section, index) => (
+                    {articleSections.map((section, index) => (
                       <section key={index} id={`section-${index}`} className="mb-12 scroll-mt-28">
                         <h2 className="text-2xl font-bold text-stone-900 mb-4 pb-2 border-b border-stone-200">
                           {section.heading}
@@ -196,7 +199,7 @@ const KnowledgeArticlePage = () => {
                         Frequently Asked Questions
                       </h2>
                       <Accordion type="single" collapsible className="w-full">
-                        {article.content.faqs.map((faq, index) => (
+                        {articleFaqs.map((faq, index) => (
                           <AccordionItem key={index} value={`faq-${index}`} className="border-b border-stone-200">
                             <AccordionTrigger className="text-left text-stone-900 hover:text-emerald-900 hover:no-underline py-4 font-medium">
                               {faq.q}

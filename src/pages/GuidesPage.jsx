@@ -77,7 +77,7 @@ const GuidesPage = () => {
                 </CardHeader>
                 <CardContent className="pt-8">
                   <div className="space-y-8">
-                    {guide.content.map((section, sectionIndex) => (
+                    {(Array.isArray(guide.content) ? guide.content : []).map((section, sectionIndex) => (
                       <div key={sectionIndex} className="flex gap-4">
                         <div className="flex-shrink-0">
                           <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">

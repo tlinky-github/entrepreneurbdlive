@@ -25,14 +25,16 @@ const GlossaryPage = () => {
 
   const allTerms = [...firestoreTerms, ...mockGlossary];
 
-  const filteredTerms = allTerms.filter(item =>
-    item.term.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.definition.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const searchTermLower = searchTerm.toLowerCase();
+  const filteredTerms = allTerms.filter(item => {
+    const termText = (item.term || '').toLowerCase();
+    const definitionText = (item.definition || '').toLowerCase();
+    return termText.includes(searchTermLower) || definitionText.includes(searchTermLower);
+  });
 
   // Group terms alphabetically
   const groupedTerms = filteredTerms.reduce((acc, term) => {
-    const letter = term.term[0].toUpperCase();
+    const letter = ((term.term || '').trim()[0] || '#').toUpperCase();
     if (!acc[letter]) {
       acc[letter] = [];
     }
@@ -119,13 +121,13 @@ const GlossaryPage = () => {
                       {letter}
                     </h2>
                     <dl className="space-y-6">
-                      {groupedTerms[letter].map((item, index) => (
+                      {(groupedTerms[letter] || []).map((item, index) => (
                         <div key={index} className="group">
                           <dt className="text-lg font-semibold text-stone-900 mb-2">
-                            {item.term}
+                            {item.term || 'Untitled'}
                           </dt>
                           <dd className="text-stone-600 leading-relaxed pl-4 border-l-2 border-emerald-200 group-hover:border-emerald-500 transition-colors">
-                            {item.definition}
+                            {item.definition || 'No definition available.'}
                           </dd>
                         </div>
                       ))}

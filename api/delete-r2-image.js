@@ -1,7 +1,6 @@
-const { S3Client, ListObjectsV2Command } = require('@aws-sdk/client-s3');
+const { S3Client, DeleteObjectCommand } = require('@aws-sdk/client-s3');
 const admin = require('firebase-admin');
 
-// Initialize Firebase Admin (Same logic as upload-url.js)
 if (!admin.apps.length) {
   const projectId = process.env.FIREBASE_PROJECT_ID;
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
@@ -32,7 +31,6 @@ const r2Client = new S3Client({
 });
 
 module.exports = async (req, res) => {
-  // CORS for dev
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -41,20 +39,21 @@ module.exports = async (req, res) => {
     return res.status(200).end();
   }
 
-  // Configuration Guard
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
   const requiredEnvVars = [
-    'R2_ACCOUNT_ID', 
-    'R2_ACCESS_KEY_ID', 
-    'R2_SECRET_ACCESS_KEY', 
-    'R2_BUCKET_NAME', 
-    'R2_PUBLIC_URL'
+    'R2_ACCOUNT_ID',
+    'R2_ACCESS_KEY_ID',
+    'R2_SECRET_ACCESS_KEY',
+    'R2_BUCKET_NAME',
   ];
   const missingVars = requiredEnvVars.filter(v => !process.env[v]);
   if (missingVars.length > 0) {
     return res.status(500).json({ error: 'Missing environment variables', missingVars });
   }
 
-  // Auth Guard
   const authHeader = req.headers['authorization'];
   if (!authHeader?.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'Unauthorized: Missing token' });
@@ -67,38 +66,22 @@ module.exports = async (req, res) => {
     return res.status(401).json({ error: 'Unauthorized: Invalid token' });
   }
 
+  const { key } = req.body || {};
+  if (!key || typeof key !== 'string') {
+    return res.status(400).json({ error: 'Missing R2 object key' });
+  }
+
   try {
     const bucketName = process.env.R2_BUCKET_NAME;
-    const publicUrl = process.env.R2_PUBLIC_URL;
-    const folderPrefix = process.env.R2_FOLDER_PREFIX || 'assets/';
-
-    const command = new ListObjectsV2Command({
+    const command = new DeleteObjectCommand({
       Bucket: bucketName,
-      Prefix: folderPrefix,
+      Key: key,
     });
 
-    const response = await r2Client.send(command);
-    
-    // Transform R2 contents into a clean Media Gallery format
-    const mediaItems = (response.Contents || [])
-      .filter(item => {
-        // Only include files with image extensions
-        const ext = item.Key.split('.').pop().toLowerCase();
-        return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext);
-      })
-      .map(item => ({
-        url: `${publicUrl.replace(/\/$/, '')}/${item.Key}`,
-        fileName: item.Key.split('/').pop(),
-        contentType: `image/${item.Key.split('.').pop().toLowerCase()}`,
-        size: item.Size,
-        lastModified: item.LastModified,
-        key: item.Key,
-        id: Buffer.from(item.Key).toString('base64').substring(0, 15) // Generate a temporary ID
-      }));
-
-    return res.status(200).json({ data: mediaItems });
+    await r2Client.send(command);
+    return res.status(200).json({ success: true });
   } catch (error) {
-    console.error('R2 List Error:', error);
-    return res.status(500).json({ error: 'Failed to list bucket contents' });
+    console.error('R2 Delete Error:', error);
+    return res.status(500).json({ error: 'Failed to delete R2 object', details: error.message });
   }
 };

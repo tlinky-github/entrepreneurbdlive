@@ -35,6 +35,8 @@ const ImageUploader = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [visibleCount, setVisibleCount] = useState(15);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [selectedDeleteItem, setSelectedDeleteItem] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const fileInputRef = useRef(null);
 
   // Sync with value prop
@@ -216,6 +218,44 @@ const ImageUploader = ({
     }
   };
 
+  const parseR2KeyFromUrl = (url) => {
+    try {
+      return new URL(url).pathname.replace(/^\//, '');
+    } catch {
+      return '';
+    }
+  };
+
+  const handleGalleryDelete = async () => {
+    if (!selectedDeleteItem) return;
+    setDeleteLoading(true);
+
+    try {
+      const key = selectedDeleteItem.key || parseR2KeyFromUrl(selectedDeleteItem.url);
+
+      if (key) {
+        await mediaAPI.deleteR2(key);
+      }
+
+      if (selectedDeleteItem.id) {
+        await mediaAPI.delete(selectedDeleteItem.id);
+      }
+
+      if (previewUrl === selectedDeleteItem.url) {
+        setPreviewUrl('');
+      }
+
+      toast.success('Image deleted from library and Cloudflare R2');
+      setSelectedDeleteItem(null);
+      loadMedia();
+    } catch (error) {
+      console.error('Failed to delete gallery image:', error);
+      toast.error('Could not delete the selected image.');
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
   const handleUseImage = () => {
     if (previewUrl) {
       onChange(previewUrl, { alt, caption, title });
@@ -341,6 +381,17 @@ const ImageUploader = ({
                           className="w-full h-full object-cover"
                           loading="lazy"
                         />
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setSelectedDeleteItem(item);
+                          }}
+                          className="absolute right-2 top-2 z-10 rounded-full bg-black/70 text-white p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                          title="Delete image from library"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                         <div className="absolute inset-x-0 bottom-0 bg-black/60 p-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <p className="text-[8px] text-white truncate text-center">{item.fileName}</p>
                         </div>
@@ -498,6 +549,26 @@ const ImageUploader = ({
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleRemove} className="bg-red-600 hover:bg-red-700">
               Remove Image
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!selectedDeleteItem} onOpenChange={(open) => { if (!open) setSelectedDeleteItem(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Image from Library?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will delete the image from your Cloudflare R2 bucket and remove it from the media library.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="px-6 py-2">
+            <p className="text-sm text-stone-600">{selectedDeleteItem?.fileName || selectedDeleteItem?.url}</p>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleGalleryDelete} className="bg-red-600 hover:bg-red-700" disabled={deleteLoading}>
+              {deleteLoading ? 'Deleting...' : 'Delete Image'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

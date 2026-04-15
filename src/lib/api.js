@@ -673,6 +673,31 @@ export const mediaAPI = {
       console.error('R2 List API Error:', error);
       throw error;
     }
+  },
+  deleteR2: async (key) => {
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) throw new Error('Not authenticated');
+
+      const response = await fetch('/api/delete-r2-image', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ key })
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to delete R2 image: ${errorText}`);
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error('R2 Delete API Error:', error);
+      throw error;
+    }
   }
 };
 

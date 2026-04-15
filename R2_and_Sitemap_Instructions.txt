@@ -1,0 +1,118 @@
+Dynamic sitemap + R2 storage setup guide
+
+1. Overview
+-----------
+- We will use Cloudflare R2 for image storage and Firestore only for metadata tracking.
+- We will add a dynamic sitemap endpoint at /api/sitemap and map /sitemap.xml to it via Vercel rewrites.
+- The sitemap will query Firestore collections in real time and return XML.
+- An R2-backed image delete flow should remove Firestore media metadata and delete the object from R2.
+
+2. Required environment variables
+---------------------------------
+Firebase Admin:
+- FIREBASE_PROJECT_ID
+- FIREBASE_CLIENT_EMAIL
+- FIREBASE_PRIVATE_KEY
+
+Cloudflare R2:
+- R2_ACCOUNT_ID
+- R2_ACCESS_KEY_ID
+- R2_SECRET_ACCESS_KEY
+- R2_BUCKET_NAME
+- R2_PUBLIC_URL
+- optional: R2_FOLDER_PREFIX
+
+3. Firebase permissions for backend
+-----------------------------------
+For the service account used by Firebase Admin:
+- roles/datastore.viewer (Firestore read)
+- roles/datastore.user (Firestore write/delete if needed)
+- roles/firebaseauth.admin (verify Firebase ID tokens)
+
+If you only need sitemap reads, datastore.viewer is enough.
+
+4. Firestore security rules
+---------------------------
+Current rules grant:
+- public read to /posts, /profiles, /listings, /resources, etc.
+- create/delete only if isAdmin() on those collections.
+- media deletes are allowed only for admin/editor users.
+
+For R2 metadata deletion, ensure the user is an admin/editor in /users/{uid}.
+
+5. R2 storage notes
+-------------------
+- R2 is not governed by Firebase Storage rules in this repo.
+- The app uses `/api/upload-url.js` for signing uploads to R2.
+- `api/list-r2.js` lists objects from R2 using an authenticated Firebase user.
+- You need R2 credentials with delete permission to remove objects.
+
+6. Implementing image delete with R2
+------------------------------------
+A complete delete flow should do both:
+- delete the Firestore `media` document
+- delete the R2 object via a backend API route
+
+Example backend route responsibilities:
+- verify Firebase ID token
+- locate the media metadata record or object key
+- call R2 `DeleteObjectCommand` for the file
+- remove the Firestore metadata doc
+
+7. Dynamic sitemap implementation
+----------------------------------
+A new file `api/sitemap.js` should:
+- initialize `firebase-admin` with env vars
+- build a list of static routes:
+  /, /blog, /directory, /resources, /knowledge, /about, /contact, etc.
+- query published Firestore collections:
+  - `posts`
+  - `profiles`
+  - `listings`
+  - `knowledge`
+- generate XML with:
+  - `<loc>` full URL
+  - `<lastmod>` document update timestamp
+  - `<changefreq>` (daily/weekly/monthly)
+  - `<priority>`
+- return `Content-Type: application/xml`
+- add caching headers such as `Cache-Control: public, max-age=3600, stale-while-revalidate=3600`
+
+8. Vercel rewrite rule
+----------------------
+Modify `vercel.json` to include:
+{
+  "rewrites": [
+    { "source": "/sitemap.xml", "destination": "/api/sitemap" }
+  ]
+}
+
+This keeps the sitemap available at the standard public path.
+
+9. package.json script
+----------------------
+Keep `generate-sitemap` as a fallback/local build tool.
+The production sitemap should be generated dynamically from `/api/sitemap`.
+
+10. Validation and test steps
+-----------------------------
+- Deploy to Vercel with all env vars set.
+- Visit `https://<your-domain>/sitemap.xml`.
+- Confirm newly published posts appear immediately.
+- Validate XML structure with a sitemap validator.
+- Check response headers for `Content-Type: application/xml` and `Cache-Control`.
+
+11. Important notes
+-------------------
+- If using R2 for uploads and deletes, do not rely on Firebase Storage rules.
+- Keep private key values safe and use Vercel environment variables, not client-side code.
+- If the sitemap uses Firestore, ensure the service account has access to query the required collections.
+- For image deletion, the front-end currently only removes Firestore metadata from `media`; it does not delete the R2 file itself.
+
+12. Suggested next tasks
+------------------------
+- Create `api/sitemap.js` with live Firestore queries.
+- Add `/sitemap.xml` rewrite in `vercel.json`.
+- Add a secure `api/delete-image.js` or extend `api/list-r2.js` for delete.
+- Ensure the Firestore admin user roles are set for access to `media` deletes.
+- Test with a new published post and a newly uploaded image.
