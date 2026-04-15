@@ -68,7 +68,7 @@ const aiAPI = {
    * Setup/configure an AI provider with API key
    */
   setupProvider: async (provider, apiKey) => {
-    return apiCall('/providers/setup', 'POST', {
+    return apiCall('/providers-handler?action=setup', 'POST', {
       provider,
       apiKey,
     });
@@ -78,21 +78,21 @@ const aiAPI = {
    * Get all configured providers for user
    */
   getProvidersConfig: async () => {
-    return apiCall('/providers/config', 'GET');
+    return apiCall('/providers-handler?action=config', 'GET');
   },
 
   /**
    * Get available models for a provider
    */
   getProviderModels: async (provider) => {
-    return apiCall(`/providers/models?provider=${provider}`, 'GET');
+    return apiCall(`/providers-handler?action=models&provider=${provider}`, 'GET');
   },
 
   /**
    * Test connection to a provider
    */
-  testProvider: async (provider) => {
-    return apiCall('/providers/test', 'POST', { provider });
+  testProvider: async (provider, apiKey) => {
+    return apiCall('/providers-handler?action=test', 'POST', { provider, apiKey });
   },
 
   /**
@@ -115,28 +115,28 @@ const aiAPI = {
     if (filters.limit) params.append('limit', filters.limit);
     if (filters.page) params.append('page', filters.page);
 
-    return apiCall(`/posts?${params.toString()}`, 'GET');
+    return apiCall(`/posts-handler?${params.toString()}`, 'GET');
   },
 
   /**
    * Get single post by ID
    */
   getPost: async (postId) => {
-    return apiCall(`/posts/${postId}`, 'GET');
+    return apiCall(`/posts-handler?id=${postId}`, 'GET');
   },
 
   /**
    * Update post
    */
   updatePost: async (postId, updates) => {
-    return apiCall(`/posts/${postId}`, 'PUT', updates);
+    return apiCall(`/posts-handler?id=${postId}`, 'PUT', updates);
   },
 
   /**
    * Delete post
    */
   deletePost: async (postId) => {
-    return apiCall(`/posts/${postId}`, 'DELETE');
+    return apiCall(`/posts-handler?id=${postId}`, 'DELETE');
   },
 
   /**
