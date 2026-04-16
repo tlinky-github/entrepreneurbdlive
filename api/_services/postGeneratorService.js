@@ -112,19 +112,21 @@ Target Language: ${language}
 Target Word Count: ${targetWordCount} words
 
 STRUCTURAL REQUIREMENTS:
-1. OVERVIEW/HOOK: Start with a powerful, attention-grabbing introduction that clearly states the value proposition.
+1. OVERVIEW/HOOK: Start with a powerful, attention-grabbing introduction.
 2. SUBHEADINGS: Use SEO-friendly, descriptive H2 and H3 subheadings.
 3. CONTENT DEPTH: Provide actionable insights and deep value.
-4. FORMATTING: Use Markdown formatting (bold, italics, lists, blockquotes).
+4. FORMATTING: Use SEMANTIC HTML (<h2>, <h3>, <p>, <ul>, <li>, <strong>). Do NOT use Markdown (# or **).
 5. ENGAGEMENT: Maintain the "${tone}" voice consistently.
 
 TECHNICAL SPECIFICATIONS:
-- Output only the Markdown content of the post.
-- Ensure the keyword integration is seamless.
+- Output ONLY the HTML content.
+- Do NOT include the Title in the body.
+- Do NOT use <h1> tags (the website handles the main title).
+- Do NOT include metadata like "Part 1" or labels.
 - This is PART 1 of the generation. Focus on the Introduction and the first few major sections.
 - Goal for this batch: ~500-700 words.
 
-Post Content:`;
+Post Content (HTML):`;
         } else {
           // Continuation prompt
           currentPrompt = `Act as a professional blogger. You are continuing a blog post.
@@ -141,11 +143,12 @@ ${fullContent.substring(Math.max(0, fullContent.length - 1500))}
 CONTINUATION REQUIREMENTS:
 1. PICK UP EXACTLY where the previous text left off.
 2. Do NOT repeat the introduction or previously covered points.
-3. Focus on expanding the remaining sections or adding new depth to reach the ${targetWordCount} word goal.
-4. Maintain the "${tone}" tone and Markdown formatting.
-5. If you have covered everything and reached near ${targetWordCount} words, provide a strong Conclusion & CTA.
+3. Focus on expanding the remaining sections using HTML tags (<h2>, <h3>, <p>, <ul>, <li>, <strong>).
+4. Maintain the "${tone}" tone.
+5. Do NOT include "Part 2" or continuation labels.
+6. If you have covered everything and reached near ${targetWordCount} words, provide a strong Conclusion & CTA.
 
-Next Section of Post:`;
+Next Section of Post (HTML):`;
         }
 
         // Generate content for this batch
@@ -197,8 +200,8 @@ Next Section of Post:`;
         model,
         tokensUsed: totalTokensUsed,
         generationTime,
-        created_at: new Date(),
-        updated_at: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
       };
 
       // Add Knowledge-specific fields if needed

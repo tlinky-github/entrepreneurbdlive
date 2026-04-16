@@ -137,7 +137,7 @@ export const AIPostQueue = ({ refreshTrigger }) => {
                       {post.status}
                     </span>
                     <span className="text-xs text-stone-500 bg-stone-100 px-2 py-1 rounded">
-                      {post.generationConfig?.provider}
+                      {post.provider} ({post.model})
                     </span>
                   </div>
 
@@ -145,9 +145,8 @@ export const AIPostQueue = ({ refreshTrigger }) => {
 
                   <div className="flex gap-4 text-xs text-stone-500">
                     <span>📝 {Math.ceil((post.content?.split(/\s+/)?.length || 0) / 200)} min read</span>
-                    <span>📊 SEO Score: {post.metadata?.seoScore || 0}%</span>
-                    <span>🔤 {post.tokens || 0} tokens</span>
-                    <span>📅 {new Date(post.createdAt?.toDate?.() || post.createdAt).toLocaleDateString()}</span>
+                    <span>🔤 {post.tokensUsed || post.tokens || 0} tokens</span>
+                    <span>📅 {post.createdAt ? new Date(post.createdAt?.toDate?.() || post.createdAt).toLocaleDateString() : 'Just now'}</span>
                   </div>
                 </div>
 
