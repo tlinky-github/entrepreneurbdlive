@@ -45,8 +45,8 @@ const openaiService = {
       let useCompletionTokens = false;
 
       if (tokenMode === 'auto') {
-        const isReasoning = /o[13]|o-?\d/i.test(model);
-        useCompletionTokens = isReasoning;
+        const isNewerModel = /o[13]|o-?\d|gpt-5|nano|mini/i.test(model);
+        useCompletionTokens = isNewerModel;
       } else if (tokenMode === 'max_completion_tokens') {
         useCompletionTokens = true;
       }

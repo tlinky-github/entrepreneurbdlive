@@ -208,6 +208,7 @@ export const AIGenerateForm = ({ onPostGenerated, onClose }) => {
           targetStatus: formData.targetStatus,
           temperature: parseFloat(formData.temperature),
           maxTokens: parseInt(formData.maxTokens),
+          tokenMode: formData.tokenMode || 'auto',
         });
 
         setBulkProgress(prev => ({
@@ -261,6 +262,7 @@ export const AIGenerateForm = ({ onPostGenerated, onClose }) => {
         targetStatus: formData.targetStatus,
         temperature: parseFloat(formData.temperature),
         maxTokens: parseInt(formData.maxTokens),
+        tokenMode: formData.tokenMode || 'auto',
       });
 
       toast.success('Post generated successfully!');
