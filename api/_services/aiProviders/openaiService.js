@@ -36,7 +36,8 @@ const openaiService = {
     }
   },
 
-    let params = { model };
+  async generateContent(apiKey, prompt, model, options = {}) {
+    let params = { model: model || 'unspecified' };
     try {
       const openai = new OpenAI({ apiKey });
 
