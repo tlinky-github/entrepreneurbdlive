@@ -182,13 +182,23 @@ const AdminContentManager = () => {
           </h1>
           <p className="page-subtitle">Manage content, categories, and SEO for all sections</p>
         </div>
-        <Button 
-          className="bg-emerald-900 hover:bg-emerald-800"
-          onClick={() => navigate(`/admin/content-editor?type=${contentType}`)}
-        >
-          <Plus size={18} className="mr-2" />
-          Create New {config.label}
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline"
+            className="border-emerald-600 text-emerald-800 hover:bg-emerald-50"
+            onClick={() => navigate('/admin/ai-generator')}
+          >
+            <Plus size={18} className="mr-2" />
+            ⚡ AI-Generate
+          </Button>
+          <Button 
+            className="bg-emerald-900 hover:bg-emerald-800"
+            onClick={() => navigate(`/admin/content-editor?type=${contentType}`)}
+          >
+            <Plus size={18} className="mr-2" />
+            Create New {config.label}
+          </Button>
+        </div>
       </div>
 
       {/* Content Type Selector */}

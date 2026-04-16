@@ -284,9 +284,19 @@ export const contentAPI = {
       knowledge: 'resources'
     };
     const colName = collectionMap[type] || type;
-    const docRef = doc(db, colName, id);
-    const docSnap = await getDoc(docRef);
+    let docRef = doc(db, colName, id);
+    let docSnap = await getDoc(docRef);
     
+    // Fallback for legacy AI posts
+    if (!docSnap.exists() && (type === 'blog' || type === 'knowledge')) {
+      const aiRef = doc(db, 'ai_posts', id);
+      const aiSnap = await getDoc(aiRef);
+      if (aiSnap.exists()) {
+        docSnap = aiSnap;
+        docRef = aiRef;
+      }
+    }
+
     if (docSnap.exists()) {
       // Update view count
       await updateDoc(docRef, {
@@ -323,12 +333,24 @@ export const contentAPI = {
     };
     const colName = collectionMap[type] || type;
     const ref = doc(db, colName, id);
-    await updateDoc(ref, { 
+    
+    // Check if we are migrating from ai_posts
+    const aiRef = doc(db, 'ai_posts', id);
+    const aiSnap = await getDoc(aiRef);
+    
+    // Use setDoc with merge: true to allow "Migration on Save"
+    await setDoc(ref, { 
       ...data, 
       authorId: data.authorId || null,
       faqs: data.faqs || [],
       updated_at: serverTimestamp() 
-    });
+    }, { merge: true });
+
+    // Clean up legacy if migrated
+    if (aiSnap.exists() && colName !== 'ai_posts') {
+      await deleteDoc(aiRef).catch(err => console.warn('Cleanup of ai_posts failed:', err));
+    }
+
     return { id, ...data };
   },
   delete: async (type, id) => {

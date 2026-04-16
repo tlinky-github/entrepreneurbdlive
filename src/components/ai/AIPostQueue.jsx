@@ -14,6 +14,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '../ui/alert-dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '../ui/dialog';
 
 /**
  * AI Post Queue Component
@@ -28,6 +34,7 @@ export const AIPostQueue = ({ refreshTrigger }) => {
   const [totalPages, setTotalPages] = useState(1);
   const [selectedPost, setSelectedPost] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
   const LIMIT = 10;
@@ -35,6 +42,24 @@ export const AIPostQueue = ({ refreshTrigger }) => {
   useEffect(() => {
     loadPosts();
   }, [statusFilter, currentPage, refreshTrigger]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const formatDate = (date) => {
+    if (!date) return 'Just now';
+    try {
+      // Handle Firestore Timestamp objects (_seconds, _nanoseconds)
+      if (date && typeof date === 'object' && 'seconds' in date) {
+        return new Date(date.seconds * 1000).toLocaleDateString();
+      }
+      if (date && typeof date === 'object' && '_seconds' in date) {
+        return new Date(date._seconds * 1000).toLocaleDateString();
+      }
+      // Handle regular date or string
+      const d = new Date(date?.toDate?.() || date);
+      return isNaN(d.getTime()) ? 'Recently' : d.toLocaleDateString();
+    } catch (e) {
+      return 'Recently';
+    }
+  };
 
   const loadPosts = async () => {
     try {
@@ -144,9 +169,9 @@ export const AIPostQueue = ({ refreshTrigger }) => {
                   <p className="text-sm text-stone-600 line-clamp-2 mb-2">{post.excerpt}</p>
 
                   <div className="flex gap-4 text-xs text-stone-500">
-                    <span>📝 {Math.ceil((post.content?.split(/\s+/)?.length || 0) / 200)} min read</span>
+                    <span>📝 {Math.ceil((post.content_html?.split(/\s+/)?.length || 0) / 200)} min read</span>
                     <span>🔤 {post.tokensUsed || post.tokens || 0} tokens</span>
-                    <span>📅 {post.createdAt ? new Date(post.createdAt?.toDate?.() || post.createdAt).toLocaleDateString() : 'Just now'}</span>
+                    <span>📅 {formatDate(post.createdAt)}</span>
                   </div>
                 </div>
 
@@ -164,17 +189,24 @@ export const AIPostQueue = ({ refreshTrigger }) => {
                     size="sm"
                     variant="outline"
                     className="text-xs"
-                    onClick={() => alert('Preview modal will open here')}
+                    onClick={() => {
+                      setSelectedPost(post);
+                      setShowPreview(true);
+                    }}
                   >
                     <Eye className="w-4 h-4 mr-1" />
-                    View
+                    Preview
                   </Button>
 
                   <Button
                     size="sm"
                     variant="outline"
                     className="text-xs"
-                    onClick={() => alert('Edit modal will open here')}
+                    onClick={() => {
+                      // Navigate to professional editor
+                      const type = post.type || 'blog';
+                      window.location.href = `/admin/content-editor?type=${type}&id=${post.liveId || post.id}`;
+                    }}
                   >
                     <Edit className="w-4 h-4 mr-1" />
                     Edit
@@ -236,6 +268,21 @@ export const AIPostQueue = ({ refreshTrigger }) => {
           </Button>
         </div>
       )}
+
+      {/* Preview Dialog */}
+      <Dialog open={showPreview} onOpenChange={setShowPreview}>
+        <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-xl border-b pb-4">{selectedPost?.title}</DialogTitle>
+          </DialogHeader>
+          <div className="py-6 prose prose-stone max-w-none">
+            <div 
+              dangerouslySetInnerHTML={{ __html: selectedPost?.content_html || selectedPost?.content }} 
+              className="preview-content ai-post-preview"
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>

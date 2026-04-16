@@ -3,7 +3,15 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { toast } from 'sonner';
 import aiAPI from '../../lib/aiApi';
-import { Loader2, Plus, X, RefreshCw } from 'lucide-react';
+import { authorAPI, taxonomyAPI } from '../../lib/api';
+import { Loader2, Plus, X, RefreshCw, User, Tag, Calendar } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../ui/select';
 
 /**
  * AI Generate Form Component
@@ -12,6 +20,8 @@ import { Loader2, Plus, X, RefreshCw } from 'lucide-react';
 
 export const AIGenerateForm = ({ onPostGenerated, onClose }) => {
   const [providers, setProviders] = useState({});
+  const [authors, setAuthors] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [fetchingModels, setFetchingModels] = useState(null);
@@ -28,12 +38,16 @@ export const AIGenerateForm = ({ onPostGenerated, onClose }) => {
     tone: 'professional',
     targetLength: '1000',
     customLength: '',
+    authorId: '',
+    categoryId: '',
     minFaqCount: 3,
     keywords: [],
     keywordInput: '',
     includeSEO: true,
     temperature: 0.7,
     maxTokens: 2000,
+    scheduledAt: '',
+    isScheduled: false,
   });
 
   const [bulkProgress, setBulkProgress] = useState({ 
@@ -54,6 +68,7 @@ export const AIGenerateForm = ({ onPostGenerated, onClose }) => {
 
   useEffect(() => {
     loadProviders();
+    loadMetadata();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { // eslint-disable-line react-hooks/exhaustive-deps
@@ -66,6 +81,19 @@ export const AIGenerateForm = ({ onPostGenerated, onClose }) => {
       }));
     }
   }, [formData.provider, providers]);
+
+  const loadMetadata = async () => {
+    try {
+      const [authorsRes, catsRes] = await Promise.all([
+        authorAPI.list(),
+        taxonomyAPI.list('blog_categories')
+      ]);
+      setAuthors(authorsRes.data || []);
+      setCategories(catsRes.data || []);
+    } catch (error) {
+      console.error('Failed to load metadata:', error);
+    }
+  };
 
   const loadProviders = async () => {
     try {
@@ -208,6 +236,9 @@ export const AIGenerateForm = ({ onPostGenerated, onClose }) => {
           targetStatus: formData.targetStatus,
           temperature: parseFloat(formData.temperature),
           maxTokens: parseInt(formData.maxTokens),
+          authorId: formData.authorId || null,
+          categoryId: formData.categoryId || null,
+          scheduledAt: formData.isScheduled ? formData.scheduledAt : null,
           tokenMode: formData.tokenMode || 'auto',
         });
 
@@ -262,6 +293,9 @@ export const AIGenerateForm = ({ onPostGenerated, onClose }) => {
         targetStatus: formData.targetStatus,
         temperature: parseFloat(formData.temperature),
         maxTokens: parseInt(formData.maxTokens),
+        authorId: formData.authorId || null,
+        categoryId: formData.categoryId || null,
+        scheduledAt: formData.isScheduled ? formData.scheduledAt : null,
         tokenMode: formData.tokenMode || 'auto',
       });
 
@@ -342,6 +376,86 @@ export const AIGenerateForm = ({ onPostGenerated, onClose }) => {
             ))}
           </select>
         </div>
+      </div>
+
+      {/* Author & Category Selection */}
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="text-sm font-medium text-stone-700 mb-1.5 flex items-center gap-2">
+            <User size={14} className="text-stone-400" /> Assign Author
+          </label>
+          <Select
+            value={formData.authorId}
+            onValueChange={(v) => setFormData(prev => ({ ...prev, authorId: v }))}
+          >
+            <SelectTrigger className="bg-white">
+              <SelectValue placeholder="Select author" />
+            </SelectTrigger>
+            <SelectContent>
+              {authors.length > 0 ? (
+                authors.map((author) => (
+                  <SelectItem key={author.id} value={author.id}>{author.name}</SelectItem>
+                ))
+              ) : (
+                <SelectItem value="none" disabled>No authors found</SelectItem>
+              )}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
+          <label className="text-sm font-medium text-stone-700 mb-1.5 flex items-center gap-2">
+            <Tag size={14} className="text-stone-400" /> Blog Category
+          </label>
+          <Select
+            value={formData.categoryId}
+            onValueChange={(v) => setFormData(prev => ({ ...prev, categoryId: v }))}
+          >
+            <SelectTrigger className="bg-white">
+              <SelectValue placeholder="Select category" />
+            </SelectTrigger>
+            <SelectContent>
+              {categories.length > 0 ? (
+                categories.map((cat) => (
+                  <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                ))
+              ) : (
+                <SelectItem value="none" disabled>No categories found</SelectItem>
+              )}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {/* Scheduling Section */}
+      <div className="bg-stone-50 p-4 rounded-lg border border-stone-200">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Calendar size={16} className="text-emerald-600" />
+            <span className="text-sm font-semibold text-stone-700">Post Scheduling</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setFormData({ ...formData, isScheduled: !formData.isScheduled })}
+            className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${formData.isScheduled ? 'bg-emerald-600' : 'bg-stone-300'}`}
+          >
+            <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${formData.isScheduled ? 'translate-x-5' : 'translate-x-1'}`} />
+          </button>
+        </div>
+        
+        {formData.isScheduled && (
+          <div className="animate-in fade-in slide-in-from-top-2 duration-200">
+            <Input
+              type="datetime-local"
+              value={formData.scheduledAt}
+              onChange={(e) => setFormData({ ...formData, scheduledAt: e.target.value })}
+              className="bg-white"
+            />
+            <p className="text-[10px] text-stone-500 mt-2">
+              Status will be set to <strong>Scheduled</strong>. The post will appear in your queue with the specific publish date.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Bulk Mode Toggle */}

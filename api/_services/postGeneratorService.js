@@ -118,12 +118,18 @@ STRUCTURAL REQUIREMENTS:
 4. FORMATTING: Use SEMANTIC HTML (<h2>, <h3>, <p>, <ul>, <li>, <strong>). Do NOT use Markdown (# or **).
 5. ENGAGEMENT: Maintain the "${tone}" voice consistently.
 
+TONE & CHARACTER POLICY:
+- Use STRAIGHT QUOTES (") instead of curly quotes (“ ”).
+- Use SIMPLE DASHES (-) instead of em-dashes (—).
+- Write as an authoritative professional. Avoid conversational chat-style language.
+- DO NOT start sentences with "So," or "Listen," or "Imagine this."
+
 TECHNICAL SPECIFICATIONS:
 - Output ONLY the HTML content.
 - Do NOT include the Title in the body.
-- Do NOT use <h1> tags (the website handles the main title).
+- Do NOT use <h1> tags.
 - Do NOT include metadata like "Part 1" or labels.
-- This is PART 1 of the generation. Focus on the Introduction and the first few major sections.
+- This is PART 1 of the generation.
 - Goal for this batch: ~500-700 words.
 
 Post Content (HTML):`;
@@ -146,7 +152,8 @@ CONTINUATION REQUIREMENTS:
 3. Focus on expanding the remaining sections using HTML tags (<h2>, <h3>, <p>, <ul>, <li>, <strong>).
 4. Maintain the "${tone}" tone.
 5. Do NOT include "Part 2" or continuation labels.
-6. If you have covered everything and reached near ${targetWordCount} words, provide a strong Conclusion & CTA.
+6. Use STRAIGHT QUOTES (") and SIMPLE DASHES (-). Avoid conversational chatbot language.
+7. If you have covered everything and reached near ${targetWordCount} words, provide a strong Conclusion & CTA (e.g., share this post or explore the directory).
 
 Next Section of Post (HTML):`;
         }
@@ -189,17 +196,23 @@ Next Section of Post (HTML):`;
       const isKnowledge = targetDestination === 'knowledge';
       const destinationCollection = isKnowledge ? 'resources' : 'posts';
       
+      const stripHtml = (html) => html.replace(/<[^>]*>?/gm, '').trim();
+
       const contentDoc = {
         userId,
         title: title || 'Untitled Post',
-        content: fullContent,
-        excerpt: fullContent.substring(0, 200) + '...',
+        content_html: fullContent,
+        excerpt: stripHtml(fullContent).substring(0, 180) + '...',
         slug: (title || 'untitled').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
         status: targetStatus || 'draft',
         provider: provider.toLowerCase(),
         model,
         tokensUsed: totalTokensUsed,
         generationTime,
+        category_id: options.categoryId || null,
+        author_id: options.authorId || null,
+        scheduledAt: options.scheduledAt ? new Date(options.scheduledAt) : null,
+        is_ai_generated: true,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -231,7 +244,7 @@ Next Section of Post (HTML):`;
         
         // Ensure SEO title/desc are also populated if not already
         contentDoc.seo_title = title;
-        contentDoc.seo_description = fullContent.substring(0, 160).replace(/<[^>]*>?/gm, '') + '...';
+        contentDoc.seo_description = stripHtml(fullContent).substring(0, 155).trim() + '...';
       }
 
       // Save to AI History (ai_posts) for tracking

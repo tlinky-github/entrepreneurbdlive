@@ -19,7 +19,7 @@ import { Input } from '../../components/ui/input';
 import { Badge } from '../../components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { toast } from 'sonner';
-import { Save, ChevronLeft, Eye, Settings, Star, HelpCircle, Code, ChevronDown, ChevronUp, FileCode } from 'lucide-react';
+import { Save, ChevronLeft, Eye, Settings, Star, HelpCircle, Code, ChevronDown, ChevronUp, FileCode, Calendar } from 'lucide-react';
 import { contentAPI, taxonomyAPI, categoryAPI, blogCategoryAPI, authorAPI } from '../../lib/api';
 import ImageUploader from '../../components/common/ImageUploader';
 import LinkDialog from '../../components/admin/LinkDialog';
@@ -54,6 +54,8 @@ const ContentEditorPanel = () => {
   const [contentLoaded, setContentLoaded] = useState(false);
   const [editorReady, setEditorReady] = useState(false);
   const [isFeatured, setIsFeatured] = useState(false);
+  const [scheduledAt, setScheduledAt] = useState('');
+  const [isScheduled, setIsScheduled] = useState(false);
 
   // SEO Fields
   const [seoTitle, setSeoTitle] = useState('');
@@ -193,6 +195,14 @@ const ContentEditorPanel = () => {
           try {
             const response = await contentAPI.get(type, itemId);
             const data = response.data;
+            
+            if (!data) {
+              console.error('Content document not found:', { type, itemId });
+              toast.error('Post not found in database');
+              setContentLoaded(true);
+              return;
+            }
+
             setTitle(data.title || '');
             setSlug(data.slug || '');
             setExcerpt(data.excerpt || '');
@@ -239,6 +249,16 @@ const ContentEditorPanel = () => {
             setCustomCss(data.custom_css || '');
             setCustomJs(data.custom_js || '');
             setCustomHeadHtml(data.custom_head_html || '');
+            
+            // Load Scheduling
+            if (data.scheduledAt) {
+              setIsScheduled(true);
+              // Format for datetime-local input
+              const date = new Date(data.scheduledAt);
+              const formatted = date.toISOString().slice(0, 16);
+              setScheduledAt(formatted);
+            }
+            
             setContentLoaded(true);
           } catch (error) {
             console.error('Error loading content:', error);
@@ -476,7 +496,8 @@ const ContentEditorPanel = () => {
         content: contentHtml,
         category_id: parseInt(category),
         // Priority: overrideStatus > current state status
-        status: overrideStatus || status,
+        status: isScheduled ? 'scheduled' : (overrideStatus || status),
+        scheduledAt: isScheduled ? scheduledAt : null,
         featured_image: featuredImage,
         seo_title: seoTitle,
         seo_description: seoDescription,
@@ -620,7 +641,7 @@ const ContentEditorPanel = () => {
             disabled={saving || publishing}
             style={{ backgroundColor: '#10b981', color: 'white' }}
           >
-            {publishing ? 'Publishing...' : status === 'published' ? 'Update' : 'Publish'}
+            {publishing ? 'Publishing...' : isScheduled ? 'Schedule' : status === 'published' ? 'Update' : 'Publish'}
           </button>
         </div>
       </div>
@@ -1162,6 +1183,45 @@ const ContentEditorPanel = () => {
 
         {/* Right: SEO & Preview */}
         <div className="editor-right">
+          {/* Scheduling Section */}
+          <Card className="mb-6 border-emerald-200 shadow-sm">
+            <CardHeader className="bg-emerald-50/50 border-b border-emerald-100 py-3">
+              <CardTitle className="text-xs font-bold uppercase tracking-wider text-emerald-800 flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4" /> Publishing Schedule
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setIsScheduled(!isScheduled)}
+                  className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${isScheduled ? 'bg-emerald-600' : 'bg-stone-300'}`}
+                >
+                  <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${isScheduled ? 'translate-x-5' : 'translate-x-1'}`} />
+                </button>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-4 pb-4">
+              {isScheduled ? (
+                <div className="space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
+                  <Input
+                    type="datetime-local"
+                    value={scheduledAt}
+                    onChange={(e) => setScheduledAt(e.target.value)}
+                    className="border-emerald-200 focus:ring-emerald-500"
+                  />
+                  <div className="flex items-center gap-2 text-[10px] text-emerald-700 bg-emerald-50 p-2 rounded border border-emerald-100">
+                    <Check className="w-3 h-3" />
+                    <span>This post will be marked as <strong>Scheduled</strong> when saved.</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-2">
+                  <p className="text-xs text-stone-500 italic">No future schedule set.</p>
+                  <p className="text-[10px] text-stone-400 mt-1">Post will be published immediately on Save/Publish.</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           {/* Media Section */}
           <Card className="mb-6 border-stone-200">
             <CardHeader className="bg-stone-50/50 border-b border-stone-100">

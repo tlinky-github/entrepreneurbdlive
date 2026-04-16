@@ -23,11 +23,19 @@ module.exports = async (req, res) => {
     if (req.method === 'GET') {
       // GET /api/ai/posts-handler or GET /api/ai/posts-handler?id=postId
       if (postId) {
-        // Get specific post
-        const postDoc = await db.collection('ai_posts').doc(postId).get();
+        // Get specific post - check both posts and resources
+        let postDoc = await db.collection('posts').doc(postId).get();
+        if (!postDoc.exists) {
+          postDoc = await db.collection('resources').doc(postId).get();
+        }
+        
+        // Final fallback for legacy ai_posts
+        if (!postDoc.exists) {
+          postDoc = await db.collection('ai_posts').doc(postId).get();
+        }
 
         if (!postDoc.exists) {
-          return errorResponse(res, 404, 'Post not found');
+          return errorResponse(res, 404, 'Post not found in any collection');
         }
 
         if (postDoc.data().userId !== userId) {
@@ -39,13 +47,16 @@ module.exports = async (req, res) => {
           ...postDoc.data(),
         });
       } else {
-        // Get all posts with pagination
+        // Get all AI-generated posts with pagination from main 'posts' collection
         const { status = 'all', limit = 10, page = 1 } = req.query;
         const limitNum = Math.min(parseInt(limit) || 10, 100);
         const pageNum = Math.max(parseInt(page) || 1, 1);
         const offset = (pageNum - 1) * limitNum;
 
-        let query = db.collection('ai_posts').where('userId', '==', userId);
+        // Unified query: Look at 'posts' where is_ai_generated is true
+        let query = db.collection('posts')
+          .where('userId', '==', userId)
+          .where('is_ai_generated', '==', true);
 
         if (status && status !== 'all') {
           query = query.where('status', '==', status);
