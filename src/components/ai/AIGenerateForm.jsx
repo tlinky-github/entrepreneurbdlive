@@ -222,6 +222,10 @@ export const AIGenerateForm = ({ onPostGenerated, onClose }) => {
 
         const targetLength = formData.targetLength === 'custom' ? formData.customLength : formData.targetLength;
 
+        // Lookup names for denormalization
+        const selectedAuthor = authors.find(a => a.id == formData.authorId);
+        const selectedCategory = categories.find(c => c.id == formData.categoryId);
+
         await aiAPI.generatePost({
           provider: formData.provider,
           profileIndex: parseInt(formData.profileIndex),
@@ -237,7 +241,9 @@ export const AIGenerateForm = ({ onPostGenerated, onClose }) => {
           temperature: parseFloat(formData.temperature),
           maxTokens: parseInt(formData.maxTokens),
           authorId: formData.authorId || null,
+          authorName: selectedAuthor?.name || null,
           categoryId: formData.categoryId || null,
+          categoryName: selectedCategory?.name || null,
           scheduledAt: formData.isScheduled ? formData.scheduledAt : null,
           tokenMode: formData.tokenMode || 'auto',
         });
@@ -279,6 +285,10 @@ export const AIGenerateForm = ({ onPostGenerated, onClose }) => {
 
       const targetLength = formData.targetLength === 'custom' ? formData.customLength : formData.targetLength;
 
+      // Lookup names for denormalization
+      const selectedAuthor = authors.find(a => a.id == formData.authorId);
+      const selectedCategory = categories.find(c => c.id == formData.categoryId);
+
       const result = await aiAPI.generatePost({
         provider: formData.provider,
         profileIndex: parseInt(formData.profileIndex),
@@ -294,7 +304,9 @@ export const AIGenerateForm = ({ onPostGenerated, onClose }) => {
         temperature: parseFloat(formData.temperature),
         maxTokens: parseInt(formData.maxTokens),
         authorId: formData.authorId || null,
+        authorName: selectedAuthor?.name || null,
         categoryId: formData.categoryId || null,
+        categoryName: selectedCategory?.name || null,
         scheduledAt: formData.isScheduled ? formData.scheduledAt : null,
         tokenMode: formData.tokenMode || 'auto',
       });

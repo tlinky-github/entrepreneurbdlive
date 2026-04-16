@@ -34,7 +34,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '../../components/ui/alert-dialog';
-import { contentAPI, categoryAPI, adminAPI } from '../../lib/api';
+import { contentAPI, categoryAPI, blogCategoryAPI, adminAPI } from '../../lib/api';
 import './AdminContentManager.css';
 
 const AdminContentManager = () => {
@@ -98,8 +98,18 @@ const AdminContentManager = () => {
 
   const loadCategories = useCallback(async () => {
     try {
-      const res = await categoryAPI.list();
-      setCategories(res.data || []);
+      // Fetch both collections to ensure lookup success regardless of data origin
+      const [blogCats, generalCats] = await Promise.all([
+        blogCategoryAPI.list(),
+        categoryAPI.list()
+      ]);
+      
+      const combined = [...(blogCats.data || []), ...(generalCats.data || [])];
+      
+      // Remove duplicates by ID
+      const unique = Array.from(new Map(combined.map(item => [item.id, item])).values());
+      
+      setCategories(unique);
     } catch (error) {
       console.error('Error loading categories:', error);
     }
@@ -273,7 +283,14 @@ const AdminContentManager = () => {
                 </TableHeader>
                 <TableBody>
                   {filteredItems.map((item) => {
-                    const catName = categories.find(c => c.id === item.category_id)?.name || '-';
+                    // Smart category lookup: checks category_id, then category name field
+                    const categoryVal = item.category_id || item.category;
+                    
+                    const catName = categories.find(c => 
+                      String(c.id) === String(categoryVal) || 
+                      c.name === categoryVal
+                    )?.name || categoryVal || '-';
+
                     const title = item.title || item.slug || item.company_name || `${item.first_name} ${item.last_name}`;
 
                     return (

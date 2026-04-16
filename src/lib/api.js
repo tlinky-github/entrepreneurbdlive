@@ -62,7 +62,7 @@ export const postAPI = {
       let constraints = [];
       
       if (params.category_id && params.category_id !== 'all') {
-        constraints.push(where('category_id', '==', parseInt(params.category_id)));
+        constraints.push(where('category_id', '==', params.category_id));
       }
       
       // Status: explicitly provided, or default to 'published' unless admin

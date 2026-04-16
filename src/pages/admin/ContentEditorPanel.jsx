@@ -206,7 +206,7 @@ const ContentEditorPanel = () => {
             setTitle(data.title || '');
             setSlug(data.slug || '');
             setExcerpt(data.excerpt || '');
-            setCategory(data.category_id?.toString() || '');
+            setCategory(data.category_id || '');
             setStatus(data.status || 'draft');
             setFeaturedImage(data.featured_image || '');
             setSeoTitle(data.seo_title || '');
@@ -488,13 +488,18 @@ const ContentEditorPanel = () => {
         }
       });
 
+      // Lookup names for denormalization
+      const selectedCategory = categories.find(cat => cat.id == category);
+      const selectedAuthor = authorsList.find(auth => auth.id == authorId);
+
       const payload = {
         type,
         title,
         slug,
         excerpt,
         content: contentHtml,
-        category_id: parseInt(category),
+        category_id: category, // Keep as string Firestore ID
+        category_name: selectedCategory?.name || '',
         // Priority: overrideStatus > current state status
         status: isScheduled ? 'scheduled' : (overrideStatus || status),
         scheduledAt: isScheduled ? scheduledAt : null,
@@ -525,6 +530,7 @@ const ContentEditorPanel = () => {
         industry,
         city,
         authorId,
+        author_name: selectedAuthor?.name || '',
         logo,
         photo,
         cover_image: coverImage,
