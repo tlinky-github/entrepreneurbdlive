@@ -26,7 +26,8 @@ import {
   Tag,
   Plus,
   UserCircle,
-  Image as ImageIcon
+  Image as ImageIcon,
+  AlertTriangle
 } from 'lucide-react';
 
 const AdminLayout = () => {
@@ -69,6 +70,7 @@ const AdminLayout = () => {
     { href: '/admin/media', label: 'Media', icon: ImageIcon },
     { href: '/admin/users', label: 'Users', icon: Users },
     { href: '/admin/ai-settings', label: '✨ AI Generator', icon: TrendingUp },
+    { href: '/admin/reports', label: 'Reports', icon: AlertTriangle },
     { href: '/admin/settings', label: 'Settings', icon: Settings },
   ];
 
@@ -135,6 +137,11 @@ const AdminLayout = () => {
                 {item.label === 'Entrepreneurs' && stats?.pending_approvals > 0 && (
                   <Badge className="ml-auto bg-red-500 text-white text-xs mr-2">
                     {stats.pending_approvals}
+                  </Badge>
+                )}
+                {item.label === 'Reports' && stats?.pending_reports > 0 && (
+                  <Badge className="ml-auto bg-orange-500 text-white text-xs mr-2 animate-pulse">
+                    {stats.pending_reports}
                   </Badge>
                 )}
                 {item.addType && (

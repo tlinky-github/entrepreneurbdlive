@@ -75,6 +75,7 @@ import ContentEditorPanel from './pages/admin/ContentEditorPanel';
 import AdminTaxonomies from './pages/admin/AdminTaxonomies';
 import AdminMedia from './pages/admin/AdminMedia';
 import AdminKnowledgeHub from './pages/admin/AdminKnowledgeHub';
+import AdminReports from './pages/admin/AdminReports';
 import TestEditor from './pages/admin/TestEditor';
 
 // Migrated Pages
@@ -179,6 +180,7 @@ function AppRoutes() {
         <Route path="settings" element={<AdminSettings />} />
         <Route path="ai-settings" element={<AISettings />} />
         <Route path="analytics" element={<AdminAnalytics />} />
+        <Route path="reports" element={<AdminReports />} />
       </Route>
 
       <Route

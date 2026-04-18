@@ -151,5 +151,11 @@ service cloud.firestore {
       allow read, create: if true;
       allow update, delete: if isAdmin();
     }
+
+    // Comment Reports: Anyone can create, only admins can read/update/delete
+    match /comment_reports/{reportId} {
+      allow create: if true;
+      allow read, update, delete: if isAdmin();
+    }
   }
 }

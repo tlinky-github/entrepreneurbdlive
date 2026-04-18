@@ -19,8 +19,11 @@ export const SEO = ({
 
     // Merge: Props > Static Config > Default Config
     // Prioritize ogImage for social sharing if provided
+    const baseTitle = title || staticConfig.title || defaultConfig.title;
+    const brandedTitle = baseTitle.includes('Entrepreneurs BD') ? baseTitle : `${baseTitle} | Entrepreneurs BD`;
+
     const meta = {
-        title: title || staticConfig.title || defaultConfig.title,
+        title: brandedTitle,
         description: description || staticConfig.description || defaultConfig.description,
         image: ogImage || image || staticConfig.image || defaultConfig.image,
         type: type || staticConfig.type || defaultConfig.type,

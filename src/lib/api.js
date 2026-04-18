@@ -543,6 +543,33 @@ export const commentAPI = {
       console.error('Comment Delete Error:', error);
       throw error;
     }
+  },
+  update: async (id, content) => {
+    try {
+      await updateDoc(doc(db, 'comments', id), {
+        content,
+        updated_at: serverTimestamp(),
+        is_edited: true
+      });
+      return { success: true };
+    } catch (error) {
+      console.error('Comment Update Error:', error);
+      throw error;
+    }
+  },
+  report: async (commentId, reason) => {
+    try {
+      await addDoc(collection(db, 'comment_reports'), {
+        comment_id: commentId,
+        reason,
+        status: 'pending',
+        created_at: serverTimestamp()
+      });
+      return { success: true };
+    } catch (error) {
+      console.error('Comment Report Error:', error);
+      throw error;
+    }
   }
 };
 
@@ -550,13 +577,14 @@ export const commentAPI = {
 export const adminAPI = {
   getStats: async () => {
     try {
-      const [postsSnap, profilesSnap, listingsSnap, resourcesSnap, usersSnap, pendingSnap] = await Promise.all([
+      const [postsSnap, profilesSnap, listingsSnap, resourcesSnap, usersSnap, pendingSnap, reportsSnap] = await Promise.all([
         getDocs(collection(db, 'posts')),
         getDocs(collection(db, 'profiles')),
         getDocs(collection(db, 'listings')),
         getDocs(collection(db, 'resources')),
         getDocs(collection(db, 'users')),
-        getDocs(query(collection(db, 'profiles'), where('status', '==', 'pending')))
+        getDocs(query(collection(db, 'profiles'), where('status', '==', 'pending'))),
+        getDocs(query(collection(db, 'comment_reports'), where('status', '==', 'pending')))
       ]);
 
       return {
@@ -566,7 +594,8 @@ export const adminAPI = {
           total_listings: listingsSnap.size,
           total_resources: resourcesSnap.size,
           total_users: usersSnap.size,
-          pending_approvals: pendingSnap.size
+          pending_approvals: pendingSnap.size,
+          pending_reports: reportsSnap.size
         }
       };
     } catch (error) {

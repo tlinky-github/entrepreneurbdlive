@@ -31,8 +31,34 @@ import {
   Globe,
   Send,
   Reply,
-  CornerDownRight
+  CornerDownRight,
+  Trash2,
+  AlertTriangle,
+  MoreVertical,
+  Flag,
+  Edit2,
+  Check,
+  X
 } from 'lucide-react';
+import { format, isToday, isYesterday } from 'date-fns';
+
+const formatRelativeDate = (date) => {
+  if (!date) return 'Recently Published';
+  try {
+    const d = date.seconds ? new Date(date.seconds * 1000) : new Date(date);
+    if (isNaN(d.getTime())) return 'Recently Published';
+    
+    if (isToday(d)) {
+      return `Today, ${format(d, 'h:mm a')}`;
+    }
+    if (isYesterday(d)) {
+      return `Yesterday, ${format(d, 'h:mm a')}`;
+    }
+    return format(d, 'MMM d, yyyy');
+  } catch (error) {
+    return 'Recently Published';
+  }
+};
 
 const BlogDetail = () => {
   const { slug } = useParams();
@@ -51,8 +77,46 @@ const BlogDetail = () => {
   const [authorData, setAuthorData] = useState(null);
   const [openFaqIndex, setOpenFaqIndex] = useState(null);
   const [relatedPosts, setRelatedPosts] = useState([]);
+  const [activeReplyId, setActiveReplyId] = useState(null);
+  const [editingCommentId, setEditingCommentId] = useState(null);
+  const [editContent, setEditContent] = useState('');
+  const [reportingCommentId, setReportingCommentId] = useState(null);
   const turnstileRef = useRef(null);
   const turnstileWidgetId = useRef(null);
+
+  const handleDeleteComment = async (id) => {
+    if (window.confirm('Are you sure you want to delete this comment?')) {
+      try {
+        await commentAPI.delete(id);
+        setComments(prev => prev.filter(c => c.id !== id));
+        toast.success('Comment deleted');
+      } catch (error) {
+        toast.error('Failed to delete comment');
+      }
+    }
+  };
+  
+  const handleUpdateComment = async (id) => {
+    if (!editContent.trim()) return;
+    try {
+      await commentAPI.update(id, editContent.trim());
+      setComments(prev => prev.map(c => c.id === id ? { ...c, content: editContent.trim(), is_edited: true } : c));
+      setEditingCommentId(null);
+      toast.success('Comment updated');
+    } catch (error) {
+      toast.error('Failed to update comment');
+    }
+  };
+
+  const handleReportComment = async (id) => {
+    try {
+      await commentAPI.report(id, 'Spam or Inappropriate');
+      setReportingCommentId(id);
+      toast.success('Report submitted to admins');
+    } catch (error) {
+      toast.error('Failed to submit report');
+    }
+  };
 
   // Render Turnstile widget
   const renderTurnstile = useCallback(() => {
@@ -318,12 +382,10 @@ const BlogDetail = () => {
                  </div>
                )}
              </div>
-             <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4" />
-                {post.created_at?.seconds 
-                  ? new Date(post.created_at.seconds * 1000).toLocaleDateString()
-                  : 'Recently Published'}
-             </div>
+              <div className="flex items-center gap-2">
+                 <Calendar className="w-4 h-4" />
+                 {formatRelativeDate(post.created_at)}
+              </div>
              <div className="flex items-center gap-2">
                 <Clock className="w-4 h-4" />
                 {readingTime} min read
@@ -551,7 +613,7 @@ const BlogDetail = () => {
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-400" />
                 <Input
                   placeholder="Your name"
-                  value={isAuthenticated ? (user?.displayName || 'Admin') : commenterName}
+                  value={isAuthenticated ? (user?.name || 'Admin') : commenterName}
                   onChange={(e) => setCommenterName(e.target.value)}
                   disabled={isAuthenticated}
                   className="pl-10"
@@ -602,14 +664,14 @@ const BlogDetail = () => {
               <Button
                 onClick={async (e) => {
                   e.preventDefault();
-                  const name = isAuthenticated ? (user?.displayName || 'Admin') : commenterName.trim();
+                  const name = isAuthenticated ? (user?.name || 'Admin') : commenterName.trim();
                   if (!name) { toast.error('Please enter your name'); return; }
                   if (!newComment.trim()) { toast.error('Please write a comment'); return; }
                   if (!turnstileToken) { toast.error('Please complete the captcha'); return; }
 
                   setSubmittingComment(true);
                   try {
-                    const res = await commentAPI.create({
+                    const commentPayload = {
                       content: newComment.trim(),
                       content_type: 'blog',
                       content_id: post.id,
@@ -617,13 +679,19 @@ const BlogDetail = () => {
                       name,
                       gender: isAuthenticated ? 'admin' : commenterGender,
                       is_admin: isAuthenticated,
-                      admin_name: isAuthenticated ? user?.displayName : null,
+                      admin_name: isAuthenticated ? (user?.name || 'Admin') : null,
                       admin_photo: isAuthenticated ? user?.photoURL : null,
-                    }, turnstileToken);
+                    };
+
+                    const res = await commentAPI.create(commentPayload, turnstileToken);
+                    
+                    // Add the comment to the local list
                     setComments(prev => [res.data, ...prev]);
                     setNewComment('');
                     setReplyTo(null);
+                    setActiveReplyId(null);
                     toast.success('Comment posted!');
+                    
                     // Reset turnstile
                     if (window.turnstile && turnstileWidgetId.current) {
                       window.turnstile.reset(turnstileWidgetId.current);
@@ -647,6 +715,16 @@ const BlogDetail = () => {
             </div>
           </div>
 
+          <div className="flex items-center justify-between mb-8">
+             <h2 className="text-2xl font-bold text-stone-900 flex items-center gap-3">
+               <MessageCircle className="w-6 h-6" />
+               Comments ({comments.length})
+             </h2>
+             <Button variant="outline" size="sm" onClick={() => { setReplyTo(null); setActiveReplyId(null); document.getElementById('comments')?.scrollIntoView({ behavior: 'smooth' }); }}>
+                Post New Comment
+             </Button>
+          </div>
+
           {/* Comments List */}
           {comments.length === 0 ? (
             <div className="text-center py-12 bg-stone-50 rounded-xl border border-stone-200">
@@ -660,15 +738,93 @@ const BlogDetail = () => {
                 const topLevel = comments.filter(c => !c.parent_id);
                 const replies = comments.filter(c => c.parent_id);
 
-                const renderComment = (comment, isReply = false) => {
+                const renderCommentFormLocal = (parentId = null, replyName = '') => (
+                  <div className={`bg-stone-50 border border-stone-200 rounded-xl p-4 md:p-6 mb-4 ${parentId ? 'mt-4 border-emerald-100 bg-emerald-50/20' : ''}`}>
+                    <div className="flex items-center justify-between mb-4">
+                      <span className="text-sm font-medium text-stone-700 flex items-center gap-2">
+                        {parentId ? <CornerDownRight className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+                        {parentId ? `Replying to ${replyName}` : 'Share your thoughts'}
+                      </span>
+                      {parentId && (
+                        <button onClick={() => { setReplyTo(null); setActiveReplyId(null); }} className="text-xs text-stone-400 hover:text-stone-600">Cancel</button>
+                      )}
+                    </div>
+                    
+                    {!isAuthenticated && (
+                      <div className="flex flex-col sm:flex-row gap-4 mb-4">
+                        <Input
+                          placeholder="Your name"
+                          value={commenterName}
+                          onChange={(e) => setCommenterName(e.target.value)}
+                          className="bg-white"
+                        />
+                        <div className="flex items-center gap-2">
+                          <button onClick={() => setCommenterGender('male')} className={`px-3 py-1 text-xs rounded-full ${commenterGender === 'male' ? 'bg-blue-500 text-white' : 'bg-white border border-stone-200 text-stone-600'}`}>Male</button>
+                          <button onClick={() => setCommenterGender('female')} className={`px-3 py-1 text-xs rounded-full ${commenterGender === 'female' ? 'bg-pink-500 text-white' : 'bg-white border border-stone-200 text-stone-600'}`}>Female</button>
+                        </div>
+                      </div>
+                    )}
+
+                    <Textarea
+                      placeholder="Write your comment..."
+                      value={newComment}
+                      onChange={(e) => setNewComment(e.target.value.slice(0, 500))}
+                      rows={parentId ? 2 : 3}
+                      className="bg-white resize-none mb-4"
+                    />
+
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                      <div ref={parentId ? null : turnstileRef} className="scale-90 origin-left" />
+                      <Button
+                        size="sm"
+                        onClick={async (e) => {
+                          e.preventDefault();
+                          const name = isAuthenticated ? (user?.name || 'Admin') : commenterName.trim();
+                          if (!name) { toast.error('Please enter your name'); return; }
+                          if (!newComment.trim()) { toast.error('Please write a comment'); return; }
+                          if (!turnstileToken) { toast.error('Please complete the captcha'); return; }
+
+                          setSubmittingComment(true);
+                          try {
+                            const res = await commentAPI.create({
+                              content: newComment.trim(),
+                              content_type: 'blog',
+                              content_id: post.id,
+                              parent_id: parentId,
+                              name,
+                              gender: isAuthenticated ? 'admin' : commenterGender,
+                              is_admin: isAuthenticated,
+                              admin_name: isAuthenticated ? (user?.name || 'Admin') : null,
+                              admin_photo: isAuthenticated ? user?.photoURL : null,
+                            }, turnstileToken);
+                            
+                            setComments(prev => [res.data, ...prev]);
+                            setNewComment('');
+                            setReplyTo(null);
+                            setActiveReplyId(null);
+                            toast.success('Comment posted!');
+                          } catch (error) {
+                            toast.error('Failed to post comment');
+                          } finally {
+                            setSubmittingComment(false);
+                          }
+                        }}
+                        disabled={submittingComment || !turnstileToken}
+                        className="bg-emerald-900 text-white w-full sm:w-auto"
+                      >
+                        {submittingComment ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Post Comment'}
+                      </Button>
+                    </div>
+                  </div>
+                );
+
+                const renderCommentNode = (comment, isReply = false) => {
                   const childReplies = replies.filter(r => r.parent_id === comment.id);
-                  const isAdmin = comment.is_admin;
+                  const isCommentAdmin = comment.is_admin;
+                  const isCurrentAdmin = isAuthenticated && (user?.role === 'super_admin' || user?.role === 'editor');
                   
-                  // Generate Avatar URL
-                  // For admins: use their photo or a specific admin-themed avatar
-                  // For others: use DiceBear seeded by their name
                   let avatarUrl;
-                  if (isAdmin) {
+                  if (isCommentAdmin) {
                     avatarUrl = comment.admin_photo || `https://api.dicebear.com/7.x/bottts/svg?seed=${comment.name || 'Admin'}&backgroundColor=059669`;
                   } else {
                     const style = comment.gender === 'female' ? 'lorelei' : 'avataaars';
@@ -676,69 +832,106 @@ const BlogDetail = () => {
                   }
 
                   return (
-                    <div key={comment.id} className={`${isReply ? 'ml-8 md:ml-12 border-l-2 border-emerald-100 pl-4 md:pl-6' : 'border-b border-stone-100 last:border-b-0'} py-6`}>
+                    <div key={comment.id} className={`${isReply ? 'ml-8 md:ml-12 border-l-2 border-emerald-100 pl-4 md:pl-6' : 'border-b border-stone-100 last:border-b-0'} py-6 group/comment`}>
                       <div className="flex gap-4">
-                        {/* Avatar */}
                         <div className="w-11 h-11 rounded-full flex-shrink-0 border border-stone-100 shadow-sm overflow-hidden bg-white">
-                          <img 
-                            src={avatarUrl} 
-                            alt={comment.name} 
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              e.target.src = `https://api.dicebear.com/7.x/initials/svg?seed=${comment.name}`;
-                            }}
-                          />
+                          <img src={avatarUrl} alt={comment.name} className="w-full h-full object-cover" />
                         </div>
 
-                        {/* Content */}
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                            <span className="font-bold text-stone-900 text-sm whitespace-nowrap">{comment.name}</span>
-                            {isAdmin && (
-                              <div className="flex items-center gap-1">
-                                {(comment.name === post.author_name || comment.admin_name === post.author_name) ? (
-                                  <Badge className="bg-emerald-600 text-white text-[10px] px-2 py-0 border-none">Author</Badge>
-                                ) : (
-                                  <Badge className="bg-stone-600 text-white text-[10px] px-2 py-0 border-none">Admin</Badge>
-                                )}
-                              </div>
-                            )}
-                            <span className="text-xs text-stone-400 whitespace-nowrap">
-                              {(comment.created_at || comment.createdAt)
-                                ? new Date(comment.created_at || comment.createdAt).toLocaleDateString('en-US', { 
-                                    month: 'short', 
-                                    day: 'numeric',
-                                    year: 'numeric',
-                                    hour: '2-digit',
-                                    minute: '2-digit'
-                                  })
-                                : 'Just now'}
-                            </span>
+                          <div className="flex items-center gap-2 mb-1.5 flex-wrap justify-between">
+                            <div className="flex items-center gap-2">
+                               <span className="font-bold text-stone-900 text-sm whitespace-nowrap">
+                                  {isCommentAdmin ? (comment.admin_name || comment.name) : comment.name}
+                               </span>
+                               {isCommentAdmin && (
+                                 <Badge className="bg-emerald-600 text-white text-[10px] px-2 py-0 border-none">
+                                    {(comment.admin_name === post.author_name || comment.name === post.author_name) ? 'Author' : 'Admin'}
+                                 </Badge>
+                               )}
+                               <span className="text-xs text-stone-400 whitespace-nowrap">
+                                 {formatRelativeDate(comment.created_at || comment.createdAt)}
+                               </span>
+                            </div>
+                            
+                            {/* Moderation Actions */}
+                            <div className="flex items-center gap-2 opacity-0 group-hover/comment:opacity-100 transition-opacity">
+                               {isCurrentAdmin && (
+                                 <>
+                                   <button 
+                                     onClick={() => {
+                                       setEditingCommentId(comment.id);
+                                       setEditContent(comment.content);
+                                     }} 
+                                     className="text-stone-400 hover:text-emerald-600 transition-colors" 
+                                     title="Edit Comment"
+                                   >
+                                     <Edit2 className="w-4 h-4" />
+                                   </button>
+                                   <button onClick={() => handleDeleteComment(comment.id)} className="text-stone-400 hover:text-red-500 transition-colors" title="Delete Comment">
+                                     <Trash2 className="w-4 h-4" />
+                                   </button>
+                                 </>
+                               )}
+                               {!isCurrentAdmin && reportingCommentId !== comment.id && (
+                                 <button onClick={() => handleReportComment(comment.id)} className="text-stone-400 hover:text-orange-500 transition-colors" title="Report Comment">
+                                   <Flag className="w-4 h-4" />
+                                 </button>
+                               )}
+                               {reportingCommentId === comment.id && <span className="text-[10px] text-orange-500 font-medium bg-orange-50 px-1.5 py-0.5 rounded">Reported</span>}
+                            </div>
                           </div>
-                          <p className="text-stone-700 text-[15px] leading-relaxed whitespace-pre-wrap">{comment.content}</p>
-                          <button
-                            onClick={() => {
-                              setReplyTo({ id: comment.id, name: comment.name });
-                              document.getElementById('comments')?.scrollIntoView({ behavior: 'smooth' });
-                            }}
-                            className="mt-3 text-xs text-emerald-700 hover:text-emerald-800 font-semibold flex items-center gap-1.5 transition-colors"
-                          >
-                            <Reply className="w-3.5 h-3.5" /> Reply
-                          </button>
+                          
+                          {editingCommentId === comment.id ? (
+                            <div className="mt-2 space-y-3">
+                              <Textarea
+                                value={editContent}
+                                onChange={(e) => setEditContent(e.target.value)}
+                                className="bg-white border-emerald-100 focus:border-emerald-500 min-h-[100px]"
+                                autoFocus
+                              />
+                              <div className="flex gap-2">
+                                <Button size="sm" onClick={() => handleUpdateComment(comment.id)} className="bg-emerald-900 text-white">
+                                  <Check className="w-4 h-4 mr-1" /> Save Changes
+                                </Button>
+                                <Button size="sm" variant="outline" onClick={() => setEditingCommentId(null)}>
+                                  <X className="w-4 h-4 mr-1" /> Cancel
+                                </Button>
+                              </div>
+                            </div>
+                          ) : (
+                            <>
+                              <p className="text-stone-700 text-[15px] leading-relaxed whitespace-pre-wrap">
+                                {comment.content}
+                                {comment.is_edited && <span className="ml-2 text-[10px] text-stone-400 italic">(edited)</span>}
+                              </p>
+                              <button
+                                onClick={() => {
+                                  setActiveReplyId(activeReplyId === comment.id ? null : comment.id);
+                                  setReplyTo({ id: comment.id, name: comment.name });
+                                }}
+                                className="mt-3 text-xs text-emerald-700 hover:text-emerald-800 font-semibold flex items-center gap-1.5 transition-colors"
+                              >
+                                <Reply className="w-3.5 h-3.5" /> {activeReplyId === comment.id ? 'Cancel Reply' : 'Reply'}
+                              </button>
+                            </>
+                          )}
+
+                          {/* Inline Reply Form */}
+                          {activeReplyId === comment.id && renderCommentFormLocal(comment.id, comment.name)}
                         </div>
                       </div>
 
-                      {/* Nested replies */}
                       {childReplies.length > 0 && (
                         <div className="mt-2">
-                          {childReplies.map(reply => renderComment(reply, true))}
+                          {childReplies.map(reply => renderCommentNode(reply, true))}
                         </div>
                       )}
                     </div>
                   );
                 };
 
-                return topLevel.map(c => renderComment(c));
+                return topLevel.map(c => renderCommentNode(c));
               })()}
             </div>
           )}
