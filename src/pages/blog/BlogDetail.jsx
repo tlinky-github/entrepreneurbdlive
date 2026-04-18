@@ -619,7 +619,7 @@ const BlogDetail = () => {
                       is_admin: isAuthenticated,
                       admin_name: isAuthenticated ? user?.displayName : null,
                       admin_photo: isAuthenticated ? user?.photoURL : null,
-                    });
+                    }, turnstileToken);
                     setComments(prev => [res.data, ...prev]);
                     setNewComment('');
                     setReplyTo(null);

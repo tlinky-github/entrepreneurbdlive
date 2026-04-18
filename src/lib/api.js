@@ -509,22 +509,27 @@ export const commentAPI = {
       return { data: [] };
     }
   },
-  create: async (data) => {
+  create: async (data, turnstileToken) => {
     try {
-      const commentDoc = {
-        content_type: data.content_type,
-        content_id: data.content_id,
-        parent_id: data.parent_id || null,
-        name: data.name,
-        gender: data.gender || 'male',
-        content: data.content,
-        is_admin: data.is_admin || false,
-        admin_name: data.admin_name || null,
-        admin_photo: data.admin_photo || null,
-        created_at: serverTimestamp(),
+      const response = await fetch('/api/comments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          token: turnstileToken,
+          commentData: data
+        })
+      });
+
+      const result = await response.json();
+      if (!result.success) throw new Error(result.error);
+
+      return { 
+        data: { 
+          id: result.id, 
+          ...data, 
+          created_at: new Date() 
+        } 
       };
-      const ref = await addDoc(collection(db, 'comments'), commentDoc);
-      return { data: { id: ref.id, ...commentDoc, created_at: new Date() } };
     } catch (error) {
       console.error('Comment Create Error:', error);
       throw error;
