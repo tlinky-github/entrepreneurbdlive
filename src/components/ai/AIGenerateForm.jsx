@@ -83,7 +83,7 @@ export const AIGenerateForm = ({ onPostGenerated, onClose }) => {
         model: providerConfig.models[0],
       }));
     }
-  }, [formData.provider, providers, loading]);
+  }, [formData.provider, providers, loading, providerConfig]);
 
   const loadMetadata = async () => {
     try {
