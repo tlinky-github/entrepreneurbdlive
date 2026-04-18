@@ -27,7 +27,8 @@ import {
   Plus,
   UserCircle,
   Image as ImageIcon,
-  AlertTriangle
+  AlertTriangle,
+  Inbox,
 } from 'lucide-react';
 
 const AdminLayout = () => {
@@ -59,8 +60,8 @@ const AdminLayout = () => {
   }, [isAdmin, navigate]);
 
   const menuItems = [
-    { href: '/admin', label: 'Dashboard', icon: LayoutDashboard, exact: true },
     { href: '/admin/content-manager', label: 'Content Manager', icon: BookOpen },
+    { href: '/admin/submissions', label: 'Submissions', icon: Inbox },
     { href: '/admin/knowledge-hub', label: 'Knowledge Hub', icon: BookOpen },
     { href: '/admin/posts', label: 'Blog Posts', icon: FileText, addType: 'blog' },
     { href: '/admin/authors', label: 'Authors', icon: UserCircle },
@@ -137,6 +138,11 @@ const AdminLayout = () => {
                 {item.label === 'Entrepreneurs' && stats?.pending_approvals > 0 && (
                   <Badge className="ml-auto bg-red-500 text-white text-xs mr-2">
                     {stats.pending_approvals}
+                  </Badge>
+                )}
+                {item.label === 'Submissions' && (stats?.pending_public_submissions > 0) && (
+                  <Badge className="ml-auto bg-blue-500 text-white text-xs mr-2 animate-pulse">
+                    {stats.pending_public_submissions}
                   </Badge>
                 )}
                 {item.label === 'Reports' && stats?.pending_reports > 0 && (

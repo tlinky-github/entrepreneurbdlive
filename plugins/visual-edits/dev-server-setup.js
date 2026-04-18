@@ -92,6 +92,10 @@ function setupDevServer(config) {
       handleApiRoute(req, res, "api/media-handler.js");
     });
 
+    devServer.app.all("/api/public-handler", (req, res) => {
+      handleApiRoute(req, res, "api/public-handler.js");
+    });
+
     // ✅ Protected file editing endpoint with AST processing
     devServer.app.post("/edit-file", (req, res) => {
       // Validate and set CORS headers

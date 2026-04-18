@@ -760,7 +760,10 @@ const ContentEditorPanel = () => {
             disabled={saving || publishing}
             style={{ backgroundColor: '#10b981', color: 'white' }}
           >
-            {publishing ? 'Publishing...' : isScheduled ? 'Schedule' : status === 'published' ? 'Update' : 'Publish'}
+            {publishing ? 'Publishing...' : 
+             isScheduled ? 'Schedule' : 
+             status === 'published' ? 'Update' : 
+             status === 'pending' ? 'Approve & Publish' : 'Publish'}
           </button>
         </div>
       </div>

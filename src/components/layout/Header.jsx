@@ -25,7 +25,8 @@ import {
   Mail,
   PenTool,
   MessageCircle,
-  Library
+  Library,
+  Plus
 } from 'lucide-react';
 
 const Header = () => {
@@ -124,6 +125,13 @@ const Header = () => {
 
           {/* Right side */}
           <div className="flex items-center gap-3">
+            <Link to="/submit" className="hidden lg:block">
+              <Button variant="outline" className="border-emerald-900/20 text-emerald-900 hover:bg-emerald-50 gap-2">
+                <Plus className="w-4 h-4" />
+                Get Listed
+              </Button>
+            </Link>
+
             {isAuthenticated ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -251,6 +259,16 @@ const Header = () => {
                 </Link>
               );
             })}
+            <div className="pt-4 border-t border-stone-100">
+              <Link
+                to="/submit"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-3 px-4 py-3 rounded-md text-sm font-semibold bg-emerald-900 text-white"
+              >
+                <Plus className="w-5 h-5" />
+                Get Listed
+              </Link>
+            </div>
           </nav>
         </div>
       )}

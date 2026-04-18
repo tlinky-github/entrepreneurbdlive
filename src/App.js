@@ -51,6 +51,8 @@ import DirectoryDetail from './pages/directory/DirectoryDetail';
 import ResourceList from './pages/resources/ResourceList';
 import ResourceDetail from './pages/resources/ResourceDetail';
 import AuthorDetail from './pages/AuthorDetail';
+import SubmissionPage from './pages/submit/SubmissionPage';
+import SubmissionSuccess from './pages/submit/SubmissionSuccess';
 
 // Auth Pages
 import Login from './pages/auth/Login';
@@ -76,6 +78,7 @@ import AdminTaxonomies from './pages/admin/AdminTaxonomies';
 import AdminMedia from './pages/admin/AdminMedia';
 import AdminKnowledgeHub from './pages/admin/AdminKnowledgeHub';
 import AdminReports from './pages/admin/AdminReports';
+import AdminSubmissions from './pages/admin/AdminSubmissions';
 import TestEditor from './pages/admin/TestEditor';
 
 // Migrated Pages
@@ -139,6 +142,8 @@ function AppRoutes() {
       <Route path="/entrepreneurs/:slug" element={<PublicLayout><EntrepreneurDetail /></PublicLayout>} />
       <Route path="/directory" element={<PublicLayout><DirectoryList /></PublicLayout>} />
       <Route path="/directory/:slug" element={<PublicLayout><DirectoryDetail /></PublicLayout>} />
+      <Route path="/submit" element={<PublicLayout><SubmissionPage /></PublicLayout>} />
+      <Route path="/submit/success" element={<PublicLayout><SubmissionSuccess /></PublicLayout>} />
       <Route path="/resources" element={<PublicLayout><ResourceList /></PublicLayout>} />
       <Route path="/resources/:slug" element={<PublicLayout><ResourceDetail /></PublicLayout>} />
       <Route path="/author/:slug" element={<PublicLayout><AuthorDetail /></PublicLayout>} />
@@ -180,6 +185,7 @@ function AppRoutes() {
         <Route path="settings" element={<AdminSettings />} />
         <Route path="ai-settings" element={<AISettings />} />
         <Route path="analytics" element={<AdminAnalytics />} />
+        <Route path="submissions" element={<AdminSubmissions />} />
         <Route path="reports" element={<AdminReports />} />
       </Route>
 
