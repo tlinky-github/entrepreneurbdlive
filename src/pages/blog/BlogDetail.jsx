@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { MDXProvider } from '@mdx-js/react';
 import { postAPI, commentAPI, interactionAPI, authorAPI } from '../../lib/api';
 import CustomCodeInjector from '../../components/common/CustomCodeInjector';
 import { useAuth } from '../../lib/auth';
@@ -57,13 +56,18 @@ const BlogDetail = () => {
 
   // Render Turnstile widget
   const renderTurnstile = useCallback(() => {
-    if (turnstileRef.current && window.turnstile && !turnstileWidgetId.current) {
-      turnstileWidgetId.current = window.turnstile.render(turnstileRef.current, {
-        sitekey: '0x4AAAAAABfZv_YFcS2Rrwmh',
-        callback: (token) => setTurnstileToken(token),
-        'expired-callback': () => setTurnstileToken(null),
-        theme: 'light',
-      });
+    try {
+      if (turnstileRef.current && window.turnstile && !turnstileWidgetId.current) {
+        turnstileWidgetId.current = window.turnstile.render(turnstileRef.current, {
+          sitekey: process.env.REACT_APP_TURNSTILE_SITE_KEY,
+          callback: (token) => setTurnstileToken(token),
+          'expired-callback': () => setTurnstileToken(null),
+          'error-callback': (err) => console.error('Turnstile Error:', err),
+          theme: 'light',
+        });
+      }
+    } catch (err) {
+      console.error('Failed to render Turnstile:', err);
     }
   }, []);
 
@@ -340,71 +344,55 @@ const BlogDetail = () => {
         )}
 
         {/* Article Content with Inline FAQs */}
-        {post.content_component ? (
-          <div className="prose prose-lg max-w-none prose-headings:font-bold prose-headings:text-stone-900 prose-p:text-stone-700 prose-a:text-emerald-900 prose-strong:text-stone-900 prose-blockquote:border-emerald-900 prose-blockquote:text-stone-600">
-            <MDXProvider>
-              <post.content_component />
-            </MDXProvider>
-          </div>
-        ) : (
-          <div className="tiptap-content">
-            {(() => {
-              const content = post.content || post.content_html || '';
-              // Split content by our custom FAQ tag
-              const parts = content.split(/(<faq-section[^>]*><\/faq-section>)/g);
-              
-              return parts.map((part, index) => {
-                if (part.startsWith('<faq-section')) {
-                  // Extract data-faqs attribute
-                  try {
-                    const match = part.match(/data-faqs='([^']*)'/);
-                    if (match && match[1]) {
-                      const faqs = JSON.parse(match[1]);
-                      return (
-                        <div key={index} className="my-12 pt-8 border-t border-stone-200 bg-emerald-50/30 rounded-2xl p-6 md:p-8">
-                          <h2 className="text-2xl font-bold text-stone-900 mb-6 flex items-center gap-2">
-                            <CheckCircle className="w-6 h-6 text-emerald-700" />
-                            Frequently Asked Questions
-                          </h2>
-                          <div className="space-y-4">
-                            {faqs.map((faq, fIndex) => (
-                              <div 
-                                key={fIndex}
-                                className="bg-white border border-stone-200 rounded-xl overflow-hidden transition-all duration-200 shadow-sm"
+        <div className="tiptap-content">
+          {(() => {
+            const content = post.content || post.content_html || '';
+            if (!content) return null;
+            
+            const parts = content.split(/(<faq-section[^>]*><\/faq-section>)/g);
+            
+            return parts.map((part, index) => {
+              if (part.startsWith('<faq-section')) {
+                try {
+                  const match = part.match(/data-faqs='([^']*)'/);
+                  if (match && match[1]) {
+                    const faqs = JSON.parse(match[1]);
+                    return (
+                      <div key={`faq-${index}`} className="my-12 pt-8 border-t border-stone-200 bg-emerald-50/30 rounded-2xl p-6 md:p-8">
+                        <h2 className="text-2xl font-bold text-stone-900 mb-6 flex items-center gap-2">
+                          <CheckCircle className="w-6 h-6 text-emerald-700" />
+                          Frequently Asked Questions
+                        </h2>
+                        <div className="space-y-4">
+                          {faqs.map((faq, fIndex) => (
+                            <div key={`faq-item-${fIndex}`} className="bg-white border border-stone-200 rounded-xl overflow-hidden shadow-sm">
+                              <button
+                                onClick={() => setOpenFaqIndex(openFaqIndex === `faq-${index}-${fIndex}` ? null : `faq-${index}-${fIndex}`)}
+                                className="w-full flex items-center justify-between p-4 text-left hover:bg-stone-50 transition-colors"
                               >
-                                <button
-                                  onClick={() => setOpenFaqIndex(openFaqIndex === `inline-${index}-${fIndex}` ? null : `inline-${index}-${fIndex}`)}
-                                  className="w-full flex items-center justify-between p-4 text-left hover:bg-stone-50 transition-colors"
-                                >
-                                  <strong className="font-bold text-stone-900 pr-4">{faq.question || faq.q}</strong>
-                                  {openFaqIndex === `inline-${index}-${fIndex}` ? (
-                                    <Minus className="w-5 h-5 text-emerald-700 flex-shrink-0" />
-                                  ) : (
-                                    <Plus className="w-5 h-5 text-emerald-700 flex-shrink-0" />
-                                  )}
-                                </button>
-                                {openFaqIndex === `inline-${index}-${fIndex}` && (
-                                  <div className="px-4 pb-4 pt-0 text-stone-600 border-t border-stone-100 animate-in fade-in slide-in-from-top-1 duration-200">
-                                    <p className="mt-4 leading-relaxed whitespace-pre-wrap">{faq.answer || faq.a}</p>
-                                  </div>
-                                )}
-                              </div>
-                            ))}
-                          </div>
+                                <strong className="font-bold text-stone-900 pr-4">{faq.question || faq.q}</strong>
+                                {openFaqIndex === `faq-${index}-${fIndex}` ? <Minus className="w-5 h-5 text-emerald-700" /> : <Plus className="w-5 h-5 text-emerald-700" />}
+                              </button>
+                              {openFaqIndex === `faq-${index}-${fIndex}` && (
+                                <div className="px-4 pb-4 pt-0 text-stone-600 border-t border-stone-100 p-4">
+                                  <p className="leading-relaxed whitespace-pre-wrap">{faq.answer || faq.a}</p>
+                                </div>
+                              )}
+                            </div>
+                          ))}
                         </div>
-                      );
-                    }
-                  } catch (e) {
-                    console.error('Error parsing inline FAQs:', e);
+                      </div>
+                    );
                   }
-                  return null;
+                } catch (e) {
+                  console.error('FAQ Error:', e);
                 }
-                
-                return <div key={index} dangerouslySetInnerHTML={{ __html: part }} />;
-              })
-            })()}
-          </div>
-        )}
+                return null;
+              }
+              return <div key={`html-${index}`} dangerouslySetInnerHTML={{ __html: part }} />;
+            });
+          })()}
+        </div>
 
         {/* Author Bio Section */}
         {authorData && (
