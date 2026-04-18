@@ -53,7 +53,7 @@ const AdminPosts = () => {
   const loadPosts = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await postAPI.list({ search: search || undefined, limit: 50 });
+      const res = await postAPI.list({ search: search || undefined, limit: 50, isAdmin: true, status: 'all' });
       setPosts(res.data || []);
     } catch (error) {
       toast.error('Failed to load posts');

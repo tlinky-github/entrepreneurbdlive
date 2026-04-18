@@ -233,8 +233,9 @@ const ContentEditorPanel = () => {
             setPhone(data.phone || '');
             setWebsite(data.website || '');
 
-            if (data.content) {
-              editor.commands.setContent(data.content);
+            const fullContent = data.content_html || data.content;
+            if (fullContent) {
+              editor.commands.setContent(fullContent);
             }
             if (data.life_at_company && lifeAtCompanyEditor) {
               lifeAtCompanyEditor.commands.setContent(data.life_at_company);
@@ -251,10 +252,11 @@ const ContentEditorPanel = () => {
             setCustomHeadHtml(data.custom_head_html || '');
             
             // Load Scheduling
-            if (data.scheduledAt) {
+            const scheduledDateVal = data.scheduled_at || data.scheduledAt;
+            if (scheduledDateVal) {
               setIsScheduled(true);
               // Format for datetime-local input
-              const date = new Date(data.scheduledAt);
+              const date = new Date(scheduledDateVal);
               const formatted = date.toISOString().slice(0, 16);
               setScheduledAt(formatted);
             }
@@ -502,7 +504,7 @@ const ContentEditorPanel = () => {
         category_name: selectedCategory?.name || '',
         // Priority: overrideStatus > current state status
         status: isScheduled ? 'scheduled' : (overrideStatus || status),
-        scheduledAt: isScheduled ? scheduledAt : null,
+        scheduled_at: isScheduled ? scheduledAt : null,
         featured_image: featuredImage,
         seo_title: seoTitle,
         seo_description: seoDescription,
@@ -547,7 +549,9 @@ const ContentEditorPanel = () => {
         // Per-post custom code
         custom_css: customCss,
         custom_js: customJs,
-        custom_head_html: customHeadHtml
+        custom_head_html: customHeadHtml,
+        // Standardized timestamps
+        updated_at: new Date()
       };
 
       console.log('Saving content to database:', payload);

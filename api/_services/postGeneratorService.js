@@ -191,18 +191,39 @@ Next Section of Post (HTML):`;
 
       const title = titleResult.content.trim().replace(/^["']|["']$/g, '');
 
-      // Create post document
-      // Create post document with destination-specific data
+      // AI Snippet (Featured Snippet style direct answer)
+      const snippetPrompt = `Provide a "Featured Snippet" direct answer (max 160 chars) summarizing this post based on the title "${title}". 
+      It should be authoritative and answer the core topic directly for Google Search.
+      
+      Content: ${fullContent.substring(0, 1000)}
+      
+      Direct Answer Snippet (Plain Text):`;
+      
+      const snippetResult = await providerService.generateContent(apiKey, snippetPrompt, model, { 
+        maxTokens: 100, 
+        tokenMode: options.tokenMode 
+      });
+      const aiSnippet = snippetResult.content.trim().replace(/^["']|["']$/g, '');
+
+      // AI Overview (SGE Style block)
+      const overviewBlock = await this.generateSummary(apiKey, providerService, model, fullContent, options.tokenMode);
+
+      // Related Content Widget
       const isKnowledge = targetDestination === 'knowledge';
       const destinationCollection = isKnowledge ? 'resources' : 'posts';
-      
+      const relatedWidget = await this.getRelatedContentWidget(destinationCollection, options.categoryId, null);
+
+      // Assemble final HTML with premium additions
+      const finalizedContent = `${overviewBlock}\n\n${fullContent}\n\n${relatedWidget}`;
+
+      // Create post document
       const stripHtml = (html) => html.replace(/<[^>]*>?/gm, '').trim();
 
       const contentDoc = {
         userId,
         title: title || 'Untitled Post',
-        content_html: fullContent,
-        excerpt: stripHtml(fullContent).substring(0, 180) + '...',
+        content_html: finalizedContent,
+        excerpt: aiSnippet || stripHtml(fullContent).substring(0, 180) + '...',
         slug: (title || 'untitled').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
         status: targetStatus || 'draft',
         provider: provider.toLowerCase(),
@@ -213,10 +234,10 @@ Next Section of Post (HTML):`;
         category_name: options.categoryName || null,
         authorId: options.authorId || null,
         author_name: options.authorName || null,
-        scheduledAt: options.scheduledAt ? new Date(options.scheduledAt) : null,
+        scheduled_at: options.scheduledAt ? new Date(options.scheduledAt) : null,
         is_ai_generated: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        created_at: new Date(),
+        updated_at: new Date(),
       };
 
       // Add Knowledge-specific fields if needed
@@ -465,6 +486,85 @@ Raw JSON-LD object (do not include script tags yet)
       return logs;
     } catch (error) {
       throw new Error(`Failed to get logs: ${error.message}`);
+    }
+  },
+  
+  async generateSummary(apiKey, providerService, model, content, tokenMode) {
+    const summaryPrompt = `Based on the following blog content, generate a high-quality "Quick Overview" for an AI search snippet. 
+    
+Requirements:
+1. Provide 3-4 ultra-concise bullet points summarizing the key value.
+2. Structure the output as an HTML snippet.
+3. Use a <h4> tag with the text "Quick Overview" at the top.
+4. Wrap everything in a <aside class="ai-overview-block">.
+5. Do NOT use markdown. Use <ul> and <li>.
+
+Content: 
+${content.substring(0, 3000)}
+
+HTML Output:`;
+
+    try {
+      const result = await providerService.generateContent(apiKey, summaryPrompt, model, { 
+        maxTokens: 500,
+        tokenMode
+      });
+      return result.content || '';
+    } catch (e) {
+      console.error('Summary generation failed:', e);
+      return '';
+    }
+  },
+
+  async getRelatedContentWidget(destinationCollection, categoryId, excludeId) {
+    if (!categoryId) return '';
+    const db = getFirestore();
+    
+    try {
+      // Find 6 most recent published items in the same category
+      // For Blog (posts), it's category_id. For Knowledge (resources), it's category.
+      const collName = (destinationCollection === 'knowledge' || destinationCollection === 'resources') ? 'resources' : 'posts';
+      const catField = collName === 'resources' ? 'category' : 'category_id';
+      
+      let q = db.collection(collName)
+        .where('status', '==', 'published')
+        .where(catField, '==', categoryId);
+
+      const snapshot = await q.orderBy('created_at', 'desc').limit(7).get();
+      
+      const relatedItems = snapshot.docs
+        .filter(doc => doc.id !== excludeId)
+        .slice(0, 6)
+        .map(doc => ({ id: doc.id, ...doc.data() }));
+
+      if (relatedItems.length === 0) return '';
+
+      const itemsHtml = relatedItems.map(item => {
+        const routePrefix = destinationCollection === 'knowledge' ? '/knowledge' : '/blog';
+        const url = `${routePrefix}/${item.slug}`;
+        const imgSrc = item.featured_image || 'https://via.placeholder.com/400x225?text=No+Image';
+        
+        return `
+          <a href="${url}" class="related-post-card">
+            <div class="related-post-thumb">
+              <img src="${imgSrc}" alt="${item.title}" loading="lazy" />
+            </div>
+            <div class="related-post-title">${item.title}</div>
+          </a>
+        `;
+      }).join('');
+
+      return `
+        <section class="related-posts-widget">
+          <h3>Related Reading</h3>
+          <div class="related-posts-grid">
+            ${itemsHtml}
+          </div>
+        </section>
+      `;
+    } catch (e) {
+      console.error('Related widget failed:', e);
+      return '';
     }
   },
 };

@@ -76,20 +76,40 @@ export const postAPI = {
         constraints.push(where('is_featured', '==', true));
       }
 
-      let q = constraints.length > 0 
-        ? query(collection(db, 'posts'), ...constraints)
-        : collection(db, 'posts');
-      
-      if (!params.noSort) {
-        q = query(q, orderBy('created_at', 'desc'));
-      }
-      
-      if (params.limit) {
-        q = query(q, limit(params.limit));
+      // Try with orderBy first, fall back without it if Firestore index is missing
+      const buildQuery = (useSort) => {
+        let q = constraints.length > 0 
+          ? query(collection(db, 'posts'), ...constraints)
+          : collection(db, 'posts');
+        
+        if (useSort && !params.noSort) {
+          q = query(q, orderBy('created_at', 'desc'));
+        }
+        
+        if (params.limit) {
+          q = query(q, limit(params.limit));
+        }
+        return q;
+      };
+
+      let snapshot;
+      try {
+        snapshot = await getDocs(buildQuery(true));
+      } catch (indexError) {
+        // Firestore composite index missing — retry without orderBy
+        console.warn('Firestore index missing, retrying without sort:', indexError.message);
+        snapshot = await getDocs(buildQuery(false));
       }
 
-      const snapshot = await getDocs(q);
-      return { data: snapshot.docs.map(docToData) };
+      const results = snapshot.docs.map(docToData);
+      // Client-side sort fallback if we skipped orderBy
+      results.sort((a, b) => {
+        const da = a.created_at ? new Date(a.created_at) : new Date(0);
+        const db2 = b.created_at ? new Date(b.created_at) : new Date(0);
+        return db2 - da;
+      });
+
+      return { data: results };
     } catch (error) {
       console.error('Firestore Posts List Error:', error);
       return { data: [] };

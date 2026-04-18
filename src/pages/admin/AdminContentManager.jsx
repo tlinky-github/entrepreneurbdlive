@@ -196,7 +196,7 @@ const AdminContentManager = () => {
           <Button 
             variant="outline"
             className="border-emerald-600 text-emerald-800 hover:bg-emerald-50"
-            onClick={() => navigate('/admin/ai-generator')}
+            onClick={() => navigate('/admin/ai-settings?action=generate')}
           >
             <Plus size={18} className="mr-2" />
             ⚡ AI-Generate

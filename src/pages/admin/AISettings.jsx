@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../../components/ui/dialog';
 import { Button } from '../../components/ui/button';
@@ -16,6 +17,14 @@ import { Plus } from 'lucide-react';
 export const AISettings = () => {
   const [openGenerateDialog, setOpenGenerateDialog] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const { search } = useLocation();
+
+  useEffect(() => {
+    const params = new URLSearchParams(search);
+    if (params.get('action') === 'generate') {
+      setOpenGenerateDialog(true);
+    }
+  }, [search]);
 
   const handlePostGenerated = (post) => {
     // Refresh the post queue to show the new post

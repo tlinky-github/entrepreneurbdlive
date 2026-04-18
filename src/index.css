@@ -185,3 +185,109 @@ code {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
+
+/* AI Content Features */
+.ai-overview-block {
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border-left: 5px solid #065f46;
+  padding: 1.75rem;
+  border-radius: 0.75rem;
+  margin: 2rem 0;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.ai-overview-block h4 {
+  color: #064e3b;
+  font-size: 1.25rem;
+  margin: 0 0 0.75rem 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+
+.ai-overview-block ul {
+  margin: 0 !important;
+  list-style-type: none !important;
+  padding: 0 !important;
+}
+
+.ai-overview-block li {
+  position: relative;
+  padding-left: 2rem !important;
+  margin-bottom: 0.75rem !important;
+  color: #065f46 !important;
+  font-weight: 500 !important;
+  line-height: 1.6;
+}
+
+.ai-overview-block li::before {
+  content: "✦";
+  position: absolute;
+  left: 0;
+  color: #10b981;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+/* Related Content Widget */
+.related-posts-widget {
+  margin-top: 4rem;
+  padding-top: 3rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.related-posts-widget h3 {
+  font-size: 1.75rem !important;
+  color: #111827 !important;
+  margin-bottom: 2rem !important;
+  font-weight: 800 !important;
+}
+
+.related-posts-grid {
+  display: grid;
+  grid-template-cols: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 2rem;
+}
+
+.related-post-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  text-decoration: none !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 0.75rem;
+  padding: 0.5rem;
+}
+
+.related-post-card:hover {
+  transform: translateY(-4px);
+  background: #f9fafb;
+}
+
+.related-post-thumb {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background-color: #f3f4f6;
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.related-post-thumb img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  margin: 0 !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
+
+.related-post-title {
+  font-weight: 700 !important;
+  color: #111827 !important;
+  line-height: 1.4 !important;
+  font-size: 1.125rem !important;
+  display: -webkit-box !important;
+  -webkit-line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+}
