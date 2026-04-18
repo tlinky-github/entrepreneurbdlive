@@ -188,7 +188,7 @@ const AdminPosts = () => {
                       </span>
                     </TableCell>
                     <TableCell className="text-stone-500 text-sm">
-                      {new Date(post.created_at).toLocaleDateString()}
+                      {(post.created_at || post.createdAt) ? new Date(post.created_at || post.createdAt).toLocaleDateString() : '-'}
                     </TableCell>
                     <TableCell>
                       <DropdownMenu>
