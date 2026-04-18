@@ -22,7 +22,7 @@ export const ProviderSetup = ({ refreshTrigger }) => {
   const [editingProfileId, setEditingProfileId] = useState(null);
   const [deletingProfileId, setDeletingProfileId] = useState(null);
   const [allProfiles, setAllProfiles] = useState([]);
-  const [globalSettings, setGlobalSettings] = useState({ minFaqCount: 3 });
+  const [globalSettings, setGlobalSettings] = useState({ minFaqCount: 3, defaultCustomPrompt: '' });
   const [savingSettings, setSavingSettings] = useState(false);
 
   const PROVIDERS = [
@@ -676,6 +676,74 @@ export const ProviderSetup = ({ refreshTrigger }) => {
             Anthropic Keys →
           </a>
         </div>
+      </div>
+
+      {/* Global AI Settings */}
+      <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-6 space-y-4 shadow-sm">
+        <div className="flex items-center gap-2 mb-2">
+           <span className="text-xl">⚙️</span>
+           <h3 className="text-lg font-bold text-emerald-900">Global Content Engine Settings</h3>
+        </div>
+        
+        <form onSubmit={handleSaveSettings} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-semibold text-emerald-800 mb-2">
+                Minimum FAQ Generation
+              </label>
+              <input
+                type="number"
+                min="1"
+                max="15"
+                value={globalSettings.minFaqCount || 3}
+                onChange={(e) => setGlobalSettings({ ...globalSettings, minFaqCount: parseInt(e.target.value) || 3 })}
+                className="w-full px-3 py-2 border border-emerald-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
+              />
+              <p className="text-[10px] text-emerald-700 mt-1 italic">
+                 Default number of FAQs generated for every post.
+              </p>
+            </div>
+          </div>
+
+          <div className="pt-2 border-t border-emerald-200">
+            <label className="block text-sm font-semibold text-emerald-800 mb-2 flex items-center gap-2">
+              <span className="text-amber-600">⚡</span> Default Custom Prompt Override (Advanced)
+            </label>
+            <textarea
+              value={globalSettings.defaultCustomPrompt || ''}
+              onChange={(e) => setGlobalSettings({ ...globalSettings, defaultCustomPrompt: e.target.value })}
+              placeholder="e.g. Write everything in a professional tone. Avoid using passive voice..."
+              className="w-full h-32 px-3 py-2 border border-emerald-300 rounded-lg font-mono text-sm focus:ring-2 focus:ring-emerald-500 outline-none shadow-inner"
+            />
+            <div className="flex flex-wrap gap-2 mt-2">
+               <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider">Available Placeholders:</span>
+               {['[Topic]', '[Keywords]', '[Tone]'].map(tag => (
+                 <code key={tag} className="text-[10px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded border border-emerald-200">{tag}</code>
+               ))}
+            </div>
+            <p className="text-[10px] text-emerald-700 mt-2 font-medium leading-relaxed">
+              This prompt will be <strong>pre-filled</strong> in the AI Post Generator when the "Custom Prompt Override" toggle is enabled. 
+              Useful for setting global brand guidelines or rules that apply to all generations.
+            </p>
+          </div>
+
+          <div className="flex justify-end pt-2">
+             <Button 
+                type="submit" 
+                disabled={savingSettings}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
+             >
+                {savingSettings ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Saving Settings...
+                  </>
+                ) : (
+                  'Save Global Settings'
+                )}
+             </Button>
+          </div>
+        </form>
       </div>
     </div>
   );

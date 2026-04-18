@@ -103,8 +103,16 @@ const postGeneratorService = {
         const currentWordCount = fullContent.split(/\s+/).filter(w => w.length > 0).length;
 
         if (customPrompt) {
-          // Raw override
-          currentPrompt = customPrompt;
+          // Process placeholders for custom prompts
+          const topicsStr = topics.join(', ');
+          const keywordsStr = keywords.join(', ');
+          currentPrompt = customPrompt
+            .replace(/\[Topic\]/gi, topics[0] || topicsStr)
+            .replace(/\{topic\}/gi, topics[0] || topicsStr)
+            .replace(/\[Keywords\]/gi, keywordsStr)
+            .replace(/\{keywords\}/gi, keywordsStr)
+            .replace(/\[Tone\]/gi, tone)
+            .replace(/\{tone\}/gi, tone);
         } else if (iterations === 1) {
           // Initial prompt
           currentPrompt = `Act as an expert content creator and professional blogger. Your goal is to generate a comprehensive, high-quality, and highly engaging blog post in ${language}.
