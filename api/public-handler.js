@@ -29,23 +29,25 @@ module.exports = async (req, res) => {
   const { action, turnstileToken, data } = req.body;
   if (!action) return errorResponse(res, 400, 'Missing action');
   
-  // CAPTCHA Verification (Mandatory for all public actions)
-  if (!turnstileToken) {
-    return errorResponse(res, 400, 'Captcha verification required');
-  }
-
-  try {
-    const verifyRes = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: `secret=${process.env.TURNSTILE_SECRET_KEY}&response=${turnstileToken}`,
-    });
-    const verifyData = await verifyRes.json();
-    if (!verifyData.success) {
-      return errorResponse(res, 400, 'Captcha verification failed. Please try again.');
+  // CAPTCHA Verification (Mandatory for mutating public actions)
+  if (action !== 'list-metadata') {
+    if (!turnstileToken) {
+      return errorResponse(res, 400, 'Captcha verification required');
     }
-  } catch (err) {
-    console.error('[Turnstile] Error:', err);
+
+    try {
+      const verifyRes = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `secret=${encodeURIComponent(process.env.TURNSTILE_SECRET_KEY)}&response=${encodeURIComponent(turnstileToken)}`,
+      });
+      const verifyData = await verifyRes.json();
+      if (!verifyData.success) {
+        return errorResponse(res, 400, 'Captcha verification failed. Please try again.');
+      }
+    } catch (err) {
+      console.error('[Turnstile] Error:', err);
+    }
   }
 
   const db = initializeFirebase();
