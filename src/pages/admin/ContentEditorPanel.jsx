@@ -19,7 +19,7 @@ import { Input } from '../../components/ui/input';
 import { Badge } from '../../components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { toast } from 'sonner';
-import { Save, ChevronLeft, Eye, Settings, Star, HelpCircle, Code, ChevronDown, ChevronUp, FileCode, Calendar } from 'lucide-react';
+import { Save, ChevronLeft, Eye, Settings, Star, HelpCircle, Code, ChevronDown, ChevronUp, FileCode, Calendar, Users } from 'lucide-react';
 import { contentAPI, taxonomyAPI, categoryAPI, blogCategoryAPI, authorAPI } from '../../lib/api';
 import ImageUploader from '../../components/common/ImageUploader';
 import LinkDialog from '../../components/admin/LinkDialog';
@@ -33,7 +33,20 @@ import {
   DialogHeader,
   DialogTitle,
 } from '../../components/ui/dialog';
-import { Pencil, Globe, Smartphone, Monitor, Plus, X, Check } from 'lucide-react';
+import { 
+  Popover, 
+  PopoverTrigger, 
+  PopoverContent 
+} from '../../components/ui/popover';
+import {
+  Command,
+  CommandInput,
+  CommandList,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem,
+} from '../../components/ui/command';
+import { Pencil, Globe, Smartphone, Monitor, Plus, X, Check, ChevronsUpDown } from 'lucide-react';
 import FaqExtension from '../../components/editor/FaqExtension';
 import './ContentEditorPanel.css';
 
@@ -88,6 +101,13 @@ const ContentEditorPanel = () => {
   const [authorId, setAuthorId] = useState('');
   const [authorsList, setAuthorsList] = useState([]);
   const [faqs, setFaqs] = useState([]); // Array of { q: '', a: '' }
+  const [entrepreneursList, setEntrepreneursList] = useState([]);
+  const [listingsList, setListingsList] = useState([]);
+  const [leadershipTeam, setLeadershipTeam] = useState({
+    founder: { type: 'manual', name: '', id: '', photo: '' },
+    ceo: { type: 'manual', name: '', id: '', photo: '' }
+  });
+  const [linkedBusiness, setLinkedBusiness] = useState({ type: 'manual', name: '', id: '', slug: '' });
 
   // Taxonomy & Metadata States
   const [categories, setCategories] = useState([]);
@@ -99,6 +119,7 @@ const ContentEditorPanel = () => {
   const [startupStages, setStartupStages] = useState([]);
   const [showQuickAdd, setShowQuickAdd] = useState({ category: false, author: false, listingType: false, stage: false, industry: false, city: false });
   const [quickAddValue, setQuickAddValue] = useState('');
+  const [leadershipSearch, setLeadershipSearch] = useState({ founder: '', ceo: '', business: '' });
 
   const [isEditingSlug, setIsEditingSlug] = useState(false);
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
@@ -110,6 +131,10 @@ const ContentEditorPanel = () => {
   const [customJs, setCustomJs] = useState('');
   const [customHeadHtml, setCustomHeadHtml] = useState('');
   const [showCustomCode, setShowCustomCode] = useState(false);
+
+  // Link Settings for manual fields
+  const [websiteLinkSettings, setWebsiteLinkSettings] = useState({ target: '_blank', rel: 'nofollow noopener noreferrer' });
+  const [linkSource, setLinkSource] = useState('editor'); // 'editor' or 'website'
 
   // Custom HTML block dialog
   const [htmlDialogOpen, setHtmlDialogOpen] = useState(false);
@@ -250,6 +275,25 @@ const ContentEditorPanel = () => {
             setCustomCss(data.custom_css || '');
             setCustomJs(data.custom_js || '');
             setCustomHeadHtml(data.custom_head_html || '');
+            setWebsiteLinkSettings(data.website_link_settings || { target: '_blank', rel: 'nofollow noopener noreferrer' });
+            
+            // Set Linked Business (for entrepreneurs)
+            if (data.linked_business) {
+              setLinkedBusiness(data.linked_business);
+            } else if (data.company_name) {
+              setLinkedBusiness({ type: 'manual', name: data.company_name, id: '', slug: '' });
+            }
+
+            // Set Leadership Team state from loaded data
+            if (data.leadership_team) {
+              setLeadershipTeam(data.leadership_team);
+            } else {
+              // Backward compatibility
+              setLeadershipTeam({
+                founder: { type: 'manual', name: data.founder_name || '', id: '', photo: '' },
+                ceo: { type: 'manual', name: data.ceo_name || '', id: '', photo: '' }
+              });
+            }
             
             // Load Scheduling
             const scheduledDateVal = data.scheduled_at || data.scheduledAt;
@@ -319,6 +363,20 @@ const ContentEditorPanel = () => {
     } catch (error) { console.error('Error loading cities:', error); }
   }, []);
 
+  const refreshListings = useCallback(async () => {
+    try {
+      const res = await contentAPI.list('directory');
+      if (res.data) setListingsList(res.data);
+    } catch (error) { console.error('Error loading directory listings:', error); }
+  }, []);
+
+  const refreshEntrepreneurs = useCallback(async () => {
+    try {
+      const res = await contentAPI.list('entrepreneurs');
+      if (res.data) setEntrepreneursList(res.data);
+    } catch (error) { console.error('Error loading entrepreneurs:', error); }
+  }, []);
+
   // Initial Data Loads
   useEffect(() => {
     refreshAuthors();
@@ -332,12 +390,14 @@ const ContentEditorPanel = () => {
     if (type === 'directory') {
       refreshListingTypes();
       refreshCities();
+      refreshEntrepreneurs();
     }
     if (type === 'entrepreneurs') {
       refreshStartupStages();
       refreshIndustries();
+      refreshListings();
     }
-  }, [type, refreshListingTypes, refreshCities, refreshStartupStages, refreshIndustries]);
+  }, [type, refreshListingTypes, refreshCities, refreshStartupStages, refreshIndustries, refreshListings]);
 
   const handleQuickAdd = async (taxType) => {
     if (!quickAddValue.trim()) return;
@@ -532,12 +592,19 @@ const ContentEditorPanel = () => {
         industry,
         city,
         authorId,
+        website_link_settings: websiteLinkSettings,
         author_name: selectedAuthor?.name || '',
         logo,
         photo,
         cover_image: coverImage,
+        leadership_team: leadershipTeam,
+        linked_business: linkedBusiness,
         // MIRROR FIELDS for frontend compatibility
-        business_name: type === 'directory' ? title : companyName,
+        founder_name: leadershipTeam.founder.name,
+        ceo_name: leadershipTeam.ceo.name,
+        business_name: type === 'directory' ? title : (linkedBusiness.type === 'linked' ? linkedBusiness.name : companyName),
+        company_name: linkedBusiness.type === 'linked' ? linkedBusiness.name : companyName,
+        linked_business_slug: linkedBusiness.type === 'linked' ? linkedBusiness.slug : null,
         name: type === 'entrepreneurs' ? title : null,
         role_title: designation,
         // Extra human-readable metadata for fast rendering
@@ -568,10 +635,9 @@ const ContentEditorPanel = () => {
       console.log('Save response:', response);
       toast.success(`Content ${status === 'published' ? 'published' : 'saved'} successfully!`);
 
-      // Redirect after successful save
-      setTimeout(() => {
-        navigate(`/admin/content-manager?type=${type}`);
-      }, 1500);
+      if (!itemId && response?.id) {
+        navigate(`/admin/content-editor?type=${type}&id=${response.id}`, { replace: true });
+      }
     } catch (error) {
       console.error('Save error:', error);
       const errorMsg = error.message || 'Failed to save content';
@@ -689,12 +755,86 @@ const ContentEditorPanel = () => {
                        />
                      </div>
                      <div>
-                       <label>Company Name</label>
-                       <Input
-                         value={companyName}
-                         onChange={(e) => setCompanyName(e.target.value)}
-                         placeholder="Target Company"
-                       />
+                      <div className="space-y-2 p-3 bg-stone-50 rounded-lg border border-stone-200">
+                        <div className="flex items-center justify-between">
+                          <label className="text-xs font-bold uppercase text-stone-500">Company / Organization</label>
+                          <select 
+                            className="text-[10px] bg-white border rounded px-1"
+                            value={linkedBusiness.type}
+                            onChange={(e) => setLinkedBusiness(prev => ({
+                              ...prev,
+                              type: e.target.value
+                            }))}
+                          >
+                            <option value="manual">Manual Entry</option>
+                            <option value="linked">Link Listing</option>
+                          </select>
+                        </div>
+
+                        {linkedBusiness.type === 'linked' ? (
+                          <div className="space-y-2">
+                             <Popover>
+                                <PopoverTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    role="combobox"
+                                    className="w-full justify-between"
+                                  >
+                                    {linkedBusiness.id
+                                      ? listingsList.find((l) => l.id === linkedBusiness.id)?.business_name
+                                      : "Select Listing..."}
+                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-full p-0">
+                                  <Command>
+                                    <CommandInput 
+                                      placeholder="Search directory..."
+                                      value={leadershipSearch.business}
+                                      onValueChange={(val) => setLeadershipSearch(prev => ({ ...prev, business: val }))}
+                                    />
+                                    <CommandList>
+                                      <CommandEmpty>No listing found.</CommandEmpty>
+                                      <CommandGroup>
+                                        {listingsList
+                                          .filter(l => l.business_name?.toLowerCase().includes(leadershipSearch.business.toLowerCase()))
+                                          .map(l => (
+                                          <CommandItem
+                                            key={l.id}
+                                            value={l.business_name}
+                                            onSelect={() => {
+                                              setLinkedBusiness(prev => ({
+                                                ...prev,
+                                                id: l.id,
+                                                name: l.business_name || '',
+                                                slug: l.slug || ''
+                                              }));
+                                              setCompanyName(l.business_name || '');
+                                              // Close popover handled contextually or by clicking outside
+                                            }}
+                                          >
+                                            <Check
+                                              className={`mr-2 h-4 w-4 ${
+                                                linkedBusiness.id === l.id ? "opacity-100" : "opacity-0"
+                                              }`}
+                                            />
+                                            {l.business_name}
+                                          </CommandItem>
+                                        ))}
+                                      </CommandGroup>
+                                    </CommandList>
+                                  </Command>
+                                </PopoverContent>
+                              </Popover>
+                          </div>
+                        ) : (
+                          <Input
+                            value={companyName}
+                            onChange={(e) => setCompanyName(e.target.value)}
+                            placeholder="Target Company"
+                          />
+                        )}
+                      </div>
                      </div>
                    </div>
                    <div className="space-y-4">
@@ -720,22 +860,207 @@ const ContentEditorPanel = () => {
 
               {type === 'directory' && (
                 <>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label>Founder Name</label>
-                      <Input
-                        value={founderName}
-                        onChange={(e) => setFounderName(e.target.value)}
-                        placeholder="Founder name"
-                      />
-                    </div>
-                    <div>
-                      <label>CEO Name</label>
-                      <Input
-                        value={ceoName}
-                        onChange={(e) => setCeoName(e.target.value)}
-                        placeholder="CEO name"
-                      />
+                  <div className="space-y-6 pb-6 mb-6 border-b border-stone-100">
+                    <h4 className="text-sm font-bold text-stone-900 uppercase tracking-wider flex items-center gap-2">
+                      <Users className="w-4 h-4 text-emerald-600" /> Leadership Team
+                    </h4>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* Founder Selector */}
+                      <div className="space-y-3 p-4 bg-stone-50 rounded-xl border border-stone-200">
+                        <div className="flex items-center justify-between">
+                          <label className="text-xs font-bold uppercase text-stone-500">Founder</label>
+                          <select 
+                            className="text-[10px] bg-white border rounded px-1"
+                            value={leadershipTeam.founder.type}
+                            onChange={(e) => setLeadershipTeam(prev => ({
+                              ...prev,
+                              founder: { ...prev.founder, type: e.target.value }
+                            }))}
+                          >
+                            <option value="manual">Manual Entry</option>
+                            <option value="linked">Link Profile</option>
+                          </select>
+                        </div>
+
+                        {leadershipTeam.founder.type === 'linked' ? (
+                          <div className="space-y-2">
+                             <Popover>
+                                <PopoverTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    role="combobox"
+                                    className="w-full justify-between"
+                                  >
+                                    {leadershipTeam.founder.id
+                                      ? entrepreneursList.find((en) => en.id === leadershipTeam.founder.id)?.name
+                                      : "Select Entrepreneur..."}
+                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-full p-0">
+                                  <Command>
+                                    <CommandInput 
+                                      placeholder="Search entrepreneur..."
+                                      value={leadershipSearch.founder}
+                                      onValueChange={(val) => setLeadershipSearch(prev => ({ ...prev, founder: val }))}
+                                    />
+                                    <CommandList>
+                                      <CommandEmpty>No entrepreneur found.</CommandEmpty>
+                                      <CommandGroup>
+                                        {entrepreneursList
+                                          .filter(en => en.name.toLowerCase().includes(leadershipSearch.founder.toLowerCase()))
+                                          .map(en => (
+                                          <CommandItem
+                                            key={en.id}
+                                            value={en.name}
+                                            onSelect={() => {
+                                              setLeadershipTeam(prev => ({
+                                                ...prev,
+                                                founder: { 
+                                                  ...prev.founder, 
+                                                  id: en.id, 
+                                                  slug: en?.slug || '', 
+                                                  name: en?.name || '', 
+                                                  photo: en?.photo || en?.featured_image || '' 
+                                                }
+                                              }));
+                                            }}
+                                          >
+                                            <Check
+                                              className={`mr-2 h-4 w-4 ${
+                                                leadershipTeam.founder.id === en.id ? "opacity-100" : "opacity-0"
+                                              }`}
+                                            />
+                                            {en.name}
+                                          </CommandItem>
+                                        ))}
+                                      </CommandGroup>
+                                    </CommandList>
+                                  </Command>
+                                </PopoverContent>
+                              </Popover>
+                          </div>
+                        ) : (
+                          <div className="space-y-3">
+                            <Input 
+                              placeholder="Name" 
+                              value={leadershipTeam.founder.name} 
+                              onChange={(e) => setLeadershipTeam(prev => ({ 
+                                ...prev, 
+                                founder: { ...prev.founder, name: e.target.value } 
+                              }))} 
+                            />
+                            <ImageUploader 
+                              value={leadershipTeam.founder.photo} 
+                              onChange={(url) => setLeadershipTeam(prev => ({
+                                ...prev,
+                                founder: { ...prev.founder, photo: url }
+                              }))}
+                              placeholder="Link Photo"
+                              entityType="leadership"
+                            />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* CEO Selector */}
+                      <div className="space-y-3 p-4 bg-stone-50 rounded-xl border border-stone-200">
+                        <div className="flex items-center justify-between">
+                          <label className="text-xs font-bold uppercase text-stone-500">CEO / Lead</label>
+                          <select 
+                            className="text-[10px] bg-white border rounded px-1"
+                            value={leadershipTeam.ceo.type}
+                            onChange={(e) => setLeadershipTeam(prev => ({
+                              ...prev,
+                              ceo: { ...prev.ceo, type: e.target.value }
+                            }))}
+                          >
+                            <option value="manual">Manual Entry</option>
+                            <option value="linked">Link Profile</option>
+                          </select>
+                        </div>
+
+                        {leadershipTeam.ceo.type === 'linked' ? (
+                          <div className="space-y-2">
+                             <Popover>
+                                <PopoverTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    role="combobox"
+                                    className="w-full justify-between"
+                                  >
+                                    {leadershipTeam.ceo.id
+                                      ? entrepreneursList.find((en) => en.id === leadershipTeam.ceo.id)?.name
+                                      : "Select Entrepreneur..."}
+                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-full p-0">
+                                  <Command>
+                                    <CommandInput 
+                                      placeholder="Search entrepreneur..."
+                                      value={leadershipSearch.ceo}
+                                      onValueChange={(val) => setLeadershipSearch(prev => ({ ...prev, ceo: val }))}
+                                    />
+                                    <CommandList>
+                                      <CommandEmpty>No entrepreneur found.</CommandEmpty>
+                                      <CommandGroup>
+                                        {entrepreneursList
+                                          .filter(en => en.name.toLowerCase().includes(leadershipSearch.ceo.toLowerCase()))
+                                          .map(en => (
+                                          <CommandItem
+                                            key={en.id}
+                                            value={en.name}
+                                            onSelect={() => {
+                                              setLeadershipTeam(prev => ({
+                                                ...prev,
+                                                ceo: { 
+                                                  ...prev.ceo, 
+                                                  id: en.id, 
+                                                  slug: en?.slug || '', 
+                                                  name: en?.name || '', 
+                                                  photo: en?.photo || en?.featured_image || '' 
+                                                }
+                                              }));
+                                            }}
+                                          >
+                                            <Check
+                                              className={`mr-2 h-4 w-4 ${
+                                                leadershipTeam.ceo.id === en.id ? "opacity-100" : "opacity-0"
+                                              }`}
+                                            />
+                                            {en.name}
+                                          </CommandItem>
+                                        ))}
+                                      </CommandGroup>
+                                    </CommandList>
+                                  </Command>
+                                </PopoverContent>
+                              </Popover>
+                          </div>
+                        ) : (
+                          <div className="space-y-3">
+                            <Input 
+                              placeholder="Name" 
+                              value={leadershipTeam.ceo.name} 
+                              onChange={(e) => setLeadershipTeam(prev => ({ 
+                                ...prev, 
+                                ceo: { ...prev.ceo, name: e.target.value } 
+                              }))} 
+                            />
+                            <ImageUploader 
+                              value={leadershipTeam.ceo.photo} 
+                              onChange={(url) => setLeadershipTeam(prev => ({
+                                ...prev,
+                                ceo: { ...prev.ceo, photo: url }
+                              }))}
+                              placeholder="Link Photo"
+                              entityType="leadership"
+                            />
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
@@ -793,11 +1118,30 @@ const ContentEditorPanel = () => {
                         onChange={(e) => setPhone(e.target.value)}
                         placeholder="Contact Phone"
                       />
-                      <Input
-                        value={website}
-                        onChange={(e) => setWebsite(e.target.value)}
-                        placeholder="Website URL"
-                      />
+                      <div className="relative">
+                        <Input
+                          value={website}
+                          onChange={(e) => setWebsite(e.target.value)}
+                          placeholder="Website URL"
+                          className="pr-10"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setLinkSource('website');
+                            setActiveLinkData({ 
+                              href: website, 
+                              target: websiteLinkSettings.target === '_blank', 
+                              rel: websiteLinkSettings.rel 
+                            });
+                            setLinkDialogOpen(true);
+                          }}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-stone-400 hover:text-emerald-600 transition-colors"
+                          title="Link Settings"
+                        >
+                          <Settings className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                   </div>
                   <div className="space-y-4 pt-4 border-t border-stone-100">
@@ -1438,13 +1782,25 @@ const ContentEditorPanel = () => {
 
       <LinkDialog
         open={linkDialogOpen}
-        onOpenChange={setLinkDialogOpen}
+        onOpenChange={(open) => {
+          setLinkDialogOpen(open);
+          if (!open) setLinkSource('editor');
+        }}
         initialData={activeLinkData}
         onApply={(data) => {
-          if (data.href) {
-            editor.chain().focus().setLink(data).run();
+          if (linkSource === 'website') {
+            setWebsite(data.href || '');
+            setWebsiteLinkSettings({
+              target: data.target ? '_blank' : '_self',
+              rel: data.rel || ''
+            });
+            toast.success('Website link settings applied');
           } else {
-            editor.chain().focus().unsetLink().run();
+            if (data.href) {
+              editor.chain().focus().setLink(data).run();
+            } else {
+              editor.chain().focus().unsetLink().run();
+            }
           }
         }}
       />

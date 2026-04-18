@@ -164,7 +164,12 @@ export const profileAPI = {
       
       if (params.search) {
         const search = params.search.toLowerCase();
-        data = data.filter(p => p.name?.toLowerCase().includes(search) || p.company_name?.toLowerCase().includes(search));
+        data = data.filter(p => 
+          p.name?.toLowerCase().includes(search) || 
+          p.company_name?.toLowerCase().includes(search) ||
+          p.designation?.toLowerCase().includes(search) ||
+          p.role_title?.toLowerCase().includes(search)
+        );
       }
 
       return { data };
@@ -240,7 +245,13 @@ export const listingAPI = {
       
       if (params.search) {
         const search = params.search.toLowerCase();
-        data = data.filter(l => l.business_name?.toLowerCase().includes(search));
+        data = data.filter(l => 
+          l.business_name?.toLowerCase().includes(search) || 
+          l.founder_name?.toLowerCase().includes(search) || 
+          l.ceo_name?.toLowerCase().includes(search) ||
+          l.leadership_team?.founder?.name?.toLowerCase().includes(search) ||
+          l.leadership_team?.ceo?.name?.toLowerCase().includes(search)
+        );
       }
 
       return { data };
@@ -655,6 +666,53 @@ export const adminAPI = {
     } catch (error) {
       console.error('Error fetching pending items:', error);
       return { data: { profiles: [], listings: [] } };
+    }
+  },
+  getReports: async () => {
+    try {
+      const q = query(collection(db, 'comment_reports'), where('status', '==', 'pending'), orderBy('created_at', 'desc'));
+      const snap = await getDocs(q);
+      
+      const reports = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const reportsWithComments = await Promise.all(reports.map(async (report) => {
+        try {
+          const commentSnap = await getDoc(doc(db, 'comments', report.comment_id));
+          return {
+            ...report,
+            comment: commentSnap.exists() ? { id: commentSnap.id, ...commentSnap.data() } : null
+          };
+        } catch (e) {
+          return { ...report, comment: null };
+        }
+      }));
+      
+      return { data: reportsWithComments };
+    } catch (error) {
+      console.error('Get Reports Error:', error);
+      throw error;
+    }
+  },
+  resolveReport: async (reportId, action) => {
+    try {
+      const reportRef = doc(db, 'comment_reports', reportId);
+      const reportSnap = await getDoc(reportRef);
+      
+      if (!reportSnap.exists()) throw new Error('Report not found');
+      const reportData = reportSnap.data();
+
+      if (action === 'delete_comment') {
+        await deleteDoc(doc(db, 'comments', reportData.comment_id));
+        const q = query(collection(db, 'comment_reports'), where('comment_id', '==', reportData.comment_id));
+        const reportsSnap = await getDocs(q);
+        await Promise.all(reportsSnap.docs.map(d => updateDoc(d.ref, { status: 'resolved', resolved_at: serverTimestamp() })));
+      } else {
+        await updateDoc(reportRef, { status: 'dismissed', resolved_at: serverTimestamp() });
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error('Resolve Report Error:', error);
+      throw error;
     }
   },
   getUsers: async (params = {}) => {

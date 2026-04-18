@@ -68,7 +68,7 @@ const DirectoryDetail = () => {
       <div className="bg-stone-50 min-h-screen py-8">
         <div className="max-w-4xl mx-auto px-4">
           <Skeleton className="h-8 w-32 mb-8" />
-          <div className="bg-white rounded-xl p-8">
+          <div className="bg-white rounded-2xl p-8">
             <div className="flex items-start gap-6">
               <Skeleton className="w-24 h-24 rounded-lg" />
               <div className="flex-1">
@@ -154,7 +154,7 @@ const DirectoryDetail = () => {
         {/* Profile Identity Bar - Decoupled Overlap */}
         <div className="relative flex flex-col md:flex-row items-center md:items-start gap-5 md:gap-10 px-4 md:px-12">
           {/* Logo with specific negative margin */}
-          <div className="-mt-12 md:-mt-20 w-24 h-24 md:w-40 md:h-40 bg-white rounded-2xl md:rounded-[2.5rem] shadow-2xl border-4 md:border-[8px] border-white flex items-center justify-center overflow-hidden flex-shrink-0 z-10 transition-all hover:scale-105 duration-300">
+          <div className="-mt-12 md:-mt-20 w-24 h-24 md:w-40 md:h-40 bg-white rounded-2xl md:rounded-3xl shadow-2xl border-4 md:border-[8px] border-white flex items-center justify-center overflow-hidden flex-shrink-0 z-10 transition-all hover:scale-105 duration-300">
             {listing.logo ? (
               <img src={listing.logo} alt={listing.business_name} className="w-full h-full object-contain p-3 md:p-6" />
             ) : (
@@ -187,7 +187,7 @@ const DirectoryDetail = () => {
           
           {/* Main Info Column */}
           <div className="lg:col-span-8 space-y-10">
-            <Card className="border-stone-200 shadow-sm overflow-hidden">
+            <Card className="border-stone-200 shadow-sm overflow-hidden rounded-2xl">
               <CardContent className="p-8 md:p-10">
                 <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-8 mb-10 pb-10 border-b border-stone-100">
                   <div className="space-y-6 flex-1">
@@ -243,7 +243,7 @@ const DirectoryDetail = () => {
                             if (match && match[1]) {
                               const faqsData = JSON.parse(match[1].replace(/&quot;/g, '"'));
                               return (
-                                <div key={index} className="my-16 bg-stone-50 rounded-[2rem] p-8 md:p-12 border border-stone-100 shadow-inner">
+                                <div key={index} className="my-16 bg-stone-50 rounded-3xl p-8 md:p-12 border border-stone-100 shadow-inner">
                                   <h3 className="text-2xl font-black text-stone-900 mb-8 flex items-center gap-3">
                                     <CheckCircle className="w-8 h-8 text-emerald-600" />
                                     Frequently Asked Questions
@@ -303,9 +303,9 @@ const DirectoryDetail = () => {
           {/* Right Sidebar Column */}
           <div className="lg:col-span-4 space-y-8">
             {/* Vital Statistics */}
-            <Card className="border-stone-200 shadow-sm overflow-hidden rounded-3xl">
+            <Card className="border-stone-200 shadow-sm overflow-hidden rounded-2xl">
                <CardHeader className="bg-stone-50 border-b border-stone-100">
-                  <CardTitle className="text-xs font-black uppercase tracking-[0.2em] text-stone-400">Company Vitals</CardTitle>
+                  <CardTitle className="text-xs font-black uppercase tracking-[0.2em] text-stone-600">Company Vitals</CardTitle>
                </CardHeader>
                <CardContent className="p-8 space-y-6">
                   <div className="flex justify-between items-center group">
@@ -337,30 +337,57 @@ const DirectoryDetail = () => {
             </Card>
 
             {/* Leadership Profiles */}
-            {(listing.founder_name || listing.ceo_name) && (
-              <Card className="border-stone-200 shadow-sm rounded-3xl overflow-hidden">
+            {(listing.leadership_team || listing.founder_name || listing.ceo_name) && (
+              <Card className="border-stone-200 shadow-sm rounded-2xl overflow-hidden">
                 <CardHeader className="bg-stone-50 border-b border-stone-100">
-                  <CardTitle className="text-xs font-black uppercase tracking-[0.2em] text-stone-400">Leadership Team</CardTitle>
+                  <CardTitle className="text-xs font-black uppercase tracking-[0.2em] text-stone-600">Leadership Team</CardTitle>
                 </CardHeader>
                 <CardContent className="p-8 space-y-6">
-                  {listing.founder_name && (
+                  {/* Founder */}
+                  {(listing.leadership_team?.founder?.name || listing.founder_name) && (
                     <div className="flex items-center gap-4 group">
-                      <div className="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-900 font-black text-xl shadow-inner group-hover:bg-emerald-100 transition-colors">
-                        {listing.founder_name.charAt(0)}
+                      <div className="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-900 font-black text-xl shadow-inner group-hover:bg-emerald-100 transition-colors overflow-hidden">
+                        {(listing.leadership_team?.founder?.photo || listing.founder_photo) ? (
+                          <img src={listing.leadership_team?.founder?.photo || listing.founder_photo} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          (listing.leadership_team?.founder?.name || listing.founder_name).charAt(0)
+                        )}
                       </div>
                       <div>
-                        <p className="font-black text-stone-900 group-hover:text-emerald-900 transition-colors">{listing.founder_name}</p>
+                        {listing.leadership_team?.founder?.type === 'linked' ? (
+                          <Link to={`/entrepreneurs/${listing.leadership_team.founder.slug || listing.leadership_team.founder.id}`} className="font-black text-stone-900 group-hover:text-emerald-900 transition-colors hover:underline">
+                            {listing.leadership_team.founder.name}
+                          </Link>
+                        ) : (
+                          <p className="font-black text-stone-900 group-hover:text-emerald-900 transition-colors">
+                            {listing.leadership_team?.founder?.name || listing.founder_name}
+                          </p>
+                        )}
                         <p className="text-xs text-stone-400 font-bold uppercase tracking-widest mt-0.5">Founder</p>
                       </div>
                     </div>
                   )}
-                  {listing.ceo_name && (
+
+                  {/* CEO */}
+                  {(listing.leadership_team?.ceo?.name || listing.ceo_name) && (
                     <div className="flex items-center gap-4 group">
-                      <div className="w-14 h-14 bg-stone-100 rounded-2xl flex items-center justify-center text-stone-900 font-black text-xl shadow-inner group-hover:bg-stone-200 transition-colors">
-                        {listing.ceo_name.charAt(0)}
+                      <div className="w-14 h-14 bg-stone-100 rounded-2xl flex items-center justify-center text-stone-900 font-black text-xl shadow-inner group-hover:bg-stone-200 transition-colors overflow-hidden">
+                        {(listing.leadership_team?.ceo?.photo || listing.ceo_photo) ? (
+                          <img src={listing.leadership_team?.ceo?.photo || listing.ceo_photo} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          (listing.leadership_team?.ceo?.name || listing.ceo_name).charAt(0)
+                        )}
                       </div>
                       <div>
-                        <p className="font-black text-stone-900 group-hover:text-emerald-900 transition-colors">{listing.ceo_name}</p>
+                        {listing.leadership_team?.ceo?.type === 'linked' ? (
+                          <Link to={`/entrepreneurs/${listing.leadership_team.ceo.slug || listing.leadership_team.ceo.id}`} className="font-black text-stone-900 group-hover:text-emerald-900 transition-colors hover:underline">
+                            {listing.leadership_team.ceo.name}
+                          </Link>
+                        ) : (
+                          <p className="font-black text-stone-900 group-hover:text-emerald-900 transition-colors">
+                            {listing.leadership_team?.ceo?.name || listing.ceo_name}
+                          </p>
+                        )}
                         <p className="text-xs text-stone-400 font-bold uppercase tracking-widest mt-0.5">Chief Executive</p>
                       </div>
                     </div>
@@ -370,7 +397,7 @@ const DirectoryDetail = () => {
             )}
 
             {/* Direct Contact Card */}
-            <Card className="bg-stone-900 border-none rounded-3xl text-white shadow-xl overflow-hidden">
+            <Card className="bg-stone-900 border-none rounded-2xl text-white shadow-xl overflow-hidden">
                <CardContent className="p-8 space-y-6">
                   <h4 className="text-lg font-black">Get in Touch</h4>
                   <div className="space-y-4">
@@ -391,7 +418,12 @@ const DirectoryDetail = () => {
                       </a>
                     )}
                     {listing.website && (
-                      <a href={listing.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-4 group">
+                      <a 
+                        href={listing.website} 
+                        target={listing.website_link_settings?.target || "_blank"} 
+                        rel={listing.website_link_settings?.rel || "noopener noreferrer nofollow"} 
+                        className="flex items-center gap-4 group"
+                      >
                         <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center group-hover:bg-emerald-600 transition-colors">
                           <Globe className="w-5 h-5" />
                         </div>
@@ -405,17 +437,17 @@ const DirectoryDetail = () => {
                         <p className="text-xs font-bold text-stone-400 mb-3">Follow Us</p>
                         <div className="flex items-center gap-3">
                           {listing.social_linkedin && (
-                            <a href={listing.social_linkedin} target="_blank" rel="noopener noreferrer" className="p-2 bg-white/10 rounded-lg hover:bg-emerald-600 transition-colors group">
+                            <a href={listing.social_linkedin} target="_blank" rel="noopener noreferrer nofollow" className="p-2 bg-white/10 rounded-lg hover:bg-emerald-600 transition-colors group">
                               <LinkedinIcon className="w-4 h-4 text-stone-300 group-hover:text-white" />
                             </a>
                           )}
                           {listing.social_twitter && (
-                            <a href={listing.social_twitter} target="_blank" rel="noopener noreferrer" className="p-2 bg-white/10 rounded-lg hover:bg-emerald-600 transition-colors group">
+                            <a href={listing.social_twitter} target="_blank" rel="noopener noreferrer nofollow" className="p-2 bg-white/10 rounded-lg hover:bg-emerald-600 transition-colors group">
                               <TwitterIcon className="w-4 h-4 text-stone-300 group-hover:text-white" />
                             </a>
                           )}
                           {listing.social_facebook && (
-                            <a href={listing.social_facebook} target="_blank" rel="noopener noreferrer" className="p-2 bg-white/10 rounded-lg hover:bg-emerald-600 transition-colors group">
+                            <a href={listing.social_facebook} target="_blank" rel="noopener noreferrer nofollow" className="p-2 bg-white/10 rounded-lg hover:bg-emerald-600 transition-colors group">
                               <FacebookIcon className="w-4 h-4 text-stone-300 group-hover:text-white" />
                             </a>
                           )}

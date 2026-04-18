@@ -207,7 +207,7 @@ const Home = () => {
                 className="border-stone-200 hover:border-emerald-900/20 hover:shadow-lg transition-all duration-200 group"
               >
                 <CardContent className="p-8">
-                  <div className="w-14 h-14 bg-emerald-100 rounded-xl mb-6 flex items-center justify-center group-hover:bg-emerald-900 transition-colors">
+                  <div className="w-14 h-14 bg-emerald-100 rounded-2xl mb-6 flex items-center justify-center group-hover:bg-emerald-900 transition-colors">
                     <feature.icon className="w-7 h-7 text-emerald-900 group-hover:text-white transition-colors" />
                   </div>
                   <h3 className="text-xl font-semibold text-stone-900 mb-3">{feature.title}</h3>
@@ -244,7 +244,7 @@ const Home = () => {
                 <Link key={item.id} to={`/knowledge/${item.id}`}>
                   <Card className="h-full border-stone-200 hover:border-emerald-900/20 hover:shadow-lg transition-all duration-200 group">
                     <CardContent className="p-8 flex flex-col h-full">
-                      <div className="w-12 h-12 bg-emerald-50 rounded-xl mb-6 flex items-center justify-center group-hover:bg-emerald-900 transition-colors">
+                      <div className="w-12 h-12 bg-emerald-50 rounded-2xl mb-6 flex items-center justify-center group-hover:bg-emerald-900 transition-colors">
                         <IconComponent className="w-6 h-6 text-emerald-900 group-hover:text-white transition-colors" />
                       </div>
                       <h3 className="text-xl font-semibold text-stone-900 mb-2 group-hover:text-emerald-900 transition-colors">
@@ -361,7 +361,7 @@ const Home = () => {
                   <Card className="border-stone-200 hover:border-emerald-900/20 hover:shadow-lg transition-all duration-200 h-full">
                     <CardContent className="p-6">
                       <div className="flex items-start gap-4">
-                        <div className="w-14 h-14 bg-stone-100 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
+                        <div className="w-14 h-14 bg-stone-100 rounded-2xl flex items-center justify-center flex-shrink-0 overflow-hidden">
                           {listing.logo ? (
                             <img 
                               src={listing.logo} 
@@ -458,7 +458,7 @@ const Home = () => {
       {/* Meet the Founder Section */}
       <section className="py-20 bg-stone-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-white rounded-3xl p-8 lg:p-12 shadow-sm border border-stone-100">
+          <div className="bg-white rounded-2xl p-8 lg:p-12 shadow-sm border border-stone-100">
             <div className="grid lg:grid-cols-2 gap-12 items-center">
               <div className="order-2 lg:order-1">
                 <Badge className="bg-emerald-100 text-emerald-900 mb-6 px-4 py-1.5">

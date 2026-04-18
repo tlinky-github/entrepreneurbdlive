@@ -194,7 +194,7 @@ const DirectoryList = () => {
               <Card key={i}>
                 <CardContent className="p-6">
                   <div className="flex items-start gap-4">
-                    <Skeleton className="w-16 h-16 rounded-lg" />
+                    <Skeleton className="w-16 h-16 rounded-2xl" />
                     <div className="flex-1">
                       <Skeleton className="h-5 w-3/4 mb-2" />
                       <Skeleton className="h-4 w-1/2" />
@@ -250,10 +250,10 @@ const DirectoryList = () => {
 
 const ListingCard = ({ listing, featured }) => (
   <Link to={`/directory/${listing.slug}`}>
-    <Card className={`h-full border-stone-200 hover:border-emerald-900/20 hover:shadow-lg transition-all duration-200 ${featured ? 'ring-2 ring-yellow-200' : ''}`}>
+    <Card className={`h-full border-stone-200 hover:border-emerald-900/20 hover:shadow-lg transition-all duration-200 rounded-2xl ${featured ? 'ring-2 ring-yellow-200' : ''}`}>
       <CardContent className="p-6">
         <div className="flex items-start gap-4">
-          <div className="w-16 h-16 bg-stone-100 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
+          <div className="w-16 h-16 bg-stone-100 rounded-2xl flex items-center justify-center flex-shrink-0 overflow-hidden">
             {listing.logo ? (
               <img src={listing.logo} alt={listing.business_name} className="w-full h-full object-cover" />
             ) : (

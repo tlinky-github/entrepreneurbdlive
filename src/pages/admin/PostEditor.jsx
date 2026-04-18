@@ -125,11 +125,10 @@ const PostEditor = () => {
         await postAPI.update(id, payload);
         toast.success('Post updated');
       } else {
-        await postAPI.create(payload);
+        const res = await postAPI.create(payload);
         toast.success('Post created');
+        navigate(`/admin/posts/${res.id}/edit`, { replace: true });
       }
-      
-      navigate('/admin/posts');
     } catch (error) {
       const message = error.response?.data?.detail || 'Failed to save post';
       toast.error(message);

@@ -30,9 +30,19 @@ export const AuthProvider = ({ children }) => {
           console.error('Error fetching user role:', error);
         }
 
+        let name = firebaseUser.displayName;
+        if (!name) {
+          try {
+            const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+            if (userDoc.exists()) {
+              name = userDoc.data().name;
+            }
+          } catch (e) { console.error('Error fetching fallback name'); }
+        }
+
         const appUser = {
           id: firebaseUser.uid,
-          name: firebaseUser.displayName,
+          name: name || (role === 'super_admin' ? 'Platform Admin' : 'Member'),
           email: firebaseUser.email,
           photoURL: firebaseUser.photoURL,
           role: role

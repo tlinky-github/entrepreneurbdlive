@@ -212,7 +212,7 @@ const EntrepreneurList = () => {
 
 const ProfileCard = ({ profile, featured }) => (
   <Link to={`/entrepreneurs/${profile.slug}`}>
-    <Card className={`h-full border-stone-200 hover:border-emerald-900/20 hover:shadow-lg transition-all duration-200 ${featured ? 'ring-2 ring-yellow-200' : ''}`}>
+    <Card className={`h-full border-stone-200 hover:border-emerald-900/20 hover:shadow-lg transition-all duration-200 rounded-2xl ${featured ? 'ring-2 ring-yellow-200' : ''}`}>
       <CardContent className="p-6">
         <div className="text-center">
           <div className="w-20 h-20 bg-emerald-100 rounded-full mx-auto mb-4 flex items-center justify-center overflow-hidden">

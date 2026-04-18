@@ -397,7 +397,7 @@ const BlogDetail = () => {
         {/* Featured Image */}
         {/* Featured Image */}
         {post.featured_image && (
-          <div className="w-full bg-stone-100 rounded-xl overflow-hidden mb-10 shadow-lg">
+          <div className="w-full bg-stone-100 rounded-2xl overflow-hidden mb-10 shadow-lg">
             <img
               src={post.featured_image}
               alt={post.title}
@@ -428,7 +428,7 @@ const BlogDetail = () => {
                         </h2>
                         <div className="space-y-4">
                           {faqs.map((faq, fIndex) => (
-                            <div key={`faq-item-${fIndex}`} className="bg-white border border-stone-200 rounded-xl overflow-hidden shadow-sm">
+                            <div key={`faq-item-${fIndex}`} className="bg-white border border-stone-200 rounded-2xl overflow-hidden shadow-sm">
                               <button
                                 onClick={() => setOpenFaqIndex(openFaqIndex === `faq-${index}-${fIndex}` ? null : `faq-${index}-${fIndex}`)}
                                 className="w-full flex items-center justify-between p-4 text-left hover:bg-stone-50 transition-colors"
@@ -557,7 +557,7 @@ const BlogDetail = () => {
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {relatedPosts.map((rPost) => (
                 <Link key={rPost.id} to={`/blog/${rPost.slug}`}>
-                  <div className="bg-white border border-stone-200 rounded-xl overflow-hidden hover:shadow-lg hover:border-emerald-900/20 transition-all duration-200 h-full group">
+                  <div className="bg-white border border-stone-200 rounded-2xl overflow-hidden hover:shadow-lg hover:border-emerald-900/20 transition-all duration-200 h-full group">
                     <div className="aspect-video bg-stone-100 overflow-hidden">
                       {rPost.featured_image ? (
                         <img
@@ -741,7 +741,7 @@ const BlogDetail = () => {
                 const replies = comments.filter(c => c.parent_id);
 
                 const renderCommentFormLocal = (parentId = null, replyName = '') => (
-                  <div className={`bg-stone-50 border border-stone-200 rounded-xl p-4 md:p-6 mb-4 ${parentId ? 'mt-4 border-emerald-100 bg-emerald-50/20' : ''}`}>
+                  <div className="bg-emerald-50/50 border border-emerald-100 rounded-2xl p-6 md:p-8 mb-4">
                     <div className="flex items-center justify-between mb-4">
                       <span className="text-sm font-medium text-stone-700 flex items-center gap-2">
                         {parentId ? <CornerDownRight className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
@@ -781,7 +781,7 @@ const BlogDetail = () => {
                         size="sm"
                         onClick={async (e) => {
                           e.preventDefault();
-                          const name = isAuthenticated ? (user?.name || 'Admin') : commenterName.trim();
+                          const name = isAuthenticated ? (user?.name || 'Platform Admin') : commenterName.trim();
                           if (!name) { toast.error('Please enter your name'); return; }
                           if (!newComment.trim()) { toast.error('Please write a comment'); return; }
                           if (!turnstileToken) { toast.error('Please complete the captcha'); return; }
@@ -796,7 +796,7 @@ const BlogDetail = () => {
                               name,
                               gender: isAuthenticated ? 'admin' : commenterGender,
                               is_admin: isAuthenticated,
-                              admin_name: isAuthenticated ? (user?.name || 'Admin') : null,
+                              admin_name: isAuthenticated ? (user?.name || 'Platform Admin') : null,
                               admin_photo: isAuthenticated ? user?.photoURL : null,
                             }, turnstileToken);
                             

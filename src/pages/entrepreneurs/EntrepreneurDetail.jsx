@@ -153,7 +153,7 @@ const EntrepreneurDetail = () => {
 
       {/* Profile Card */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Card className="border-stone-200 overflow-hidden">
+        <Card className="border-stone-200 overflow-hidden rounded-2xl">
           {/* Cover */}
           <div className="h-32 bg-gradient-to-r from-emerald-900 to-emerald-700" />
 
@@ -161,7 +161,7 @@ const EntrepreneurDetail = () => {
             <div className="flex flex-col md:flex-row gap-6">
               {/* Avatar */}
               <div className="flex-shrink-0">
-                <div className="w-32 h-32 bg-white rounded-xl shadow-lg flex items-center justify-center overflow-hidden border-4 border-white">
+                <div className="w-32 h-32 bg-white rounded-2xl shadow-lg flex items-center justify-center overflow-hidden border-4 border-white">
                   {(profile.featured_image || profile.photo) ? (
                     <img src={profile.featured_image || profile.photo} alt={profile.name} className="w-full h-full object-cover" />
                   ) : (
@@ -182,34 +182,48 @@ const EntrepreneurDetail = () => {
                         <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />
                       )}
                     </div>
-                    {(profile.designation || profile.role_title) && profile.company_name && (
+                    {(profile.designation || profile.role_title) && (profile.company_name || profile.business_name) && (
                       <p className="text-lg text-stone-600">
-                        {profile.designation || profile.role_title} at <span className="font-medium">{profile.company_name}</span>
+                        {profile.designation || profile.role_title} at{' '}
+                        {profile.linked_business_slug ? (
+                          <Link 
+                            to={`/directory/${profile.linked_business_slug}`}
+                            className="font-bold text-emerald-900 hover:underline decoration-emerald-200 decoration-2 underline-offset-4"
+                          >
+                            {profile.company_name || profile.business_name}
+                          </Link>
+                        ) : (
+                          <span className="font-medium">{profile.company_name || profile.business_name}</span>
+                        )}
                       </p>
                     )}
                     
-                    {/* Social Media Links - Clean layout without line breaks */}
                     <div className="flex flex-wrap items-center gap-6 mt-3">
                       {(profile.linkedin || profile.social_linkedin) && (
-                        <a href={profile.linkedin || profile.social_linkedin} target="_blank" rel="noopener noreferrer" className="text-stone-400 hover:text-blue-600 transition-all hover:scale-110 flex items-center gap-2 font-medium text-sm">
+                        <a href={profile.linkedin || profile.social_linkedin} target="_blank" rel="noopener noreferrer nofollow" className="text-stone-400 hover:text-blue-600 transition-all hover:scale-110 flex items-center gap-2 font-medium text-sm">
                           <Linkedin className="w-5 h-5 opacity-70" />
                           <span className="hidden sm:inline">LinkedIn</span>
                         </a>
                       )}
                       {(profile.twitter || profile.social_twitter) && (
-                        <a href={profile.twitter || profile.social_twitter} target="_blank" rel="noopener noreferrer" className="text-stone-400 hover:text-sky-500 transition-all hover:scale-110 flex items-center gap-2 font-medium text-sm">
+                        <a href={profile.twitter || profile.social_twitter} target="_blank" rel="noopener noreferrer nofollow" className="text-stone-400 hover:text-sky-500 transition-all hover:scale-110 flex items-center gap-2 font-medium text-sm">
                           <Twitter className="w-5 h-5 opacity-70" />
                           <span className="hidden sm:inline">Twitter</span>
                         </a>
                       )}
                       {(profile.facebook || profile.social_facebook) && (
-                        <a href={profile.facebook || profile.social_facebook} target="_blank" rel="noopener noreferrer" className="text-stone-400 hover:text-blue-700 transition-all hover:scale-110 flex items-center gap-2 font-medium text-sm">
+                        <a href={profile.facebook || profile.social_facebook} target="_blank" rel="noopener noreferrer nofollow" className="text-stone-400 hover:text-blue-700 transition-all hover:scale-110 flex items-center gap-2 font-medium text-sm">
                           <Facebook className="w-5 h-5 opacity-70" />
                           <span className="hidden sm:inline">Facebook</span>
                         </a>
                       )}
                       {(profile.website || profile.company_page_url) && (
-                        <a href={profile.website || profile.company_page_url} target="_blank" rel="noopener noreferrer" className="text-stone-400 hover:text-emerald-700 transition-all hover:scale-110 flex items-center gap-2 font-medium text-sm">
+                        <a 
+                          href={profile.website || profile.company_page_url} 
+                          target={profile.website_link_settings?.target || "_blank"} 
+                          rel={profile.website_link_settings?.rel || "noopener noreferrer nofollow"} 
+                          className="text-stone-400 hover:text-emerald-700 transition-all hover:scale-110 flex items-center gap-2 font-medium text-sm"
+                        >
                           <Globe className="w-5 h-5 opacity-70" />
                           <span className="hidden sm:inline">Website</span>
                         </a>
@@ -234,25 +248,25 @@ const EntrepreneurDetail = () => {
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6 pt-6">
                   {profile.startup_stage && (
                     <div className="flex flex-col">
-                      <span className="text-[10px] uppercase font-bold text-stone-400">Stage</span>
+                      <span className="text-[10px] uppercase font-bold text-stone-600">Stage</span>
                       <span className="text-sm font-semibold text-stone-700">{profile.startup_stage}</span>
                     </div>
                   )}
                   {profile.industry && (
                     <div className="flex flex-col">
-                      <span className="text-[10px] uppercase font-bold text-stone-400">Industry</span>
+                      <span className="text-[10px] uppercase font-bold text-stone-600">Industry</span>
                       <span className="text-sm font-semibold text-stone-700">{profile.industry}</span>
                     </div>
                   )}
                   {profile.employee_size && (
                     <div className="flex flex-col">
-                      <span className="text-[10px] uppercase font-bold text-stone-400">Team Size</span>
+                      <span className="text-[10px] uppercase font-bold text-stone-600">Team Size</span>
                       <span className="text-sm font-semibold text-stone-700">{profile.employee_size} members</span>
                     </div>
                   )}
                   {(profile.founder_name || profile.ceo_name) && (
                     <div className="flex flex-col">
-                      <span className="text-[10px] uppercase font-bold text-stone-400">Leadership</span>
+                      <span className="text-[10px] uppercase font-bold text-stone-600">Leadership</span>
                       <span className="text-sm font-semibold text-stone-700 truncate">{profile.ceo_name || profile.founder_name}</span>
                     </div>
                   )}
@@ -299,7 +313,7 @@ const EntrepreneurDetail = () => {
                           if (match && match[1]) {
                             const faqs = JSON.parse(match[1].replace(/&quot;/g, '"'));
                             return (
-                              <div key={index} className="my-12 pt-8 border-t border-stone-200 bg-emerald-50/30 rounded-2xl p-6 md:p-8">
+                              <div key={index} className="my-12 pt-8 border-t border-stone-200 bg-emerald-50/30 rounded-3xl p-6 md:p-8">
                                 <h2 className="text-2xl font-bold text-stone-900 mb-6 flex items-center gap-2">
                                   <Plus className="w-6 h-6 text-emerald-700" />
                                   Expert Q&A
@@ -308,7 +322,7 @@ const EntrepreneurDetail = () => {
                                   {faqs.map((faq, fIndex) => (
                                     <div 
                                       key={fIndex}
-                                      className="bg-white border border-stone-200 rounded-xl overflow-hidden shadow-sm"
+                                      className="bg-white border border-stone-200 rounded-2xl overflow-hidden shadow-sm"
                                     >
                                       <button
                                         onClick={() => setOpenFaqIndex(openFaqIndex === `inline-${index}-${fIndex}` ? null : `inline-${index}-${fIndex}`)}
@@ -351,7 +365,7 @@ const EntrepreneurDetail = () => {
                 </h2>
                 <div className="space-y-4">
                   {profile.faqs.map((faq, index) => (
-                    <div key={index} className="bg-stone-50 border border-stone-200 rounded-xl overflow-hidden transition-all duration-200">
+                    <div key={index} className="bg-stone-50 border border-stone-200 rounded-2xl overflow-hidden transition-all duration-200">
                       <button
                         onClick={() => setOpenFaqIndex(openFaqIndex === index ? null : index)}
                         className="w-full flex items-center justify-between p-4 text-left hover:bg-stone-100 transition-colors"
