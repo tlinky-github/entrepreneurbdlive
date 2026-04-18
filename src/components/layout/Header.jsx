@@ -178,6 +178,7 @@ const Header = () => {
               </DropdownMenu>
             ) : (
               <div className="flex items-center gap-2">
+                {/*
                 <Link to="/login">
                   <Button variant="ghost" className="text-stone-600">
                     Login
@@ -188,6 +189,7 @@ const Header = () => {
                     Get Started
                   </Button>
                 </Link>
+                */}
               </div>
             )}
 
