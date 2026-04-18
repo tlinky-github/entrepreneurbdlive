@@ -20,6 +20,8 @@ import {
 } from 'lucide-react';
 import { authorAPI } from '../../lib/api';
 import ImageUploader from '../../components/common/ImageUploader';
+import LinkDialog from '../../components/admin/LinkDialog';
+import { Settings } from 'lucide-react';
 
 const AdminAuthors = () => {
   const [authors, setAuthors] = useState([]);
@@ -38,6 +40,8 @@ const AdminAuthors = () => {
   const [facebook, setFacebook] = useState('');
   const [designation, setDesignation] = useState('');
   const [saving, setSaving] = useState(false);
+  const [websiteLinkSettings, setWebsiteLinkSettings] = useState({ target: '_blank', rel: 'nofollow noopener noreferrer' });
+  const [linkDialogOpen, setLinkDialogOpen] = useState(false);
 
   useEffect(() => {
     loadAuthors();
@@ -66,6 +70,7 @@ const AdminAuthors = () => {
     setTwitter(author.twitter || '');
     setFacebook(author.facebook || '');
     setDesignation(author.designation || '');
+    setWebsiteLinkSettings(author.website_link_settings || { target: '_blank', rel: 'nofollow noopener noreferrer' });
     setIsFormOpen(true);
   };
 
@@ -79,6 +84,7 @@ const AdminAuthors = () => {
     setTwitter('');
     setFacebook('');
     setDesignation('');
+    setWebsiteLinkSettings({ target: '_blank', rel: 'nofollow noopener noreferrer' });
     setIsFormOpen(false);
   };
 
@@ -98,7 +104,8 @@ const AdminAuthors = () => {
       linkedin,
       twitter,
       facebook,
-      designation
+      designation,
+      website_link_settings: websiteLinkSettings
     };
 
     try {
@@ -205,7 +212,24 @@ const AdminAuthors = () => {
                   <label className="text-sm font-medium text-stone-700 mb-1 block flex items-center gap-2">
                     <Globe className="w-4 h-4" /> Website
                   </label>
-                  <Input value={website} onChange={(e) => setWebsite(e.target.value)} placeholder="https://..." />
+                  <div className="flex gap-2">
+                    <Input 
+                      value={website} 
+                      onChange={(e) => setWebsite(e.target.value)} 
+                      placeholder="https://..." 
+                      className="flex-1"
+                    />
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      size="icon" 
+                      onClick={() => setLinkDialogOpen(true)}
+                      title="Link Settings"
+                      className={websiteLinkSettings?.rel?.includes('nofollow') ? 'border-amber-200 bg-amber-50 text-amber-600' : ''}
+                    >
+                      <Settings className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-stone-700 mb-1 block flex items-center gap-2">
@@ -234,6 +258,16 @@ const AdminAuthors = () => {
                 </Button>
               </div>
             </form>
+
+            <LinkDialog
+              open={linkDialogOpen}
+              onOpenChange={setLinkDialogOpen}
+              initialData={{ href: website, target: websiteLinkSettings.target, rel: websiteLinkSettings.rel }}
+              onApply={(data) => {
+                setWebsite(data.href);
+                setWebsiteLinkSettings({ target: data.target, rel: data.rel });
+              }}
+            />
           </CardContent>
         </Card>
       )}

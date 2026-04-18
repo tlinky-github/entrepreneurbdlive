@@ -11,6 +11,39 @@
       "destination": "/api/:path*"
     },
     {
+      "source": "/blog/:slug",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "(?i)bot|facebookexternalhit|whatsapp|google-marketing-platform|twitterbot|messenger|slackbot|linkedinbot|embedly|quora link preview|outbrain|pinterest\\/0\\.|bingbot|msnbot|bingpreview|googlebot|adsbot-google|twitterbot|pinterest|baiduspider|yandexbot|facebookexternalhit|metainspector"
+        }
+      ],
+      "destination": "/api/seo-handler?path=blog/:slug"
+    },
+    {
+      "source": "/directory/:slug",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "(?i)bot|facebookexternalhit|whatsapp|google-marketing-platform|twitterbot|messenger|slackbot|linkedinbot|embedly|quora link preview|outbrain|pinterest\\/0\\.|bingbot|msnbot|bingpreview|googlebot|adsbot-google|twitterbot|pinterest|baiduspider|yandexbot|facebookexternalhit|metainspector"
+        }
+      ],
+      "destination": "/api/seo-handler?path=directory/:slug"
+    },
+    {
+      "source": "/entrepreneurs/:slug",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "(?i)bot|facebookexternalhit|whatsapp|google-marketing-platform|twitterbot|messenger|slackbot|linkedinbot|embedly|quora link preview|outbrain|pinterest\\/0\\.|bingbot|msnbot|bingpreview|googlebot|adsbot-google|twitterbot|pinterest|baiduspider|yandexbot|facebookexternalhit|metainspector"
+        }
+      ],
+      "destination": "/api/seo-handler?path=entrepreneurs/:slug"
+    },
+    {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
     }

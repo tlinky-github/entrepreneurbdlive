@@ -8,6 +8,7 @@ import { Badge } from '../../components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Skeleton } from '../../components/ui/skeleton';
 import { toast } from 'sonner';
+import { ensureAbsoluteUrl } from '../../lib/utils';
 import {
   ArrowLeft,
   MapPin,
@@ -213,7 +214,7 @@ const DirectoryDetail = () => {
                       <Share2 className="w-4 h-4 mr-2" /> Share
                     </Button>
                     {listing.website && (
-                      <a href={listing.website} target="_blank" rel="noopener noreferrer" className="flex-1 md:flex-initial">
+                      <a href={ensureAbsoluteUrl(listing.website)} target={listing.website_link_settings?.target || "_blank"} rel={listing.website_link_settings?.rel || "noopener noreferrer"} className="flex-1 md:flex-initial">
                         <Button className="bg-emerald-900 hover:bg-emerald-800 w-full h-11 px-8">
                           <Globe className="w-4 h-4 mr-2" /> Visit Website
                         </Button>
@@ -419,9 +420,9 @@ const DirectoryDetail = () => {
                     )}
                     {listing.website && (
                       <a 
-                        href={listing.website} 
+                        href={ensureAbsoluteUrl(listing.website)} 
                         target={listing.website_link_settings?.target || "_blank"} 
-                        rel={listing.website_link_settings?.rel || "noopener noreferrer nofollow"} 
+                        rel={listing.website_link_settings?.rel || "noopener noreferrer"} 
                         className="flex items-center gap-4 group"
                       >
                         <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center group-hover:bg-emerald-600 transition-colors">
@@ -437,17 +438,17 @@ const DirectoryDetail = () => {
                         <p className="text-xs font-bold text-stone-400 mb-3">Follow Us</p>
                         <div className="flex items-center gap-3">
                           {listing.social_linkedin && (
-                            <a href={listing.social_linkedin} target="_blank" rel="noopener noreferrer nofollow" className="p-2 bg-white/10 rounded-lg hover:bg-emerald-600 transition-colors group">
+                            <a href={ensureAbsoluteUrl(listing.social_linkedin)} target="_blank" rel="noopener noreferrer nofollow" className="p-2 bg-white/10 rounded-lg hover:bg-emerald-600 transition-colors group">
                               <LinkedinIcon className="w-4 h-4 text-stone-300 group-hover:text-white" />
                             </a>
                           )}
                           {listing.social_twitter && (
-                            <a href={listing.social_twitter} target="_blank" rel="noopener noreferrer nofollow" className="p-2 bg-white/10 rounded-lg hover:bg-emerald-600 transition-colors group">
+                            <a href={ensureAbsoluteUrl(listing.social_twitter)} target="_blank" rel="noopener noreferrer nofollow" className="p-2 bg-white/10 rounded-lg hover:bg-emerald-600 transition-colors group">
                               <TwitterIcon className="w-4 h-4 text-stone-300 group-hover:text-white" />
                             </a>
                           )}
                           {listing.social_facebook && (
-                            <a href={listing.social_facebook} target="_blank" rel="noopener noreferrer nofollow" className="p-2 bg-white/10 rounded-lg hover:bg-emerald-600 transition-colors group">
+                            <a href={ensureAbsoluteUrl(listing.social_facebook)} target="_blank" rel="noopener noreferrer nofollow" className="p-2 bg-white/10 rounded-lg hover:bg-emerald-600 transition-colors group">
                               <FacebookIcon className="w-4 h-4 text-stone-300 group-hover:text-white" />
                             </a>
                           )}

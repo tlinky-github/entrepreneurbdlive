@@ -1138,13 +1138,29 @@ const ContentEditorPanel = () => {
                       placeholder="Select Type"
                     />
                   </div>
-                  <div>
-                    <label>Official Page URL</label>
+                  <div className="relative">
                     <Input
                       value={companyPageUrl}
                       onChange={(e) => setCompanyPageUrl(e.target.value)}
                       placeholder="https://company.com"
+                      className="pr-10"
                     />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLinkSource('companyPageUrl');
+                        setActiveLinkData({ 
+                          href: companyPageUrl, 
+                          target: websiteLinkSettings.target === '_blank', 
+                          rel: websiteLinkSettings.rel 
+                        });
+                        setLinkDialogOpen(true);
+                      }}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-stone-400 hover:text-emerald-600 transition-colors"
+                      title="Link Settings"
+                    >
+                      <Settings className="w-4 h-4" />
+                    </button>
                   </div>
                   <div className="space-y-4 pt-4 border-t border-stone-100">
                     <h4 className="font-semibold text-sm">Contact Information</h4>
@@ -1917,13 +1933,15 @@ const ContentEditorPanel = () => {
         }}
         initialData={activeLinkData}
         onApply={(data) => {
-          if (linkSource === 'website') {
-            setWebsite(data.href || '');
+          if (linkSource === 'website' || linkSource === 'companyPageUrl') {
+            if (linkSource === 'website') setWebsite(data.href || '');
+            if (linkSource === 'companyPageUrl') setCompanyPageUrl(data.href || '');
+            
             setWebsiteLinkSettings({
-              target: data.target ? '_blank' : '_self',
+              target: data.target || '_blank',
               rel: data.rel || ''
             });
-            toast.success('Website link settings applied');
+            toast.success('Link settings applied');
           } else {
             if (data.href) {
               editor.chain().focus().setLink(data).run();

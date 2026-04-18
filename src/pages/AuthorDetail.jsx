@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { authorAPI, postAPI, profileAPI, listingAPI, resourceAPI } from '../lib/api';
 import { Card, CardContent } from '../components/ui/card';
+import { ensureAbsoluteUrl } from '../lib/utils';
 import { Badge } from '../components/ui/badge';
 import { Skeleton } from '../components/ui/skeleton';
 import { SEO } from '../components/SEO';
@@ -171,22 +172,27 @@ const AuthorDetail = () => {
                   <h3 className="text-xs font-bold text-stone-400 uppercase tracking-widest">Connect</h3>
                   <div className="flex flex-col gap-3">
                     {author.website && (
-                      <a href={author.website} target="_blank" rel="noopener noreferrer" className="text-stone-600 hover:text-emerald-900 text-sm flex items-center gap-2 transition-colors">
+                      <a 
+                        href={ensureAbsoluteUrl(author.website)} 
+                        target={author.website_link_settings?.target || "_blank"} 
+                        rel={author.website_link_settings?.rel || "noopener noreferrer"} 
+                        className="text-stone-600 hover:text-emerald-900 text-sm flex items-center gap-2 transition-colors"
+                      >
                         <Globe className="w-4 h-4" /> Website
                       </a>
                     )}
                     {author.linkedin && (
-                      <a href={author.linkedin} target="_blank" rel="noopener noreferrer" className="text-stone-600 hover:text-blue-700 text-sm flex items-center gap-2 transition-colors">
+                      <a href={ensureAbsoluteUrl(author.linkedin)} target="_blank" rel="noopener noreferrer nofollow" className="text-stone-600 hover:text-blue-700 text-sm flex items-center gap-2 transition-colors">
                         <Linkedin className="w-4 h-4" /> LinkedIn
                       </a>
                     )}
                     {author.twitter && (
-                      <a href={author.twitter} target="_blank" rel="noopener noreferrer" className="text-stone-600 hover:text-sky-500 text-sm flex items-center gap-2 transition-colors">
+                      <a href={ensureAbsoluteUrl(author.twitter)} target="_blank" rel="noopener noreferrer nofollow" className="text-stone-600 hover:text-sky-500 text-sm flex items-center gap-2 transition-colors">
                         <Twitter className="w-4 h-4" /> Twitter
                       </a>
                     )}
                     {author.facebook && (
-                      <a href={author.facebook} target="_blank" rel="noopener noreferrer" className="text-stone-600 hover:text-blue-600 text-sm flex items-center gap-2 transition-colors">
+                      <a href={ensureAbsoluteUrl(author.facebook)} target="_blank" rel="noopener noreferrer nofollow" className="text-stone-600 hover:text-blue-600 text-sm flex items-center gap-2 transition-colors">
                         <Facebook className="w-4 h-4" /> Facebook
                       </a>
                     )}

@@ -9,6 +9,7 @@ import { Badge } from '../../components/ui/badge';
 import { Card, CardContent } from '../../components/ui/card';
 import { Skeleton } from '../../components/ui/skeleton';
 import { toast } from 'sonner';
+import { ensureAbsoluteUrl } from '../../lib/utils';
 import {
   ArrowLeft,
   MapPin,
@@ -200,28 +201,28 @@ const EntrepreneurDetail = () => {
                     
                     <div className="flex flex-wrap items-center gap-6 mt-3">
                       {(profile.linkedin || profile.social_linkedin) && (
-                        <a href={profile.linkedin || profile.social_linkedin} target="_blank" rel="noopener noreferrer nofollow" className="text-stone-400 hover:text-blue-600 transition-all hover:scale-110 flex items-center gap-2 font-medium text-sm">
+                        <a href={ensureAbsoluteUrl(profile.linkedin || profile.social_linkedin)} target="_blank" rel="noopener noreferrer nofollow" className="text-stone-400 hover:text-blue-600 transition-all hover:scale-110 flex items-center gap-2 font-medium text-sm">
                           <Linkedin className="w-5 h-5 opacity-70" />
                           <span className="hidden sm:inline">LinkedIn</span>
                         </a>
                       )}
                       {(profile.twitter || profile.social_twitter) && (
-                        <a href={profile.twitter || profile.social_twitter} target="_blank" rel="noopener noreferrer nofollow" className="text-stone-400 hover:text-sky-500 transition-all hover:scale-110 flex items-center gap-2 font-medium text-sm">
+                        <a href={ensureAbsoluteUrl(profile.twitter || profile.social_twitter)} target="_blank" rel="noopener noreferrer nofollow" className="text-stone-400 hover:text-sky-500 transition-all hover:scale-110 flex items-center gap-2 font-medium text-sm">
                           <Twitter className="w-5 h-5 opacity-70" />
                           <span className="hidden sm:inline">Twitter</span>
                         </a>
                       )}
                       {(profile.facebook || profile.social_facebook) && (
-                        <a href={profile.facebook || profile.social_facebook} target="_blank" rel="noopener noreferrer nofollow" className="text-stone-400 hover:text-blue-700 transition-all hover:scale-110 flex items-center gap-2 font-medium text-sm">
+                        <a href={ensureAbsoluteUrl(profile.facebook || profile.social_facebook)} target="_blank" rel="noopener noreferrer nofollow" className="text-stone-400 hover:text-blue-700 transition-all hover:scale-110 flex items-center gap-2 font-medium text-sm">
                           <Facebook className="w-5 h-5 opacity-70" />
                           <span className="hidden sm:inline">Facebook</span>
                         </a>
                       )}
                       {(profile.website || profile.company_page_url) && (
                         <a 
-                          href={profile.website || profile.company_page_url} 
+                          href={ensureAbsoluteUrl(profile.website || profile.company_page_url)} 
                           target={profile.website_link_settings?.target || "_blank"} 
-                          rel={profile.website_link_settings?.rel || "noopener noreferrer nofollow"} 
+                          rel={profile.website_link_settings?.rel || "noopener noreferrer"} 
                           className="text-stone-400 hover:text-emerald-700 transition-all hover:scale-110 flex items-center gap-2 font-medium text-sm"
                         >
                           <Globe className="w-5 h-5 opacity-70" />

@@ -11,6 +11,7 @@ import { Avatar, AvatarFallback } from '../../components/ui/avatar';
 import { PageLoader } from '../../components/ui/page-loader';
 import { SEO } from '../../components/SEO';
 import { toast } from 'sonner';
+import { ensureAbsoluteUrl } from '../../lib/utils';
 import {
   Calendar,
   User,
@@ -89,9 +90,25 @@ const BlogDetail = () => {
     if (window.confirm('Are you sure you want to delete this comment?')) {
       try {
         await commentAPI.delete(id);
-        setComments(prev => prev.filter(c => c.id !== id));
+        // Remove the comment and all its replies from the local state to prevent orphans
+        setComments(prev => {
+          const toDelete = new Set([id]);
+          // Simple one-level nested check (common in this app)
+          prev.forEach(c => { if(c.parent_id === id) toDelete.add(c.id); });
+          return prev.filter(c => !toDelete.has(c.id));
+        });
+        
+        // Update local post count based on actual items removed
+        setPost(prev => {
+          const removedCount = comments.filter(c => c.id === id || c.parent_id === id).length;
+          return { 
+            ...prev, 
+            comment_count: Math.max(0, (prev.comment_count || 0) - removedCount) 
+          };
+        });
         toast.success('Comment deleted');
       } catch (error) {
+        console.error('Delete Error:', error);
         toast.error('Failed to delete comment');
       }
     }
@@ -246,32 +263,6 @@ const BlogDetail = () => {
     } catch {
       navigator.clipboard.writeText(window.location.href);
       toast.success('Link copied to clipboard');
-    }
-  };
-
-  const handleComment = async (e) => {
-    e.preventDefault();
-    if (!isAuthenticated) {
-      toast.error('Please login to comment');
-      return;
-    }
-    if (!newComment.trim()) return;
-
-    setSubmittingComment(true);
-    try {
-      const res = await commentAPI.create({
-        content: newComment,
-        content_type: 'blog',
-        content_id: post.id,
-      });
-      setComments([res.data, ...comments]);
-      setNewComment('');
-      setPost(prev => ({ ...prev, comment_count: prev.comment_count + 1 }));
-      toast.success('Comment added');
-    } catch (error) {
-      toast.error('Failed to add comment');
-    } finally {
-      setSubmittingComment(false);
     }
   };
 
@@ -593,10 +584,15 @@ const BlogDetail = () => {
 
         {/* Comments Section */}
         <section id="comments" className="mt-12">
-          <h2 className="text-2xl font-bold text-stone-900 mb-8 flex items-center gap-3">
-            <MessageCircle className="w-6 h-6" />
-            Comments ({comments.length})
-          </h2>
+          <div className="flex items-center justify-between mb-8">
+            <h2 className="text-2xl font-bold text-stone-900 flex items-center gap-3">
+              <MessageCircle className="w-6 h-6" />
+              Comments ({comments.length})
+            </h2>
+            <Button variant="outline" size="sm" onClick={() => { setReplyTo(null); setActiveReplyId(null); document.getElementById('comments')?.scrollIntoView({ behavior: 'smooth' }); }}>
+              Post New Comment
+            </Button>
+          </div>
 
           {/* Comment Form */}
           <div className="bg-white border border-stone-200 rounded-2xl p-6 md:p-8 mb-8 shadow-sm">
@@ -662,7 +658,7 @@ const BlogDetail = () => {
             </div>
 
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div ref={turnstileRef} />
+              <div ref={turnstileRef} className="scale-90 origin-left" />
               <Button
                 onClick={async (e) => {
                   e.preventDefault();
@@ -673,7 +669,7 @@ const BlogDetail = () => {
 
                   setSubmittingComment(true);
                   try {
-                    const commentPayload = {
+                    const res = await commentAPI.create({
                       content: newComment.trim(),
                       content_type: 'blog',
                       content_id: post.id,
@@ -683,18 +679,14 @@ const BlogDetail = () => {
                       is_admin: isAuthenticated,
                       admin_name: isAuthenticated ? (user?.name || 'Admin') : null,
                       admin_photo: isAuthenticated ? user?.photoURL : null,
-                    };
-
-                    const res = await commentAPI.create(commentPayload, turnstileToken);
+                    }, turnstileToken);
                     
-                    // Add the comment to the local list
                     setComments(prev => [res.data, ...prev]);
                     setNewComment('');
                     setReplyTo(null);
                     setActiveReplyId(null);
                     toast.success('Comment posted!');
                     
-                    // Reset turnstile
                     if (window.turnstile && turnstileWidgetId.current) {
                       window.turnstile.reset(turnstileWidgetId.current);
                       setTurnstileToken(null);
@@ -715,16 +707,6 @@ const BlogDetail = () => {
                 )}
               </Button>
             </div>
-          </div>
-
-          <div className="flex items-center justify-between mb-8">
-             <h2 className="text-2xl font-bold text-stone-900 flex items-center gap-3">
-               <MessageCircle className="w-6 h-6" />
-               Comments ({comments.length})
-             </h2>
-             <Button variant="outline" size="sm" onClick={() => { setReplyTo(null); setActiveReplyId(null); document.getElementById('comments')?.scrollIntoView({ behavior: 'smooth' }); }}>
-                Post New Comment
-             </Button>
           </div>
 
           {/* Comments List */}
