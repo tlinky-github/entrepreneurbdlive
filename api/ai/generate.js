@@ -35,7 +35,8 @@ module.exports = async (req, res) => {
       targetStatus,
       includeSEO,
       minFaqCount,
-      tokenMode
+      tokenMode,
+      customPrompt
     } = req.body;
 
     if (!provider || !model) {
@@ -59,6 +60,7 @@ module.exports = async (req, res) => {
       includeSEO: includeSEO !== false,
       minFaqCount: parseInt(minFaqCount) || 3,
       tokenMode: tokenMode || 'auto',
+      customPrompt: customPrompt || null,
     });
 
     return successResponse(res, { post: result.post });

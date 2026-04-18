@@ -7,13 +7,7 @@ const claudeService = {
       const anthropic = new Anthropic({ apiKey });
 
       // Try to create a message to validate key
-      const models = [
-        'claude-3-5-sonnet-20241022',
-        'claude-3-5-haiku-20241022',
-        'claude-3-opus-20240229',
-        'claude-3-sonnet-20240229',
-        'claude-3-haiku-20240307',
-      ];
+      const models = await this.getAvailableModels(apiKey);
 
       return {
         success: true,
@@ -28,7 +22,7 @@ const claudeService = {
     }
   },
 
-  async generateContent(apiKey, prompt, model = 'claude-3-5-sonnet-20241022', options = {}) {
+  async generateContent(apiKey, prompt, model, options = {}) {
     try {
       const anthropic = new Anthropic({ apiKey });
 
@@ -58,47 +52,24 @@ const claudeService = {
     }
   },
 
-  async extractTitle(apiKey, content) {
-    try {
-      const response = await this.generateContent(
-        apiKey,
-        `Extract a concise title (max 100 chars) for this post:\n\n${content}`,
-        'claude-3-5-haiku-20241022',
-        { maxTokens: 100 }
-      );
-      return response.content.trim();
-    } catch (error) {
-      return 'Untitled Post';
-    }
-  },
-
-  async extractExcerpt(apiKey, content) {
-    try {
-      const response = await this.generateContent(
-        apiKey,
-        `Extract a brief excerpt (max 200 chars) for this post:\n\n${content}`,
-        'claude-3-5-haiku-20241022',
-        { maxTokens: 150 }
-      );
-      return response.content.trim();
-    } catch (error) {
-      return content.substring(0, 200) + '...';
-    }
-  },
-
   async getAvailableModels(apiKey) {
     try {
-      // Anthropic Claude supported models (as of current API)
-      const availableModels = [
-        'claude-3-5-sonnet-20241022',
-        'claude-3-5-haiku-20241022',
-        'claude-3-opus-20240229',
-        'claude-3-sonnet-20240229',
-        'claude-3-haiku-20240307',
-      ];
-      return availableModels;
+      const response = await fetch('https://api.anthropic.com/v1/models', {
+        method: 'GET',
+        headers: {
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01'
+        }
+      });
+      if (!response.ok) throw new Error(`Anthropic API responded with status: ${response.status}`);
+      const data = await response.json();
+      if (data.data && Array.isArray(data.data)) {
+        const validModels = data.data.map(model => model.id);
+        if (validModels.length > 0) return validModels;
+      }
+      throw new Error('No valid models found in Anthropic response');
     } catch (error) {
-      throw new Error(`Claude API Error: ${error.message}`);
+      throw new Error(`Failed to fetch Claude models: ${error.message}`);
     }
   },
 };

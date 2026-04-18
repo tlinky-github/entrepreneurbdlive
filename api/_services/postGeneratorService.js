@@ -28,6 +28,7 @@ const postGeneratorService = {
       language = 'en',
       targetDestination = 'blog', // 'blog' or 'knowledge'
       targetStatus = 'draft',      // 'draft' or 'published'
+      customPrompt = null,
     } = options;
 
     const db = getFirestore();
@@ -91,7 +92,7 @@ const postGeneratorService = {
       let fullContent = '';
       let totalTokensUsed = 0;
       let iterations = 0;
-      const MAX_ITERATIONS = 4; // Prevent infinite loops
+      const MAX_ITERATIONS = customPrompt ? 1 : 4; // Prevent infinite loops, 1 pass for custom prompts
       const topicsStr = topics.join(', ');
       const keywordsStr = keywords.join(', ');
 
@@ -101,7 +102,10 @@ const postGeneratorService = {
         let currentPrompt = '';
         const currentWordCount = fullContent.split(/\s+/).filter(w => w.length > 0).length;
 
-        if (iterations === 1) {
+        if (customPrompt) {
+          // Raw override
+          currentPrompt = customPrompt;
+        } else if (iterations === 1) {
           // Initial prompt
           currentPrompt = `Act as an expert content creator and professional blogger. Your goal is to generate a comprehensive, high-quality, and highly engaging blog post in ${language}.
           
@@ -129,8 +133,9 @@ TECHNICAL SPECIFICATIONS:
 - Do NOT include the Title in the body.
 - Do NOT use <h1> tags.
 - Do NOT include metadata like "Part 1" or labels.
-- This is PART 1 of the generation.
-- Goal for this batch: ~500-700 words.
+- NEVER include meta-commentary like 'Part 1' or 'Part 2'.
+- Write the ENTIRE, complete blog post from start to finish. Include the conclusion at the end.
+- Fully build out lists or steps. If writing a 'Top 20' list, you MUST include all 20 items.
 
 Post Content (HTML):`;
         } else {
@@ -151,9 +156,9 @@ CONTINUATION REQUIREMENTS:
 2. Do NOT repeat the introduction or previously covered points.
 3. Focus on expanding the remaining sections using HTML tags (<h2>, <h3>, <p>, <ul>, <li>, <strong>).
 4. Maintain the "${tone}" tone.
-5. Do NOT include "Part 2" or continuation labels.
-6. Use STRAIGHT QUOTES (") and SIMPLE DASHES (-). Avoid conversational chatbot language.
-7. If you have covered everything and reached near ${targetWordCount} words, provide a strong Conclusion & CTA (e.g., share this post or explore the directory).
+5. Provide a Conclusion only if you are about to reach ${targetWordCount} words.
+6. NEVER include labels like "Part 2", "In conclusion", or meta-commentary. Output ONLY the organic HTML text.
+7. If writing a list (e.g. "Top 20"), continue the numbering exactly where it stopped.
 
 Next Section of Post (HTML):`;
         }
@@ -565,6 +570,91 @@ HTML Output:`;
     } catch (e) {
       console.error('Related widget failed:', e);
       return '';
+    }
+  },
+
+  async copilotAction(userId, options = {}) {
+    const { provider, model, profileIndex = 0, action = 'rewrite', text = '', prompt = '' } = options;
+    const db = getFirestore();
+    
+    try {
+      // Get user's provider config
+      const configDoc = await db.collection('ai_configs').doc(userId).get();
+      if (!configDoc.exists) throw new Error('No AI provider configured');
+
+      const config = configDoc.data();
+      const providerLower = provider.toLowerCase();
+      const providerConfig = config.providers?.[providerLower];
+
+      if (!providerConfig) throw new Error(`Provider ${provider} not configured`);
+
+      // Get the correct API key based on profileIndex
+      let apiKey;
+      if (providerConfig.profiles && providerConfig.profiles[profileIndex]) {
+        apiKey = providerConfig.profiles[profileIndex].apiKey;
+      } else {
+        apiKey = providerConfig.apiKey;
+      }
+
+      if (!apiKey) throw new Error('No API key found for this profile');
+      apiKey = decrypt(apiKey);
+
+      const providerService = this.getProviderService(provider);
+      if (!providerService) throw new Error('Unknown provider');
+
+      let systemPrompt = '';
+      if (!text && prompt) {
+          systemPrompt = `Act as an expert content writer. Follow this prompt and return ONLY the generated text in HTML format if applicable, without markdown code blocks. PROMPT: ${prompt}`;
+      } else {
+          switch (action) {
+            case 'rewrite':
+              systemPrompt = `Rewrite the following text to be more professional, engaging, and clear. Output ONLY the rewritten text, preserving any original HTML tags structure if they exist. \n\nTEXT:\n${text}`;
+              break;
+            case 'expand':
+              systemPrompt = `Expand upon the following text. Add more detail, examples, or context where appropriate. Output ONLY the expanded text, preserving HTML tags.\n\nTEXT:\n${text}`;
+              break;
+            case 'summarize':
+              systemPrompt = `Summarize the following text into a very concise paragraph. Output ONLY the summary.\n\nTEXT:\n${text}`;
+              break;
+            case 'grammar':
+              systemPrompt = `Fix all spelling and grammar mistakes in the following text without drastically changing its meaning. Output ONLY the fixed text, preserving HTML.\n\nTEXT:\n${text}`;
+              break;
+            case 'custom':
+              systemPrompt = `Follow the user instructions relative to the text. Output ONLY the resulting text.\n\nINSTRUCTIONS: ${prompt}\n\nTEXT:\n${text}`;
+              break;
+            default:
+              systemPrompt = text;
+          }
+      }
+
+      const result = await providerService.generateContent(
+        apiKey,
+        systemPrompt,
+        model,
+        { temperature: 0.7, maxTokens: 1000 }
+      );
+
+      // Log copilot generation
+      await db.collection('ai_logs').add({
+        userId,
+        action: 'copilot_' + action,
+        status: 'success',
+        provider: providerLower,
+        model,
+        tokensUsed: result.tokensUsed || 0,
+        timestamp: new Date(),
+      });
+
+      return { success: true, text: result.content.replace(/^\s*[\"\']|[\"\']\s*$/g, '') };
+    } catch (error) {
+      await db.collection('ai_logs').add({
+        userId,
+        action: 'copilot_' + action,
+        status: 'error',
+        error: error.message,
+        timestamp: new Date(),
+      });
+      throw error;
     }
   },
 };

@@ -36,7 +36,12 @@ import {
   Undo,
   Redo,
   Minus,
+  Sparkles,
+  Wand2,
+  Loader2
 } from 'lucide-react';
+import { toast } from 'sonner';
+import aiAPI from '../../lib/aiApi';
 import { useState, useCallback, useEffect } from 'react';
 import {
   Dialog,
@@ -67,6 +72,41 @@ const TipTapEditor = ({ content, onChange, placeholder = 'Start writing your con
   const [linkUrl, setLinkUrl] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [youtubeUrl, setYoutubeUrl] = useState('');
+  
+  const [isCopilotLoading, setIsCopilotLoading] = useState(false);
+  const [copilotActionType, setCopilotActionType] = useState(null);
+
+  const handleCopilot = async (actionStr) => {
+    if (!editor) return;
+    const { from, to } = editor.state.selection;
+    const selectedText = editor.state.doc.textBetween(from, to, ' ');
+    if (!selectedText) {
+       toast.error('Please highlight some text first to use AI Copilot');
+       return;
+    }
+
+    try {
+      setIsCopilotLoading(true);
+      setCopilotActionType(actionStr);
+      
+      const response = await aiAPI.copilotAction({
+         action: actionStr,
+         text: selectedText
+      });
+
+      if (response && response.success && response.text) {
+         editor.chain().focus().insertContentAt({ from, to }, response.text).run();
+         toast.success('AI finished successfully!');
+      } else {
+         throw new Error("Invalid response format");
+      }
+    } catch(err) {
+      toast.error('AI Copilot failed: ' + (err.message || 'Unknown error'));
+    } finally {
+      setIsCopilotLoading(false);
+      setCopilotActionType(null);
+    }
+  };
 
   const editor = useEditor({
     extensions: [
@@ -316,6 +356,33 @@ const TipTapEditor = ({ content, onChange, placeholder = 'Start writing your con
           <MenuButton onClick={addTable} title="Add Table">
             <TableIcon className="w-4 h-4" />
           </MenuButton>
+        </div>
+
+        {/* AI Copilot Toolbar */}
+        <div className="flex items-center ml-auto">
+          <div className="flex items-center bg-indigo-50 rounded pl-2 pr-1 py-0.5 border border-indigo-100 shadow-sm">
+            <span className="text-xs font-bold text-indigo-800 mr-2 flex items-center uppercase tracking-wider">AI Copilot</span>
+            {isCopilotLoading ? (
+              <span className="text-xs font-semibold text-indigo-600 px-2 py-1 flex items-center gap-1">
+                <Loader2 className="w-3.5 h-3.5 animate-spin" /> Thinking...
+              </span>
+            ) : (
+              <div className="flex items-center gap-1">
+                <MenuButton onClick={() => handleCopilot('rewrite')} title="Rewrite Selected Text" className="hover:bg-indigo-100">
+                  <Wand2 className="w-4 h-4 text-indigo-700" />
+                </MenuButton>
+                <MenuButton onClick={() => handleCopilot('expand')} title="Expand Selected Text" className="hover:bg-indigo-100">
+                  <Sparkles className="w-4 h-4 text-indigo-700" />
+                </MenuButton>
+                <button type="button" onClick={() => handleCopilot('summarize')} className="text-xs font-semibold text-indigo-700 hover:bg-indigo-100 px-2 py-1.5 rounded transition-colors" title="Summarize">
+                  Sum
+                </button>
+                <button type="button" onClick={() => handleCopilot('grammar')} className="text-xs font-semibold text-indigo-700 hover:bg-indigo-100 px-2 py-1.5 rounded transition-colors" title="Fix Grammar">
+                  A+
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

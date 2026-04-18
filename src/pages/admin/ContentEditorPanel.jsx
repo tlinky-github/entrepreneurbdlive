@@ -19,8 +19,9 @@ import { Input } from '../../components/ui/input';
 import { Badge } from '../../components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { toast } from 'sonner';
-import { Save, ChevronLeft, Eye, Settings, Star, HelpCircle, Code, ChevronDown, ChevronUp, FileCode, Calendar, Users } from 'lucide-react';
+import { Save, ChevronLeft, Eye, Settings, Star, HelpCircle, Code, ChevronDown, ChevronUp, FileCode, Calendar, Users, Wand2, Sparkles, Loader2 } from 'lucide-react';
 import { contentAPI, taxonomyAPI, categoryAPI, blogCategoryAPI, authorAPI } from '../../lib/api';
+import aiAPI from '../../lib/aiApi';
 import ImageUploader from '../../components/common/ImageUploader';
 import LinkDialog from '../../components/admin/LinkDialog';
 import ImageEditorDialog from '../../components/admin/ImageEditorDialog';
@@ -139,6 +140,47 @@ const ContentEditorPanel = () => {
   // Custom HTML block dialog
   const [htmlDialogOpen, setHtmlDialogOpen] = useState(false);
   const [customHtmlInput, setCustomHtmlInput] = useState('');
+
+  // --- AI Copilot Logic ---
+  const [isCopilotLoading, setIsCopilotLoading] = useState(false);
+  const [showCustomCopilot, setShowCustomCopilot] = useState(false);
+  const [customCopilotInstruction, setCustomCopilotInstruction] = useState('');
+
+  const handleCopilot = async (actionStr, customPrompt = null) => {
+    if (!editor) return;
+    const { from, to } = editor.state.selection;
+    const selectedText = editor.state.doc.textBetween(from, to, ' ');
+    if (!selectedText) {
+       toast.error('Please highlight some text first to use AI Copilot');
+       return;
+    }
+
+    try {
+      setIsCopilotLoading(true);
+      const payload = {
+         action: actionStr,
+         text: selectedText
+      };
+
+      if (customPrompt) {
+         payload.prompt = customPrompt;
+      }
+
+      const response = await aiAPI.copilotAction(payload);
+
+      if (response && response.success && response.text) {
+         editor.chain().focus().insertContentAt({ from, to }, response.text).run();
+         toast.success('AI finished successfully!');
+      } else {
+         throw new Error("Invalid response format");
+      }
+    } catch(err) {
+      toast.error('AI Copilot failed: ' + (err.message || 'Unknown error'));
+      console.error('Copilot error:', err);
+    } finally {
+      setIsCopilotLoading(false);
+    }
+  };
 
   // 1. Shared Extensions to prevent duplicates
   const sharedExtensions = [
@@ -397,7 +439,7 @@ const ContentEditorPanel = () => {
       refreshIndustries();
       refreshListings();
     }
-  }, [type, refreshListingTypes, refreshCities, refreshStartupStages, refreshIndustries, refreshListings]);
+  }, [type, refreshListingTypes, refreshCities, refreshStartupStages, refreshIndustries, refreshListings, refreshEntrepreneurs]);
 
   const handleQuickAdd = async (taxType) => {
     if (!quickAddValue.trim()) return;
@@ -632,7 +674,7 @@ const ContentEditorPanel = () => {
         response = await contentAPI.create(payload);
       }
 
-      console.log('Save response:', response);
+
       toast.success(`Content ${status === 'published' ? 'published' : 'saved'} successfully!`);
 
       if (!itemId && response?.id) {
@@ -1487,6 +1529,93 @@ const ContentEditorPanel = () => {
                     <FileCode size={14} /> HTML
                   </button>
                 </div>
+
+                <div className="toolbar-divider" />
+
+                <div className="toolbar-group flex items-center bg-indigo-50 border border-indigo-100 rounded-md p-1 ml-auto">
+                  <span className="text-xs font-bold text-indigo-800 mx-2 flex items-center uppercase tracking-wider">AI Copilot</span>
+                  {isCopilotLoading ? (
+                    <span className="text-xs font-semibold text-indigo-600 px-2 py-1 flex items-center gap-1">
+                      <Loader2 size={12} className="animate-spin" /> Thinking...
+                    </span>
+                  ) : (
+                    <div className="flex items-center gap-1">
+                      <button 
+                        onClick={(e) => { e.preventDefault(); handleCopilot('rewrite'); }} 
+                        title="Rewrite Selected Text" 
+                        disabled={!editor} 
+                        className="text-indigo-700 hover:bg-indigo-100 p-1 rounded transition-colors"
+                      >
+                        <Wand2 size={14} />
+                      </button>
+                      <button 
+                        onClick={(e) => { e.preventDefault(); handleCopilot('expand'); }} 
+                        title="Expand Selected Text" 
+                        disabled={!editor} 
+                        className="text-indigo-700 hover:bg-indigo-100 p-1 rounded transition-colors"
+                      >
+                        <Sparkles size={14} />
+                      </button>
+                      <button 
+                        onClick={(e) => { e.preventDefault(); handleCopilot('summarize'); }} 
+                        title="Summarize" 
+                        disabled={!editor} 
+                        className="text-xs font-bold text-indigo-700 hover:bg-indigo-100 px-1.5 py-1 rounded transition-colors"
+                      >
+                        SUM
+                      </button>
+                      <button 
+                        onClick={(e) => { e.preventDefault(); handleCopilot('grammar'); }} 
+                        title="Fix Grammar" 
+                        disabled={!editor} 
+                        className="text-xs font-bold text-indigo-700 hover:bg-indigo-100 px-1.5 py-1 rounded transition-colors"
+                      >
+                        A+
+                      </button>
+                      <button 
+                        onClick={(e) => { e.preventDefault(); setShowCustomCopilot(!showCustomCopilot); }} 
+                        title="Custom AI Instruction" 
+                        disabled={!editor} 
+                        className={`text-xs font-bold px-1.5 py-1 rounded transition-colors ${showCustomCopilot ? 'bg-indigo-600 text-white' : 'text-indigo-700 hover:bg-indigo-100'}`}
+                      >
+                        CUSTOM
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {showCustomCopilot && !isCopilotLoading && (
+                  <div className="flex items-center gap-2 bg-indigo-50 border border-indigo-100 p-1 px-2 rounded-md ml-2 shadow-sm animate-in slide-in-from-left-1 duration-200">
+                     <Input 
+                        placeholder="E.g. Make it funnier, simplify, etc." 
+                        value={customCopilotInstruction}
+                        onChange={(e) => setCustomCopilotInstruction(e.target.value)}
+                        className="h-7 text-xs border-indigo-200 focus:border-indigo-400 bg-white w-48"
+                        onKeyDown={(e) => {
+                           if (e.key === 'Enter') {
+                              e.preventDefault();
+                              handleCopilot('custom', customCopilotInstruction);
+                              setShowCustomCopilot(false);
+                           }
+                        }}
+                     />
+                     <button 
+                        onClick={() => {
+                           handleCopilot('custom', customCopilotInstruction);
+                           setShowCustomCopilot(false);
+                        }}
+                        className="p-1 px-2 bg-indigo-600 text-white rounded text-[10px] font-bold hover:bg-indigo-700 transition-colors uppercase"
+                     >
+                        Go
+                     </button>
+                     <button 
+                        onClick={() => setShowCustomCopilot(false)}
+                        className="text-indigo-400 hover:text-indigo-600 p-0.5"
+                     >
+                        <X size={14} />
+                     </button>
+                  </div>
+                )}
 
                 <div className="toolbar-divider" />
 

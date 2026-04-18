@@ -48,6 +48,8 @@ export const AIGenerateForm = ({ onPostGenerated, onClose }) => {
     maxTokens: 2000,
     scheduledAt: '',
     isScheduled: false,
+    customPrompt: '',
+    isCustomPrompt: false,
   });
 
   const [bulkProgress, setBulkProgress] = useState({ 
@@ -309,6 +311,7 @@ export const AIGenerateForm = ({ onPostGenerated, onClose }) => {
         categoryName: selectedCategory?.name || null,
         scheduledAt: formData.isScheduled ? formData.scheduledAt : null,
         tokenMode: formData.tokenMode || 'auto',
+        customPrompt: formData.isCustomPrompt && formData.customPrompt.trim() !== '' ? formData.customPrompt : null,
       });
 
       toast.success('Post generated successfully!');
@@ -650,6 +653,41 @@ export const AIGenerateForm = ({ onPostGenerated, onClose }) => {
           ))}
         </div>
       </div>
+
+      {/* Custom Prompt Toggle */}
+      {!formData.isBulk && (
+        <div className="flex items-center justify-between bg-amber-50 p-3 rounded-lg border border-amber-100 mb-4">
+          <div className="flex items-center gap-2">
+            <span className="text-lg">⚡</span>
+            <span className="text-sm font-semibold text-amber-900">Custom Prompt Override</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setFormData({ ...formData, isCustomPrompt: !formData.isCustomPrompt })}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${formData.isCustomPrompt ? 'bg-amber-600' : 'bg-amber-300'}`}
+          >
+            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${formData.isCustomPrompt ? 'translate-x-6' : 'translate-x-1'}`} />
+          </button>
+        </div>
+      )}
+
+      {/* Custom Prompt Override Textarea */}
+      {!formData.isBulk && formData.isCustomPrompt && (
+        <div className="bg-amber-50 p-4 rounded-lg border border-amber-200 shadow-sm animate-in slide-in-from-top-1">
+          <label className="block text-sm font-semibold text-amber-900 mb-2 whitespace-nowrap">
+            Full Custom Prompt Override (Advanced)
+          </label>
+          <textarea
+            value={formData.customPrompt}
+            onChange={(e) => setFormData({ ...formData, customPrompt: e.target.value })}
+            placeholder="e.g. You are an expert marketer. Write a 5-paragraph promotional post about [Topic]. Do not use any subheadings..."
+            className="w-full h-32 px-3 py-2 border border-amber-300 rounded-lg font-mono text-sm shadow-inner"
+          />
+          <p className="text-xs text-amber-700/80 mt-2 font-medium leading-relaxed">
+            If provided, this prompt will <strong>completely ignore</strong> Topics, Tone, Length, and Keywords. It speaks directly directly to the AI model using exactly your wording. Your custom prompt will run <strong>once</strong>.
+          </p>
+        </div>
+      )}
 
       {/* Content Engine Settings */}
       <div className="bg-emerald-50 p-5 rounded-xl border border-emerald-100 shadow-sm space-y-4">

@@ -6,14 +6,8 @@ const geminiService = {
     try {
       const genAI = new GoogleGenerativeAI(apiKey);
       
-      // Try to list models
-      const models = [
-        'gemini-2.0-flash',
-        'gemini-2.0-pro',
-        'gemini-1.5-pro',
-        'gemini-1.5-flash',
-        'gemini-1.0-pro',
-      ];
+      // Try to list models to validate key
+      const models = await this.getAvailableModels(apiKey);
 
       return {
         success: true,
@@ -28,8 +22,9 @@ const geminiService = {
     }
   },
 
-  async generateContent(apiKey, prompt, model = 'gemini-1.5-pro', options = {}) {
+  async generateContent(apiKey, prompt, model, options = {}) {
     try {
+      if (!model) throw new Error('AI Model must be specified');
       const genAI = new GoogleGenerativeAI(apiKey);
       const geminiModel = genAI.getGenerativeModel({ model });
 
@@ -55,48 +50,27 @@ const geminiService = {
     }
   },
 
-  async extractTitle(apiKey, content) {
-    try {
-      const response = await this.generateContent(
-        apiKey,
-        `Extract a concise title (max 100 chars) for this post:\n\n${content}`,
-        'gemini-1.5-flash',
-        { maxTokens: 100 }
-      );
-      return response.content.trim();
-    } catch (error) {
-      return 'Untitled Post';
-    }
-  },
-
-  async extractExcerpt(apiKey, content) {
-    try {
-      const response = await this.generateContent(
-        apiKey,
-        `Extract a brief excerpt (max 200 chars) for this post:\n\n${content}`,
-        'gemini-1.5-flash',
-        { maxTokens: 150 }
-      );
-      return response.content.trim();
-    } catch (error) {
-      return content.substring(0, 200) + '...';
-    }
-  },
-
   async getAvailableModels(apiKey) {
     try {
-      // Google Gemini supported models (as of current API)
-      const availableModels = [
-        'gemini-2.0-flash',
-        'gemini-2.0-pro',
-        'gemini-1.5-pro',
-        'gemini-1.5-flash',
-        'gemini-1.0-pro',
-      ];
-      return availableModels;
+      // Dynamic fetch from Google API
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+      if (!response.ok) {
+        throw new Error(`Google API responded with status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      if (data.models && Array.isArray(data.models)) {
+        // Filter those that support generateContent
+        const validModels = data.models
+          .filter(model => model.supportedGenerationMethods && model.supportedGenerationMethods.includes('generateContent'))
+          .map(model => model.name.replace('models/', ''));
+          
+        if (validModels.length > 0) return validModels;
+      }
+      throw new Error('No valid generateContent models found in response');
     } catch (error) {
-      // Return default models if API calls fail
-      return ['gemini-1.5-pro', 'gemini-1.5-flash', 'gemini-1.0-pro'];
+      console.warn('Dynamic fetch for Gemini models failed:', error.message);
+      throw new Error(`Failed to fetch Gemini models: ${error.message}`);
     }
   },
 };

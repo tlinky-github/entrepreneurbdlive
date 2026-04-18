@@ -12,7 +12,7 @@ import { auth } from './firebase';
 // Base API URL - configurable via environment variable
 // Production: https://entrepreneurs.bd/api/ai (serverless functions on Vercel)
 // Can override with REACT_APP_AI_API_BASE environment variable
-const API_BASE = process.env.REACT_APP_AI_API_BASE || 'https://entrepreneurs.bd/api/ai';
+const API_BASE = process.env.REACT_APP_AI_API_BASE || '/api/ai';
 
 // Get Firebase auth token for API requests
 const getAuthToken = async () => {
@@ -133,6 +133,13 @@ const aiAPI = {
    */
   generatePost: async (config) => {
     return apiCall('/generate', 'POST', config);
+  },
+
+  /**
+   * Run in-editor Copilot actions (rewrite, summarize, etc)
+   */
+  copilotAction: async (payload) => {
+    return apiCall('/copilot', 'POST', payload);
   },
 
   /**
