@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { MDXProvider } from '@mdx-js/react';
 import { postAPI, commentAPI, interactionAPI, authorAPI } from '../../lib/api';
@@ -6,6 +6,7 @@ import CustomCodeInjector from '../../components/common/CustomCodeInjector';
 import { useAuth } from '../../lib/auth';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
+import { Input } from '../../components/ui/input';
 import { Textarea } from '../../components/ui/textarea';
 import { Avatar, AvatarFallback } from '../../components/ui/avatar';
 import { PageLoader } from '../../components/ui/page-loader';
@@ -28,7 +29,10 @@ import {
   Linkedin,
   Twitter,
   Facebook,
-  Globe
+  Globe,
+  Send,
+  Reply,
+  CornerDownRight
 } from 'lucide-react';
 
 const BlogDetail = () => {
@@ -40,10 +44,38 @@ const BlogDetail = () => {
   const [liked, setLiked] = useState(false);
   const [bookmarked, setBookmarked] = useState(false);
   const [newComment, setNewComment] = useState('');
+  const [commenterName, setCommenterName] = useState('');
+  const [commenterGender, setCommenterGender] = useState('male');
+  const [turnstileToken, setTurnstileToken] = useState(null);
+  const [replyTo, setReplyTo] = useState(null);
   const [submittingComment, setSubmittingComment] = useState(false);
   const [authorData, setAuthorData] = useState(null);
   const [openFaqIndex, setOpenFaqIndex] = useState(null);
   const [relatedPosts, setRelatedPosts] = useState([]);
+  const turnstileRef = useRef(null);
+  const turnstileWidgetId = useRef(null);
+
+  // Render Turnstile widget
+  const renderTurnstile = useCallback(() => {
+    if (turnstileRef.current && window.turnstile && !turnstileWidgetId.current) {
+      turnstileWidgetId.current = window.turnstile.render(turnstileRef.current, {
+        sitekey: '0x4AAAAAABfZv_YFcS2Rrwmh',
+        callback: (token) => setTurnstileToken(token),
+        'expired-callback': () => setTurnstileToken(null),
+        theme: 'light',
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (window.turnstile && turnstileRef.current && !turnstileWidgetId.current) {
+        renderTurnstile();
+        clearInterval(interval);
+      }
+    }, 500);
+    return () => clearInterval(interval);
+  }, [renderTurnstile]);
 
   useEffect(() => {
     const loadPost = async () => {
@@ -509,18 +541,219 @@ const BlogDetail = () => {
 
         {/* Comments Section */}
         <section id="comments" className="mt-12">
-          <h2 className="text-2xl font-bold text-stone-900 mb-6">
-            Comments
+          <h2 className="text-2xl font-bold text-stone-900 mb-8 flex items-center gap-3">
+            <MessageCircle className="w-6 h-6" />
+            Comments ({comments.length})
           </h2>
 
-          {/* Coming Soon Message */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
-            <MessageCircle className="w-12 h-12 text-blue-500 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-blue-900 mb-2">Comments Coming Soon</h3>
-            <p className="text-blue-700">
-              The comments feature will be implemented in the next update. Stay tuned!
-            </p>
+          {/* Comment Form */}
+          <div className="bg-white border border-stone-200 rounded-2xl p-6 md:p-8 mb-8 shadow-sm">
+            {replyTo && (
+              <div className="mb-4 flex items-center justify-between bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-2">
+                <span className="text-sm text-emerald-800 flex items-center gap-2">
+                  <CornerDownRight className="w-4 h-4" />
+                  Replying to <strong>{replyTo.name}</strong>
+                </span>
+                <button onClick={() => setReplyTo(null)} className="text-stone-400 hover:text-stone-600 text-sm font-medium">Cancel</button>
+              </div>
+            )}
+
+            <div className="flex flex-col sm:flex-row gap-4 mb-4">
+              <div className="relative flex-1">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-400" />
+                <Input
+                  placeholder="Your name"
+                  value={isAuthenticated ? (user?.displayName || 'Admin') : commenterName}
+                  onChange={(e) => setCommenterName(e.target.value)}
+                  disabled={isAuthenticated}
+                  className="pl-10"
+                />
+              </div>
+              {!isAuthenticated && (
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-medium text-stone-600">Gender:</span>
+                  <button
+                    type="button"
+                    onClick={() => setCommenterGender('male')}
+                    className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
+                      commenterGender === 'male'
+                        ? 'bg-blue-500 text-white shadow-md'
+                        : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                    }`}
+                  >
+                    Male
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCommenterGender('female')}
+                    className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
+                      commenterGender === 'female'
+                        ? 'bg-pink-500 text-white shadow-md'
+                        : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                    }`}
+                  >
+                    Female
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div className="relative mb-4">
+              <Textarea
+                placeholder="Share your perspective on this article..."
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value.slice(0, 500))}
+                rows={4}
+                className="resize-none"
+              />
+              <span className="absolute bottom-2 right-3 text-xs text-stone-400">{newComment.length}/500</span>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div ref={turnstileRef} />
+              <Button
+                onClick={async (e) => {
+                  e.preventDefault();
+                  const name = isAuthenticated ? (user?.displayName || 'Admin') : commenterName.trim();
+                  if (!name) { toast.error('Please enter your name'); return; }
+                  if (!newComment.trim()) { toast.error('Please write a comment'); return; }
+                  if (!turnstileToken) { toast.error('Please complete the captcha'); return; }
+
+                  setSubmittingComment(true);
+                  try {
+                    const res = await commentAPI.create({
+                      content: newComment.trim(),
+                      content_type: 'blog',
+                      content_id: post.id,
+                      parent_id: replyTo?.id || null,
+                      name,
+                      gender: isAuthenticated ? 'admin' : commenterGender,
+                      is_admin: isAuthenticated,
+                      admin_name: isAuthenticated ? user?.displayName : null,
+                      admin_photo: isAuthenticated ? user?.photoURL : null,
+                    });
+                    setComments(prev => [res.data, ...prev]);
+                    setNewComment('');
+                    setReplyTo(null);
+                    toast.success('Comment posted!');
+                    // Reset turnstile
+                    if (window.turnstile && turnstileWidgetId.current) {
+                      window.turnstile.reset(turnstileWidgetId.current);
+                      setTurnstileToken(null);
+                    }
+                  } catch (error) {
+                    toast.error('Failed to post comment');
+                  } finally {
+                    setSubmittingComment(false);
+                  }
+                }}
+                disabled={submittingComment || !turnstileToken}
+                className="bg-emerald-900 hover:bg-emerald-800 text-white px-8 w-full sm:w-auto disabled:opacity-50"
+              >
+                {submittingComment ? (
+                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Posting...</>
+                ) : (
+                  <><Send className="w-4 h-4 mr-2" /> Post Comment</>
+                )}
+              </Button>
+            </div>
           </div>
+
+          {/* Comments List */}
+          {comments.length === 0 ? (
+            <div className="text-center py-12 bg-stone-50 rounded-xl border border-stone-200">
+              <MessageCircle className="w-12 h-12 text-stone-300 mx-auto mb-3" />
+              <p className="text-stone-500">No comments yet. Be the first to share your thoughts!</p>
+            </div>
+          ) : (
+            <div className="space-y-0">
+              {(() => {
+                // Build threaded structure
+                const topLevel = comments.filter(c => !c.parent_id);
+                const replies = comments.filter(c => c.parent_id);
+
+                const renderComment = (comment, isReply = false) => {
+                  const childReplies = replies.filter(r => r.parent_id === comment.id);
+                  const isAdmin = comment.is_admin;
+                  
+                  // Generate Avatar URL
+                  // For admins: use their photo or a specific admin-themed avatar
+                  // For others: use DiceBear seeded by their name
+                  let avatarUrl;
+                  if (isAdmin) {
+                    avatarUrl = comment.admin_photo || `https://api.dicebear.com/7.x/bottts/svg?seed=${comment.name || 'Admin'}&backgroundColor=059669`;
+                  } else {
+                    const style = comment.gender === 'female' ? 'lorelei' : 'avataaars';
+                    avatarUrl = `https://api.dicebear.com/7.x/${style}/svg?seed=${encodeURIComponent(comment.name)}&backgroundColor=f1f5f9`;
+                  }
+
+                  return (
+                    <div key={comment.id} className={`${isReply ? 'ml-8 md:ml-12 border-l-2 border-emerald-100 pl-4 md:pl-6' : 'border-b border-stone-100 last:border-b-0'} py-6`}>
+                      <div className="flex gap-4">
+                        {/* Avatar */}
+                        <div className="w-11 h-11 rounded-full flex-shrink-0 border border-stone-100 shadow-sm overflow-hidden bg-white">
+                          <img 
+                            src={avatarUrl} 
+                            alt={comment.name} 
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.target.src = `https://api.dicebear.com/7.x/initials/svg?seed=${comment.name}`;
+                            }}
+                          />
+                        </div>
+
+                        {/* Content */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                            <span className="font-bold text-stone-900 text-sm whitespace-nowrap">{comment.name}</span>
+                            {isAdmin && (
+                              <div className="flex items-center gap-1">
+                                {(comment.name === post.author_name || comment.admin_name === post.author_name) ? (
+                                  <Badge className="bg-emerald-600 text-white text-[10px] px-2 py-0 border-none">Author</Badge>
+                                ) : (
+                                  <Badge className="bg-stone-600 text-white text-[10px] px-2 py-0 border-none">Admin</Badge>
+                                )}
+                              </div>
+                            )}
+                            <span className="text-xs text-stone-400 whitespace-nowrap">
+                              {(comment.created_at || comment.createdAt)
+                                ? new Date(comment.created_at || comment.createdAt).toLocaleDateString('en-US', { 
+                                    month: 'short', 
+                                    day: 'numeric',
+                                    year: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  })
+                                : 'Just now'}
+                            </span>
+                          </div>
+                          <p className="text-stone-700 text-[15px] leading-relaxed whitespace-pre-wrap">{comment.content}</p>
+                          <button
+                            onClick={() => {
+                              setReplyTo({ id: comment.id, name: comment.name });
+                              document.getElementById('comments')?.scrollIntoView({ behavior: 'smooth' });
+                            }}
+                            className="mt-3 text-xs text-emerald-700 hover:text-emerald-800 font-semibold flex items-center gap-1.5 transition-colors"
+                          >
+                            <Reply className="w-3.5 h-3.5" /> Reply
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Nested replies */}
+                      {childReplies.length > 0 && (
+                        <div className="mt-2">
+                          {childReplies.map(reply => renderComment(reply, true))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                };
+
+                return topLevel.map(c => renderComment(c));
+              })()}
+            </div>
+          )}
         </section>
       </article>
     </div>

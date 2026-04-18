@@ -487,14 +487,57 @@ export const interactionAPI = {
 // --- Comment API ---
 export const commentAPI = {
   list: async (contentType, contentId) => {
-    // Placeholder returning empty list for now
-    return { data: [] };
+    try {
+      const q = query(
+        collection(db, 'comments'),
+        where('content_type', '==', contentType),
+        where('content_id', '==', contentId)
+      );
+      const snapshot = await getDocs(q);
+      const allComments = snapshot.docs.map(docToData);
+      
+      // Sort: newest first
+      allComments.sort((a, b) => {
+        const da = new Date(a.created_at || a.createdAt || 0);
+        const db2 = new Date(b.created_at || b.createdAt || 0);
+        return db2 - da;
+      });
+
+      return { data: allComments };
+    } catch (error) {
+      console.error('Comments List Error:', error);
+      return { data: [] };
+    }
   },
   create: async (data) => {
-    return { data: { id: Date.now(), ...data } };
+    try {
+      const commentDoc = {
+        content_type: data.content_type,
+        content_id: data.content_id,
+        parent_id: data.parent_id || null,
+        name: data.name,
+        gender: data.gender || 'male',
+        content: data.content,
+        is_admin: data.is_admin || false,
+        admin_name: data.admin_name || null,
+        admin_photo: data.admin_photo || null,
+        created_at: serverTimestamp(),
+      };
+      const ref = await addDoc(collection(db, 'comments'), commentDoc);
+      return { data: { id: ref.id, ...commentDoc, created_at: new Date() } };
+    } catch (error) {
+      console.error('Comment Create Error:', error);
+      throw error;
+    }
   },
   delete: async (id) => {
-    return { success: true };
+    try {
+      await deleteDoc(doc(db, 'comments', id));
+      return { success: true };
+    } catch (error) {
+      console.error('Comment Delete Error:', error);
+      throw error;
+    }
   }
 };
 
