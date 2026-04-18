@@ -1,10 +1,9 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
-const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
+const url = require('url');
 
-// 1. Simple .env loader
+// Load environment variables
 const envPath = path.resolve(process.cwd(), '.env');
 if (fs.existsSync(envPath)) {
   const envContent = fs.readFileSync(envPath, 'utf8');
@@ -19,12 +18,29 @@ if (fs.existsSync(envPath)) {
 const PORT = 5000;
 
 const server = http.createServer(async (req, res) => {
-  console.log(`[Bridge] ${req.method} ${req.url}`);
+  const parsedUrl = url.parse(req.url, true);
+  const pathname = parsedUrl.pathname;
 
-  // Add CORS headers for local development
+  console.log(`[Bridge] ${req.method} ${pathname}`);
+
+  // 1. Shims for Vercel/Express compatibility
+  req.query = parsedUrl.query;
+  res.status = (code) => { 
+    res.statusCode = code; 
+    return res; 
+  };
+  res.json = (data) => {
+    if (!res.writableEnded) {
+      res.setHeader('Content-Type', 'application/json');
+      res.end(JSON.stringify(data));
+    }
+    return res;
+  };
+
+  // 2. CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   if (req.method === 'OPTIONS') {
     res.writeHead(204);
@@ -32,66 +48,60 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  if (req.method === 'POST') {
-    let body = [];
-    req.on('data', chunk => { body.push(chunk); });
-    req.on('end', async () => {
-      const payload = Buffer.concat(body).toString();
-      console.log(`[Bridge] Received payload: ${payload.substring(0, 100)}...`);
-      try {
-        if (!payload) {
-          throw new Error('Empty request body');
+  // 3. Read Body
+  let bodyChunks = [];
+  req.on('data', chunk => bodyChunks.push(chunk));
+  req.on('end', async () => {
+    try {
+      const rawBody = Buffer.concat(bodyChunks).toString();
+      if (rawBody && req.headers['content-type']?.includes('application/json')) {
+        try {
+          req.body = JSON.parse(rawBody);
+        } catch (e) {
+          req.body = rawBody;
         }
-        const { fileName, fileType } = JSON.parse(payload);
-        console.log(`[Bridge] Request for: ${fileName} (${fileType})`);
-
-        if (!fileName || !fileType) {
-          res.writeHead(400, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ error: 'Missing fileName or fileType' }));
-          return;
-        }
-
-        // Initialize S3 Client (R2)
-        const s3Client = new S3Client({
-          region: 'auto',
-          endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-          credentials: {
-            accessKeyId: process.env.R2_ACCESS_KEY_ID,
-            secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
-          },
-        });
-
-        const folderPrefix = process.env.R2_FOLDER_PREFIX || '';
-        const fileExtension = fileName.split('.').pop();
-        const folderPath = folderPrefix ? `${folderPrefix.replace(/\/$/, '')}/` : '';
-        const uniqueKey = `${folderPath}${fileType}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExtension}`;
-
-        const command = new PutObjectCommand({
-          Bucket: process.env.R2_BUCKET_NAME,
-          Key: uniqueKey,
-          ContentType: fileType,
-        });
-
-        const uploadUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
-        const publicUrl = `${process.env.R2_PUBLIC_URL.replace(/\/$/, '')}/${uniqueKey}`;
-
-        console.log(`[Bridge] Generated URL for: ${uniqueKey}`);
-
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ uploadUrl, publicUrl }));
-      } catch (error) {
-        console.error('[Bridge] Error:', error);
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: error.message }));
+      } else {
+        req.body = rawBody;
       }
-    });
-  } else {
-    res.writeHead(404);
-    res.end();
-  }
+
+      // 4. Routes
+      // Map local paths to Vercel functions
+      if (pathname === '/api/ai/ai-router') {
+        const handlerPath = path.resolve(__dirname, '../api/ai/ai-router.js');
+        delete require.cache[require.resolve(handlerPath)]; // Hot reload
+        const handler = require(handlerPath);
+        return handler(req, res);
+      }
+
+      if (pathname === '/api/media-handler') {
+        const handlerPath = path.resolve(__dirname, '../api/media-handler.js');
+        delete require.cache[require.resolve(handlerPath)]; // Hot reload
+        const handler = require(handlerPath);
+        return handler(req, res);
+      }
+
+      // Legacy support (proxies to the consolidated routers)
+      if (pathname.startsWith('/api/ai/')) {
+        const target = pathname.split('/').pop().replace('-handler', '').replace('posts', 'posts');
+        req.query.target = target;
+        const handlerPath = path.resolve(__dirname, '../api/ai/ai-router.js');
+        const handler = require(handlerPath);
+        return handler(req, res);
+      }
+
+      // Default 404
+      res.status(404).json({ error: `Route ${pathname} not handled by local-bridge` });
+    } catch (err) {
+      console.error('[Bridge Error]', err);
+      if (!res.writableEnded) {
+        res.status(500).json({ error: err.message, stack: err.stack });
+      }
+    }
+  });
 });
 
 server.listen(PORT, () => {
-  console.log(`\n🚀 R2 Bridge running on http://localhost:${PORT}`);
-  console.log(`📍 Proxying /api/upload-url to Cloudflare R2\n`);
+  console.log('\x1b[36m%s\x1b[0m', `\n🚀 API Bridge (Vercel Emulator) running on http://localhost:${PORT}`);
+  console.log('\x1b[32m%s\x1b[0m', `📍 Handling /api/ai/ai-router and /api/media-handler`);
+  console.log('\x1b[33m%s\x1b[0m', `💡 Make sure your frontend has "proxy": "http://localhost:${PORT}" in package.json\n`);
 });

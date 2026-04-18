@@ -68,14 +68,14 @@ const aiAPI = {
    * Setup/configure an AI provider with API key and profile name
    */
   setupProvider: async (config) => {
-    return apiCall('/providers-handler?action=setup', 'POST', config);
+    return apiCall('/ai-router?target=providers&action=setup', 'POST', config);
   },
 
   /**
    * Update an existing provider profile
    */
   updateProfile: async (provider, profileIndex, updates) => {
-    return apiCall('/providers-handler?action=update', 'PUT', {
+    return apiCall('/ai-router?target=providers&action=update', 'PUT', {
       provider,
       profileIndex,
       ...updates,
@@ -86,7 +86,7 @@ const aiAPI = {
    * Delete a provider profile
    */
   deleteProfile: async (provider, profileIndex) => {
-    return apiCall('/providers-handler?action=delete', 'DELETE', {
+    return apiCall('/ai-router?target=providers&action=delete', 'DELETE', {
       provider,
       profileIndex,
     });
@@ -96,14 +96,14 @@ const aiAPI = {
    * Get all configured providers for user
    */
   getProvidersConfig: async () => {
-    return apiCall('/providers-handler?action=config', 'GET');
+    return apiCall('/ai-router?target=providers&action=config', 'GET');
   },
 
   /**
    * Get available models for a provider
    */
   getProviderModels: async (provider, apiKey = null) => {
-    let url = `/providers-handler?action=models&provider=${provider}`;
+    let url = `/ai-router?target=providers&action=models&provider=${provider}`;
     if (apiKey) {
       url += `&apiKeyInput=${encodeURIComponent(apiKey)}`;
     }
@@ -114,14 +114,14 @@ const aiAPI = {
    * Test connection to a provider
    */
   testProvider: async (provider, apiKey) => {
-    return apiCall('/providers-handler?action=test', 'POST', { provider, apiKey });
+    return apiCall('/ai-router?target=providers&action=test', 'POST', { provider, apiKey });
   },
 
   /**
    * Update global AI settings (e.g., FAQ count)
    */
   updateSettings: async (settings) => {
-    return apiCall('/providers-handler?action=settings', 'POST', { settings });
+    return apiCall('/ai-router?target=providers&action=settings', 'POST', { settings });
   },
 
   /**
@@ -132,14 +132,14 @@ const aiAPI = {
    * Generate a new post
    */
   generatePost: async (config) => {
-    return apiCall('/generate', 'POST', config);
+    return apiCall('/ai-router?target=generate', 'POST', config);
   },
 
   /**
    * Run in-editor Copilot actions (rewrite, summarize, etc)
    */
   copilotAction: async (payload) => {
-    return apiCall('/copilot', 'POST', payload);
+    return apiCall('/ai-router?target=copilot', 'POST', payload);
   },
 
   /**
@@ -151,28 +151,28 @@ const aiAPI = {
     if (filters.limit) params.append('limit', filters.limit);
     if (filters.page) params.append('page', filters.page);
 
-    return apiCall(`/posts-handler?${params.toString()}`, 'GET');
+    return apiCall(`/ai-router?target=posts&${params.toString()}`, 'GET');
   },
 
   /**
    * Get single post by ID
    */
   getPost: async (postId) => {
-    return apiCall(`/posts-handler?id=${postId}`, 'GET');
+    return apiCall(`/ai-router?target=posts&id=${postId}`, 'GET');
   },
 
   /**
    * Update post
    */
   updatePost: async (postId, updates) => {
-    return apiCall(`/posts-handler?id=${postId}`, 'PUT', updates);
+    return apiCall(`/ai-router?target=posts&id=${postId}`, 'PUT', updates);
   },
 
   /**
    * Delete post
    */
   deletePost: async (postId) => {
-    return apiCall(`/posts-handler?id=${postId}`, 'DELETE');
+    return apiCall(`/ai-router?target=posts&id=${postId}`, 'DELETE');
   },
 
   /**
@@ -203,7 +203,7 @@ const aiAPI = {
    * Get usage statistics
    */
   getStats: async () => {
-    return apiCall('/stats', 'GET');
+    return apiCall('/ai-router?target=stats', 'GET');
   },
 };
 

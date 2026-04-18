@@ -61,6 +61,37 @@ function setupDevServer(config) {
       res.json({ status: "ok", time: new Date().toISOString() });
     });
 
+    // 🚀 API Emulation Router (Vercel Emulator)
+    const handleApiRoute = (req, res, handlerFile) => {
+      try {
+        const handlerPath = path.resolve(__dirname, '../../', handlerFile);
+        if (!fs.existsSync(handlerPath)) {
+          return res.status(404).json({ error: `Function file not found: ${handlerFile}` });
+        }
+        
+        // Clear cache for hot reloading of API functions
+        delete require.cache[require.resolve(handlerPath)];
+        const handler = require(handlerPath);
+
+        // Add Vercel-like shims if not present
+        if (!res.status) res.status = (c) => res.statusCode = c;
+        if (!res.json) res.json = (d) => res.send(d);
+
+        return handler(req, res);
+      } catch (err) {
+        console.error(`[DevServer API] Error in ${handlerFile}:`, err);
+        return res.status(500).json({ error: err.message, stack: err.stack });
+      }
+    };
+
+    devServer.app.all("/api/ai/ai-router", (req, res) => {
+      handleApiRoute(req, res, "api/ai/ai-router.js");
+    });
+
+    devServer.app.all("/api/media-handler", (req, res) => {
+      handleApiRoute(req, res, "api/media-handler.js");
+    });
+
     // ✅ Protected file editing endpoint with AST processing
     devServer.app.post("/edit-file", (req, res) => {
       // Validate and set CORS headers

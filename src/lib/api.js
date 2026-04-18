@@ -885,8 +885,8 @@ export const mediaAPI = {
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('Not authenticated');
       
-      const response = await fetch('/api/list-r2', {
-        method: 'POST',
+      const response = await fetch('/api/media-handler?action=list', {
+        method: 'GET',
         headers: { 
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
@@ -905,8 +905,8 @@ export const mediaAPI = {
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error('Not authenticated');
 
-      const response = await fetch('/api/delete-r2-image', {
-        method: 'POST',
+      const response = await fetch('/api/media-handler?action=delete', {
+        method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
@@ -939,7 +939,7 @@ export const mediaAPI = {
         body.sourceUrl = source;
       }
 
-      const response = await fetch('/api/optimize-image', {
+      const response = await fetch('/api/media-handler?action=optimize', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
