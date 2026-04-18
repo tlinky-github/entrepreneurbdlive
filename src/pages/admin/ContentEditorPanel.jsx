@@ -279,6 +279,7 @@ const ContentEditorPanel = () => {
             setSeoTitle(data.seo_title || '');
             setSeoDescription(data.seo_description || '');
             setSeoKeywords(data.seo_keywords || '');
+            setFeaturedImage(data.featured_image || '');
             setOgImage(data.og_image || '');
             setLogo(data.logo || '');
             setPhoto(data.photo || '');
@@ -636,9 +637,9 @@ const ContentEditorPanel = () => {
         authorId,
         website_link_settings: websiteLinkSettings,
         author_name: selectedAuthor?.name || '',
-        logo,
-        photo,
-        cover_image: coverImage,
+        logo: type === 'directory' ? (featuredImage || logo) : logo,
+        photo: type === 'entrepreneurs' ? (featuredImage || photo) : photo,
+        cover_image: featuredImage || coverImage,
         leadership_team: leadershipTeam,
         linked_business: linkedBusiness,
         // MIRROR FIELDS for frontend compatibility

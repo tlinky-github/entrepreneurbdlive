@@ -90,22 +90,24 @@ const BlogDetail = () => {
     if (window.confirm('Are you sure you want to delete this comment?')) {
       try {
         await commentAPI.delete(id);
-        // Remove the comment and all its replies from the local state to prevent orphans
+        
+        // Robust Recursive Deletion from local state
         setComments(prev => {
           const toDelete = new Set([id]);
-          // Simple one-level nested check (common in this app)
-          prev.forEach(c => { if(c.parent_id === id) toDelete.add(c.id); });
+          let foundNew;
+          do {
+            foundNew = false;
+            prev.forEach(c => {
+              if (c.parent_id && toDelete.has(c.parent_id) && !toDelete.has(c.id)) {
+                toDelete.add(c.id);
+                foundNew = true;
+              }
+            });
+          } while (foundNew);
+          
           return prev.filter(c => !toDelete.has(c.id));
         });
         
-        // Update local post count based on actual items removed
-        setPost(prev => {
-          const removedCount = comments.filter(c => c.id === id || c.parent_id === id).length;
-          return { 
-            ...prev, 
-            comment_count: Math.max(0, (prev.comment_count || 0) - removedCount) 
-          };
-        });
         toast.success('Comment deleted');
       } catch (error) {
         console.error('Delete Error:', error);
@@ -113,6 +115,17 @@ const BlogDetail = () => {
       }
     }
   };
+
+  // Helper to accurately count only "Healthy" (non-orphan) comments
+  const getVisibleCommentsCount = () => {
+    const topLevelIds = new Set(comments.filter(c => !c.parent_id).map(c => c.id));
+    // A comment is visible if it's top-level OR its parent is top-level (direct reply)
+    // Note: This app currently supports 1 level of nesting per UI design
+    const visible = comments.filter(c => !c.parent_id || topLevelIds.has(c.parent_id));
+    return visible.length;
+  };
+
+  const visibleCount = getVisibleCommentsCount();
   
   const handleUpdateComment = async (id) => {
     if (!editContent.trim()) return;
@@ -385,23 +398,47 @@ const BlogDetail = () => {
            </div>
         </header>
 
-        {/* Featured Image */}
-        {/* Featured Image */}
-        {post.featured_image && (
-          <div className="w-full bg-stone-100 rounded-2xl overflow-hidden mb-10 shadow-lg">
-            <img
-              src={post.featured_image}
-              alt={post.title}
-              className="w-full h-auto"
-            />
-          </div>
-        )}
-
         {/* Article Content with Inline FAQs */}
         <div className="tiptap-content">
           {(() => {
-            const content = post.content || post.content_html || '';
+            let content = post.content || post.content_html || '';
             if (!content) return null;
+
+            // Senior Engineer Fix: Relocate featured image after 2nd H2 (or 1st H2 as fallback)
+            if (post.featured_image) {
+              const h2TagRegex = /<\/h2>/gi;
+              const matches = [...content.matchAll(h2TagRegex)];
+              const h2Count = matches.length;
+              
+              if (h2Count > 0) {
+                // Get indices from regex matches for precision
+                const firstH2Match = matches[0];
+                const secondH2Match = h2Count >= 2 ? matches[1] : null;
+                
+                const injectionPoint = secondH2Match 
+                  ? secondH2Match.index + secondH2Match[0].length 
+                  : firstH2Match.index + firstH2Match[0].length;
+
+                const imageHtml = `
+                  <div class="featured-image-inline mt-8 mb-12 rounded-2xl overflow-hidden shadow-2xl border border-stone-100 ring-1 ring-stone-900/5 group">
+                    <img 
+                      src="${post.featured_image}" 
+                      alt="${post.title}" 
+                      class="w-full h-auto object-cover transform transition-transform duration-700 group-hover:scale-105" 
+                    />
+                  </div>
+                `;
+                content = content.slice(0, injectionPoint) + imageHtml + content.slice(injectionPoint);
+              } else if (post.featured_image) {
+                // Fallback: if no H2s, put it at the very top (legacy/short posts)
+                const imageHtml = `
+                  <div class="featured-image-inline mb-10 rounded-2xl overflow-hidden shadow-xl border border-stone-200">
+                    <img src="${post.featured_image}" alt="${post.title}" class="w-full h-auto" />
+                  </div>
+                `;
+                content = imageHtml + content;
+              }
+            }
             
             const parts = content.split(/(<faq-section[^>]*><\/faq-section>)/g);
             
@@ -523,7 +560,7 @@ const BlogDetail = () => {
               onClick={() => document.getElementById('comments')?.scrollIntoView({ behavior: 'smooth' })}
             >
               <MessageCircle className="w-5 h-5" />
-              <span>{post.comment_count}</span>
+              <span>{visibleCount}</span>
             </Button>
           </div>
           <div className="flex items-center gap-2">
@@ -587,7 +624,7 @@ const BlogDetail = () => {
           <div className="flex items-center justify-between mb-8">
             <h2 className="text-2xl font-bold text-stone-900 flex items-center gap-3">
               <MessageCircle className="w-6 h-6" />
-              Comments ({comments.length})
+              Comments ({visibleCount})
             </h2>
             <Button variant="outline" size="sm" onClick={() => { setReplyTo(null); setActiveReplyId(null); document.getElementById('comments')?.scrollIntoView({ behavior: 'smooth' }); }}>
               Post New Comment

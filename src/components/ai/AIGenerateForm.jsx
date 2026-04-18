@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../ui/select';
+import ImageUploader from '../common/ImageUploader';
 
 /**
  * AI Generate Form Component
@@ -50,7 +51,36 @@ export const AIGenerateForm = ({ onPostGenerated, onClose }) => {
     isScheduled: false,
     customPrompt: '',
     isCustomPrompt: false,
+    featuredImage: null,
   });
+
+  const [generatingStatus, setGeneratingStatus] = useState("Generating Post...");
+  const STATUS_MESSAGES = [
+    "Analyzing topics and structure...",
+    "Drafting initial hook...",
+    "Building core sections...",
+    "Expanding in-depth analysis...",
+    "Continuing past token limits...",
+    "Refining for target length...",
+    "Synthesizing conclusion...",
+    "Optimizing for SEO...",
+    "Finalizing premium blocks..."
+  ];
+
+  useEffect(() => {
+    let interval;
+    if (generating) {
+      let idx = 0;
+      setGeneratingStatus(STATUS_MESSAGES[0]);
+      interval = setInterval(() => {
+        idx = (idx + 1) % STATUS_MESSAGES.length;
+        setGeneratingStatus(STATUS_MESSAGES[idx]);
+      }, 3500);
+    } else {
+      setGeneratingStatus(formData.isBulk ? 'Processing Queue...' : 'Generating Post...');
+    }
+    return () => clearInterval(interval);
+  }, [generating, formData.isBulk]);
 
   const [bulkProgress, setBulkProgress] = useState({ 
     active: false, 
@@ -230,13 +260,15 @@ export const AIGenerateForm = ({ onPostGenerated, onClose }) => {
         const selectedAuthor = authors.find(a => a.id == formData.authorId);
         const selectedCategory = categories.find(c => c.id == formData.categoryId);
 
-        await aiAPI.generatePost({
+        const payload = {
+          ...formData,
           provider: formData.provider,
           profileIndex: parseInt(formData.profileIndex),
           model,
           topics: [topic],
           tone: formData.tone,
           targetLength,
+          featuredImage: formData.featuredImage,
           keywords: keywords,
           includeSEO: formData.includeSEO,
           minFaqCount: formData.minFaqCount,
@@ -251,7 +283,9 @@ export const AIGenerateForm = ({ onPostGenerated, onClose }) => {
           scheduledAt: formData.isScheduled ? formData.scheduledAt : null,
           tokenMode: formData.tokenMode || 'auto',
           customPrompt: formData.isCustomPrompt && formData.customPrompt.trim() !== '' ? formData.customPrompt : null,
-        });
+        };
+
+        await aiAPI.generatePost(payload);
 
         setBulkProgress(prev => ({
           ...prev,
@@ -294,13 +328,15 @@ export const AIGenerateForm = ({ onPostGenerated, onClose }) => {
       const selectedAuthor = authors.find(a => a.id == formData.authorId);
       const selectedCategory = categories.find(c => c.id == formData.categoryId);
 
-      const result = await aiAPI.generatePost({
+      const payload = {
+        ...formData,
         provider: formData.provider,
         profileIndex: parseInt(formData.profileIndex),
         model,
         topics: formData.topics,
         tone: formData.tone,
         targetLength,
+        featuredImage: formData.featuredImage,
         keywords: formData.keywords,
         includeSEO: formData.includeSEO,
         minFaqCount: formData.minFaqCount,
@@ -315,7 +351,9 @@ export const AIGenerateForm = ({ onPostGenerated, onClose }) => {
         scheduledAt: formData.isScheduled ? formData.scheduledAt : null,
         tokenMode: formData.tokenMode || 'auto',
         customPrompt: formData.isCustomPrompt && formData.customPrompt.trim() !== '' ? formData.customPrompt : null,
-      });
+      };
+
+      const result = await aiAPI.generatePost(payload);
 
       toast.success('Post generated successfully!');
       onPostGenerated?.(result.post);
@@ -441,6 +479,22 @@ export const AIGenerateForm = ({ onPostGenerated, onClose }) => {
             </SelectContent>
           </Select>
         </div>
+      </div>
+
+      {/* Featured Image Selection */}
+      <div className="bg-white p-4 rounded-xl border border-stone-200 shadow-sm">
+        <label className="text-sm font-bold text-stone-700 mb-3 flex items-center gap-2">
+          <span>🖼️</span> Featured Image (Optional)
+        </label>
+        <ImageUploader 
+          value={formData.featuredImage}
+          onChange={(url) => setFormData(prev => ({ ...prev, featuredImage: url }))}
+          label="Select image"
+          className="bg-stone-50"
+        />
+        <p className="text-[10px] text-stone-500 mt-2">
+          This image will be used for the blog listing and inside the post (after the 2nd H2).
+        </p>
       </div>
 
       {/* Scheduling Section */}
@@ -885,8 +939,8 @@ export const AIGenerateForm = ({ onPostGenerated, onClose }) => {
         >
           {generating ? (
             <>
-              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-              {formData.isBulk ? 'Processing Queue...' : 'Generating Post...'}
+              <Loader2 className="w-5 h-5 mr-2 animate-spin text-emerald-200" />
+              <span className="animate-pulse">{generatingStatus}</span>
             </>
           ) : (
             `✨ ${formData.isBulk ? 'Generate Batch' : 'Generate Post'}`

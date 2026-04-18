@@ -186,47 +186,108 @@ code {
   outline-offset: 2px;
 }
 
-/* AI Content Features */
-.ai-overview-block {
-  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
-  border-left: 5px solid #065f46;
-  padding: 1.75rem;
-  border-radius: 0.75rem;
-  margin: 2rem 0;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+/* AI Content Features - Premium Overview Block */
+.ai-overview-block, 
+.ai-summary-block,
+[class*="ai-overview"],
+[class*="ai-summary"] {
+  background: linear-gradient(135deg, rgba(240, 253, 244, 0.7) 0%, rgba(220, 252, 231, 0.7) 100%);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  border-left: 6px solid #10b981;
+  padding: 2rem;
+  border-radius: 1.25rem;
+  margin: 2.5rem 0;
+  box-shadow: 
+    0 4px 6px -1px rgba(0, 0, 0, 0.05),
+    0 10px 15px -3px rgba(16, 185, 129, 0.05);
+  position: relative;
+  overflow: hidden;
 }
 
+/* Add a subtle animated shimmer effect to the background */
+.ai-overview-block::after {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    45deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.1) 45%,
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(255, 255, 255, 0.1) 55%,
+    transparent 100%
+  );
+  transform: rotate(25deg);
+  animation: shimmer 6s infinite;
+  pointer-events: none;
+}
+
+@keyframes shimmer {
+  0% { transform: translate(-30%, -30%) rotate(25deg); }
+  100% { transform: translate(30%, 30%) rotate(25deg); }
+}
+
+.ai-overview-block h2,
+.ai-overview-block h3,
 .ai-overview-block h4 {
-  color: #064e3b;
-  font-size: 1.25rem;
-  margin: 0 0 0.75rem 0 !important;
+  color: #064e3b !important;
+  font-size: 1.4rem !important;
+  font-weight: 800 !important;
+  margin: 0 0 1rem 0 !important;
   display: flex !important;
   align-items: center !important;
-  gap: 10px !important;
+  gap: 12px !important;
+  letter-spacing: -0.01em !important;
+}
+
+/* AI Sparkle Icon before the title */
+.ai-overview-block h2::before,
+.ai-overview-block h3::before,
+.ai-overview-block h4::before {
+  content: "✦";
+  background: linear-gradient(135deg, #10b981 0%, #3b82f6 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-size: 1.6rem;
+  filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.3));
 }
 
 .ai-overview-block ul {
   margin: 0 !important;
   list-style-type: none !important;
   padding: 0 !important;
+  display: grid !important;
+  gap: 0.875rem !important;
 }
 
 .ai-overview-block li {
   position: relative;
-  padding-left: 2rem !important;
-  margin-bottom: 0.75rem !important;
+  padding-left: 1.75rem !important;
+  margin: 0 !important;
   color: #065f46 !important;
   font-weight: 500 !important;
-  line-height: 1.6;
+  line-height: 1.5;
+  font-size: 1.05rem !important;
 }
 
 .ai-overview-block li::before {
-  content: "✦";
+  content: "→";
   position: absolute;
   left: 0;
   color: #10b981;
-  font-size: 1.25rem;
-  font-weight: 700;
+  font-weight: 800;
+  opacity: 0.7;
+}
+
+.ai-overview-block li:hover {
+  transform: translateX(4px);
+  transition: transform 0.2s ease;
 }
 
 /* Related Content Widget */
@@ -245,7 +306,7 @@ code {
 
 .related-posts-grid {
   display: grid;
-  grid-template-cols: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 2rem;
 }
 
@@ -257,6 +318,27 @@ code {
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   border-radius: 0.75rem;
   padding: 0.5rem;
+}
+
+.related-post-card:hover .related-post-title {
+  color: #10b981;
+}
+
+/* Featured Image Inline Styles */
+.featured-image-inline {
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: slideUpFade 0.8s ease-out forwards;
+}
+
+@keyframes slideUpFade {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .related-post-card:hover {
@@ -288,6 +370,7 @@ code {
   font-size: 1.125rem !important;
   display: -webkit-box !important;
   -webkit-line-clamp: 2 !important;
+  line-clamp: 2 !important;
   -webkit-box-orient: vertical !important;
   overflow: hidden !important;
 }

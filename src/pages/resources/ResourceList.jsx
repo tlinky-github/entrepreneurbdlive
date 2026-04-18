@@ -223,12 +223,24 @@ const ResourceList = () => {
                   className="h-full border-stone-200 hover:border-emerald-900/20 hover:shadow-lg transition-all duration-200"
                 >
                   <CardContent className="p-6">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center">
-                        <Icon className="w-6 h-6 text-emerald-900" />
-                      </div>
+                    <div className="aspect-video bg-stone-100 rounded-xl overflow-hidden mb-6 group/img relative">
+                      {resource.featured_image ? (
+                        <img 
+                          src={resource.featured_image} 
+                          alt={resource.title} 
+                          className="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-500"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-emerald-900 flex items-center justify-center p-4">
+                           <div className="text-center">
+                              <Icon className="w-10 h-10 text-emerald-100/20 mx-auto mb-2" />
+                              <span className="text-[10px] text-emerald-100/40 uppercase tracking-widest font-bold">Entrepreneurs BD</span>
+                           </div>
+                        </div>
+                      )}
+                      
                       {resource.is_premium && (
-                        <Badge className="bg-yellow-100 text-yellow-700">
+                        <Badge className="absolute top-3 right-3 bg-yellow-400 text-yellow-900 border-none shadow-sm">
                           <Lock className="w-3 h-3 mr-1" />
                           Premium
                         </Badge>

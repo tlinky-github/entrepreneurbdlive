@@ -22,13 +22,15 @@ export const SEO = ({
     const baseTitle = title || staticConfig.title || defaultConfig.title;
     const brandedTitle = baseTitle.includes('Entrepreneurs BD') ? baseTitle : `${baseTitle} | Entrepreneurs BD`;
 
-    // Dynamic Branded OG Image Construction
-    const dynamicOgUrl = `/api/og-image?title=${encodeURIComponent(baseTitle)}`;
+    // Dynamic Branded OG Image Construction (Priority Source for Social Shares)
+    const categoryParam = props.category ? `&category=${encodeURIComponent(props.category)}` : '';
+    const dynamicOgUrl = `/api/og-image?title=${encodeURIComponent(baseTitle)}${categoryParam}`;
     
     const meta = {
         title: brandedTitle,
         description: description || staticConfig.description || defaultConfig.description,
-        image: ogImage || image || staticConfig.image || dynamicOgUrl,
+        // POLICY: Always use generator for social sharing
+        image: dynamicOgUrl, 
         type: type || staticConfig.type || defaultConfig.type,
         keywords: props.keywords || staticConfig.keywords || defaultConfig.keywords || [],
     };

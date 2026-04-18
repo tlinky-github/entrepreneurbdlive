@@ -92,7 +92,10 @@ const postGeneratorService = {
       let fullContent = '';
       let totalTokensUsed = 0;
       let iterations = 0;
-      const MAX_ITERATIONS = customPrompt ? 1 : 4; // Prevent infinite loops, 1 pass for custom prompts
+      
+      // Senior Engineer Fix: Allow iterations for custom prompts too, and scale with word count
+      const MAX_ITERATIONS = Math.max(customPrompt ? 3 : 5, Math.ceil(targetWordCount / 400)); 
+      
       const topicsStr = topics.join(', ');
       const keywordsStr = keywords.join(', ');
 
@@ -102,10 +105,8 @@ const postGeneratorService = {
         let currentPrompt = '';
         const currentWordCount = fullContent.split(/\s+/).filter(w => w.length > 0).length;
 
-        if (customPrompt) {
-          // Process placeholders for custom prompts
-          const topicsStr = topics.join(', ');
-          const keywordsStr = keywords.join(', ');
+        if (customPrompt && iterations === 1) {
+          // Process placeholders for initial custom prompt
           currentPrompt = customPrompt
             .replace(/\[Topic\]/gi, topics[0] || topicsStr)
             .replace(/\{topic\}/gi, topics[0] || topicsStr)
@@ -114,7 +115,7 @@ const postGeneratorService = {
             .replace(/\[Tone\]/gi, tone)
             .replace(/\{tone\}/gi, tone);
         } else if (iterations === 1) {
-          // Initial prompt
+          // Initial default prompt
           currentPrompt = `Act as an expert content creator and professional blogger. Your goal is to generate a comprehensive, high-quality, and highly engaging blog post in ${language}.
           
 Topic: ${topicsStr}
@@ -128,27 +129,17 @@ STRUCTURAL REQUIREMENTS:
 2. SUBHEADINGS: Use SEO-friendly, descriptive H2 and H3 subheadings.
 3. CONTENT DEPTH: Provide actionable insights and deep value.
 4. FORMATTING: Use SEMANTIC HTML (<h2>, <h3>, <p>, <ul>, <li>, <strong>). Do NOT use Markdown (# or **).
-5. ENGAGEMENT: Maintain the "${tone}" voice consistently.
-
-TONE & CHARACTER POLICY:
-- Use STRAIGHT QUOTES (") instead of curly quotes (“ ”).
-- Use SIMPLE DASHES (-) instead of em-dashes (—).
-- Write as an authoritative professional. Avoid conversational chat-style language.
-- DO NOT start sentences with "So," or "Listen," or "Imagine this."
 
 TECHNICAL SPECIFICATIONS:
 - Output ONLY the HTML content.
 - Do NOT include the Title in the body.
 - Do NOT use <h1> tags.
-- Do NOT include metadata like "Part 1" or labels.
-- NEVER include meta-commentary like 'Part 1' or 'Part 2'.
 - Write the ENTIRE, complete blog post from start to finish. Include the conclusion at the end.
-- Fully build out lists or steps. If writing a 'Top 20' list, you MUST include all 20 items.
 
 Post Content (HTML):`;
         } else {
-          // Continuation prompt
-          currentPrompt = `Act as a professional blogger. You are continuing a blog post.
+          // Continuation prompt - used for both default and custom prompts when cut off
+          currentPrompt = `Act as a professional blogger. You are CONTINUING a blog post that was cut off.
           
 Original Topic: ${topicsStr}
 Current Word Count: ${currentWordCount} words
@@ -156,17 +147,15 @@ Target Word Count: ${targetWordCount} words
 
 The content already generated is:
 ---
-${fullContent.substring(Math.max(0, fullContent.length - 1500))} 
+${fullContent.substring(Math.max(0, fullContent.length - 1200))} 
 ---
 
 CONTINUATION REQUIREMENTS:
-1. PICK UP EXACTLY where the previous text left off.
-2. Do NOT repeat the introduction or previously covered points.
-3. Focus on expanding the remaining sections using HTML tags (<h2>, <h3>, <p>, <ul>, <li>, <strong>).
-4. Maintain the "${tone}" tone.
-5. Provide a Conclusion only if you are about to reach ${targetWordCount} words.
-6. NEVER include labels like "Part 2", "In conclusion", or meta-commentary. Output ONLY the organic HTML text.
-7. If writing a list (e.g. "Top 20"), continue the numbering exactly where it stopped.
+1. PICK UP EXACTLY where the previous text left off. Do NOT repeat yourself.
+2. Do NOT restart the post. Do NOT provide an introduction.
+3. Resume the flow naturally using HTML tags (<h2>, <h3>, <p>, <ul>, <li>, <strong>).
+4. If you were in the middle of a sentence or a list, finish it first.
+5. Provide a Conclusion ONLY if you have reached the substantive depth required for a ${targetWordCount} word post.
 
 Next Section of Post (HTML):`;
         }
@@ -179,18 +168,29 @@ Next Section of Post (HTML):`;
           { temperature, maxTokens, tokenMode: options.tokenMode }
         );
 
-        fullContent += (iterations > 1 ? '\n\n' : '') + result.content.trim();
+        fullContent += (iterations > 1 ? ' ' : '') + result.content.trim();
         totalTokensUsed += result.tokensUsed || 0;
 
-        // Check if we reached the target or if the AI signaled completion
+        // Senior Engineer Fix: Logic to detect if we should stop
         const newWordCount = fullContent.split(/\s+/).filter(w => w.length > 0).length;
         
-        // If we are within 10% of target or AI seems to have finished (contains Conclusion header/CTA)
-        const hasFinished = /conclusion|final thoughts|summary|call to action|cta/i.test(result.content.toLowerCase());
+        // 1. Check if the AI logically finished (Conclusion detected)
+        const hasFinishedLogically = /<\/html>|<\/body>|conclusion|final thoughts|summary|call to action|cta/i.test(result.content.toLowerCase());
         
-        if (newWordCount >= targetWordCount * 0.9 || hasFinished) {
-          break;
+        // 2. Check if the AI was cut off mid-sentence (ends with common punctuation?)
+        const endsWithPunctuation = /[.!?]>$/.test(result.content.trim());
+        const isCutOff = !endsWithPunctuation && !hasFinishedLogically;
+
+        // Decisions
+        if (newWordCount >= targetWordCount * 0.95 && !isCutOff) {
+          break; // Close enough and ends cleanly
         }
+        
+        if (hasFinishedLogically && newWordCount >= targetWordCount * 0.7) {
+          break; // Finished logically and has decent length
+        }
+        
+        // Otherwise, keep looping (continuation logic will trigger in next iteration)
       }
 
       const generationTime = Date.now() - startTime;
@@ -243,6 +243,7 @@ Next Section of Post (HTML):`;
         model,
         tokensUsed: totalTokensUsed,
         generationTime,
+        featured_image: options.featuredImage || null, // Sync from options
         category_id: options.categoryId || null,
         category_name: options.categoryName || null,
         authorId: options.authorId || null,
@@ -507,10 +508,20 @@ Raw JSON-LD object (do not include script tags yet)
     
 Requirements:
 1. Provide 3-4 ultra-concise bullet points summarizing the key value.
-2. Structure the output as an HTML snippet.
+2. Structure the output EXACTLY as the HTML snippet shown below.
 3. Use a <h4> tag with the text "Quick Overview" at the top.
 4. Wrap everything in a <aside class="ai-overview-block">.
 5. Do NOT use markdown. Use <ul> and <li>.
+
+EXAMPLE STRUCTURE (FOLLOW THIS EXACTLY):
+<aside class="ai-overview-block">
+  <h4>Quick Overview</h4>
+  <ul>
+    <li>Key point one here</li>
+    <li>Key point two here</li>
+    <li>Key point three here</li>
+  </ul>
+</aside>
 
 Content: 
 ${content.substring(0, 3000)}
