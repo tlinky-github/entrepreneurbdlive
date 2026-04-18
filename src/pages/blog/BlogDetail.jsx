@@ -43,6 +43,7 @@ const BlogDetail = () => {
   const [submittingComment, setSubmittingComment] = useState(false);
   const [authorData, setAuthorData] = useState(null);
   const [openFaqIndex, setOpenFaqIndex] = useState(null);
+  const [relatedPosts, setRelatedPosts] = useState([]);
 
   useEffect(() => {
     const loadPost = async () => {
@@ -57,6 +58,17 @@ const BlogDetail = () => {
         }
 
         setPost(postRes.data);
+
+        // Load related posts from the same category
+        if (postRes.data.category_id) {
+          try {
+            const relatedRes = await postAPI.list({ category_id: postRes.data.category_id, status: 'published', limit: 7 });
+            const filtered = (relatedRes.data || []).filter(p => p.id !== postRes.data.id).slice(0, 6);
+            setRelatedPosts(filtered);
+          } catch (err) {
+            console.error('Error loading related posts:', err);
+          }
+        }
         
         // Load Author Data if exists
         if (postRes.data.authorId) {
@@ -454,6 +466,46 @@ const BlogDetail = () => {
             </Button>
           </div>
         </div>
+
+        {/* Related Articles */}
+        {relatedPosts.length > 0 && (
+          <section className="mt-16">
+            <h2 className="text-2xl font-bold text-stone-900 mb-8">Related Articles</h2>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {relatedPosts.map((rPost) => (
+                <Link key={rPost.id} to={`/blog/${rPost.slug}`}>
+                  <div className="bg-white border border-stone-200 rounded-xl overflow-hidden hover:shadow-lg hover:border-emerald-900/20 transition-all duration-200 h-full group">
+                    <div className="aspect-video bg-stone-100 overflow-hidden">
+                      {rPost.featured_image ? (
+                        <img
+                          src={rPost.featured_image}
+                          alt={rPost.title}
+                          loading="lazy"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-emerald-50">
+                          <span className="text-3xl font-bold text-emerald-900/10">e.bd</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-5">
+                      {rPost.category_name && (
+                        <Badge variant="outline" className="mb-2 text-xs">{rPost.category_name}</Badge>
+                      )}
+                      <h3 className="font-semibold text-stone-900 line-clamp-2 mb-2 group-hover:text-emerald-900 transition-colors">
+                        {rPost.title}
+                      </h3>
+                      {rPost.excerpt && (
+                        <p className="text-sm text-stone-600 line-clamp-2">{rPost.excerpt}</p>
+                      )}
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Comments Section */}
         <section id="comments" className="mt-12">
