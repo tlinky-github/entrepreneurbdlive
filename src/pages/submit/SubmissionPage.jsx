@@ -46,7 +46,7 @@ const SubmissionPage = () => {
     industries: [], 
     listing_types: [],
     startup_stages: [],
-    employee_sizes: ['1-10', '11-50', '51-200', '201-500', 'Custom'] 
+    employee_sizes: ['1-10', '11-50', '51-200', '201-500', '501-1000', '1001-5000', '5000+'] 
   });
   const [metadataLoading, setMetadataLoading] = useState(true);
 
@@ -96,7 +96,7 @@ const SubmissionPage = () => {
         const res = await publicAPI.listMetadata(turnstileToken || TURNSTILE_SITE_KEY);
         setMetadata({
           ...res.data,
-          employee_sizes: ['1-10', '11-50', '51-200', '201-500', 'Custom']
+          employee_sizes: ['1-10', '11-50', '51-200', '201-500', '501-1000', '1001-5000', '5000+']
         });
       } catch (err) {
         console.error('Metadata load failed:', err);
@@ -232,6 +232,7 @@ const SubmissionPage = () => {
                       <div className="grid sm:grid-cols-2 gap-6 sm:gap-8">
                         <div className="space-y-3">
                           <label className="text-xs sm:text-sm font-bold text-stone-700 ml-1 uppercase tracking-wider">Full Name *</label>
+                          <p className="text-[10px] text-stone-500 ml-1 mb-1 font-medium leading-tight">Your legal name or the name you are professionally known as.</p>
                           <Input 
                             placeholder="e.g. Nasir Uddin" 
                             className="bg-stone-50 border-stone-200 h-12 sm:h-14 rounded-xl focus:ring-emerald-500"
@@ -242,6 +243,7 @@ const SubmissionPage = () => {
                         </div>
                         <div className="space-y-3">
                           <label className="text-xs sm:text-sm font-bold text-stone-700 ml-1 uppercase tracking-wider">Designation *</label>
+                          <p className="text-[10px] text-stone-500 ml-1 mb-1 font-medium leading-tight">Your official title or primary role (e.g., Founder, CEO).</p>
                           <Input 
                             placeholder="e.g. Managing Director" 
                             className="bg-stone-50 border-stone-200 h-12 sm:h-14 rounded-xl"
@@ -266,6 +268,7 @@ const SubmissionPage = () => {
                       <div className="grid sm:grid-cols-2 gap-6 sm:gap-8">
                         <div className="space-y-3">
                           <label className="text-xs sm:text-sm font-bold text-stone-700 ml-1 uppercase tracking-wider">Category</label>
+                          <p className="text-[10px] text-stone-500 ml-1 mb-1 font-medium leading-tight">The specific niche or sector you focus on (e.g., EdTech, Fintech).</p>
                           <Input 
                             placeholder="e.g. Fintech, Edtech" 
                             className="bg-stone-50 border-stone-200 h-12 sm:h-14 rounded-xl"
@@ -276,6 +279,7 @@ const SubmissionPage = () => {
                         </div>
                         <div className="space-y-3">
                           <label className="text-xs sm:text-sm font-bold text-stone-700 ml-1 uppercase tracking-wider">Industry</label>
+                          <p className="text-[10px] text-stone-500 ml-1 mb-1 font-medium leading-tight">The broader market industry you operate in (e.g., Software, Finance).</p>
                           <Input 
                             placeholder="e.g. Software, Banking" 
                             className="bg-stone-50 border-stone-200 h-12 sm:h-14 rounded-xl"
@@ -310,6 +314,7 @@ const SubmissionPage = () => {
 
                       <div className="space-y-3">
                         <label className="text-xs sm:text-sm font-bold text-stone-700 ml-1 uppercase tracking-wider">Short Bio (Max 400 chars)</label>
+                        <p className="text-[10px] text-stone-500 ml-1 mb-1 font-medium leading-tight">A punchy, concise summary of who you are and your top achievements. This will appear on preview cards.</p>
                         <textarea 
                           className="w-full bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:outline-none transition-all min-h-[100px] p-4 text-sm"
                           placeholder="A quick summary for list views..."
@@ -324,7 +329,10 @@ const SubmissionPage = () => {
                       </div>
 
                       <div className="space-y-6">
-                        <label className="text-xs sm:text-sm font-bold text-stone-700 ml-1 uppercase tracking-wider">Detailed Journey (Content)</label>
+                        <div className="flex flex-col gap-1 mb-2">
+                          <label className="text-xs sm:text-sm font-bold text-stone-700 ml-1 uppercase tracking-wider">Detailed Journey (Content)</label>
+                          <p className="text-xs text-stone-500 ml-1">Share the full story of your entrepreneurial journey. Mention early struggles, major milestones, key pivots, and what drives you. Use headings (H2, H3) to structure your story.</p>
+                        </div>
                         <PublicRichEditor 
                           value={pData.content}
                           onChange={(html) => setPData({...pData, content: html})}
@@ -401,7 +409,7 @@ const SubmissionPage = () => {
                       <SectionTitle 
                         icon={ShieldCheck} 
                         title="Moderation Contact" 
-                        subtitle="Private information for our editorial team only." 
+                        subtitle="Private information for our editorial team only. Please provide accurate details so editors can reach out if content polishing is needed." 
                       />
 
                       <div className="grid sm:grid-cols-2 gap-6 sm:gap-8">
@@ -484,6 +492,7 @@ const SubmissionPage = () => {
                       
                       <div className="space-y-3">
                         <label className="text-xs sm:text-sm font-bold text-stone-700 ml-1 uppercase tracking-wider">Business Name *</label>
+                        <p className="text-[10px] text-stone-500 ml-1 mb-1 font-medium leading-tight">The legally registered or commonly known public name of your company.</p>
                         <Input 
                           placeholder="e.g. NextGen BD" 
                           className="bg-stone-50 border-stone-200 h-12 sm:h-14 rounded-xl"
@@ -496,6 +505,7 @@ const SubmissionPage = () => {
                       <div className="grid sm:grid-cols-2 gap-6 sm:gap-8">
                         <div className="space-y-3">
                           <label className="text-xs sm:text-sm font-bold text-stone-700 ml-1 uppercase tracking-wider">Category</label>
+                          <p className="text-[10px] text-stone-500 ml-1 mb-1 font-medium leading-tight">The specific niche your business serves (e.g., E-commerce, Logistics).</p>
                           <Input 
                             placeholder="e.g. E-commerce" 
                             className="bg-stone-50 border-stone-200 h-12 sm:h-14 rounded-xl"
@@ -505,6 +515,7 @@ const SubmissionPage = () => {
                         </div>
                         <div className="space-y-3">
                           <label className="text-xs sm:text-sm font-bold text-stone-700 ml-1 uppercase tracking-wider">Industry</label>
+                          <p className="text-[10px] text-stone-500 ml-1 mb-1 font-medium leading-tight">Your broader market sector (e.g., Technology, Retail).</p>
                           <Input 
                             placeholder="e.g. Technology" 
                             className="bg-stone-50 border-stone-200 h-12 sm:h-14 rounded-xl"
@@ -517,6 +528,7 @@ const SubmissionPage = () => {
                       <div className="grid sm:grid-cols-2 gap-6 sm:gap-8">
                         <div className="space-y-3">
                           <label className="text-xs sm:text-sm font-bold text-stone-700 ml-1 uppercase tracking-wider">Headquarters</label>
+                          <p className="text-[10px] text-stone-500 ml-1 mb-1 font-medium leading-tight">Primary location of your operations (e.g., Banani, Dhaka).</p>
                           <Input 
                             placeholder="e.g. Gulshan, Dhaka" 
                             className="bg-stone-50 border-stone-200 h-12 sm:h-14 rounded-xl"
@@ -526,6 +538,7 @@ const SubmissionPage = () => {
                         </div>
                         <div className="space-y-3">
                           <label className="text-xs sm:text-sm font-bold text-stone-700 ml-1 uppercase tracking-wider">Website URL</label>
+                          <p className="text-[10px] text-stone-500 ml-1 mb-1 font-medium leading-tight">Link to your official company website.</p>
                           <Input 
                             placeholder="https://nextgen.bd" 
                             className="bg-stone-50 border-stone-200 h-12 sm:h-14 rounded-xl"
@@ -601,6 +614,7 @@ const SubmissionPage = () => {
                             value={lData.logo}
                             onChange={(e) => setLData({...lData, logo: e.target.value})}
                           />
+                          <p className="text-[10px] text-amber-600 font-bold uppercase tracking-tighter mt-2">Preferred: Square 400x400 (Max 20kb)</p>
                         </div>
                         <div className="space-y-3">
                           <label className="text-xs sm:text-sm font-bold text-stone-700 ml-1 flex items-center gap-2 uppercase tracking-wider">
@@ -612,11 +626,13 @@ const SubmissionPage = () => {
                             value={lData.cover_image}
                             onChange={(e) => setLData({...lData, cover_image: e.target.value})}
                           />
+                          <p className="text-[10px] text-amber-600 font-bold uppercase tracking-tighter mt-2">Preferred: Landscape 1220x320 (Max 50kb)</p>
                         </div>
                       </div>
 
                       <div className="space-y-3">
                         <label className="text-xs sm:text-sm font-bold text-stone-700 ml-1 uppercase tracking-wider">Short Pitch (Excerpt)</label>
+                        <p className="text-[10px] text-stone-500 ml-1 mb-1 font-medium leading-tight">A powerful 1-2 sentence pitch describing exactly what your business does and its core value proposition. Shown on directory cards.</p>
                         <textarea 
                           className="w-full bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:outline-none transition-all min-h-[100px] p-4 text-sm"
                           placeholder="A quick 1-2 sentence pitch..."
@@ -626,7 +642,10 @@ const SubmissionPage = () => {
                       </div>
 
                       <div className="space-y-6">
-                        <label className="text-xs sm:text-sm font-bold text-stone-700 ml-1 uppercase tracking-wider">Detailed About (Content)</label>
+                        <div className="flex flex-col gap-1 mb-2">
+                          <label className="text-xs sm:text-sm font-bold text-stone-700 ml-1 uppercase tracking-wider">Detailed About (Content)</label>
+                          <p className="text-xs text-stone-500 ml-1">Provide a comprehensive overview of your business. Include your mission, the problem you solve, core products/services, and major achievements. Structure with Headings (H2, H3) for readability.</p>
+                        </div>
                         <PublicRichEditor 
                           value={lData.content}
                           onChange={(html) => setLData({...lData, content: html})}
@@ -713,7 +732,7 @@ const SubmissionPage = () => {
                       <SectionTitle 
                         icon={ShieldCheck} 
                         title="Moderation Contact" 
-                        subtitle="Private information for our editorial team only." 
+                        subtitle="Private information for our editorial team only. Please provide accurate details so editors can reach out if content polishing is needed." 
                       />
 
                       <div className="grid sm:grid-cols-2 gap-6 sm:gap-8">
