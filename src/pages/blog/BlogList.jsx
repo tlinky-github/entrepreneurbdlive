@@ -182,7 +182,7 @@ const BlogList = () => {
               {regularPosts.map((post) => (
                 <Link key={post.id} to={`/blog/${post.slug}`}>
                   <Card className="h-full overflow-hidden border-stone-200 hover:border-emerald-900/20 hover:shadow-lg transition-all duration-200">
-                    <div className="aspect-video bg-stone-100 overflow-hidden">
+                    <div className="aspect-[3/2] bg-stone-100 overflow-hidden">
                       {post.featured_image ? (
                         <img
                           src={post.featured_image}

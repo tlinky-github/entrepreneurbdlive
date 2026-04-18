@@ -374,3 +374,103 @@ code {
   -webkit-box-orient: vertical !important;
   overflow: hidden !important;
 }
+
+/* Premium AI Overview Block */
+.ai-overview-block {
+  background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%);
+  border: 1px solid #dcfce7;
+  border-radius: 1.25rem;
+  padding: 1.5rem;
+  margin: 2rem 0;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 20px -5px rgba(5, 150, 105, 0.05);
+}
+
+.ai-overview-block::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: #10b981;
+}
+
+.ai-overview-block h4 {
+  color: #065f46 !important;
+  font-size: 1.125rem !important;
+  font-weight: 800 !important;
+  margin-top: 0 !important;
+  margin-bottom: 1rem !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+}
+
+.ai-overview-block h4::before {
+  content: '✦';
+  color: #10b981;
+  font-size: 1.25rem;
+}
+
+.ai-overview-block ul {
+  list-style: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  display: grid !important;
+  gap: 0.5rem !important;
+}
+
+.ai-overview-block li {
+  padding-left: 1.75rem !important;
+  position: relative !important;
+  color: #2d3748 !important;
+  font-weight: 500 !important;
+  line-height: 1.5 !important;
+  margin: 0 !important;
+  font-size: 0.95rem !important;
+}
+
+.ai-overview-block li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.15rem;
+  width: 1.1rem;
+  height: 1.1rem;
+  background-color: #10b981;
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'%3E%3Cpath d='M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'%3E%3Cpath d='M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z'/%3E%3C/svg%3E");
+  mask-repeat: no-repeat;
+  -webkit-mask-repeat: no-repeat;
+}
+
+/* Static Overrides: Disable all animations and transitions in this block */
+.ai-overview-block, 
+.ai-overview-block *,
+.ai-overview-block::before,
+.ai-overview-block::after {
+  animation: none !important;
+  transition: none !important;
+  transform: none !important;
+}
+
+/* Strip margins from paragraphs inside the overview block to keep it compact */
+.ai-overview-block p, 
+.ai-overview-block ul, 
+.ai-overview-block li {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+.ai-overview-block li + li {
+  margin-top: 0.5rem !important;
+}
+
+/* Syncing related thumbnails to the new 3:2 standard */
+.related-post-thumb {
+  aspect-ratio: 3 / 2 !important;
+}

@@ -406,7 +406,7 @@ const BlogDetail = () => {
 
             // Senior Engineer Fix: Relocate featured image after 2nd H2 (or 1st H2 as fallback)
             if (post.featured_image) {
-              const h2TagRegex = /<\/h2>/gi;
+              const h2TagRegex = /<h2/gi;
               const matches = [...content.matchAll(h2TagRegex)];
               const h2Count = matches.length;
               
@@ -415,9 +415,8 @@ const BlogDetail = () => {
                 const firstH2Match = matches[0];
                 const secondH2Match = h2Count >= 2 ? matches[1] : null;
                 
-                const injectionPoint = secondH2Match 
-                  ? secondH2Match.index + secondH2Match[0].length 
-                  : firstH2Match.index + firstH2Match[0].length;
+                // Senior Engineer Fix: Place image right BEFORE the second H2 (User preference)
+                const injectionPoint = secondH2Match ? secondH2Match.index : firstH2Match.index;
 
                 const imageHtml = `
                   <div class="featured-image-inline mt-8 mb-12 rounded-2xl overflow-hidden shadow-2xl border border-stone-100 ring-1 ring-stone-900/5 group">
@@ -439,6 +438,10 @@ const BlogDetail = () => {
                 content = imageHtml + content;
               }
             }
+            
+            // Hybrid Approach: Wrap any "Quick Overview" sections (even legacy) with the premium style
+            const overviewRegex = /(<h4>Quick Overview<\/h4>[\s\S]*?<\/ul>)/gi;
+            content = content.replace(overviewRegex, '<aside class="ai-overview-block">$1</aside>');
             
             const parts = content.split(/(<faq-section[^>]*><\/faq-section>)/g);
             

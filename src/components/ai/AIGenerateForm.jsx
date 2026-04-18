@@ -19,6 +19,27 @@ import ImageUploader from '../common/ImageUploader';
  * Interface to generate new posts from topics
  */
 
+const STATUS_MESSAGES = [
+  "Analyzing topics and structure...",
+  "Drafting initial hook...",
+  "Building core sections...",
+  "Expanding in-depth analysis...",
+  "Continuing past token limits...",
+  "Refining for target length...",
+  "Synthesizing conclusion...",
+  "Optimizing for SEO...",
+  "Finalizing premium blocks..."
+];
+
+const TONES = [
+  'professional',
+  'casual',
+  'technical',
+  'creative',
+  'educational',
+  'persuasive',
+];
+
 export const AIGenerateForm = ({ onPostGenerated, onClose }) => {
   const [providers, setProviders] = useState({});
   const [authors, setAuthors] = useState([]);
@@ -55,17 +76,6 @@ export const AIGenerateForm = ({ onPostGenerated, onClose }) => {
   });
 
   const [generatingStatus, setGeneratingStatus] = useState("Generating Post...");
-  const STATUS_MESSAGES = [
-    "Analyzing topics and structure...",
-    "Drafting initial hook...",
-    "Building core sections...",
-    "Expanding in-depth analysis...",
-    "Continuing past token limits...",
-    "Refining for target length...",
-    "Synthesizing conclusion...",
-    "Optimizing for SEO...",
-    "Finalizing premium blocks..."
-  ];
 
   useEffect(() => {
     let interval;
@@ -91,21 +101,12 @@ export const AIGenerateForm = ({ onPostGenerated, onClose }) => {
   
   const providerConfig = providers[formData.provider];
 
-  const TONES = [
-    'professional',
-    'casual',
-    'technical',
-    'creative',
-    'educational',
-    'persuasive',
-  ];
-
   useEffect(() => {
     loadProviders();
     loadMetadata();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => { // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
     // Auto-select first model when provider changes
     if (!loading && providerConfig?.models?.length > 0) {
       setFormData((prev) => ({
@@ -113,7 +114,8 @@ export const AIGenerateForm = ({ onPostGenerated, onClose }) => {
         model: providerConfig.models[0],
       }));
     }
-  }, [formData.provider, providers, loading, providerConfig]);
+  }, [formData.provider, providers, loading, providerConfig]); // eslint-disable-line react-hooks/exhaustive-deps
+
 
   const loadMetadata = async () => {
     try {

@@ -461,7 +461,13 @@ const ImageUploader = ({
         console.warn('Image uploaded to R2 but failed to track in Firestore:', trackError);
       }
 
-      toast.success('Upload successful!');
+      // 3. Notify parent immediately
+      onChange(publicUrl, { 
+        alt: file.name.split('.')[0].replace(/[-_]/g, ' '),
+        title: file.name
+      });
+      
+      toast.success('Upload successful and linked to content!');
     } catch (error) {
       console.error('Upload error:', error);
       toast.error('Failed to upload image.');
@@ -647,6 +653,11 @@ const ImageUploader = ({
                           setAlt(item.fileName?.split('.')[0].replace(/[-_]/g, ' ') || '');
                           setSourceSize(item.size || null);
                           setOptimizedSize(null);
+                          // Notify parent immediately
+                          onChange(item.url, { 
+                            alt: item.fileName?.split('.')[0].replace(/[-_]/g, ' ') || '',
+                            title: item.fileName
+                          });
                           setActiveTab('upload');
                         }}
                         className={`aspect-square rounded-lg overflow-hidden border-2 cursor-pointer transition-all hover:scale-[1.05] active:scale-95 group relative ${
