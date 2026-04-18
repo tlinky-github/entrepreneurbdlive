@@ -21,9 +21,12 @@ import {
   Brain,
   DollarSign,
   AlertTriangle,
-  Laptop
+  Laptop,
+  Clock,
+  User,
 } from 'lucide-react';
 import { pillarPages, pillarPagesPart2 } from '../data/mock';
+import BrandedPlaceholder from '../components/blog/BrandedPlaceholder';
 
 const iconMap = {
   Lightbulb: Lightbulb,
@@ -63,8 +66,10 @@ const Home = () => {
           require('../lib/api').resourceAPI.list({ limit: 6 }).catch(() => ({ data: [] }))
         ]);
 
-        // Use featured posts if available, otherwise fall back to latest published
-        const blogPosts = (postsRes.data && postsRes.data.length > 0) ? postsRes.data : (latestPostsRes.data || []);
+        // Use featured posts if available, otherwise fall back to latest published (strictly limit to 3)
+        const blogPosts = (postsRes.data && postsRes.data.length > 0) 
+          ? postsRes.data.slice(0, 3) 
+          : (latestPostsRes.data || []).slice(0, 3);
         setFeaturedPosts(blogPosts);
         setFeaturedEntrepreneurs(profilesRes.data || []);
         setFeaturedListings(listingsRes.data || []);
@@ -423,26 +428,44 @@ const Home = () => {
             <div className="grid md:grid-cols-3 gap-8">
               {featuredPosts.map((post) => (
                 <Link key={post.id} to={`/blog/${post.slug}`}>
-                  <Card className="border-stone-200 hover:border-emerald-900/20 hover:shadow-lg transition-all duration-200 h-full overflow-hidden">
-                    {post.featured_image && (
-                      <div className="aspect-video bg-stone-100 overflow-hidden">
+                  <Card className="h-full overflow-hidden border-stone-200 hover:border-emerald-900/20 hover:shadow-lg transition-all duration-200 group">
+                    <div className="aspect-[3/2] bg-stone-100 overflow-hidden">
+                      {post.featured_image ? (
                         <img
                           src={post.featured_image}
-                          alt={post.featured_image_alt || post.title}
-                          loading="lazy"
-                          decoding="async"
+                          alt={post.title}
                           className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                         />
-                      </div>
-                    )}
+                      ) : (
+                        <BrandedPlaceholder 
+                          title={post.title} 
+                          category={post.category_name} 
+                        />
+                      )}
+                    </div>
                     <CardContent className="p-6">
-                      <h3 className="font-semibold text-stone-900 mb-2 line-clamp-2">{post.title}</h3>
+                      {post.category_name && (
+                        <Badge variant="outline" className="mb-3 text-xs">
+                          {post.category_name}
+                        </Badge>
+                      )}
+                      <h3 className="font-semibold text-stone-900 mb-2 line-clamp-2 group-hover:text-emerald-900 transition-colors">
+                        {post.title}
+                      </h3>
                       {post.excerpt && (
                         <p className="text-sm text-stone-600 line-clamp-2 mb-4">{post.excerpt}</p>
                       )}
                       <div className="flex items-center justify-between text-xs text-stone-500">
-                        <span>{post.author_name}</span>
-                        <span>{(post.created_at || post.createdAt) ? new Date(post.created_at || post.createdAt).toLocaleDateString() : ''}</span>
+                        <span className="flex items-center gap-1">
+                          <User className="w-3 h-3" />
+                          {post.author_name}
+                        </span>
+                        {(post.content || post.content_html) && (
+                          <span className="flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {Math.ceil(((post.content || post.content_html).replace(/<[^>]+>/g, '').split(/\s+/).length) / 200)} min read
+                          </span>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
