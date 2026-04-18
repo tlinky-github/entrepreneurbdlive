@@ -76,40 +76,43 @@ export const postAPI = {
         constraints.push(where('is_featured', '==', true));
       }
 
-      // Try with orderBy first, fall back without it if Firestore index is missing
-      const buildQuery = (useSort) => {
-        let q = constraints.length > 0 
-          ? query(collection(db, 'posts'), ...constraints)
-          : collection(db, 'posts');
-        
-        if (useSort && !params.noSort) {
-          q = query(q, orderBy('created_at', 'desc'));
-        }
-        
-        if (params.limit) {
-          q = query(q, limit(params.limit));
-        }
-        return q;
-      };
-
-      let snapshot;
+      // HYBRID: Try Firestore-sorted query first (fast path for new posts)
+      let sortedResults = [];
       try {
-        snapshot = await getDocs(buildQuery(true));
-      } catch (indexError) {
-        // Firestore composite index missing — retry without orderBy
-        console.warn('Firestore index missing, retrying without sort:', indexError.message);
-        snapshot = await getDocs(buildQuery(false));
+        const sortedQ = constraints.length > 0
+          ? query(collection(db, 'posts'), ...constraints, orderBy('created_at', 'desc'))
+          : query(collection(db, 'posts'), orderBy('created_at', 'desc'));
+        const sortedSnap = await getDocs(sortedQ);
+        sortedResults = sortedSnap.docs.map(docToData);
+      } catch (e) {
+        // Composite index missing — that's okay, unsorted fallback will cover it
       }
 
-      const results = snapshot.docs.map(docToData);
-      // Client-side sort fallback if we skipped orderBy
-      results.sort((a, b) => {
-        const da = a.created_at ? new Date(a.created_at) : new Date(0);
-        const db2 = b.created_at ? new Date(b.created_at) : new Date(0);
+      // FALLBACK: Also query without orderBy to catch legacy posts missing `created_at`
+      const unsortedQ = constraints.length > 0
+        ? query(collection(db, 'posts'), ...constraints)
+        : collection(db, 'posts');
+      const unsortedSnap = await getDocs(unsortedQ);
+      const unsortedResults = unsortedSnap.docs.map(docToData);
+
+      // MERGE: Deduplicate by ID, sorted results take priority
+      const seenIds = new Set(sortedResults.map(r => r.id));
+      const legacyOnly = unsortedResults.filter(r => !seenIds.has(r.id));
+      const merged = [...sortedResults, ...legacyOnly];
+
+      // Final client-side sort (handles both created_at and createdAt)
+      merged.sort((a, b) => {
+        const da = new Date(a.created_at || a.createdAt || 0);
+        const db2 = new Date(b.created_at || b.createdAt || 0);
         return db2 - da;
       });
 
-      return { data: results };
+      // Apply limit
+      if (params.limit) {
+        return { data: merged.slice(0, params.limit) };
+      }
+
+      return { data: merged };
     } catch (error) {
       console.error('Firestore Posts List Error:', error);
       return { data: [] };

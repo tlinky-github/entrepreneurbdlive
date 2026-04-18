@@ -54,15 +54,18 @@ const Home = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [postsRes, profilesRes, listingsRes, statsRes, resourcesRes] = await Promise.all([
+        const [postsRes, latestPostsRes, profilesRes, listingsRes, statsRes, resourcesRes] = await Promise.all([
           postAPI.list({ is_featured: true, status: 'published', limit: 3 }).catch(() => ({ data: [] })),
+          postAPI.list({ status: 'published', limit: 6 }).catch(() => ({ data: [] })),
           profileAPI.list({ is_featured: true, status: 'published', limit: 4 }).catch(() => ({ data: [] })),
           listingAPI.list({ is_featured: true, status: 'published', limit: 4 }).catch(() => ({ data: [] })),
           require('../lib/api').adminAPI.getStats().catch(() => ({ data: {} })),
           require('../lib/api').resourceAPI.list({ limit: 6 }).catch(() => ({ data: [] }))
         ]);
 
-        setFeaturedPosts(postsRes.data || []);
+        // Use featured posts if available, otherwise fall back to latest published
+        const blogPosts = (postsRes.data && postsRes.data.length > 0) ? postsRes.data : (latestPostsRes.data || []);
+        setFeaturedPosts(blogPosts);
         setFeaturedEntrepreneurs(profilesRes.data || []);
         setFeaturedListings(listingsRes.data || []);
         setKnowledgeItems(resourcesRes.data || []);
@@ -439,7 +442,7 @@ const Home = () => {
                       )}
                       <div className="flex items-center justify-between text-xs text-stone-500">
                         <span>{post.author_name}</span>
-                        <span>{new Date(post.created_at).toLocaleDateString()}</span>
+                        <span>{(post.created_at || post.createdAt) ? new Date(post.created_at || post.createdAt).toLocaleDateString() : ''}</span>
                       </div>
                     </CardContent>
                   </Card>
