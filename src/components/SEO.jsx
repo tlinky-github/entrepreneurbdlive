@@ -22,17 +22,20 @@ export const SEO = ({
     const baseTitle = title || staticConfig.title || defaultConfig.title;
     const brandedTitle = baseTitle.includes('Entrepreneurs BD') ? baseTitle : `${baseTitle} | Entrepreneurs BD`;
 
+    // Dynamic Branded OG Image Construction
+    const dynamicOgUrl = `/api/og-image?title=${encodeURIComponent(baseTitle)}`;
+    
     const meta = {
         title: brandedTitle,
         description: description || staticConfig.description || defaultConfig.description,
-        image: ogImage || image || staticConfig.image || defaultConfig.image,
+        image: ogImage || image || staticConfig.image || dynamicOgUrl,
         type: type || staticConfig.type || defaultConfig.type,
         keywords: props.keywords || staticConfig.keywords || defaultConfig.keywords || [],
     };
 
-    const siteUrl = window.location.origin;
+    const siteUrl = typeof window !== 'undefined' ? window.location.origin : '';
     const fullImageUrl = meta.image?.startsWith('http') ? meta.image : `${siteUrl}${meta.image}`;
-    const currentUrl = window.location.href;
+    const currentUrl = typeof window !== 'undefined' ? window.location.href : '';
 
     // Generate Breadcrumbs Schema
     const breadcrumbSchema = props.breadcrumbs ? {

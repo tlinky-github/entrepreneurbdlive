@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../../components/ui/select';
+import BrandedPlaceholder from '../../components/blog/BrandedPlaceholder';
 
 const BlogList = () => {
   const [posts, setPosts] = useState([]);
@@ -144,9 +145,10 @@ const BlogList = () => {
                           className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-emerald-100">
-                          <span className="text-6xl font-bold text-emerald-900/20">e.bd</span>
-                        </div>
+                        <BrandedPlaceholder 
+                          title={featuredPost.title} 
+                          category={featuredPost.category_name} 
+                        />
                       )}
                     </div>
                     <CardContent className="p-8 lg:p-12 flex flex-col justify-center">
@@ -188,9 +190,10 @@ const BlogList = () => {
                           className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-emerald-50">
-                          <span className="text-4xl font-bold text-emerald-900/10">e.bd</span>
-                        </div>
+                        <BrandedPlaceholder 
+                          title={post.title} 
+                          category={post.category_name} 
+                        />
                       )}
                     </div>
                     <CardContent className="p-6">

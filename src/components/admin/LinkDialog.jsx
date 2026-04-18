@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import * as Checkbox from '@radix-ui/react-checkbox';
-import { X, ExternalLink, Shield, DollarSign } from 'lucide-react';
+import { X, ExternalLink, Shield, DollarSign, Check } from 'lucide-react';
 
 const LinkDialog = ({ open, onOpenChange, initialData, onApply }) => {
   const [url, setUrl] = useState('');
@@ -35,8 +35,8 @@ const LinkDialog = ({ open, onOpenChange, initialData, onApply }) => {
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="dialog-overlay" />
-        <Dialog.Content className="dialog-content-premium max-w-md w-full p-6">
+        <Dialog.Overlay className="dialog-overlay bg-black/60 fixed inset-0 z-[100] backdrop-blur-sm animate-in fade-in duration-300" />
+        <Dialog.Content className="dialog-content-premium fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 max-w-md w-full p-6 bg-white rounded-2xl shadow-2xl z-[101] outline-none animate-in zoom-in-95 duration-200">
           <div className="flex justify-between items-center mb-6">
             <Dialog.Title className="text-xl font-bold text-slate-800">
               Link Settings
@@ -75,7 +75,7 @@ const LinkDialog = ({ open, onOpenChange, initialData, onApply }) => {
                   id="targetBlank"
                 >
                   <Checkbox.Indicator className="checkbox-indicator">
-                    <div className="w-2 h-2 bg-white rounded-full" />
+                    <Check size={14} className="text-white" />
                   </Checkbox.Indicator>
                 </Checkbox.Root>
                 <label className="flex items-center space-x-2 cursor-pointer select-none" htmlFor="targetBlank">
@@ -92,7 +92,7 @@ const LinkDialog = ({ open, onOpenChange, initialData, onApply }) => {
                   id="noFollow"
                 >
                   <Checkbox.Indicator className="checkbox-indicator">
-                    <div className="w-2 h-2 bg-white rounded-full" />
+                    <Check size={14} className="text-white" />
                   </Checkbox.Indicator>
                 </Checkbox.Root>
                 <label className="flex items-center space-x-2 cursor-pointer select-none" htmlFor="noFollow">
@@ -109,7 +109,7 @@ const LinkDialog = ({ open, onOpenChange, initialData, onApply }) => {
                   id="sponsored"
                 >
                   <Checkbox.Indicator className="checkbox-indicator">
-                    <div className="w-2 h-2 bg-white rounded-full" />
+                    <Check size={14} className="text-white" />
                   </Checkbox.Indicator>
                 </Checkbox.Root>
                 <label className="flex items-center space-x-2 cursor-pointer select-none" htmlFor="sponsored">
@@ -128,7 +128,7 @@ const LinkDialog = ({ open, onOpenChange, initialData, onApply }) => {
             </Dialog.Close>
             <button
               onClick={handleApply}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transform hover:-translate-y-0.5 active:translate-y-0 transition-all"
+              className="px-6 py-2 bg-emerald-900 text-white rounded-lg text-sm font-bold shadow-lg shadow-emerald-900/10 hover:bg-emerald-800 transform hover:-translate-y-0.5 active:translate-y-0 transition-all"
             >
               Apply Link
             </button>

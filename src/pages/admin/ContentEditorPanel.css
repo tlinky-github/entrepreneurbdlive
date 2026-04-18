@@ -490,3 +490,42 @@
     min-height: 300px;
   }
 }
+
+/* Dialog & Checkbox Styles */
+.checkbox-root {
+  background-color: white;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #d1d5db;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.checkbox-root[data-state='checked'] {
+  background-color: #064E3B;
+  border-color: #064E3B;
+}
+
+.checkbox-root:focus {
+  box-shadow: 0 0 0 2px rgba(6, 78, 59, 0.2);
+}
+
+.checkbox-indicator {
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dialog-overlay {
+  z-index: 100;
+}
+
+.dialog-content-premium {
+  z-index: 101;
+}

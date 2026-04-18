@@ -41,6 +41,7 @@ import {
   X
 } from 'lucide-react';
 import { format, isToday, isYesterday } from 'date-fns';
+import BrandedPlaceholder from '../../components/blog/BrandedPlaceholder';
 
 const formatRelativeDate = (date) => {
   if (!date) return 'Recently Published';
@@ -566,9 +567,10 @@ const BlogDetail = () => {
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-emerald-50">
-                          <span className="text-3xl font-bold text-emerald-900/10">e.bd</span>
-                        </div>
+                        <BrandedPlaceholder 
+                          title={rPost.title} 
+                          category={rPost.category_name} 
+                        />
                       )}
                     </div>
                     <div className="p-5">
