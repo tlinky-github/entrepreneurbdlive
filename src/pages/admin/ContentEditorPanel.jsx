@@ -66,58 +66,55 @@ const upgradeLegacyFaqs = (html) => {
   let overviewData = { answer: null, takeaways: [], markerNode: null };
   let foundOverview = false;
 
-  // --- PART 1: SMART OVERVIEW SCANNER (Quick Answer & Key Takeaways) ---
-  // We use deep discovery to find these elements regardless of nesting
-  const allElements = Array.from(doc.body.querySelectorAll('p, h1, h2, h3, h4, div'));
+  // --- PART 1: SMART OVERVIEW SCANNER (Final Foolproof Hierarchy Scanner) ---
+  const scanners = ['key takeaways', 'quick overview', 'quick answer', 'key highlights', 'takeaways'];
+  const processedNodes = new Set();
   
-  // A. Find Quick Answer (Matches "Quick Answer:" or "Quick Overview:")
-  const answerNode = allElements.find(el => /^(quick\s*answer|quick\s*overview):/i.test(el.innerText.trim()));
-  if (answerNode) {
-    // Preserve the original HTML structure (bold, links, etc)
-    const rawHtml = answerNode.innerHTML;
-    overviewData.answer = rawHtml.replace(/^(?:<[^>]*>)*\s*(quick\s*answer|quick\s*overview):\s*(?:<\/[^>]*>)*/i, '<strong>Quick Answer:</strong> ');
-    overviewData.markerNode = answerNode;
-    nodesToRemove.add(answerNode);
-    foundOverview = true;
-  }
+  const allPossible = Array.from(doc.body.querySelectorAll('*')).filter(el => {
+    const text = el.innerText.trim().toLowerCase().replace(/[\s\u00A0\u2726]+/g, ' ');
+    return scanners.some(s => text.startsWith(s)) && text.length < 80;
+  });
 
-  // B. Find Key Takeaways Header
-  const takeawaysHeader = allElements.find(el => /^(key\s*takeaways|key\s*highlights|takeaways)$/i.test(el.innerText.trim()));
-  if (takeawaysHeader) {
-    if (!overviewData.markerNode) overviewData.markerNode = takeawaysHeader;
-    nodesToRemove.add(takeawaysHeader);
-    foundOverview = true;
+  allPossible.forEach(el => {
+    if (processedNodes.has(el)) return;
+    
+    // If this match is inside another match, skip it (we want the outer header)
+    if (allPossible.some(other => other !== el && other.contains(el))) return;
 
-    // Look for the NEAREST list below this header (within reasonable proximity)
-    let next = takeawaysHeader.nextElementSibling;
+    const sectionData = { headerHtml: el.innerHTML.replace(/[:.]+$/, '').trim(), bodyHtml: '' };
+    const nodesToRemove = [el];
+    
+    let next = el.nextElementSibling;
     let attempts = 0;
-    while (next && attempts < 5) {
-      if (next.tagName === 'UL' || next.tagName === 'OL') {
-        overviewData.takeawaysHtml = next.outerHTML; // Keep the whole list with its attributes/styles
-        nodesToRemove.add(next);
+    while (next && attempts < 15) {
+      const tag = next.tagName;
+      if (tag === 'UL' || tag === 'OL') {
+        sectionData.bodyHtml = next.outerHTML; 
+        nodesToRemove.push(next);
+        break;
+      }
+      if ((tag === 'P' || tag === 'DIV' || tag === 'SECTION') && next.innerText.trim().length > 5) {
+        const nt = next.innerText.trim().toLowerCase();
+        if (scanners.some(s => nt.startsWith(s))) break;
+        sectionData.bodyHtml = `<div class="quick-answer">${next.innerHTML}</div>`;
+        nodesToRemove.push(next);
         break;
       }
       next = next.nextElementSibling;
       attempts++;
     }
-  }
 
-  if (foundOverview) {
-    const aside = document.createElement('aside');
-    aside.className = 'ai-overview-block';
-    
-    // We treat Key Takeaways and Quick Overview the same - boxing them in the premium emerald container
-    const answerHtml = overviewData.answer ? `<div class="quick-answer">${overviewData.answer}</div>` : '';
-    const takeawaysHtml = overviewData.takeawaysHtml 
-      ? `<h2>${takeawaysHeader ? takeawaysHeader.innerHTML : 'Key Takeaways'}</h2>${overviewData.takeawaysHtml}`
-      : '';
-    
-    aside.innerHTML = `${answerHtml}${takeawaysHtml}`;
-    
-    if (overviewData.markerNode && overviewData.markerNode.parentNode) {
-      overviewData.markerNode.parentNode.insertBefore(aside, overviewData.markerNode);
+    if (sectionData.bodyHtml) {
+      const box = document.createElement('div');
+      box.className = 'ai-overview-block';
+      box.innerHTML = `<h2>${sectionData.headerHtml}</h2>${sectionData.bodyHtml}`;
+      el.parentNode.insertBefore(box, el);
+      nodesToRemove.forEach(node => {
+        processedNodes.add(node);
+        try { node.remove(); } catch(e) {}
+      });
     }
-  }
+  });
 
   // --- PART 2: FAQ SCANNER ---
   let faqStartIndex = -1;

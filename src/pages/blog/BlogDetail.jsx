@@ -424,53 +424,55 @@ const BlogDetail = () => {
                 if (!el.style.length) el.removeAttribute('style');
               });
 
-              // 2. Discover Overview Blocks
-              const allElements = Array.from(doc.body.querySelectorAll('p, h1, h2, h3, h4, div'));
-              let overviewData = { answer: null, takeaways: [], markerNode: null };
-              let foundSomething = false;
-              let nodesToRemove = new Set();
+              // 2. Discover Overview Blocks (Final Foolproof Hierarchy Scanner)
+              const scanners = ['key takeaways', 'quick overview', 'quick answer', 'key highlights', 'takeaways'];
+              const processedNodes = new Set();
+              
+              const allPossible = Array.from(doc.body.querySelectorAll('*')).filter(el => {
+                const text = el.innerText.trim().toLowerCase().replace(/[\s\u00A0\u2726]+/g, ' ');
+                return scanners.some(s => text.startsWith(s)) && text.length < 80;
+              });
 
-              const answerNode = allElements.find(el => /^(quick\s*answer|quick\s*overview):/i.test(el.innerText.trim()));
-              if (answerNode) {
-                // Preserve the original HTML structure (bold, links, etc)
-                const rawHtml = answerNode.innerHTML;
-                overviewData.answer = rawHtml.replace(/^(?:<[^>]*>)*\s*(quick\s*answer|quick\s*overview):\s*(?:<\/[^>]*>)*/i, '<strong>Quick Answer:</strong> ');
-                overviewData.markerNode = answerNode;
-                nodesToRemove.add(answerNode);
-                foundSomething = true;
-              }
+              allPossible.forEach(el => {
+                if (processedNodes.has(el)) return;
+                
+                // If this match is inside another match, skip it (we want the outer header)
+                if (allPossible.some(other => other !== el && other.contains(el))) return;
 
-              const takeawaysHeader = allElements.find(el => /^(key\s*takeaways|key\s*highlights|takeaways)$/i.test(el.innerText.trim()));
-              if (takeawaysHeader) {
-                if (!overviewData.markerNode) overviewData.markerNode = takeawaysHeader;
-                nodesToRemove.add(takeawaysHeader);
-                foundSomething = true;
-                let next = takeawaysHeader.nextElementSibling;
+                const sectionData = { headerHtml: el.innerHTML.replace(/[:.]+$/, '').trim(), bodyHtml: '' };
+                const nodesToRemove = [el];
+                
+                let next = el.nextElementSibling;
                 let attempts = 0;
-                while (next && attempts < 5) {
-                  if (next.tagName === 'UL' || next.tagName === 'OL') {
-                    overviewData.takeawaysHtml = next.outerHTML; // Keep the whole list with its attributes/styles
-                    nodesToRemove.add(next);
+                while (next && attempts < 15) {
+                  const tag = next.tagName;
+                  if (tag === 'UL' || tag === 'OL') {
+                    sectionData.bodyHtml = next.outerHTML; 
+                    nodesToRemove.push(next);
+                    break;
+                  }
+                  if ((tag === 'P' || tag === 'DIV' || tag === 'SECTION') && next.innerText.trim().length > 5) {
+                    const nt = next.innerText.trim().toLowerCase();
+                    if (scanners.some(s => nt.startsWith(s))) break;
+                    sectionData.bodyHtml = `<div class="quick-answer">${next.innerHTML}</div>`;
+                    nodesToRemove.push(next);
                     break;
                   }
                   next = next.nextElementSibling;
                   attempts++;
                 }
-              }
 
-              if (foundSomething) {
-                const aside = document.createElement('aside');
-                aside.className = 'ai-overview-block';
-                const answerHtml = overviewData.answer ? `<div class="quick-answer">${overviewData.answer}</div>` : '';
-                const takeawaysHtml = overviewData.takeawaysHtml 
-                  ? `<h2>${takeawaysHeader ? takeawaysHeader.innerHTML : 'Key Takeaways'}</h2>${overviewData.takeawaysHtml}`
-                  : '';
-                aside.innerHTML = `${answerHtml}${takeawaysHtml}`;
-                if (overviewData.markerNode && overviewData.markerNode.parentNode) {
-                  overviewData.markerNode.parentNode.insertBefore(aside, overviewData.markerNode);
+                if (sectionData.bodyHtml) {
+                  const box = document.createElement('div');
+                  box.className = 'ai-overview-block';
+                  box.innerHTML = `<h2>${sectionData.headerHtml}</h2>${sectionData.bodyHtml}`;
+                  el.parentNode.insertBefore(box, el);
+                  nodesToRemove.forEach(node => {
+                    processedNodes.add(node);
+                    try { node.remove(); } catch(e) {}
+                  });
                 }
-                nodesToRemove.forEach(node => { try { node.remove(); } catch(e) {} });
-              }
+              });
               
               return doc.body.innerHTML;
             };
@@ -517,10 +519,7 @@ const BlogDetail = () => {
               }
             }
             
-            // Clean existing aside wrappers to prevent double-wrapping, then apply the premium style wrapper
-            let tempContent = content.replace(/<aside class="ai-overview-block">([\s\S]*?)<\/aside>/gi, '$1');
-            const overviewRegex = /((?:<div class="quick-answer">[\s\S]*?<\/div>\s*)?<h4>(?:Quick Overview|Key Takeaways)<\/h4>[\s\S]*?<\/ul>)/gi;
-            content = tempContent.replace(overviewRegex, '<aside class="ai-overview-block">$1</aside>');
+            // Legacy overrides removed. Smart Scanner above now handles all overview styling.
             
             const parts = content.split(/(<faq-section[^>]*>.*?<\/faq-section>|<faq-section[^>]*\/>)/gi);
             

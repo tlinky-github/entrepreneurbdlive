@@ -178,48 +178,46 @@ const KnowledgeArticlePage = () => {
                       const doc = parser.parseFromString(html, 'text/html');
                       
                       const allElements = Array.from(doc.body.querySelectorAll('p, h1, h2, h3, h4, div'));
-                      let overviewData = { answer: null, takeawaysHtml: null, markerNode: null };
-                      let foundSomething = false;
-                      let nodesToRemove = new Set();
+                      const processedNodes = new Set();
+                      
+                      allElements.forEach(el => {
+                        if (processedNodes.has(el)) return;
 
-                      const answerNode = allElements.find(el => /^(quick\s*answer|quick\s*overview):/i.test(el.innerText.trim()));
-                      if (answerNode) {
-                        const rawHtml = answerNode.innerHTML;
-                        overviewData.answer = rawHtml.replace(/^(?:<[^>]*>)*\s*(quick\s*answer|quick\s*overview):\s*(?:<\/[^>]*>)*/i, '<strong>Quick Answer:</strong> ');
-                        overviewData.markerNode = answerNode;
-                        nodesToRemove.add(answerNode);
-                        foundSomething = true;
-                      }
-
-                      const takeawaysHeader = allElements.find(el => /^(key\s*takeaways|takeaways)$/i.test(el.innerText.trim()));
-                      if (takeawaysHeader) {
-                        if (!overviewData.markerNode) overviewData.markerNode = takeawaysHeader;
-                        nodesToRemove.add(takeawaysHeader);
-                        foundSomething = true;
-                        let next = takeawaysHeader.nextElementSibling;
-                        let attempts = 0;
-                        while (next && attempts < 5) {
-                          if (next.tagName === 'UL' || next.tagName === 'OL') {
-                            overviewData.takeawaysHtml = next.outerHTML;
-                            nodesToRemove.add(next);
-                            break;
+                        const isHeader = /^(key\s*takeaways|key\s*highlights|takeaways|quick\s*answer|quick\s*overview)[\s:]*$/i.test(el.innerText.trim());
+                        
+                        if (isHeader) {
+                          const sectionData = { headerHtml: el.innerHTML.replace(/[:.]+$/, '').trim(), bodyHtml: '' };
+                          const nodesToRemove = [el];
+                          
+                          let next = el.nextElementSibling;
+                          let attempts = 0;
+                          while (next && attempts < 5) {
+                            if (next.tagName === 'UL' || next.tagName === 'OL') {
+                              sectionData.bodyHtml = next.outerHTML; 
+                              nodesToRemove.push(next);
+                              break;
+                            }
+                            if (next.tagName === 'P' && !sectionData.bodyHtml) {
+                              sectionData.bodyHtml = `<div class="quick-answer">${next.innerHTML}</div>`;
+                              nodesToRemove.push(next);
+                              break;
+                            }
+                            next = next.nextElementSibling;
+                            attempts++;
                           }
-                          next = next.nextElementSibling;
-                          attempts++;
-                        }
-                      }
 
-                      if (foundSomething) {
-                        const aside = document.createElement('aside');
-                        aside.className = 'ai-overview-block';
-                        const answerHtml = overviewData.answer ? `<div class="quick-answer">${overviewData.answer}</div>` : '';
-                        const takeawaysHtml = overviewData.takeawaysHtml ? `<h2>${takeawaysHeader ? takeawaysHeader.innerHTML : 'Key Takeaways'}</h2>${overviewData.takeawaysHtml}` : '';
-                        aside.innerHTML = `${answerHtml}${takeawaysHtml}`;
-                        if (overviewData.markerNode && overviewData.markerNode.parentNode) {
-                          overviewData.markerNode.parentNode.insertBefore(aside, overviewData.markerNode);
+                          if (sectionData.bodyHtml) {
+                            const aside = document.createElement('aside');
+                            aside.className = 'ai-overview-block';
+                            aside.innerHTML = `<h2>${sectionData.headerHtml}</h2>${sectionData.bodyHtml}`;
+                            el.parentNode.insertBefore(aside, el);
+                            nodesToRemove.forEach(node => {
+                              processedNodes.add(node);
+                              try { node.remove(); } catch(e) {}
+                            });
+                          }
                         }
-                        nodesToRemove.forEach(node => { try { node.remove(); } catch(e) {} });
-                      }
+                      });
                       return doc.body.innerHTML;
                     };
 

@@ -232,9 +232,12 @@ code {
   100% { transform: translate(30%, 30%) rotate(25deg); }
 }
 
+.ai-overview-block h1,
 .ai-overview-block h2,
 .ai-overview-block h3,
-.ai-overview-block h4 {
+.ai-overview-block h4,
+.ai-overview-block h5,
+.ai-overview-block h6 {
   color: #064e3b !important;
   font-size: 1.4rem !important;
   font-weight: 800 !important;
@@ -246,9 +249,12 @@ code {
 }
 
 /* AI Sparkle Icon before the title */
+.ai-overview-block h1::before,
 .ai-overview-block h2::before,
 .ai-overview-block h3::before,
-.ai-overview-block h4::before {
+.ai-overview-block h4::before,
+.ai-overview-block h5::before,
+.ai-overview-block h6::before {
   content: "✦";
   background: linear-gradient(135deg, #10b981 0%, #3b82f6 100%);
   -webkit-background-clip: text;
