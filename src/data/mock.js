@@ -10,7 +10,7 @@ export const siteConfig = {
     image: "public\shaddam.webp",
     bio: "An entrepreneur, digital marketer, and affiliate marketing specialist with over a decade of experience in the technology and business sector. Former Team Lead of Sales & Marketing at HasThemes (HasTech IT Ltd.), bringing hands-on experience in team coordination, web development, and technology-driven business operations.",
     linkedin: "https://bd.linkedin.com/in/shaddam-hossain",
-    facebook: "https://www.facebook.com/shaddamhossain.sagor"
+    facebook: "https://www.facebook.com/heyshaddam"
   },
   contact: {
     email: "contact@entrepreneurs.bd",

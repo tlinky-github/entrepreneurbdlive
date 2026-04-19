@@ -4,20 +4,20 @@ const sharp = require('sharp');
 const axios = require('axios');
 
 // --- FIREBASE INIT ---
+// Using REACT_APP prefix as confirmed by Vercel Environment variables
 const firebaseConfig = {
-  apiKey: process.env.VITE_FIREBASE_API_KEY,
-  authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.VITE_FIREBASE_APP_ID
+  apiKey: process.env.REACT_APP_FIREBASE_API_KEY || process.env.VITE_FIREBASE_API_KEY || process.env.FIREBASE_API_KEY,
+  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN || process.env.VITE_FIREBASE_AUTH_DOMAIN || process.env.FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID,
+  storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET || process.env.VITE_FIREBASE_STORAGE_BUCKET || process.env.FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID || process.env.VITE_FIREBASE_MESSAGING_SENDER_ID || process.env.FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.REACT_APP_FIREBASE_APP_ID || process.env.VITE_FIREBASE_APP_ID || process.env.FIREBASE_APP_ID
 };
 
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const db = getFirestore(app);
 
 // --- IRONCLAD MASTER HTML SHELL ---
-// This shell is used to ensure bots see valid HTML instantly, without external fetches.
 const HTML_SHELL = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -244,7 +244,30 @@ module.exports = async (req, res) => {
     // Schemas
     const orgSchema = { "@context": "https://schema.org", "@type": "Organization", "name": "Entrepreneurs BD", "url": SITE_URL, "logo": `${SITE_URL}/logo.png`, "foundingDate": "2024", "sameAs": ["https://www.facebook.com/entrepreneursbd.official/"] };
     const breadcrumbSchema = { "@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": segments.map((s, i) => ({ "@type": "ListItem", "position": i + 1, "name": (i === segments.length - 1) ? title : s, "item": `${SITE_URL}/${segments.slice(0, i + 1).join('/')}` })) };
+    
+    // Default Schema
     let mainSchema = { "@context": "https://schema.org", "@type": "WebPage", "headline": title, "description": description, "image": image, "url": currentAbsoluteUrl };
+    
+    // Blog Specific Schema
+    if (type === 'blog' && slug) {
+      mainSchema = {
+        "@context": "https://schema.org",
+        "@type": "BlogPosting",
+        "headline": title,
+        "description": description,
+        "image": image,
+        "url": currentAbsoluteUrl,
+        "author": { "@type": "Person", "name": authorData?.name || "Entrepreneurs BD Staff" },
+        "publisher": orgSchema,
+        "datePublished": docData?.created_at?.toDate?.()?.toISOString() || new Date().toISOString()
+      };
+    } else if (type === 'entrepreneurs' && slug) {
+       mainSchema = {
+        "@context": "https://schema.org",
+        "@type": "ProfilePage",
+        "mainEntity": { "@type": "Person", "name": docData?.name, "image": docData?.photo, "jobTitle": docData?.role_title }
+      };
+    }
 
     const metaTags = `
       <title>${title}</title>
