@@ -223,6 +223,7 @@ Next Section of Post (HTML):`;
 
       // Clean up the content_html for the database (Senior Engineer Fix)
       // Removes ALL inline classes and styles to ensure semantic purity
+      const stripHtml = (html) => html.replace(/<[^>]*>?/gm, '').trim();
       const cleanContentHtml = (html) => {
         return html
           .replace(/^(<p>\s*<br\s*\/?>\s*<\/p>|<p>\s*<\/p>|<br\s*\/?>|\s)+/gi, '') // Trim top

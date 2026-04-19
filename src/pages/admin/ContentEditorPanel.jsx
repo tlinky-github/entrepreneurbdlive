@@ -323,14 +323,21 @@ const ContentEditorPanel = () => {
       toast.error('AI Copilot failed: ' + (err.message || 'Unknown error'));
       console.error('Copilot error:', err);
     } finally {
-      setIsCopilotLoading(false);
+  setIsCopilotLoading(false);
     }
   };
 
   // 1. Shared Extensions to prevent duplicates
-  const sharedExtensions = [
+  // Factory for extensions to avoid duplicate instances between editors
+  const getSharedExtensions = () => [
     StarterKit.configure({
       history: true,
+    }),
+    Link.configure({
+      openOnClick: false,
+      HTMLAttributes: {
+        class: 'text-emerald-600 underline hover:text-emerald-700 transition-colors',
+      },
     }),
     Image.extend({
       addAttributes() {
@@ -366,7 +373,7 @@ const ContentEditorPanel = () => {
   // Main Content Editor
   const editor = useEditor({
     extensions: [
-      ...sharedExtensions,
+      ...getSharedExtensions(),
       Placeholder.configure({ placeholder: 'Write your story...' })
     ],
     content: '<p>Start typing here...</p>',
@@ -388,7 +395,7 @@ const ContentEditorPanel = () => {
   // Second Editor for "Life at Company" (Directory Only)
   const lifeAtCompanyEditor = useEditor({
     extensions: [
-      ...sharedExtensions,
+      ...getSharedExtensions(),
       Placeholder.configure({ placeholder: 'Describe company culture, environment, and perks...' })
     ],
     content: '',
