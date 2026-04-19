@@ -1,6 +1,9 @@
+'use client';
+
 import { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import Link from '../common/UniversalLink';
 import { useAuth } from '../../lib/auth';
+import { useSafeNavigation } from '../../lib/safe-navigation';
 import { Button } from '../ui/button';
 import { toast } from 'sonner';
 import {
@@ -33,12 +36,11 @@ const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [expandedMenu, setExpandedMenu] = useState(null);
   const { user, logout, isAdmin, isAuthenticated } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
+  const { router, pathname } = useSafeNavigation();
 
   const handleLogout = () => {
     logout();
-    navigate('/');
+    router.push('/');
   };
 
   const navLinks = [
@@ -57,14 +59,14 @@ const Header = () => {
     },
   ];
 
-  const isActive = (path) => location.pathname.startsWith(path);
+  const isActive = (path) => pathname.startsWith(path);
 
   return (
     <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-stone-200/50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 group" data-testid="header-logo">
+          <Link href="/" className="flex items-center gap-2 group" data-testid="header-logo">
             <div className="w-10 h-10 bg-emerald-900 rounded-lg flex items-center justify-center group-hover:bg-emerald-800 transition-colors">
               <span className="text-white font-bold text-xl">e</span>
             </div>
@@ -97,7 +99,7 @@ const Header = () => {
                     <DropdownMenuContent align="start" className="w-48">
                       {link.children.map((child) => (
                         <DropdownMenuItem key={child.href} asChild>
-                          <Link to={child.href} className="flex items-center gap-2 cursor-pointer">
+                          <Link href={child.href} className="flex items-center gap-2 cursor-pointer">
                             <child.icon className="w-4 h-4 text-stone-500" />
                             {child.label}
                           </Link>
@@ -110,7 +112,7 @@ const Header = () => {
               return (
                 <Link
                   key={link.href}
-                  to={link.href}
+                  href={link.href}
                   data-testid={`nav-${link.label.toLowerCase().replace(' ', '-')}`}
                   className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${isActive(link.href)
                       ? 'bg-emerald-50 text-emerald-900'
@@ -125,7 +127,7 @@ const Header = () => {
 
           {/* Right side */}
           <div className="flex items-center gap-3">
-            <Link to="/submit" className="hidden lg:block">
+            <Link href="/submit" className="hidden lg:block">
               <Button variant="outline" className="border-emerald-900/20 text-emerald-900 hover:bg-emerald-50 gap-2">
                 <Plus className="w-4 h-4" />
                 Get Listed
@@ -155,7 +157,7 @@ const Header = () => {
                   {isAdmin && (
                     <>
                       <DropdownMenuItem asChild>
-                        <Link to="/admin" className="flex items-center gap-2" data-testid="admin-dashboard-link">
+                        <Link href="/admin" className="flex items-center gap-2" data-testid="admin-dashboard-link">
                           <LayoutDashboard className="w-4 h-4" />
                           Admin Dashboard
                         </Link>
@@ -164,7 +166,7 @@ const Header = () => {
                     </>
                   )}
                   <DropdownMenuItem asChild>
-                    <Link to="/dashboard" className="flex items-center gap-2" data-testid="my-dashboard-link">
+                    <Link href="/dashboard" className="flex items-center gap-2" data-testid="my-dashboard-link">
                       <User className="w-4 h-4" />
                       My Dashboard
                     </Link>
@@ -179,12 +181,12 @@ const Header = () => {
             ) : (
               <div className="flex items-center gap-2">
                 {/*
-                <Link to="/login">
+                <Link href="/login">
                   <Button variant="ghost" className="text-stone-600">
                     Login
                   </Button>
                 </Link>
-                <Link to="/register">
+                <Link href="/register">
                   <Button className="bg-emerald-900 text-white hover:bg-emerald-800">
                     Get Started
                   </Button>
@@ -228,7 +230,7 @@ const Header = () => {
                         {link.children.map((child) => (
                           <Link
                             key={child.href}
-                            to={child.href}
+                            href={child.href}
                             onClick={() => {
                               setMobileMenuOpen(false);
                               setExpandedMenu(null);
@@ -249,7 +251,7 @@ const Header = () => {
               return (
                 <Link
                   key={link.href}
-                  to={link.href}
+                  href={link.href}
                   onClick={() => setMobileMenuOpen(false)}
                   className={`flex items-center gap-3 px-4 py-3 rounded-md text-sm font-medium transition-colors ${isActive(link.href)
                       ? 'bg-emerald-50 text-emerald-900'
@@ -263,7 +265,7 @@ const Header = () => {
             })}
             <div className="pt-4 border-t border-stone-100">
               <Link
-                to="/submit"
+                href="/submit"
                 onClick={() => setMobileMenuOpen(false)}
                 className="flex items-center gap-3 px-4 py-3 rounded-md text-sm font-semibold bg-emerald-900 text-white"
               >

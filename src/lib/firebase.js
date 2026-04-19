@@ -16,16 +16,19 @@ const firebaseConfig = {
 
 // --- PRODUCTION HEALTH CHECK ---
 const validateConfig = () => {
-  const required = [
-    'REACT_APP_FIREBASE_API_KEY',
-    'REACT_APP_FIREBASE_AUTH_DOMAIN',
-    'REACT_APP_FIREBASE_PROJECT_ID'
-  ];
-  const missing = required.filter(key => !process.env[key]);
-  if (missing.length > 0) {
+  const isMissing = !process.env.REACT_APP_FIREBASE_API_KEY || 
+                    !process.env.REACT_APP_FIREBASE_AUTH_DOMAIN || 
+                    !process.env.REACT_APP_FIREBASE_PROJECT_ID;
+
+  if (isMissing) {
+    const missingKeys = [];
+    if (!process.env.REACT_APP_FIREBASE_API_KEY) missingKeys.push('REACT_APP_FIREBASE_API_KEY');
+    if (!process.env.REACT_APP_FIREBASE_AUTH_DOMAIN) missingKeys.push('REACT_APP_FIREBASE_AUTH_DOMAIN');
+    if (!process.env.REACT_APP_FIREBASE_PROJECT_ID) missingKeys.push('REACT_APP_FIREBASE_PROJECT_ID');
+
     console.error(
-      `❌ CRITICAL: Missing Environment Variables: ${missing.join(', ')}. ` +
-      `Please ensure these are configured in your Vercel Dashboard Settings.`
+      `❌ CRITICAL: Missing Environment Variables: ${missingKeys.join(', ')}. ` +
+      `Please ensure these are configured in your Vercel Dashboard and your local .env file.`
     );
   }
 };

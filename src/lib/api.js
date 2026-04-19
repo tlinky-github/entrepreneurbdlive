@@ -588,7 +588,8 @@ export const commentAPI = {
 export const adminAPI = {
   getStats: async () => {
     try {
-      const [postsSnap, profilesSnap, listingsSnap, resourcesSnap, usersSnap, pendingProfilesSnap, pendingListingsSnap, reportsSnap] = await Promise.all([
+      // Robust settled ingestion: prevent a single Restricted collection from crashing the whole dashboard
+      const results = await Promise.allSettled([
         getDocs(collection(db, 'posts')),
         getDocs(collection(db, 'profiles')),
         getDocs(collection(db, 'listings')),
@@ -599,19 +600,24 @@ export const adminAPI = {
         getDocs(query(collection(db, 'comment_reports'), where('status', '==', 'pending')))
       ]);
 
-      const pendingPublicProfiles = pendingProfilesSnap.docs.filter(d => d.data().source === 'public').length;
-      const pendingPublicListings = pendingListingsSnap.docs.filter(d => d.data().source === 'public').length;
+      const [
+        postsSnap, profilesSnap, listingsSnap, resourcesSnap, usersSnap, 
+        pendingProfilesSnap, pendingListingsSnap, reportsSnap
+      ] = results.map(r => r.status === 'fulfilled' ? r.value : { size: 0, docs: [] });
+
+      const pendingPublicProfiles = pendingProfilesSnap.docs?.filter(d => d.data().source === 'public').length || 0;
+      const pendingPublicListings = pendingListingsSnap.docs?.filter(d => d.data().source === 'public').length || 0;
 
       return {
         data: {
-          total_blog_posts: postsSnap.size,
-          total_entrepreneurs: profilesSnap.size,
-          total_listings: listingsSnap.size,
-          total_resources: resourcesSnap.size,
-          total_users: usersSnap.size,
-          pending_approvals: pendingProfilesSnap.size + pendingListingsSnap.size,
+          total_blog_posts: postsSnap.size || 0,
+          total_entrepreneurs: profilesSnap.size || 0,
+          total_listings: listingsSnap.size || 0,
+          total_resources: resourcesSnap.size || 0,
+          total_users: usersSnap.size || 0,
+          pending_approvals: (pendingProfilesSnap.size || 0) + (pendingListingsSnap.size || 0),
           pending_public_submissions: pendingPublicProfiles + pendingPublicListings,
-          pending_reports: reportsSnap.size
+          pending_reports: reportsSnap.size || 0
         }
       };
     } catch (error) {
