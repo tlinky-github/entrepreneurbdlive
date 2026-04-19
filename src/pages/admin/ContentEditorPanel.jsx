@@ -51,6 +51,116 @@ import { Pencil, Globe, Smartphone, Monitor, Plus, X, Check, ChevronsUpDown } fr
 import FaqExtension from '../../components/editor/FaqExtension';
 import './ContentEditorPanel.css';
 
+// Senior Engineer Fix: Boundary-Aware Structural FAQ Detection with Strict Termination
+const upgradeLegacyFaqs = (html) => {
+  if (!html) return html;
+  
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, 'text/html');
+  const topLevelElements = Array.from(doc.body.children);
+  if (topLevelElements.length === 0) return html;
+
+  // 1. Find the FAQ Section Boundary
+  let faqStartIndex = -1;
+  for (let i = 0; i < topLevelElements.length; i++) {
+    const text = topLevelElements[i].innerText.trim();
+    if (/^(frequently\s*asked\s*questions|faq|q&a|common\s*questions)$/i.test(text)) {
+      faqStartIndex = i;
+      break;
+    }
+  }
+
+  let extractedFaqs = [];
+  let nodesToRemove = new Set();
+  
+  // 2. Scan only after the boundary
+  const scanStartIndex = faqStartIndex !== -1 ? faqStartIndex + 1 : 0;
+  let inFaqZone = faqStartIndex !== -1;
+
+  for (let i = scanStartIndex; i < topLevelElements.length; i++) {
+    const el = topLevelElements[i];
+    if (nodesToRemove.has(el)) continue;
+    if (el.tagName.toLowerCase() === 'faq-section') continue;
+
+    const text = el.innerText.trim();
+    const htmlContent = el.innerHTML.toLowerCase();
+    const styleAttr = (el.getAttribute('style') || '').toLowerCase();
+    
+    // Pattern cues
+    const isBold = (el.querySelector('strong, b') || htmlContent.includes('font-weight:700') || styleAttr.includes('font-weight:700'));
+    const isHeader = el.tagName.match(/^H[1-6]$/);
+    const endsWithQuestion = text.endsWith('?');
+
+    // STRICT TERMINATION:
+    // If we are in the FAQ zone and hit a Bold line/Header that is NOT a question (no ?),
+    // then we have reached the conclusion of the FAQ section. STOP SCANNING.
+    if (inFaqZone && (isBold || isHeader) && !endsWithQuestion && text.length > 3) {
+      break; 
+    }
+
+    // Question Heuristic: Must end with ? to be safe, especially if we have no clear header
+    const isLikelyQuestion = endsWithQuestion && text.length < 250;
+
+    if (isLikelyQuestion && text.length > 3) {
+      inFaqZone = true; // We are definitely in an FAQ section now
+      let answerParts = [];
+      let j = i + 1;
+      
+      while (j < topLevelElements.length) {
+        const nextEl = topLevelElements[j];
+        if (nodesToRemove.has(nextEl)) { j++; continue; }
+        
+        const nextText = nextEl.innerText.trim();
+        if (!nextText) { j++; continue; }
+
+        // Termination check inside answer gathering
+        if (nextText.endsWith('?') && nextText.length < 250) break;
+        if ((nextEl.tagName.match(/^H[1-6]$/) || (nextEl.querySelector('strong, b'))) && !nextText.endsWith('?')) break;
+        
+        answerParts.push(nextText);
+        nodesToRemove.add(nextEl);
+        j++;
+        if (answerParts.length >= 6) break; 
+      }
+
+      if (answerParts.length > 0) {
+        extractedFaqs.push({ q: text, a: answerParts.join('\n\n') });
+        nodesToRemove.add(el);
+        i = j - 1;
+      }
+    }
+  }
+
+  // 3. Assemble
+  if (extractedFaqs.length > 0) {
+    const faqsJson = JSON.stringify(extractedFaqs).replace(/'/g, "&apos;");
+    const faqTag = `<faq-section data-faqs='${faqsJson}'></faq-section>`;
+    
+    // Find the marker point (where the FAQ header was or where the first question began)
+    // We need to insert the new tag AT this specific position
+    const markerNode = faqStartIndex !== -1 
+      ? topLevelElements[faqStartIndex] 
+      : Array.from(nodesToRemove)[0];
+
+    if (markerNode && markerNode.parentNode) {
+      const temp = document.createElement('div');
+      temp.innerHTML = faqTag;
+      const faqNode = temp.firstChild;
+      markerNode.parentNode.insertBefore(faqNode, markerNode);
+    }
+
+    // Now safely remove all the original plain-text nodes
+    if (faqStartIndex !== -1) {
+      try { topLevelElements[faqStartIndex].remove(); } catch(e) {}
+    }
+    nodesToRemove.forEach(n => { try { n.remove(); } catch(e) {} });
+    
+    return doc.body.innerHTML;
+  }
+
+  return doc.body.innerHTML;
+};
+
 const ContentEditorPanel = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -230,96 +340,7 @@ const ContentEditorPanel = () => {
         class: 'tiptap-content focus:outline-none min-height: 400px;',
       },
       transformPastedHTML: (html) => {
-        // Senior Engineer Fix: Ultra-Smart Structural FAQ Detection
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
-        
-        // 1. Latch onto the FAQ structure BEFORE cleaning (so we can see styles like font-weight)
-        const hasFaqHeader = /frequently\s*asked\s*questions|faq/i.test(doc.body.innerText);
-        
-        // Gather all block-level elements
-        const allElements = Array.from(doc.body.querySelectorAll('p, h1, h2, h3, h4, h5, h6, li, div'));
-        let extractedFaqs = [];
-        let nodesToRemove = new Set();
-
-        for (let i = 0; i < allElements.length; i++) {
-          const el = allElements[i];
-          if (nodesToRemove.has(el)) continue;
-
-          const text = el.innerText.trim();
-          const htmlContent = el.innerHTML.toLowerCase();
-          
-          // Question Cues: ends with ?, is a header, or has bold styles/tags
-          const isBold = (
-            el.querySelector('strong, b') || 
-            htmlContent.includes('font-weight:700') || 
-            htmlContent.includes('font-weight:bold') ||
-            (el.getAttribute('style') || '').includes('font-weight:700') ||
-            (el.getAttribute('style') || '').includes('font-weight:bold')
-          );
-          
-          const isHeader = el.tagName.match(/^H[1-6]$/);
-          const endsWithQuestion = text.endsWith('?');
-
-          if ((isBold || isHeader || endsWithQuestion) && text.length > 5 && text.length < 300) {
-            let answerParts = [];
-            let j = i + 1;
-            
-            // Look for subsequent normal paragraphs as the answer
-            while (j < allElements.length) {
-              const nextEl = allElements[j];
-              const nextText = nextEl.innerText.trim();
-              const nextHtml = nextEl.innerHTML.toLowerCase();
-              
-              if (!nextText) { j++; continue; }
-
-              // Stop if we hit another potential question
-              const nextIsBold = nextEl.querySelector('strong, b') || nextHtml.includes('font-weight:700') || (nextEl.getAttribute('style') || '').includes('font-weight:700');
-              if (nextEl.tagName.match(/^H[1-6]$/) || (nextText.endsWith('?') && nextText.length < 200) || (nextIsBold && nextText.length < 200)) {
-                break;
-              }
-              
-              answerParts.push(nextText);
-              nodesToRemove.add(nextEl);
-              j++;
-              if (answerParts.length >= 3) break; // Don't eat too much
-            }
-
-            if (answerParts.length > 0) {
-              extractedFaqs.push({ q: text, a: answerParts.join('\n\n') });
-              nodesToRemove.add(el);
-              i = j - 1;
-            }
-          }
-        }
-
-        // 2. NOW clean the junk from the body for the rest of the content
-        doc.querySelectorAll('[style]').forEach(el => el.removeAttribute('style'));
-        doc.querySelectorAll('span').forEach(span => {
-          while (span.firstChild) { span.parentNode.insertBefore(span.firstChild, span); }
-          span.remove();
-        });
-        
-        // 3. Final Assembly
-        if (extractedFaqs.length >= 2 || (hasFaqHeader && extractedFaqs.length >= 1)) {
-          // Remove source nodes
-          nodesToRemove.forEach(n => {
-            try { n.remove(); } catch(e) {}
-          });
-          
-          // Clean header
-          allElements.forEach(el => {
-            if (/^(frequently\s*asked\s*questions|faq)$/i.test(el.innerText.trim())) {
-              try { el.remove(); } catch(e) {}
-            }
-          });
-
-          const faqsJson = JSON.stringify(extractedFaqs).replace(/'/g, "&apos;");
-          const faqTag = `<faq-section data-faqs='${faqsJson}'></faq-section>`;
-          return doc.body.innerHTML + faqTag;
-        }
-
-        return doc.body.innerHTML;
+        return upgradeLegacyFaqs(html);
       },
       handlePaste: (view, event) => {
         const text = event.clipboardData?.getData('text/plain');
@@ -463,10 +484,11 @@ const ContentEditorPanel = () => {
 
             const fullContent = data.content_html || data.content;
             if (fullContent) {
-              editor.commands.setContent(fullContent);
+              // Senior Engineer Fix: Automatically upgrade legacy plain-text FAQs to dynamic blocks on load
+              editor.commands.setContent(upgradeLegacyFaqs(fullContent));
             }
             if (data.life_at_company && lifeAtCompanyEditor) {
-              lifeAtCompanyEditor.commands.setContent(data.life_at_company);
+              lifeAtCompanyEditor.commands.setContent(upgradeLegacyFaqs(data.life_at_company));
             }
             setListingType(data.listing_type || '');
             setStartupStage(data.startup_stage || '');
@@ -1759,6 +1781,24 @@ const ContentEditorPanel = () => {
                         className="text-xs font-bold text-indigo-700 hover:bg-indigo-100 px-1.5 py-1 rounded transition-colors"
                       >
                         A+
+                      </button>
+                      <button 
+                        onClick={(e) => { 
+                          e.preventDefault(); 
+                          const currentHtml = editor.getHTML();
+                          const upgraded = upgradeLegacyFaqs(currentHtml);
+                          if (upgraded !== currentHtml) {
+                            editor.commands.setContent(upgraded);
+                            toast.success('Smart FAQ Upgrade: Detected and converted items!');
+                          } else {
+                            toast('No new FAQ patterns detected.');
+                          }
+                        }}
+                        disabled={!editor} 
+                        title="Smart FAQ Scan: Detects plain-text FAQs and converts them to dynamic blocks"
+                        className="text-xs font-bold text-indigo-700 hover:bg-indigo-100 px-1.5 py-1 rounded transition-colors flex items-center gap-1"
+                      >
+                        <Wand2 size={12} /> SCAN
                       </button>
                       <button 
                         onClick={(e) => { e.preventDefault(); setShowCustomCopilot(!showCustomCopilot); }} 
