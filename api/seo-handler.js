@@ -69,8 +69,10 @@ module.exports = async (req, res) => {
         const snap = await getDocs(q);
         snap.forEach(doc => {
           const data = doc.data();
+          const slug = data.slug || doc.id;
+          console.log(`[Sitemap] Found ${col.name}: ${slug}`);
           routes.push({
-            url: `${col.path}${data.slug || doc.id}`,
+            url: `${col.path}${slug}`,
             priority: col.priority,
             changefreq: 'weekly'
           });
@@ -88,7 +90,15 @@ ${routes.map(r => `  <url>
 </urlset>`;
 
       res.setHeader('Content-Type', 'application/xml');
-      res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate'); // 1 hour cache
+      
+      if (req.query.nocache === 'true') {
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+      } else {
+        res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate');
+      }
+
       return res.status(200).send(xml);
     }
 
