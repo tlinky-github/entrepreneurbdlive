@@ -204,22 +204,14 @@ Next Section of Post (HTML):`;
 
       const title = titleResult.content.trim().replace(/^["']|["']$/g, '');
 
-      // AI Snippet (Featured Snippet style direct answer)
-      const snippetPrompt = `Provide a "Featured Snippet" direct answer (max 160 chars) summarizing this post based on the title "${title}". 
-      It should be authoritative and answer the core topic directly for Google Search.
-      
-      Content: ${fullContent.substring(0, 1000)}
-      
-      Direct Answer Snippet (Plain Text):`;
-      
-      const snippetResult = await providerService.generateContent(apiKey, snippetPrompt, model, { 
-        maxTokens: 100, 
-        tokenMode: options.tokenMode 
-      });
-      const aiSnippet = snippetResult.content.trim().replace(/^["']|["']$/g, '');
-
       // AI Overview (SGE Style block)
       const overviewBlock = await this.generateSummary(apiKey, providerService, model, fullContent, options.tokenMode);
+
+      // Senior Engineer Fix: Extract clean text "Quick Answer" for the Short Description field
+      const quickAnswerMatch = (overviewBlock || "").match(/<div class="quick-answer">([\s\S]*?)<\/div>/i);
+      const cleanQuickAnswer = quickAnswerMatch 
+        ? quickAnswerMatch[1].replace(/<strong>Quick Answer:<\/strong>/i, '').replace(/<[^>]*>?/gm, '').trim()
+        : '';
 
       // Related Content Widget
       const isKnowledge = targetDestination === 'knowledge';
@@ -229,23 +221,23 @@ Next Section of Post (HTML):`;
       // Assemble final HTML with premium additions
       const finalizedContent = `${overviewBlock.trim()}\n${fullContent.trim()}\n${relatedWidget.trim()}`;
 
-      // Create post document
-      const stripHtml = (html) => html.replace(/<[^>]*>?/gm, '').trim();
-
       // Clean up the content_html for the database (Senior Engineer Fix)
+      // Removes ALL inline classes and styles to ensure semantic purity
       const cleanContentHtml = (html) => {
         return html
           .replace(/^(<p>\s*<br\s*\/?>\s*<\/p>|<p>\s*<\/p>|<br\s*\/?>|\s)+/gi, '') // Trim top
           .replace(/(<p>\s*<br\s*\/?>\s*<\/p>|<p>\s*<\/p>|<br\s*\/?>|\s)+$/gi, '') // Trim bottom
           .replace(/<p><strong>SEO Title:<\/strong>.*?<\/p>/gi, '') // Remove redundant text
-          .replace(/<p><strong>Meta Description:<\/strong>.*?<\/p>/gi, ''); // Remove redundant text
+          .replace(/<p><strong>Meta Description:<\/strong>.*?<\/p>/gi, '') 
+          .replace(/\s+class=["'][^"']*["']/gi, '') // STRIP ALL CLASSES
+          .replace(/\s+style=["'][^"']*["']/gi, ''); // STRIP ALL INLINE STYLES
       };
 
       const contentDoc = {
         userId,
         title: title || 'Untitled Post',
         content_html: cleanContentHtml(finalizedContent),
-        excerpt: aiSnippet || stripHtml(fullContent).substring(0, 180) + '...',
+        excerpt: cleanQuickAnswer || stripHtml(fullContent).substring(0, 180) + '...',
         slug: (title || 'untitled').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
         status: targetStatus || 'draft',
         provider: provider.toLowerCase(),
@@ -392,7 +384,13 @@ CONTENT: ${content.substring(0, 3000)}
 
 REQUEST:
 1. Generate exactly ${minFaqCount} high-value FAQs (Question and Answer pairs) related to this topic.
+   IMPORTANT: Only generate FAQs that answer vital, search-intent driven questions. Avoid summarizing descriptive paragraphs.
 2. Generate a valid Article/FAQPage JSON-LD Schema (Schema.org) for this content.
+
+FORMATTING RULES:
+- Use <h4> tags for the Questions.
+- Use <p> tags for the Answers.
+- DO NOT use any "style" or "class" attributes.
 
 FORMAT: Use the following markers to wrap your response:
 [FAQ_START]

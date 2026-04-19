@@ -5,7 +5,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Plus, X, HelpCircle, ChevronDown, ChevronUp } from 'lucide-react';
 
-const FaqComponent = ({ node, updateAttributes, deleteNode }) => {
+const FaqComponent = ({ node, updateAttributes, deleteNode, editor }) => {
   const faqs = node.attrs.faqs || [];
 
   const addFaq = () => {
@@ -26,6 +26,34 @@ const FaqComponent = ({ node, updateAttributes, deleteNode }) => {
     updateAttributes({ faqs: newFaqs });
   };
 
+  const convertToText = () => {
+    if (!editor) return;
+    
+    let html = '';
+    faqs.forEach(f => {
+      if (f.q || f.a) {
+        html += `<h4>${f.q}</h4><p>${f.a}</p>`;
+      }
+    });
+
+    if (!html) {
+      deleteNode();
+      return;
+    }
+
+    // Get the current position of the node
+    const pos = editor.state.selection.$from.before();
+    
+    // We must execute this in a single transaction
+    editor.chain()
+      .focus()
+      .insertContentAt(pos, html)
+      .run();
+      
+    // Remove the original FAQ node
+    deleteNode();
+  };
+
   return (
     <NodeViewWrapper className="faq-section-node my-8">
       <div contentEditable={false} className="bg-emerald-50/50 border-2 border-dashed border-emerald-200 rounded-2xl p-6 relative group">
@@ -39,14 +67,26 @@ const FaqComponent = ({ node, updateAttributes, deleteNode }) => {
               <p className="text-[10px] text-emerald-700 uppercase tracking-wider font-semibold">SEO Optimized Questions</p>
             </div>
           </div>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={deleteNode}
-            className="text-stone-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-          >
-            <X size={16} />
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button 
+              type="button"
+              variant="outline" 
+              size="sm" 
+              onClick={convertToText}
+              className="text-xs h-7 text-stone-500 hover:text-emerald-700 bg-white"
+              title="Convert this block back into normal text headings and paragraphs"
+            >
+              Convert to Text
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={deleteNode}
+              className="text-stone-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+            >
+              <X size={16} />
+            </Button>
+          </div>
         </div>
 
         <div className="space-y-4">

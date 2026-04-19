@@ -57,16 +57,21 @@ import './ContentEditorPanel.css';
 const upgradeLegacyFaqs = (html) => {
   if (!html) return html;
   
+  // First, do a global scrub of all inline styles and classes that AI might have injected
+  // This satisfies the user's request for "no inline style junk"
+  const sanitizedHtml = html
+    .replace(/\s+class=["'][^"']*["']/gi, '') 
+    .replace(/\s+style=["'][^"']*["']/gi, '');
+
   const parser = new DOMParser();
-  const doc = parser.parseFromString(html, 'text/html');
+  const doc = parser.parseFromString(sanitizedHtml, 'text/html');
   const topLevelElements = Array.from(doc.body.children);
-  if (topLevelElements.length === 0) return html;
+  if (topLevelElements.length === 0) return sanitizedHtml;
 
   let nodesToRemove = new Set();
-  let overviewData = { answer: null, takeaways: [], markerNode: null };
-  let foundOverview = false;
-
-  // --- PART 1: SMART OVERVIEW SCANNER (Final Foolproof Hierarchy Scanner) ---
+  
+  // --- PART 1: SMART OVERVIEW SCANNER ---
+  // (Logic for overview block remains, but we ensure it's semantic)
   const scanners = ['key takeaways', 'quick overview', 'quick answer', 'key highlights', 'takeaways'];
   const processedNodes = new Set();
   
@@ -77,16 +82,11 @@ const upgradeLegacyFaqs = (html) => {
 
   allPossible.forEach(el => {
     if (processedNodes.has(el)) return;
-    
-    // --- BROAD DOUBLE-WRAP PREVENTION ---
-    // If this element is already inside ANY AI-styled block, skip it.
-    if (el.closest('.ai-overview-block, .ai-summary-block, [class*="ai-overview"], [class*="ai-summary"]')) return;
-    
-    // If this match is inside another match, skip it (we want the outer header)
+    if (el.closest('.ai-overview-block')) return;
     if (allPossible.some(other => other !== el && other.contains(el))) return;
 
     const sectionData = { headerHtml: el.innerHTML.replace(/[:.]+$/, '').trim(), bodyHtml: '' };
-    const nodesToRemove = [el];
+    const nodesToRemoveCurrent = [el];
     
     let next = el.nextElementSibling;
     let attempts = 0;
@@ -94,14 +94,14 @@ const upgradeLegacyFaqs = (html) => {
       const tag = next.tagName;
       if (tag === 'UL' || tag === 'OL') {
         sectionData.bodyHtml = next.outerHTML; 
-        nodesToRemove.push(next);
+        nodesToRemoveCurrent.push(next);
         break;
       }
-      if ((tag === 'P' || tag === 'DIV' || tag === 'SECTION') && next.innerText.trim().length > 5) {
+      if ((tag === 'P' || tag === 'DIV') && next.innerText.trim().length > 5) {
         const nt = next.innerText.trim().toLowerCase();
         if (scanners.some(s => nt.startsWith(s))) break;
         sectionData.bodyHtml = `<div class="quick-answer">${next.innerHTML}</div>`;
-        nodesToRemove.push(next);
+        nodesToRemoveCurrent.push(next);
         break;
       }
       next = next.nextElementSibling;
@@ -113,42 +113,34 @@ const upgradeLegacyFaqs = (html) => {
       box.className = 'ai-overview-block';
       box.innerHTML = `<h2>${sectionData.headerHtml}</h2>${sectionData.bodyHtml}`;
       el.parentNode.insertBefore(box, el);
-      nodesToRemove.forEach(node => {
+      nodesToRemoveCurrent.forEach(node => {
         processedNodes.add(node);
-        try { node.remove(); } catch(e) {}
+        nodesToRemove.add(node); // Add to global removal list
       });
     }
   });
 
-  // --- PART 2: FAQ SCANNER ---
-  let faqStartIndex = -1;
-  for (let i = 0; i < topLevelElements.length; i++) {
-    const text = topLevelElements[i].innerText.trim();
-    if (/^(frequently\s*asked\s*questions|faq|q&a|common\s*questions)$/i.test(text)) {
-      faqStartIndex = i;
-      break;
-    }
-  }
-
+  // --- PART 2: SMART FAQ SCANNER (Context-Aware) ---
   let extractedFaqs = [];
-  const scanStartIndex = faqStartIndex !== -1 ? faqStartIndex + 1 : 0;
-  let inFaqZone = faqStartIndex !== -1;
+  let inFaqZone = false; // Senior Engineer Fix: Start as FALSE. Don't snatch unless prompted.
 
-  for (let i = scanStartIndex; i < topLevelElements.length; i++) {
+  for (let i = 0; i < topLevelElements.length; i++) {
     const el = topLevelElements[i];
     if (nodesToRemove.has(el)) continue;
 
     const text = el.innerText.trim();
-    const styleAttr = (el.getAttribute('style') || '').toLowerCase();
-    const isBold = (el.querySelector('strong, b') || styleAttr.includes('font-weight:700'));
-    const isHeader = el.tagName.match(/^H[1-6]$/);
-    const endsWithQuestion = text.endsWith('?');
+    const tag = el.tagName;
 
-    if (inFaqZone && (isBold || isHeader) && !endsWithQuestion && text.length > 5) break; 
-    if (inFaqZone && text.length > 600) break;
-
-    if (endsWithQuestion && text.length < 250 && text.length > 5) {
+    // Detect FAQ Zone Start (H2/H3/H4 containing FAQ keywords)
+    if (tag.match(/^H[2-4]$/) && /faq|frequently asked|questions|q&a/i.test(text)) {
       inFaqZone = true;
+      nodesToRemove.add(el); // Remove the FAQ header, we'll replace with the block
+      continue;
+    }
+
+    // Capture Questions + Answers ONLY if in FAQ Zone
+    const endsWithQuestion = text.endsWith('?');
+    if (inFaqZone && endsWithQuestion && text.length < 250 && text.length > 5) {
       let answerParts = [];
       let gatheredChars = 0;
       let tempNodes = [];
@@ -160,9 +152,10 @@ const upgradeLegacyFaqs = (html) => {
         const nextText = nextEl.innerText.trim();
         if (!nextText) { j++; continue; }
 
+        // Stop if we hit another question or a new section header
         if (nextText.endsWith('?') && nextText.length < 250) break;
-        if ((nextEl.tagName.match(/^H[1-6]$/) || nextEl.querySelector('strong, b')) && !nextText.endsWith('?')) break;
-        if (nextText.length > 600 || gatheredChars > 1500) break;
+        if (nextEl.tagName.match(/^H[1-6]$/)) break;
+        if (nextText.length > 1000) break; // If answer is too long, it's probably not a simple FAQ answer
         
         answerParts.push(nextText);
         gatheredChars += nextText.length;
@@ -177,60 +170,28 @@ const upgradeLegacyFaqs = (html) => {
         tempNodes.forEach(node => nodesToRemove.add(node));
         i = j - 1;
       }
+    } else if (inFaqZone && tag.match(/^H[1-6]$/) && !/faq|questions/i.test(text)) {
+      // Exit FAQ zone if we hit a new unrelated header
+      inFaqZone = false;
     }
   }
 
-  // --- PART 3: ASSEMBLY & CLEANING ---
+  // --- PART 3: ASSEMBLY ---
   if (extractedFaqs.length > 0) {
     const faqsJson = JSON.stringify(extractedFaqs).replace(/'/g, "&apos;");
     const faqTag = `<faq-section data-faqs='${faqsJson}'></faq-section>`;
-    const markerNode = faqStartIndex !== -1 ? topLevelElements[faqStartIndex] : Array.from(nodesToRemove).find(n => n.innerText.includes('?'));
     
-    if (markerNode && markerNode.parentNode) {
+    // Insert the FAQ section at the first removed node's position
+    const firstRemoved = topLevelElements.find(el => nodesToRemove.has(el));
+    if (firstRemoved && firstRemoved.parentNode) {
       const tempWrapper = document.createElement('div');
       tempWrapper.innerHTML = faqTag;
-      const faqNode = tempWrapper.firstChild;
-      markerNode.parentNode.insertBefore(faqNode, markerNode);
+      firstRemoved.parentNode.insertBefore(tempWrapper.firstChild, firstRemoved);
     }
-    
-    if (faqStartIndex !== -1) try { topLevelElements[faqStartIndex].remove(); } catch(e) {}
   }
 
   // Final removal of source nodes
   nodesToRemove.forEach(node => { try { node.remove(); } catch(e) {} });
-
-  // Deep Clean Style Sanitization
-  doc.querySelectorAll('[style]').forEach(el => {
-    // Preserve the new overview block classes and styles
-    if (el.closest('.ai-overview-block')) return; 
-
-    const textLen = el.innerText.length;
-    if (textLen > 300) el.style.fontWeight = 'normal';
-    
-    el.style.color = '';
-    el.style.backgroundColor = '';
-    el.style.fontFamily = '';
-    el.style.fontSize = '';
-    el.style.lineHeight = '';
-    
-    if (el.getAttribute('style') === '' || !el.style.length) {
-      el.removeAttribute('style');
-    }
-  });
-
-  doc.querySelectorAll('strong, b').forEach(bold => {
-    if (bold.closest('.ai-overview-block')) return;
-    if (bold.innerText.length > 500) {
-      while (bold.firstChild) { bold.parentNode.insertBefore(bold.firstChild, bold); }
-      bold.remove();
-    }
-  });
-
-  doc.querySelectorAll('span').forEach(span => {
-    if (span.closest('.ai-overview-block')) return;
-    while (span.firstChild) { span.parentNode.insertBefore(span.firstChild, span); }
-    span.remove();
-  });
 
   return doc.body.innerHTML;
 };
