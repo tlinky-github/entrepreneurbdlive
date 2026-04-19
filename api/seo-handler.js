@@ -79,16 +79,18 @@ async function generateOgImage(title, description, image, category) {
 
 module.exports = async (req, res) => {
   const host = req.headers.host || 'entrepreneurs.bd';
-  const url = `https://${host}${req.url.split('?')[0]}`;
-  const segments = req.url.split('?')[0].split('/').filter(Boolean);
+  // --- MASTER PATH RESOLVER ---
+  const pathParam = req.query.path || '';
+  const segments = pathParam ? pathParam.split('/').filter(Boolean) : req.url.split('?')[0].split('/').filter(Boolean);
   
-  const type = segments[0] || 'home'; 
-  const slug = segments[1];
+  // Handle explicit "home" string from Vercel rewrite
+  const type = (segments[0] === 'home' || !segments[0]) ? 'home' : segments[0];
+  const slug = (segments[0] === 'home') ? null : segments[1];
 
   // Logic switcher: OG Image Render or HTML Render
   const isImageRequest = req.query.render === 'image';
 
-  // --- SENIOR RESILIENCE: Pre-load base HTML in case of DB failure ---
+  // --- SENIOR RESILIENCE: Pre-load base HTML ---
   let baseHtml = '<html><body>Redirecting...</body></html>';
   try {
     const protocol = host.includes('localhost') ? 'http' : 'https';
@@ -99,9 +101,12 @@ module.exports = async (req, res) => {
   }
 
   try {
-    // --- 1. REDIRECT ENGINE (Highest Priority) ---
-    const path = req.url.split('?')[0];
-    const redirectQuery = query(collection(db, 'redirects'), where('fromPath', '==', path.replace(/\/$/, '') || '/'), limit(1));
+    // --- 1. REDIRECT ENGINE ---
+    const rawPath = req.url.split('?')[0];
+    const canonicalPath = (pathParam && pathParam !== 'home') ? `/${pathParam}` : (rawPath === '/' ? '/' : rawPath);
+    
+    const searchPath = canonicalPath.replace(/\/$/, '') || '/';
+    const redirectQuery = query(collection(db, 'redirects'), where('fromPath', '==', searchPath), limit(1));
     const redirectSnap = await getDocs(redirectQuery);
     
     if (!redirectSnap.empty) {
@@ -112,11 +117,13 @@ module.exports = async (req, res) => {
       res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate');
       return res.status(301).end();
     }
+    
+    const url = `https://${host}${canonicalPath}`;
 
     // --- 2. DYNAMIC SITEMAP ENGINE ---
     const { action } = req.query;
-    const isNewsSitemap = action === 'sitemap-news' || path === '/sitemap-news.xml';
-    const isStandardSitemap = action === 'sitemap' || path === '/sitemap.xml';
+    const isNewsSitemap = action === 'sitemap-news' || canonicalPath === '/sitemap-news.xml';
+    const isStandardSitemap = action === 'sitemap' || canonicalPath === '/sitemap.xml';
 
     if (isStandardSitemap || isNewsSitemap) {
       const SITE_URL = 'https://entrepreneurs.bd';
@@ -256,7 +263,7 @@ ${routes.map(r => `  <url>
     const isBot = /bot|facebookexternalhit|whatsapp|google-marketing-platform|twitterbot|messenger|slackbot|linkedinbot|embedly|quora link preview|outbrain|pinterest\/0\.|bingbot|msnbot|bingpreview|googlebot|adsbot-google|twitterbot|baiduspider|yandexbot|metainspector/i.test(userAgent);
 
     if (!isBot && !req.query.force_bot) {
-      return res.status(200).send(`<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0; url=${path}"></head><body>Redirecting...</body></html>`);
+      return res.status(200).send(`<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0; url=${canonicalPath}"></head><body>Redirecting...</body></html>`);
     }
 
     description = (description || '').replace(/<[^>]*>/g, '').substring(0, 160);
