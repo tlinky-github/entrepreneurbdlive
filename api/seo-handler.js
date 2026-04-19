@@ -16,6 +16,33 @@ const firebaseConfig = {
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const db = getFirestore(app);
 
+// --- IRONCLAD MASTER HTML SHELL ---
+// This shell is used to ensure bots see valid HTML instantly, without external fetches.
+const HTML_SHELL = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#34d399">
+    {{META_TAGS}}
+    <style>
+        body { background: #022c22; color: #34d399; font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; text-align: center; }
+        .emerald-loader { border: 4px solid #064e3b; border-top: 4px solid #34d399; border-radius: 50%; width: 50px; height: 50px; animation: spin 0.8s ease-in-out infinite; margin: 0 auto 20px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        h1 { font-size: 1.5rem; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; }
+        p { color: #d1d5db; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+    <div>
+        <div class="emerald-loader"></div>
+        <h1>Entrepreneurs BD</h1>
+        <p>Connecting you to the National Growth Engine...</p>
+    </div>
+    <script>window.location.href = "{{REDIRECT_PATH}}";</script>
+</body>
+</html>`;
+
 // --- HELPER: OG IMAGE ENGINE ---
 async function generateOgImage(title, description, image, category) {
   const cleanTitle = (title || 'Entrepreneurs BD').length > 70 ? (title || 'Entrepreneurs BD').substring(0, 67) + '...' : (title || 'Entrepreneurs BD');
@@ -25,10 +52,10 @@ async function generateOgImage(title, description, image, category) {
   let backgroundBuffer;
   try {
     if (image && image.startsWith('http')) {
-      const imgRes = await axios.get(image, { responseType: 'arraybuffer' });
+      const imgRes = await axios.get(image, { responseType: 'arraybuffer', timeout: 5000 });
       backgroundBuffer = await sharp(imgRes.data)
         .resize(1200, 630, { fit: 'cover' })
-        .blur(5)
+        .blur(8)
         .modulate({ brightness: 0.4 })
         .toBuffer();
     }
@@ -51,19 +78,19 @@ async function generateOgImage(title, description, image, category) {
       <rect width="1200" height="630" fill="url(#pattern)" />
       <rect x="30" y="30" width="1140" height="570" fill="none" stroke="#34d399" stroke-width="4" rx="15" stroke-opacity="0.2" />
       <text x="80" y="100" font-family="sans-serif" font-size="28" font-weight="900" fill="#34d399" letter-spacing="3">ENTREPRENEURS BD</text>
-      <rect x="80" y="140" width="${cleanCategory.length * 14 + 30}" height="36" rx="18" fill="#059669" />
-      <text x="${80 + (cleanCategory.length * 14 + 30) / 2}" y="164" font-family="sans-serif" font-size="18" font-weight="bold" fill="#ffffff" text-anchor="middle">${cleanCategory}</text>
-      <foreignObject x="80" y="220" width="1040" height="280">
-        <div xmlns="http://www.w3.org/1999/xhtml" style="color: white; font-family: sans-serif; font-size: 72px; font-weight: 800; line-height: 1.1; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
+      <rect x="80" y="140" width="${cleanCategory.length * 15 + 40}" height="40" rx="20" fill="#059669" />
+      <text x="${80 + (cleanCategory.length * 15 + 40) / 2}" y="166" font-family="sans-serif" font-size="20" font-weight="bold" fill="#ffffff" text-anchor="middle">${cleanCategory}</text>
+      <foreignObject x="80" y="210" width="1040" height="280">
+        <div xmlns="http://www.w3.org/1999/xhtml" style="color: white; font-family: sans-serif; font-size: 68px; font-weight: 800; line-height: 1.1; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis;">
           ${cleanTitle}
         </div>
       </foreignObject>
-      <foreignObject x="80" y="480" width="900" height="80">
-        <div xmlns="http://www.w3.org/1999/xhtml" style="color: #d1d5db; font-family: sans-serif; font-size: 28px; font-weight: 400; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+      <foreignObject x="80" y="480" width="900" height="100">
+        <div xmlns="http://www.w3.org/1999/xhtml" style="color: #d1d5db; font-family: sans-serif; font-size: 26px; font-weight: 400; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis;">
           ${cleanDesc}
         </div>
       </foreignObject>
-      <text x="80" y="580" font-family="sans-serif" font-size="22" font-weight="bold" fill="#059669" opacity="0.8">entrepreneurs.bd</text>
+      <text x="80" y="585" font-family="sans-serif" font-size="24" font-weight="bold" fill="#059669" opacity="0.8">entrepreneurs.bd</text>
     </svg>
   `;
 
@@ -79,86 +106,60 @@ async function generateOgImage(title, description, image, category) {
 
 module.exports = async (req, res) => {
   const host = req.headers.host || 'entrepreneurs.bd';
-  // --- MASTER PATH RESOLVER ---
-  const pathParam = req.query.path || '';
-  const segments = pathParam ? pathParam.split('/').filter(Boolean) : req.url.split('?')[0].split('/').filter(Boolean);
-  
-  // Handle explicit "home" string from Vercel rewrite
-  const type = (segments[0] === 'home' || !segments[0]) ? 'home' : segments[0];
-  const slug = (segments[0] === 'home') ? null : segments[1];
-
-  // Logic switcher: OG Image Render or HTML Render
   const isImageRequest = req.query.render === 'image';
 
-  // --- SENIOR RESILIENCE: Pre-load base HTML ---
-  let baseHtml = '<html><body>Redirecting...</body></html>';
-  try {
-    const protocol = host.includes('localhost') ? 'http' : 'https';
-    const indexRes = await fetch(`${protocol}://${host}/index.html`);
-    baseHtml = await indexRes.text();
-  } catch (e) {
-    console.error('[SEO Fallback] Could not fetch base HTML:', e.message);
-  }
+  // --- MASTER PATH RESOLVER ---
+  const pathParam = req.query.path || '';
+  const finalPath = (pathParam === 'home' || !pathParam) ? '/' : (pathParam.startsWith('/') ? pathParam : `/${pathParam}`);
+  const segments = finalPath.split('/').filter(Boolean);
+  
+  const type = (finalPath === '/' || segments.length === 0) ? 'home' : segments[0];
+  const slug = segments.length > 1 ? segments[1] : null;
 
   try {
     // --- 1. REDIRECT ENGINE ---
-    const rawPath = req.url.split('?')[0];
-    const canonicalPath = (pathParam && pathParam !== 'home') ? `/${pathParam}` : (rawPath === '/' ? '/' : rawPath);
-    
-    const searchPath = canonicalPath.replace(/\/$/, '') || '/';
+    const searchPath = finalPath.replace(/\/$/, '') || '/';
     const redirectQuery = query(collection(db, 'redirects'), where('fromPath', '==', searchPath), limit(1));
     const redirectSnap = await getDocs(redirectQuery);
     
     if (!redirectSnap.empty) {
       const redirectData = redirectSnap.docs[0].data();
-      const targetUrl = redirectData.toPath;
       updateDoc(doc(db, 'redirects', redirectSnap.docs[0].id), { hit_count: increment(1), last_hit: new Date() }).catch(() => {});
-      res.setHeader('Location', targetUrl);
-      res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate');
+      res.setHeader('Location', redirectData.toPath);
       return res.status(301).end();
     }
-    
-    const url = `https://${host}${canonicalPath}`;
+
+    const { action } = req.query;
+    const SITE_URL = 'https://entrepreneurs.bd';
 
     // --- 2. DYNAMIC SITEMAP ENGINE ---
-    const { action } = req.query;
-    const isNewsSitemap = action === 'sitemap-news' || canonicalPath === '/sitemap-news.xml';
-    const isStandardSitemap = action === 'sitemap' || canonicalPath === '/sitemap.xml';
-
-    if (isStandardSitemap || isNewsSitemap) {
-      const SITE_URL = 'https://entrepreneurs.bd';
+    if (action === 'sitemap' || action === 'sitemap-news' || finalPath === '/sitemap.xml' || finalPath === '/sitemap-news.xml') {
+      const isNews = action === 'sitemap-news' || finalPath === '/sitemap-news.xml';
       const lastmod = new Date().toISOString().split('T')[0];
-      let routes = isStandardSitemap ? [
+      let routes = !isNews ? [
         { url: '/', priority: 1.0, changefreq: 'weekly' },
         { url: '/blog', priority: 0.9, changefreq: 'daily' },
         { url: '/entrepreneurs', priority: 0.9, changefreq: 'daily' },
-        { url: '/directory', priority: 0.9, changefreq: 'daily' },
-        { url: '/knowledge', priority: 0.8, changefreq: 'weekly' }
+        { url: '/directory', priority: 0.9, changefreq: 'daily' }
       ] : [];
 
       const collections = [
         { name: 'posts', path: '/blog/', priority: 0.8 },
         { name: 'profiles', path: '/entrepreneurs/', priority: 0.7 },
-        { name: 'listings', path: '/directory/', priority: 0.7 },
-        { name: 'resources', path: '/knowledge/', priority: 0.7 }
+        { name: 'listings', path: '/directory/', priority: 0.7 }
       ];
-
-      const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000);
 
       for (const col of collections) {
         let q = query(collection(db, col.name), where('status', '==', 'published'));
-        if (isNewsSitemap) {
-          if (col.name !== 'posts') continue;
-          q = query(q, where('created_at', '>=', fortyEightHoursAgo));
+        if (isNews && col.name === 'posts') {
+          q = query(q, where('created_at', '>=', new Date(Date.now() - 48 * 60 * 60 * 1000)));
         }
-
         const snap = await getDocs(q);
-        snap.forEach(doc => {
-          const data = doc.data();
+        snap.forEach(d => {
+          const data = d.data();
           routes.push({
-            url: `${col.path}${data.slug || doc.id}`,
+            url: `${col.path}${data.slug || d.id}`,
             priority: col.priority,
-            changefreq: 'weekly',
             title: data.title || data.business_name || data.name,
             image: data.featured_image || data.logo || data.photo,
             created_at: data.created_at?.toDate?.() || new Date()
@@ -166,40 +167,23 @@ module.exports = async (req, res) => {
         });
       }
 
-      let xml = isNewsSitemap ? `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">
-${routes.map(r => `  <url>
-    <loc>${SITE_URL}${r.url}</loc>
-    <news:news>
-      <news:publication><news:name>Entrepreneurs BD</news:name><news:language>en</news:language></news:publication>
-      <news:publication_date>${r.created_at.toISOString()}</news:publication_date>
-      <news:title>${(r.title || '').replace(/[<>&"']/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&apos;'}[c]))}</news:title>
-    </news:news>
-  </url>`).join('\n')}
-</urlset>` : `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
-${routes.map(r => `  <url>
-    <loc>${SITE_URL}${r.url}</loc>
-    <lastmod>${lastmod}</lastmod>
-    <changefreq>${r.changefreq}</changefreq>
-    <priority>${r.priority}</priority>
-    ${r.image ? `<image:image><image:loc>${r.image}</image:loc></image:image>` : ''}
-  </url>`).join('\n')}
-</urlset>`;
+      let xml = isNews ? `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">
+        ${routes.map(r => `<url><loc>${SITE_URL}${r.url}</loc><news:news><news:publication><news:name>Entrepreneurs BD</news:name><news:language>en</news:language></news:publication>
+        <news:publication_date>${r.created_at.toISOString()}</news:publication_date><news:title>${(r.title || '').replace(/[<>&"']/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&apos;'}[c]))}</news:title></news:news></url>`).join('')}</urlset>`
+      : `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+        ${routes.map(r => `<url><loc>${SITE_URL}${r.url}</loc><lastmod>${lastmod}</lastmod><priority>${r.priority}</priority>${r.image ? `<image:image><image:loc>${r.image}</image:loc></image:image>` : ''}</url>`).join('')}</urlset>`;
 
       res.setHeader('Content-Type', 'application/xml');
-      res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate');
       return res.status(200).send(xml);
     }
 
-    // --- 3. DATA FETCHING FOR MODE SWITCHER ---
+    // --- 3. DYNAMIC CONTENT ENGINE ---
     let title = "Entrepreneurs BD | The National Engine of Growth";
-    let description = "Developing 1 million entrepreneurs by 2030. Connect, discover, and scale your startup on Bangladesh's premier growth engine.";
-    let image = "https://entrepreneurs.bd/og-default.png";
+    let description = "Developing 1 million entrepreneurs by 2030. Connect, discover, and scale your startup on Bangladesh's premier growth hub.";
+    let image = `${SITE_URL}/og-default.png`;
     let docData = null;
     let authorData = null;
 
-    // --- SMART HUB TITLING ---
     const hubTitles = {
       'blog': 'Insights: Startup Stories & Business Wisdom',
       'directory': 'Business Directory: Discover Bangladesh\'s Startups',
@@ -207,242 +191,83 @@ ${routes.map(r => `  <url>
       'knowledge': 'Knowledge Base: Master the Startup Ecosystem'
     };
 
-    if (type && slug) {
-      const collectionName = type === 'blog' ? 'posts' : type === 'directory' ? 'listings' : type === 'entrepreneurs' ? 'profiles' : type === 'knowledge' ? 'resources' : null;
-      if (collectionName) {
-        const snapshot = await getDocs(query(collection(db, collectionName), where('slug', '==', slug), limit(1)));
-        if (!snapshot.empty) {
-          docData = snapshot.docs[0].data();
-          if (type === 'blog' || type === 'knowledge') {
-            title = docData.title || title;
-            description = docData.excerpt || docData.seo_description || description;
-            image = docData.featured_image || image;
-            if (docData.authorId) {
-              const authorSnap = await getDocs(query(collection(db, 'authors'), where('id', '==', docData.authorId), limit(1)));
-              if (!authorSnap.empty) authorData = authorSnap.docs[0].data();
-            }
-          } else if (type === 'directory') {
-            title = docData.business_name || title;
-            description = docData.short_description || docData.description || description;
-            image = docData.logo || docData.featured_image || image;
-          } else if (type === 'entrepreneurs') {
-            title = docData.name || title;
-            description = docData.short_bio || docData.details || description;
-            image = docData.photo || docData.featured_image || image;
+    if (type !== 'home' && slug) {
+      const colMap = { 'blog': 'posts', 'directory': 'listings', 'entrepreneurs': 'profiles', 'knowledge': 'resources' };
+      const colName = colMap[type];
+      if (colName) {
+        const snap = await getDocs(query(collection(db, colName), where('slug', '==', slug), limit(1)));
+        if (!snap.empty) {
+          docData = snap.docs[0].data();
+          title = docData.title || docData.business_name || docData.name || title;
+          description = (docData.excerpt || docData.seo_description || docData.short_description || docData.short_bio || description).replace(/<[^>]*>/g, '').substring(0, 160);
+          image = docData.featured_image || docData.logo || docData.photo || image;
+          if (docData.authorId) {
+            const aSnap = await getDocs(query(collection(db, 'authors'), where('id', '==', docData.authorId), limit(1)));
+            if (!aSnap.empty) authorData = aSnap.docs[0].data();
           }
         }
       }
-    } else if (!slug && hubTitles[type]) {
-      // It's a Hub Index (e.g. /blog)
+    } else if (hubTitles[type]) {
       title = hubTitles[type];
-      description = `Discover the comprehensive ${type} at Entrepreneurs BD. The National Engine of Growth.`;
+      description = `Discover the ${type} hub on Entrepreneurs BD. The National Engine of Growth.`;
     }
 
-    // --- SMART CATEGORY LOGIC ---
+    // --- 4. RENDERER SWITCHER ---
     let category = "Insights";
-    if (type === 'home' || segments.length === 0) category = "Ecosystem Hub";
+    if (type === 'home') category = "Ecosystem Hub";
     else if (type === 'entrepreneurs') category = "Founder Profile";
     else if (type === 'directory') category = "Business Directory";
     else if (type === 'knowledge') category = "Knowledge Hub";
 
-    // --- MODE: IMAGE RENDERER ---
+    // MODE: OG Image
     if (isImageRequest) {
-      const imageBuffer = await generateOgImage(
-        req.query.title || title,
-        req.query.description || description,
-        req.query.image || image,
-        req.query.category || category
-      );
+      const buffer = await generateOgImage(req.query.title || title, req.query.description || description, req.query.image || image, req.query.category || category);
       res.setHeader('Content-Type', 'image/png');
       res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-      return res.status(200).send(imageBuffer);
+      return res.status(200).send(buffer);
     }
 
-    // --- MODE: HTML RENDERER (BOTS) ---
+    // MODE: HTML Pre-render (Bots)
     const userAgent = req.headers['user-agent'] || '';
-    const isBot = /bot|facebookexternalhit|whatsapp|google-marketing-platform|twitterbot|messenger|slackbot|linkedinbot|embedly|quora link preview|outbrain|pinterest\/0\.|bingbot|msnbot|bingpreview|googlebot|adsbot-google|twitterbot|baiduspider|yandexbot|metainspector/i.test(userAgent);
+    const isBot = /bot|googlebot|crawler|spider|facebookexternalhit|whatsapp|linkedinbot|twitterbot|slackbot|discordbot|telegrambot|applebot|bingbot|yandexbot|baiduspider|metainspector/i.test(userAgent);
 
     if (!isBot && !req.query.force_bot) {
-      return res.status(200).send(`<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0; url=${canonicalPath}"></head><body>Redirecting...</body></html>`);
+      return res.status(200).send(HTML_SHELL.replace('{{META_TAGS}}', '').replace('{{REDIRECT_PATH}}', finalPath));
     }
 
-    description = (description || '').replace(/<[^>]*>/g, '').substring(0, 160);
-    const ogImageUrl = `https://entrepreneurs.bd/api/og-image?title=${encodeURIComponent(title)}&description=${encodeURIComponent(description)}&image=${encodeURIComponent(image)}&category=${category}`;
-    const siteUrl = 'https://entrepreneurs.bd';
+    const currentAbsoluteUrl = `${SITE_URL}${finalPath}`;
+    const dynamicOgUrl = `${SITE_URL}/api/og-image?title=${encodeURIComponent(title)}&description=${encodeURIComponent(description)}&image=${encodeURIComponent(image)}&category=${category}`;
 
-    // --- ELITE SCHEMA: Organization Expansion (E-E-A-T) ---
-    const orgSchema = {
-      "@context": "https://schema.org",
-      "@type": "Organization",
-      "name": "Entrepreneurs BD",
-      "alternateName": "Entrepreneurs Bangladesh",
-      "url": siteUrl,
-      "logo": `${siteUrl}/logo.png`,
-      "foundingDate": "2024",
-      "knowsAbout": ["Startup Ecosystem", "Entrepreneurship", "Bangladesh Business", "Venture Capital"],
-      "sameAs": ["https://www.facebook.com/entrepreneursbd.official/","https://www.linkedin.com/company/entrepreneursbd/"],
-      "contactPoint": { "@type": "ContactPoint", "email": "hello@entrepreneurs.bd", "contactType": "customer support" }
-    };
-
-    const breadcrumbMap = {
-      "blog": "Insights",
-      "directory": "Business Directory",
-      "entrepreneurs": "Entrepreneurs",
-      "knowledge": "Knowledge Base"
-    };
-
-    const breadcrumbSchema = {
-      "@context": "https://schema.org",
-      "@type": "BreadcrumbList",
-      "itemListElement": segments.map((seg, i) => ({
-        "@type": "ListItem",
-        "position": i + 1,
-        "name": (i === segments.length - 1) ? title : (breadcrumbMap[seg] || seg.charAt(0).toUpperCase() + seg.slice(1)),
-        "item": `${siteUrl}/${segments.slice(0, i + 1).join('/')}`
-      }))
-    };
-
-    const websiteSchema = {
-      "@context": "https://schema.org",
-      "@type": "WebSite",
-      "name": "Entrepreneurs BD",
-      "url": siteUrl,
-      "potentialAction": {
-        "@type": "SearchAction",
-        "target": `${siteUrl}/blog?search={search_term_string}`,
-        "query-input": "required name=search_term_string"
-      }
-    };
-
-    // --- ELITE SCHEMA: CollectionPage for Hubs ---
-    let mainSchema;
-    if (!slug && type !== 'home') {
-      mainSchema = {
-        "@context": "https://schema.org",
-        "@type": "CollectionPage",
-        "name": title,
-        "description": description,
-        "url": url,
-        "mainEntity": {
-          "@type": "ItemList",
-          "numberOfItems": 10,
-          "itemListOrder": "https://schema.org/ItemListOrderDescending"
-        }
-      };
-    } else {
-      mainSchema = { "@context": "https://schema.org", "@type": "WebPage", "headline": title, "description": description, "image": image, "url": url };
-    }
-    
-    // Type-Specific Schemas
-    let publishedTime = docData?.created_at?.toDate?.()?.toISOString() || new Date().toISOString();
-    let modifiedTime = docData?.updated_at?.toDate?.()?.toISOString() || new Date().toISOString();
-
-    if (type === 'blog' || type === 'knowledge') {
-      mainSchema = {
-        "@context": "https://schema.org",
-        "@type": "BlogPosting",
-        "headline": title,
-        "image": image,
-        "author": { "@type": "Person", "name": authorData?.name || docData?.author_name || "Entrepreneurs BD Staff" },
-        "publisher": orgSchema,
-        "datePublished": publishedTime,
-        "dateModified": modifiedTime,
-        "mainEntityOfPage": { "@type": "WebPage", "@id": url }
-      };
-    } else if (type === 'entrepreneurs') {
-      mainSchema = {
-        "@context": "https://schema.org",
-        "@type": "ProfilePage",
-        "mainEntity": {
-          "@type": "Person",
-          "name": docData?.name,
-          "description": docData?.short_bio || docData?.details,
-          "image": docData?.photo || docData?.featured_image,
-          "jobTitle": docData?.designation || docData?.role_title,
-          "worksFor": { "@type": "Organization", "name": docData?.company_name || docData?.business_name },
-          "sameAs": [docData?.linkedin, docData?.twitter, docData?.facebook].filter(Boolean)
-        }
-      };
-    } else if (type === 'directory') {
-      mainSchema = {
-        "@context": "https://schema.org",
-        "@type": "LocalBusiness",
-        "name": docData?.business_name,
-        "description": description,
-        "image": docData?.logo || docData?.featured_image,
-        "url": url,
-        "email": docData?.email,
-        "telephone": docData?.phone,
-        "address": {
-          "@type": "PostalAddress",
-          "addressLocality": docData?.city || "Dhaka",
-          "addressRegion": "Dhaka",
-          "addressCountry": "BD"
-        },
-        "sameAs": [docData?.social_linkedin, docData?.social_twitter, docData?.social_facebook].filter(Boolean)
-      };
-    }
-
-    const faqSchema = (docData?.faqs && docData.faqs.length > 0) ? {
-      "@context": "https://schema.org",
-      "@type": "FAQPage",
-      "mainEntity": docData.faqs.map(f => ({
-        "@type": "Question",
-        "name": f.question || f.q,
-        "acceptedAnswer": { "@type": "Answer", "text": f.answer || f.a }
-      }))
-    } : null;
-
-    const combinedSchemas = [orgSchema, breadcrumbSchema, websiteSchema, mainSchema];
-    if (faqSchema) combinedSchemas.push(faqSchema);
-
-    // --- MASTER SOCIAL & SPEED META ---
-    const articleMeta = (type === 'blog' || type === 'knowledge') ? `
-    <meta property="article:published_time" content="${publishedTime}">
-    <meta property="article:modified_time" content="${modifiedTime}">
-    <meta property="article:author" content="${authorData?.name || "Entrepreneurs BD"}">
-    <meta property="article:section" content="${category}">
-    <meta property="article:tag" content="Entrepreneurship, Startup, Bangladesh, Business">` : '';
-
-    const speedHints = `
-    <link rel="dns-prefetch" href="https://fonts.googleapis.com">
-    <link rel="dns-prefetch" href="https://firebasestorage.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preconnect" href="https://firebasestorage.googleapis.com" crossorigin>`;
+    // Schemas
+    const orgSchema = { "@context": "https://schema.org", "@type": "Organization", "name": "Entrepreneurs BD", "url": SITE_URL, "logo": `${SITE_URL}/logo.png`, "foundingDate": "2024", "sameAs": ["https://www.facebook.com/entrepreneursbd.official/"] };
+    const breadcrumbSchema = { "@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": segments.map((s, i) => ({ "@type": "ListItem", "position": i + 1, "name": (i === segments.length - 1) ? title : s, "item": `${SITE_URL}/${segments.slice(0, i + 1).join('/')}` })) };
+    let mainSchema = { "@context": "https://schema.org", "@type": "WebPage", "headline": title, "description": description, "image": image, "url": currentAbsoluteUrl };
 
     const metaTags = `
-    <!-- 1000% SEO Perfection: Master Engine -->
-    <title>${title}</title>
-    ${speedHints}
-    <meta name="description" content="${description}">
-    <link rel="canonical" href="${url}">
-    <link rel="alternate" hreflang="en-bd" href="${url}">
-    <meta name="geo.region" content="BD-13">
-    <meta name="geo.placename" content="Dhaka">
-    <meta property="og:locale" content="en_BD">
-    <meta property="og:type" content="${type === 'blog' ? 'article' : 'website'}">
-    <meta property="og:url" content="${url}">
-    <meta property="og:title" content="${title}">
-    <meta property="og:description" content="${description}">
-    <meta property="og:image" content="${ogImageUrl}">
-    ${articleMeta}
-    <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:site" content="@EntrepreneursBD">
-    <meta property="twitter:creator" content="@EntrepreneursBD">
-    <meta property="twitter:title" content="${title}">
-    <meta property="twitter:description" content="${description}">
-    <meta property="twitter:image" content="${ogImageUrl}">
-    ${combinedSchemas.map(s => `<script type="application/ld+json">${JSON.stringify(s)}</script>`).join('\n')}
+      <title>${title}</title>
+      <meta name="description" content="${description}">
+      <link rel="canonical" href="${currentAbsoluteUrl}">
+      <meta property="og:type" content="${type === 'blog' ? 'article' : 'website'}">
+      <meta property="og:title" content="${title}">
+      <meta property="og:description" content="${description}">
+      <meta property="og:image" content="${dynamicOgUrl}">
+      <meta property="og:url" content="${currentAbsoluteUrl}">
+      <meta property="og:site_name" content="Entrepreneurs BD">
+      <meta name="twitter:card" content="summary_large_image">
+      <meta name="twitter:title" content="${title}">
+      <meta name="twitter:description" content="${description}">
+      <meta name="twitter:image" content="${dynamicOgUrl}">
+      <script type="application/ld+json">${JSON.stringify(orgSchema)}</script>
+      <script type="application/ld+json">${JSON.stringify(breadcrumbSchema)}</script>
+      <script type="application/ld+json">${JSON.stringify(mainSchema)}</script>
     `;
 
-    const finalHtml = baseHtml.includes('<head>') ? baseHtml.replace('<head>', '<head>' + metaTags) : baseHtml.replace('<html>', '<html><head>' + metaTags + '</head>');
     res.setHeader('Content-Type', 'text/html');
     res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate');
-    return res.status(200).send(finalHtml);
+    return res.status(200).send(HTML_SHELL.replace('{{META_TAGS}}', metaTags).replace('{{REDIRECT_PATH}}', finalPath));
 
   } catch (error) {
-    console.error('[SEO ENGINE CRITICAL] Fallback to base HTML:', error.message);
-    res.setHeader('Content-Type', 'text/html');
-    return res.status(200).send(baseHtml);
+    console.error('[CRITICAL] SEO Engine failure:', error.message);
+    return res.status(200).send(HTML_SHELL.replace('{{META_TAGS}}', '').replace('{{REDIRECT_PATH}}', finalPath));
   }
 };
