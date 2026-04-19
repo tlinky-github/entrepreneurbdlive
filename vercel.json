@@ -52,7 +52,7 @@
         {
           "type": "header",
           "key": "user-agent",
-          "value": "(?i)bot|facebookexternalhit|whatsapp|google-marketing-platform|twitterbot|messenger|slackbot|linkedinbot|embedly|quora link preview|outbrain|pinterest\\/0\\.|bingbot|msnbot|bingpreview|googlebot|adsbot-google|twitterbot|pinterest|baiduspider|yandexbot|facebookexternalhit|metainspector"
+          "value": "(?i).*(bot|facebookexternalhit|whatsapp|google-marketing-platform|twitterbot|messenger|slackbot|linkedinbot|embedly|quora link preview|outbrain|pinterest\\/0\\.|bingbot|msnbot|bingpreview|googlebot|adsbot-google|twitterbot|pinterest|baiduspider|yandexbot|facebookexternalhit|metainspector).*"
         }
       ],
       "destination": "/api/seo-handler?path=blog/:slug"
@@ -63,7 +63,7 @@
         {
           "type": "header",
           "key": "user-agent",
-          "value": "(?i)bot|facebookexternalhit|whatsapp|google-marketing-platform|twitterbot|messenger|slackbot|linkedinbot|embedly|quora link preview|outbrain|pinterest\\/0\\.|bingbot|msnbot|bingpreview|googlebot|adsbot-google|twitterbot|pinterest|baiduspider|yandexbot|facebookexternalhit|metainspector"
+          "value": "(?i).*(bot|facebookexternalhit|whatsapp|google-marketing-platform|twitterbot|messenger|slackbot|linkedinbot|embedly|quora link preview|outbrain|pinterest\\/0\\.|bingbot|msnbot|bingpreview|googlebot|adsbot-google|twitterbot|pinterest|baiduspider|yandexbot|facebookexternalhit|metainspector).*"
         }
       ],
       "destination": "/api/seo-handler?path=directory/:slug"
@@ -74,7 +74,7 @@
         {
           "type": "header",
           "key": "user-agent",
-          "value": "(?i)bot|facebookexternalhit|whatsapp|google-marketing-platform|twitterbot|messenger|slackbot|linkedinbot|embedly|quora link preview|outbrain|pinterest\\/0\\.|bingbot|msnbot|bingpreview|googlebot|adsbot-google|twitterbot|pinterest|baiduspider|yandexbot|facebookexternalhit|metainspector"
+          "value": "(?i).*(bot|facebookexternalhit|whatsapp|google-marketing-platform|twitterbot|messenger|slackbot|linkedinbot|embedly|quora link preview|outbrain|pinterest\\/0\\.|bingbot|msnbot|bingpreview|googlebot|adsbot-google|twitterbot|pinterest|baiduspider|yandexbot|facebookexternalhit|metainspector).*"
         }
       ],
       "destination": "/api/seo-handler?path=entrepreneurs/:slug"

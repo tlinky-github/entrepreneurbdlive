@@ -69,10 +69,21 @@ module.exports = async (req, res) => {
     // Generate dynamic OG image URL
     const ogImageUrl = `https://entrepreneurs.bd/api/og-image?title=${encodeURIComponent(title)}&description=${encodeURIComponent(description)}&image=${encodeURIComponent(image)}&type=${type}`;
 
-    const html = `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
+    // Fetch the actual SPA index.html so bots get the full React app along with the injected tags
+    let baseHtml = '';
+    try {
+      const host = req.headers.host || 'entrepreneurs.bd';
+      const protocol = host.includes('localhost') ? 'http' : 'https';
+      const indexRes = await fetch(`${protocol}://${host}/index.html`);
+      baseHtml = await indexRes.text();
+    } catch (e) {
+      console.error('Failed to fetch base index.html:', e);
+      // Fallback HTML if fetching fails
+      baseHtml = `<!DOCTYPE html><html lang="en"><head></head><body><script>window.location.href = "${url}";</script></body></html>`;
+    }
+
+    const metaTags = `
+    <!-- Injected by SEO Handler -->
     <title>${title}</title>
     <meta name="description" content="${description}">
     
@@ -91,20 +102,20 @@ module.exports = async (req, res) => {
     <meta property="twitter:title" content="${title}">
     <meta property="twitter:description" content="${description}">
     <meta property="twitter:image" content="${ogImageUrl}">
+    `;
 
-    <!-- Redirection for non-bots who might land here -->
-    <script>window.location.href = "${url}";</script>
-</head>
-<body>
-    <h1>${title}</h1>
-    <p>${description}</p>
-    <img src="${ogImageUrl}" alt="${title}">
-</body>
-</html>`;
+    // Inject the meta tags into the <head> of the base HTML
+    let finalHtml = baseHtml;
+    if (finalHtml.includes('<head>')) {
+      finalHtml = finalHtml.replace('<head>', '<head>' + metaTags);
+    } else {
+      finalHtml = finalHtml.replace('<html>', '<html><head>' + metaTags + '</head>');
+    }
 
     res.setHeader('Content-Type', 'text/html');
     res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate');
-    return res.status(200).send(html);
+    return res.status(200).send(finalHtml);
+
 
   } catch (error) {
     console.error('SEO Handler Error:', error);
