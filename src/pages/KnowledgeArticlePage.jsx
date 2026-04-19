@@ -172,32 +172,44 @@ const KnowledgeArticlePage = () => {
                   /* Firestore rich HTML content */
                   (() => {
                     const content = article.content || '';
-                    const applySmartDesign = (html) => {
-                      if (!html) return '';
-                      const parser = new DOMParser();
-                      const doc = parser.parseFromString(html, 'text/html');
-                      
-                      const allElements = Array.from(doc.body.querySelectorAll('p, h1, h2, h3, h4, div'));
-                      const processedNodes = new Set();
-                      
-                      allElements.forEach(el => {
-                        if (processedNodes.has(el)) return;
-
-                        const isHeader = /^(key\s*takeaways|key\s*highlights|takeaways|quick\s*answer|quick\s*overview)[\s:]*$/i.test(el.innerText.trim());
+                      const applySmartDesign = (html) => {
+                        if (!html) return '';
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(html, 'text/html');
                         
-                        if (isHeader) {
+                        const scanners = ['key takeaways', 'quick overview', 'quick answer', 'key highlights', 'takeaways'];
+                        const processedNodes = new Set();
+                        
+                        const allPossible = Array.from(doc.body.querySelectorAll('*')).filter(el => {
+                          const text = el.innerText.trim().toLowerCase().replace(/[\s\u00A0\u2726]+/g, ' ');
+                          return scanners.some(s => text.startsWith(s)) && text.length < 80;
+                        });
+
+                        allPossible.forEach(el => {
+                          if (processedNodes.has(el)) return;
+                          
+                          // --- BROAD DOUBLE-WRAP PREVENTION ---
+                          // If already inside ANY AI-styled block, do not wrap it again.
+                          if (el.closest('.ai-overview-block, .ai-summary-block, [class*="ai-overview"], [class*="ai-summary"]')) return;
+                          
+                          // If this match is inside another match, skip it
+                          if (allPossible.some(other => other !== el && other.contains(el))) return;
+
                           const sectionData = { headerHtml: el.innerHTML.replace(/[:.]+$/, '').trim(), bodyHtml: '' };
                           const nodesToRemove = [el];
                           
                           let next = el.nextElementSibling;
                           let attempts = 0;
-                          while (next && attempts < 5) {
-                            if (next.tagName === 'UL' || next.tagName === 'OL') {
+                          while (next && attempts < 15) {
+                            const tag = next.tagName;
+                            if (tag === 'UL' || tag === 'OL') {
                               sectionData.bodyHtml = next.outerHTML; 
                               nodesToRemove.push(next);
                               break;
                             }
-                            if (next.tagName === 'P' && !sectionData.bodyHtml) {
+                            if ((tag === 'P' || tag === 'DIV' || tag === 'SECTION') && next.innerText.trim().length > 5) {
+                              const nt = next.innerText.trim().toLowerCase();
+                              if (scanners.some(s => nt.startsWith(s))) break;
                               sectionData.bodyHtml = `<div class="quick-answer">${next.innerHTML}</div>`;
                               nodesToRemove.push(next);
                               break;
@@ -207,19 +219,18 @@ const KnowledgeArticlePage = () => {
                           }
 
                           if (sectionData.bodyHtml) {
-                            const aside = document.createElement('aside');
-                            aside.className = 'ai-overview-block';
-                            aside.innerHTML = `<h2>${sectionData.headerHtml}</h2>${sectionData.bodyHtml}`;
-                            el.parentNode.insertBefore(aside, el);
+                            const box = document.createElement('div');
+                            box.className = 'ai-overview-block';
+                            box.innerHTML = `<h2>${sectionData.headerHtml}</h2>${sectionData.bodyHtml}`;
+                            el.parentNode.insertBefore(box, el);
                             nodesToRemove.forEach(node => {
                               processedNodes.add(node);
                               try { node.remove(); } catch(e) {}
                             });
                           }
-                        }
-                      });
-                      return doc.body.innerHTML;
-                    };
+                        });
+                        return doc.body.innerHTML;
+                      };
 
                     return (
                       <div 

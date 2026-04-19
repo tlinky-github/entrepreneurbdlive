@@ -436,6 +436,10 @@ const BlogDetail = () => {
               allPossible.forEach(el => {
                 if (processedNodes.has(el)) return;
                 
+                // --- BROAD DOUBLE-WRAP PREVENTION ---
+                // If this element is already inside ANY AI-styled block, skip it.
+                if (el.closest('.ai-overview-block, .ai-summary-block, [class*="ai-overview"], [class*="ai-summary"]')) return;
+                
                 // If this match is inside another match, skip it (we want the outer header)
                 if (allPossible.some(other => other !== el && other.contains(el))) return;
 
