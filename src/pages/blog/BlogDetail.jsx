@@ -432,7 +432,9 @@ const BlogDetail = () => {
 
               const answerNode = allElements.find(el => /^(quick\s*answer|quick\s*overview):/i.test(el.innerText.trim()));
               if (answerNode) {
-                overviewData.answer = answerNode.innerText.trim().replace(/^(quick\s*answer|quick\s*overview):\s*/i, '<strong>Quick Answer:</strong> ');
+                // Preserve the original HTML structure (bold, links, etc)
+                const rawHtml = answerNode.innerHTML;
+                overviewData.answer = rawHtml.replace(/^(?:<[^>]*>)*\s*(quick\s*answer|quick\s*overview):\s*(?:<\/[^>]*>)*/i, '<strong>Quick Answer:</strong> ');
                 overviewData.markerNode = answerNode;
                 nodesToRemove.add(answerNode);
                 foundSomething = true;
@@ -447,7 +449,7 @@ const BlogDetail = () => {
                 let attempts = 0;
                 while (next && attempts < 5) {
                   if (next.tagName === 'UL' || next.tagName === 'OL') {
-                    overviewData.takeaways = Array.from(next.querySelectorAll('li')).map(li => li.innerText.trim());
+                    overviewData.takeawaysHtml = next.outerHTML; // Keep the whole list with its attributes/styles
                     nodesToRemove.add(next);
                     break;
                   }
@@ -460,8 +462,8 @@ const BlogDetail = () => {
                 const aside = document.createElement('aside');
                 aside.className = 'ai-overview-block';
                 const answerHtml = overviewData.answer ? `<div class="quick-answer">${overviewData.answer}</div>` : '';
-                const takeawaysHtml = overviewData.takeaways.length > 0 
-                  ? `<h2>Key Takeaways</h2><ul>${overviewData.takeaways.map(t => `<li>${t}</li>`).join('')}</ul>`
+                const takeawaysHtml = overviewData.takeawaysHtml 
+                  ? `<h2>${takeawaysHeader ? takeawaysHeader.innerHTML : 'Key Takeaways'}</h2>${overviewData.takeawaysHtml}`
                   : '';
                 aside.innerHTML = `${answerHtml}${takeawaysHtml}`;
                 if (overviewData.markerNode && overviewData.markerNode.parentNode) {
