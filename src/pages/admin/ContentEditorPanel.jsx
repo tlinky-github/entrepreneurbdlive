@@ -208,9 +208,8 @@ const ContentEditorPanel = () => {
         return ['img', HTMLAttributes];
       },
     }),
+    Underline,
     TextAlign.configure({ types: ['heading', 'paragraph'] }),
-    TextStyle,
-    Color,
     Highlight.configure({
       multicolor: true,
     }),
@@ -230,6 +229,148 @@ const ContentEditorPanel = () => {
       attributes: {
         class: 'tiptap-content focus:outline-none min-height: 400px;',
       },
+      transformPastedHTML: (html) => {
+        // Senior Engineer Fix: Ultra-Smart Structural FAQ Detection
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        
+        // 1. Latch onto the FAQ structure BEFORE cleaning (so we can see styles like font-weight)
+        const hasFaqHeader = /frequently\s*asked\s*questions|faq/i.test(doc.body.innerText);
+        
+        // Gather all block-level elements
+        const allElements = Array.from(doc.body.querySelectorAll('p, h1, h2, h3, h4, h5, h6, li, div'));
+        let extractedFaqs = [];
+        let nodesToRemove = new Set();
+
+        for (let i = 0; i < allElements.length; i++) {
+          const el = allElements[i];
+          if (nodesToRemove.has(el)) continue;
+
+          const text = el.innerText.trim();
+          const htmlContent = el.innerHTML.toLowerCase();
+          
+          // Question Cues: ends with ?, is a header, or has bold styles/tags
+          const isBold = (
+            el.querySelector('strong, b') || 
+            htmlContent.includes('font-weight:700') || 
+            htmlContent.includes('font-weight:bold') ||
+            (el.getAttribute('style') || '').includes('font-weight:700') ||
+            (el.getAttribute('style') || '').includes('font-weight:bold')
+          );
+          
+          const isHeader = el.tagName.match(/^H[1-6]$/);
+          const endsWithQuestion = text.endsWith('?');
+
+          if ((isBold || isHeader || endsWithQuestion) && text.length > 5 && text.length < 300) {
+            let answerParts = [];
+            let j = i + 1;
+            
+            // Look for subsequent normal paragraphs as the answer
+            while (j < allElements.length) {
+              const nextEl = allElements[j];
+              const nextText = nextEl.innerText.trim();
+              const nextHtml = nextEl.innerHTML.toLowerCase();
+              
+              if (!nextText) { j++; continue; }
+
+              // Stop if we hit another potential question
+              const nextIsBold = nextEl.querySelector('strong, b') || nextHtml.includes('font-weight:700') || (nextEl.getAttribute('style') || '').includes('font-weight:700');
+              if (nextEl.tagName.match(/^H[1-6]$/) || (nextText.endsWith('?') && nextText.length < 200) || (nextIsBold && nextText.length < 200)) {
+                break;
+              }
+              
+              answerParts.push(nextText);
+              nodesToRemove.add(nextEl);
+              j++;
+              if (answerParts.length >= 3) break; // Don't eat too much
+            }
+
+            if (answerParts.length > 0) {
+              extractedFaqs.push({ q: text, a: answerParts.join('\n\n') });
+              nodesToRemove.add(el);
+              i = j - 1;
+            }
+          }
+        }
+
+        // 2. NOW clean the junk from the body for the rest of the content
+        doc.querySelectorAll('[style]').forEach(el => el.removeAttribute('style'));
+        doc.querySelectorAll('span').forEach(span => {
+          while (span.firstChild) { span.parentNode.insertBefore(span.firstChild, span); }
+          span.remove();
+        });
+        
+        // 3. Final Assembly
+        if (extractedFaqs.length >= 2 || (hasFaqHeader && extractedFaqs.length >= 1)) {
+          // Remove source nodes
+          nodesToRemove.forEach(n => {
+            try { n.remove(); } catch(e) {}
+          });
+          
+          // Clean header
+          allElements.forEach(el => {
+            if (/^(frequently\s*asked\s*questions|faq)$/i.test(el.innerText.trim())) {
+              try { el.remove(); } catch(e) {}
+            }
+          });
+
+          const faqsJson = JSON.stringify(extractedFaqs).replace(/'/g, "&apos;");
+          const faqTag = `<faq-section data-faqs='${faqsJson}'></faq-section>`;
+          return doc.body.innerHTML + faqTag;
+        }
+
+        return doc.body.innerHTML;
+      },
+      handlePaste: (view, event) => {
+        const text = event.clipboardData?.getData('text/plain');
+        if (!text) return false;
+
+        // Senior Engineer Fix: Advanced Structural FAQ Detection
+        // Triggers if text contains "FAQ" or "Frequently Asked Questions" OR has multiple ? patterns
+        const hasFaqHeader = /frequently\s*asked\s*questions|faq/i.test(text);
+        const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+        
+        let detectedFaqs = [];
+        let currentQuestion = null;
+        let currentAnswer = [];
+
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i];
+
+          // HEURISTIC: A line ending in ? is a potential question
+          // (Max length check to avoid accidentally catching long prose ending in ?)
+          if (line.endsWith('?') && line.length < 200) {
+            // If we already had a question/answer pair, save it
+            if (currentQuestion && currentAnswer.length > 0) {
+              detectedFaqs.push({ q: currentQuestion, a: currentAnswer.join('\n\n') });
+            }
+            currentQuestion = line;
+            currentAnswer = [];
+          } else if (currentQuestion) {
+            // Everything after a question is part of the answer until the next question
+            currentAnswer.push(line);
+          }
+        }
+
+        // Catch the last pair
+        if (currentQuestion && currentAnswer.length > 0) {
+          detectedFaqs.push({ q: currentQuestion, a: currentAnswer.join('\n\n') });
+        }
+
+        // Final Validation: 
+        // If we found multiple pairs (or a specific FAQ header was present + at least 1 pair)
+        if (detectedFaqs.length >= 2 || (hasFaqHeader && detectedFaqs.length >= 1)) {
+          const node = view.state.schema.nodes.faqSection.create({ faqs: detectedFaqs });
+          const tr = view.state.tr;
+          tr.replaceSelectionWith(node);
+          view.dispatch(tr);
+          
+          toast.success(`Dynamically detected ${detectedFaqs.length} FAQ items!`);
+          return true;
+        }
+
+        return false;
+      }
     },
   });
 
@@ -244,6 +385,25 @@ const ContentEditorPanel = () => {
     editorProps: {
       attributes: {
         class: 'tiptap-content focus:outline-none min-height: 200px;',
+      },
+      transformPastedHTML: (html) => {
+        // Senior Engineer Fix: Bulletproof DOM-based cleaning for Google Docs/External junk
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        doc.querySelectorAll('[style]').forEach(el => el.removeAttribute('style'));
+        doc.querySelectorAll('span').forEach(span => {
+          while (span.firstChild) {
+            span.parentNode.insertBefore(span.firstChild, span);
+          }
+          span.remove();
+        });
+        doc.querySelectorAll('font').forEach(font => {
+          while (font.firstChild) {
+            font.parentNode.insertBefore(font.firstChild, font);
+          }
+          font.remove();
+        });
+        return doc.body.innerHTML;
       },
     },
   });
@@ -569,13 +729,21 @@ const ContentEditorPanel = () => {
 
     setSaving(true);
     try {
-      const contentHtml = editor?.getHTML() || '';
+      let contentHtml = editor?.getHTML() || '';
 
       if (!contentHtml || contentHtml === '<p></p>') {
         toast.warning('Please add some content before saving');
         setSaving(false);
         return;
       }
+
+      // Senior Engineer Fix: Sanitize content before saving (Google Docs compatible)
+      contentHtml = contentHtml
+        .replace(/^(<p>\s*<br\s*\/?>\s*<\/p>|<p>\s*<\/p>|<br\s*\/?>|\s)+/gi, '') // Trim top
+        .replace(/(<p>\s*<br\s*\/?>\s*<\/p>|<p>\s*<\/p>|<br\s*\/?>|\s)+$/gi, '') // Trim bottom
+        .replace(/<p[^>]*>(?:<[^>]+>)*\s*SEO Title:[\s\S]*?<\/p>/gi, '') // Remove styled metadata
+        .replace(/<p[^>]*>(?:<[^>]+>)*\s*Meta Description:[\s\S]*?<\/p>/gi, '') // Remove styled metadata
+        .replace(/(<p>\s*<br\s*\/?>\s*<\/p>){2,}/gi, '<p><br></p>'); // Consolidate multiple breaks
 
       // Extract FAQs from content
       const faqBlocks = document.createElement('div');

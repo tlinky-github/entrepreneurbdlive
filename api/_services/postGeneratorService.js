@@ -227,15 +227,24 @@ Next Section of Post (HTML):`;
       const relatedWidget = await this.getRelatedContentWidget(destinationCollection, options.categoryId, null);
 
       // Assemble final HTML with premium additions
-      const finalizedContent = `${overviewBlock}\n\n${fullContent}\n\n${relatedWidget}`;
+      const finalizedContent = `${overviewBlock.trim()}\n${fullContent.trim()}\n${relatedWidget.trim()}`;
 
       // Create post document
       const stripHtml = (html) => html.replace(/<[^>]*>?/gm, '').trim();
 
+      // Clean up the content_html for the database (Senior Engineer Fix)
+      const cleanContentHtml = (html) => {
+        return html
+          .replace(/^(<p>\s*<br\s*\/?>\s*<\/p>|<p>\s*<\/p>|<br\s*\/?>|\s)+/gi, '') // Trim top
+          .replace(/(<p>\s*<br\s*\/?>\s*<\/p>|<p>\s*<\/p>|<br\s*\/?>|\s)+$/gi, '') // Trim bottom
+          .replace(/<p><strong>SEO Title:<\/strong>.*?<\/p>/gi, '') // Remove redundant text
+          .replace(/<p><strong>Meta Description:<\/strong>.*?<\/p>/gi, ''); // Remove redundant text
+      };
+
       const contentDoc = {
         userId,
         title: title || 'Untitled Post',
-        content_html: finalizedContent,
+        content_html: cleanContentHtml(finalizedContent),
         excerpt: aiSnippet || stripHtml(fullContent).substring(0, 180) + '...',
         slug: (title || 'untitled').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
         status: targetStatus || 'draft',
@@ -278,6 +287,12 @@ Next Section of Post (HTML):`;
         const seoData = await this.generateSEOEnrichment(apiKey, providerService, model, title, fullContent, minFaqCount, options.tokenMode);
         contentDoc.faqs = seoData.faqs || [];
         contentDoc.custom_head_html = seoData.customHeadHtml || '';
+        
+        // Inject so it appears in the editor natively
+        if (contentDoc.faqs.length > 0) {
+          const faqsJson = JSON.stringify(contentDoc.faqs).replace(/'/g, "&apos;");
+          contentDoc.content_html = contentDoc.content_html.trim() + `\n<faq-section data-faqs='${faqsJson}'></faq-section>`;
+        }
         
         // Ensure SEO title/desc are also populated if not already
         contentDoc.seo_title = title;
@@ -504,18 +519,22 @@ Raw JSON-LD object (do not include script tags yet)
   },
   
   async generateSummary(apiKey, providerService, model, content, tokenMode) {
-    const summaryPrompt = `Based on the following blog content, generate a high-quality "Quick Overview" for an AI search snippet. 
-    
+    const summaryPrompt = `Based on the following blog content, generate two things for an AI search snippet:
+1. "Quick Answer": An authoritative 1-2 sentence direct output responding to the article's core topic.
+2. "Key Takeaways": 3-4 ultra-concise bullet points summarizing the key value.
+
 Requirements:
-1. Provide 3-4 ultra-concise bullet points summarizing the key value.
-2. Structure the output EXACTLY as the HTML snippet shown below.
-3. Use a <h4> tag with the text "Quick Overview" at the top.
-4. Wrap everything in a <aside class="ai-overview-block">.
-5. Do NOT use markdown. Use <ul> and <li>.
+1. Structure the output EXACTLY as the HTML snippet shown below.
+2. Use a <h4> tag with the text "Key Takeaways".
+3. Wrap everything in a <aside class="ai-overview-block">.
+4. Do NOT use markdown. Use HTML tags exactly as shown.
 
 EXAMPLE STRUCTURE (FOLLOW THIS EXACTLY):
 <aside class="ai-overview-block">
-  <h4>Quick Overview</h4>
+  <div class="quick-answer">
+    <strong>Quick Answer:</strong> [Your 1-2 sentence direct answer here]
+  </div>
+  <h4>Key Takeaways</h4>
   <ul>
     <li>Key point one here</li>
     <li>Key point two here</li>

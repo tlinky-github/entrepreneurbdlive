@@ -114,6 +114,7 @@ const DirectoryDetail = () => {
         description={listing.metaDescription || listing.short_description}
         image={listing.logo}
         type="business.business"
+        faqs={listing.faqs}
         keywords={[listing.category, listing.city, listing.listing_type, 'Business Directory', 'Bangladesh'].filter(Boolean)}
         breadcrumbs={[
           { name: 'Home', path: '/' },
@@ -234,38 +235,40 @@ const DirectoryDetail = () => {
                 {listing.content && (
                   <div className="mt-12 pt-12 border-t border-stone-100 tiptap-content">
                     {(() => {
-                      const contentHtml = listing.content || '';
-                      const parts = contentHtml.split(/(<faq-section[^>]*><\/faq-section>)/g);
+                      let contentHtml = listing.content || '';
+                      if (!contentHtml) return null;
+
+                      // Senior Engineer Fix: Strip leading/trailing empty noise and redundant AI metadata (Google Docs compatible)
+                      contentHtml = contentHtml
+                        .replace(/^(<p>\s*<br\s*\/?>\s*<\/p>|<p>\s*<\/p>|<br\s*\/?>|\s)+/gi, '')
+                        .replace(/(<p>\s*<br\s*\/?>\s*<\/p>|<p>\s*<\/p>|<br\s*\/?>|\s)+$/gi, '')
+                        .replace(/<p[^>]*>(?:<[^>]+>)*\s*SEO Title:[\s\S]*?<\/p>/gi, '')
+                        .replace(/<p[^>]*>(?:<[^>]+>)*\s*Meta Description:[\s\S]*?<\/p>/gi, '')
+                        .replace(/(<p>\s*<br\s*\/?>\s*<\/p>){2,}/gi, '<p><br></p>')
+                        .replace(/ style="[^"]*"/gi, '') // Strip all hardcoded styles
+                        .replace(/<span[^>]*>([\s\S]*?)<\/span>/gi, '$1'); // Unwrap all spans
+
+                      const parts = contentHtml.split(/(<faq-section[^>]*>.*?<\/faq-section>|<faq-section[^>]*\/>)/gi);
                       
                       return parts.map((part, index) => {
-                        if (part.startsWith('<faq-section')) {
+                        if (!part) return null;
+                        const trimmedPart = part.trim();
+                        if (trimmedPart.toLowerCase().startsWith('<faq-section')) {
                           try {
-                            const match = part.match(/data-faqs='([^']*)'/);
-                            if (match && match[1]) {
-                              const faqsData = JSON.parse(match[1].replace(/&quot;/g, '"'));
+                            const match = trimmedPart.match(/data-faqs=(?:'([^']*)'|"([^"]*)")/i);
+                            const faqsJson = match ? (match[1] || match[2]) : null;
+                            if (faqsJson) {
+                              const faqsData = JSON.parse(faqsJson.replace(/&apos;/g, "'").replace(/&quot;/g, '"'));
                               return (
-                                <div key={index} className="my-16 bg-stone-50 rounded-3xl p-8 md:p-12 border border-stone-100 shadow-inner">
-                                  <h3 className="text-2xl font-black text-stone-900 mb-8 flex items-center gap-3">
-                                    <CheckCircle className="w-8 h-8 text-emerald-600" />
+                                <div key={index} className="mt-10 mb-6">
+                                  <h2 className="text-[1.875rem] font-bold text-stone-900 border-b border-stone-200 pb-2 mb-5">
                                     Frequently Asked Questions
-                                  </h3>
-                                  <div className="space-y-4">
+                                  </h2>
+                                  <div className="faq-list">
                                     {faqsData.map((faq, fIndex) => (
-                                      <div key={fIndex} className="bg-white rounded-2xl border border-stone-200 shadow-sm transition-all hover:border-emerald-200">
-                                        <button
-                                          onClick={() => setOpenFaqIndex(openFaqIndex === `faq-${index}-${fIndex}` ? null : `faq-${index}-${fIndex}`)}
-                                          className="w-full flex items-center justify-between p-6 text-left group"
-                                        >
-                                          <span className="font-bold text-stone-800 group-hover:text-emerald-900 transition-colors">{faq.question || faq.q}</span>
-                                          <div className={`p-2 rounded-full transition-colors ${openFaqIndex === `faq-${index}-${fIndex}` ? 'bg-emerald-100 text-emerald-700' : 'bg-stone-50 text-stone-400'}`}>
-                                            {openFaqIndex === `faq-${index}-${fIndex}` ? <Minus className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
-                                          </div>
-                                        </button>
-                                        {openFaqIndex === `faq-${index}-${fIndex}` && (
-                                          <div className="px-6 pb-6 text-stone-600 border-t border-stone-50 animate-in fade-in slide-in-from-top-2 duration-300">
-                                            <p className="pt-4 leading-relaxed">{faq.answer || faq.a}</p>
-                                          </div>
-                                        )}
+                                      <div key={fIndex} className="mb-6 last:mb-0">
+                                        <p className="font-bold text-stone-900 !m-0 text-lg">{faq.question || faq.q}</p>
+                                        <p className="text-stone-800 leading-[1.8] !mt-1 !mb-0">{faq.answer || faq.a}</p>
                                       </div>
                                     ))}
                                   </div>

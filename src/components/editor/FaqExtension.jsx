@@ -28,7 +28,7 @@ const FaqComponent = ({ node, updateAttributes, deleteNode }) => {
 
   return (
     <NodeViewWrapper className="faq-section-node my-8">
-      <div className="bg-emerald-50/50 border-2 border-dashed border-emerald-200 rounded-2xl p-6 relative group">
+      <div contentEditable={false} className="bg-emerald-50/50 border-2 border-dashed border-emerald-200 rounded-2xl p-6 relative group">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-emerald-600 rounded-full flex items-center justify-center text-white">
@@ -63,8 +63,10 @@ const FaqComponent = ({ node, updateAttributes, deleteNode }) => {
                 <div className="space-y-1">
                   <label className="text-[9px] font-bold text-emerald-600 uppercase">Question {index + 1}</label>
                   <Input 
-                    value={faq.q}
-                    onChange={(e) => updateFaq(index, 'q', e.target.value)}
+                    defaultValue={faq.q}
+                    onBlur={(e) => updateFaq(index, 'q', e.target.value)}
+                    onKeyDownCapture={(e) => e.stopPropagation()}
+                    onMouseDownCapture={(e) => e.stopPropagation()}
                     placeholder="Enter question..."
                     className="border-stone-100 focus:border-emerald-500 h-9 text-sm"
                   />
@@ -72,8 +74,10 @@ const FaqComponent = ({ node, updateAttributes, deleteNode }) => {
                 <div className="space-y-1">
                   <label className="text-[9px] font-bold text-emerald-600 uppercase">Answer {index + 1}</label>
                   <textarea 
-                    value={faq.a}
-                    onChange={(e) => updateFaq(index, 'a', e.target.value)}
+                    defaultValue={faq.a}
+                    onBlur={(e) => updateFaq(index, 'a', e.target.value)}
+                    onKeyDownCapture={(e) => e.stopPropagation()}
+                    onMouseDownCapture={(e) => e.stopPropagation()}
                     placeholder="Enter answer..."
                     className="w-full min-h-[80px] p-2 text-sm border border-stone-100 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 bg-stone-50/30"
                   />

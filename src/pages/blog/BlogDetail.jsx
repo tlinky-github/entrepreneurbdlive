@@ -404,6 +404,16 @@ const BlogDetail = () => {
             let content = post.content || post.content_html || '';
             if (!content) return null;
 
+            // Senior Engineer Fix: Strip leading/trailing empty noise and redundant AI metadata (Google Docs compatible)
+            content = content
+              .replace(/^(<p>\s*<br\s*\/?>\s*<\/p>|<p>\s*<\/p>|<br\s*\/?>|\s)+/gi, '') // Trim total start
+              .replace(/(<p>\s*<br\s*\/?>\s*<\/p>|<p>\s*<\/p>|<br\s*\/?>|\s)+$/gi, '') // Trim total end
+              .replace(/<p[^>]*>(?:<[^>]+>)*\s*SEO Title:[\s\S]*?<\/p>/gi, '') // Remove SEO Title even with spans/styles
+              .replace(/<p[^>]*>(?:<[^>]+>)*\s*Meta Description:[\s\S]*?<\/p>/gi, '') // Remove Meta Desc even with spans/styles
+              .replace(/(<p>\s*<br\s*\/?>\s*<\/p>){2,}/gi, '<p><br></p>') // Consolidate 2+ empty paras into one
+              .replace(/ style="[^"]*"/gi, '') // Senior Engineer Fix: Strip all hardcoded styles from old posts
+              .replace(/<span[^>]*>([\s\S]*?)<\/span>/gi, '$1'); // Senior Engineer Fix: Unwrap all spans from old posts
+
             // Senior Engineer Fix: Relocate featured image after 2nd H2 (or 1st H2 as fallback)
             if (post.featured_image) {
               const h2TagRegex = /<h2/gi;
@@ -439,39 +449,37 @@ const BlogDetail = () => {
               }
             }
             
-            // Hybrid Approach: Wrap any "Quick Overview" sections (even legacy) with the premium style
-            const overviewRegex = /(<h4>Quick Overview<\/h4>[\s\S]*?<\/ul>)/gi;
-            content = content.replace(overviewRegex, '<aside class="ai-overview-block">$1</aside>');
+            // Clean existing aside wrappers to prevent double-wrapping, then apply the premium style wrapper
+            let tempContent = content.replace(/<aside class="ai-overview-block">([\s\S]*?)<\/aside>/gi, '$1');
+            const overviewRegex = /((?:<div class="quick-answer">[\s\S]*?<\/div>\s*)?<h4>(?:Quick Overview|Key Takeaways)<\/h4>[\s\S]*?<\/ul>)/gi;
+            content = tempContent.replace(overviewRegex, '<aside class="ai-overview-block">$1</aside>');
             
-            const parts = content.split(/(<faq-section[^>]*><\/faq-section>)/g);
+            const parts = content.split(/(<faq-section[^>]*>.*?<\/faq-section>|<faq-section[^>]*\/>)/gi);
             
             return parts.map((part, index) => {
-              if (part.startsWith('<faq-section')) {
+              if (!part) return null;
+              const trimmedPart = part.trim();
+              if (trimmedPart.toLowerCase().startsWith('<faq-section')) {
                 try {
-                  const match = part.match(/data-faqs='([^']*)'/);
-                  if (match && match[1]) {
-                    const faqs = JSON.parse(match[1]);
+                  const match = trimmedPart.match(/data-faqs=(?:'([^']*)'|"([^"]*)")/i);
+                  const faqsJson = match ? (match[1] || match[2]) : null;
+                  
+                  if (faqsJson) {
+                    const faqs = JSON.parse(faqsJson.replace(/&apos;/g, "'").replace(/&quot;/g, '"'));
                     return (
-                      <div key={`faq-${index}`} className="my-12 pt-8 border-t border-stone-200 bg-emerald-50/30 rounded-2xl p-6 md:p-8">
-                        <h2 className="text-2xl font-bold text-stone-900 mb-6 flex items-center gap-2">
-                          <CheckCircle className="w-6 h-6 text-emerald-700" />
+                      <div key={`faq-${index}`} className="mt-10 mb-6">
+                        <h2 className="text-[1.875rem] font-bold text-stone-900 border-b border-stone-200 pb-2 mb-5">
                           Frequently Asked Questions
                         </h2>
-                        <div className="space-y-4">
+                        <div className="faq-list">
                           {faqs.map((faq, fIndex) => (
-                            <div key={`faq-item-${fIndex}`} className="bg-white border border-stone-200 rounded-2xl overflow-hidden shadow-sm">
-                              <button
-                                onClick={() => setOpenFaqIndex(openFaqIndex === `faq-${index}-${fIndex}` ? null : `faq-${index}-${fIndex}`)}
-                                className="w-full flex items-center justify-between p-4 text-left hover:bg-stone-50 transition-colors"
-                              >
-                                <strong className="font-bold text-stone-900 pr-4">{faq.question || faq.q}</strong>
-                                {openFaqIndex === `faq-${index}-${fIndex}` ? <Minus className="w-5 h-5 text-emerald-700" /> : <Plus className="w-5 h-5 text-emerald-700" />}
-                              </button>
-                              {openFaqIndex === `faq-${index}-${fIndex}` && (
-                                <div className="px-4 pb-4 pt-0 text-stone-600 border-t border-stone-100 p-4">
-                                  <p className="leading-relaxed whitespace-pre-wrap">{faq.answer || faq.a}</p>
-                                </div>
-                              )}
+                            <div key={`faq-item-${fIndex}`} className="mb-6 last:mb-0">
+                              <p className="font-bold text-stone-900 !m-0 text-lg">
+                                {faq.question || faq.q}
+                              </p>
+                              <p className="text-stone-800 leading-[1.8] !mt-1 !mb-0">
+                                {faq.answer || faq.a}
+                              </p>
                             </div>
                           ))}
                         </div>
