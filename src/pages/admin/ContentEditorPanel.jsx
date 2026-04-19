@@ -49,9 +49,11 @@ import {
 } from '../../components/ui/command';
 import { Pencil, Globe, Smartphone, Monitor, Plus, X, Check, ChevronsUpDown } from 'lucide-react';
 import FaqExtension from '../../components/editor/FaqExtension';
+import { OverviewBlock, QuickAnswer } from '../../components/editor/OverviewExtension';
 import './ContentEditorPanel.css';
 
-// Senior Engineer Fix: Boundary-Aware Structural FAQ Detection with Strict Termination
+// Senior Engineer Fix: Advanced Multi-Structural Smart Scanner
+// Detects FAQs, Quick Answers, and Key Takeaways for premium styling
 const upgradeLegacyFaqs = (html) => {
   if (!html) return html;
   
@@ -60,7 +62,64 @@ const upgradeLegacyFaqs = (html) => {
   const topLevelElements = Array.from(doc.body.children);
   if (topLevelElements.length === 0) return html;
 
-  // 1. Find the FAQ Section Boundary
+  let nodesToRemove = new Set();
+  let overviewData = { answer: null, takeaways: [], markerNode: null };
+  let foundOverview = false;
+
+  // --- PART 1: SMART OVERVIEW SCANNER (Quick Answer & Key Takeaways) ---
+  // We use deep discovery to find these elements regardless of nesting
+  const allElements = Array.from(doc.body.querySelectorAll('p, h1, h2, h3, h4, div'));
+  
+  // A. Find Quick Answer (Matches "Quick Answer:" or "Quick Overview:")
+  const answerNode = allElements.find(el => /^(quick\s*answer|quick\s*overview):/i.test(el.innerText.trim()));
+  if (answerNode) {
+    overviewData.answer = answerNode.innerText.trim().replace(/^(quick\s*answer|quick\s*overview):\s*/i, '<strong>Quick Answer:</strong> ');
+    overviewData.markerNode = answerNode;
+    nodesToRemove.add(answerNode);
+    foundOverview = true;
+  }
+
+  // B. Find Key Takeaways Header
+  const takeawaysHeader = allElements.find(el => /^(key\s*takeaways|key\s*highlights|takeaways)$/i.test(el.innerText.trim()));
+  if (takeawaysHeader) {
+    if (!overviewData.markerNode) overviewData.markerNode = takeawaysHeader;
+    nodesToRemove.add(takeawaysHeader);
+    foundOverview = true;
+
+    // Look for the NEAREST list below this header (within reasonable proximity)
+    let next = takeawaysHeader.nextElementSibling;
+    let attempts = 0;
+    while (next && attempts < 5) {
+      if (next.tagName === 'UL' || next.tagName === 'OL') {
+        overviewData.takeaways = Array.from(next.querySelectorAll('li')).map(li => li.innerText.trim());
+        nodesToRemove.add(next);
+        break;
+      }
+      next = next.nextElementSibling;
+      attempts++;
+    }
+  }
+
+  if (foundOverview) {
+    const takeawaysHtml = overviewData.takeaways.length > 0 
+      ? `<h2>Key Takeaways</h2><ul>${overviewData.takeaways.map(t => `<li>${t}</li>`).join('')}</ul>`
+      : '';
+    const answerHtml = overviewData.answer 
+      ? `<div class="quick-answer">${overviewData.answer}</div>`
+      : '';
+    
+    if (takeawaysHtml || answerHtml) {
+      const aside = document.createElement('aside');
+      aside.className = 'ai-overview-block';
+      aside.innerHTML = `${answerHtml}${takeawaysHtml}`;
+      
+      if (overviewData.markerNode && overviewData.markerNode.parentNode) {
+        overviewData.markerNode.parentNode.insertBefore(aside, overviewData.markerNode);
+      }
+    }
+  }
+
+  // --- PART 2: FAQ SCANNER ---
   let faqStartIndex = -1;
   for (let i = 0; i < topLevelElements.length; i++) {
     const text = topLevelElements[i].innerText.trim();
@@ -71,92 +130,106 @@ const upgradeLegacyFaqs = (html) => {
   }
 
   let extractedFaqs = [];
-  let nodesToRemove = new Set();
-  
-  // 2. Scan only after the boundary
   const scanStartIndex = faqStartIndex !== -1 ? faqStartIndex + 1 : 0;
   let inFaqZone = faqStartIndex !== -1;
 
   for (let i = scanStartIndex; i < topLevelElements.length; i++) {
     const el = topLevelElements[i];
     if (nodesToRemove.has(el)) continue;
-    if (el.tagName.toLowerCase() === 'faq-section') continue;
 
     const text = el.innerText.trim();
-    const htmlContent = el.innerHTML.toLowerCase();
     const styleAttr = (el.getAttribute('style') || '').toLowerCase();
-    
-    // Pattern cues
-    const isBold = (el.querySelector('strong, b') || htmlContent.includes('font-weight:700') || styleAttr.includes('font-weight:700'));
+    const isBold = (el.querySelector('strong, b') || styleAttr.includes('font-weight:700'));
     const isHeader = el.tagName.match(/^H[1-6]$/);
     const endsWithQuestion = text.endsWith('?');
 
-    // STRICT TERMINATION:
-    // If we are in the FAQ zone and hit a Bold line/Header that is NOT a question (no ?),
-    // then we have reached the conclusion of the FAQ section. STOP SCANNING.
-    if (inFaqZone && (isBold || isHeader) && !endsWithQuestion && text.length > 3) {
-      break; 
-    }
+    if (inFaqZone && (isBold || isHeader) && !endsWithQuestion && text.length > 5) break; 
+    if (inFaqZone && text.length > 600) break;
 
-    // Question Heuristic: Must end with ? to be safe, especially if we have no clear header
-    const isLikelyQuestion = endsWithQuestion && text.length < 250;
-
-    if (isLikelyQuestion && text.length > 3) {
-      inFaqZone = true; // We are definitely in an FAQ section now
+    if (endsWithQuestion && text.length < 250 && text.length > 5) {
+      inFaqZone = true;
       let answerParts = [];
+      let gatheredChars = 0;
+      let tempNodes = [];
       let j = i + 1;
       
       while (j < topLevelElements.length) {
         const nextEl = topLevelElements[j];
         if (nodesToRemove.has(nextEl)) { j++; continue; }
-        
         const nextText = nextEl.innerText.trim();
         if (!nextText) { j++; continue; }
 
-        // Termination check inside answer gathering
         if (nextText.endsWith('?') && nextText.length < 250) break;
-        if ((nextEl.tagName.match(/^H[1-6]$/) || (nextEl.querySelector('strong, b'))) && !nextText.endsWith('?')) break;
+        if ((nextEl.tagName.match(/^H[1-6]$/) || nextEl.querySelector('strong, b')) && !nextText.endsWith('?')) break;
+        if (nextText.length > 600 || gatheredChars > 1500) break;
         
         answerParts.push(nextText);
-        nodesToRemove.add(nextEl);
+        gatheredChars += nextText.length;
+        tempNodes.push(nextEl);
         j++;
-        if (answerParts.length >= 6) break; 
+        if (answerParts.length >= 3) break;
       }
 
       if (answerParts.length > 0) {
         extractedFaqs.push({ q: text, a: answerParts.join('\n\n') });
         nodesToRemove.add(el);
+        tempNodes.forEach(node => nodesToRemove.add(node));
         i = j - 1;
       }
     }
   }
 
-  // 3. Assemble
+  // --- PART 3: ASSEMBLY & CLEANING ---
   if (extractedFaqs.length > 0) {
     const faqsJson = JSON.stringify(extractedFaqs).replace(/'/g, "&apos;");
     const faqTag = `<faq-section data-faqs='${faqsJson}'></faq-section>`;
+    const markerNode = faqStartIndex !== -1 ? topLevelElements[faqStartIndex] : Array.from(nodesToRemove).find(n => n.innerText.includes('?'));
     
-    // Find the marker point (where the FAQ header was or where the first question began)
-    // We need to insert the new tag AT this specific position
-    const markerNode = faqStartIndex !== -1 
-      ? topLevelElements[faqStartIndex] 
-      : Array.from(nodesToRemove)[0];
-
     if (markerNode && markerNode.parentNode) {
-      const temp = document.createElement('div');
-      temp.innerHTML = faqTag;
-      const faqNode = temp.firstChild;
+      const tempWrapper = document.createElement('div');
+      tempWrapper.innerHTML = faqTag;
+      const faqNode = tempWrapper.firstChild;
       markerNode.parentNode.insertBefore(faqNode, markerNode);
     }
-
-    // Now safely remove all the original plain-text nodes
-    if (faqStartIndex !== -1) {
-      try { topLevelElements[faqStartIndex].remove(); } catch(e) {}
-    }
-    nodesToRemove.forEach(n => { try { n.remove(); } catch(e) {} });
     
-    return doc.body.innerHTML;
+    if (faqStartIndex !== -1) try { topLevelElements[faqStartIndex].remove(); } catch(e) {}
   }
+
+  // Final removal of source nodes
+  nodesToRemove.forEach(node => { try { node.remove(); } catch(e) {} });
+
+  // Deep Clean Style Sanitization
+  doc.querySelectorAll('[style]').forEach(el => {
+    // Preserve the new overview block classes and styles
+    if (el.closest('.ai-overview-block')) return; 
+
+    const textLen = el.innerText.length;
+    if (textLen > 300) el.style.fontWeight = 'normal';
+    
+    el.style.color = '';
+    el.style.backgroundColor = '';
+    el.style.fontFamily = '';
+    el.style.fontSize = '';
+    el.style.lineHeight = '';
+    
+    if (el.getAttribute('style') === '' || !el.style.length) {
+      el.removeAttribute('style');
+    }
+  });
+
+  doc.querySelectorAll('strong, b').forEach(bold => {
+    if (bold.closest('.ai-overview-block')) return;
+    if (bold.innerText.length > 500) {
+      while (bold.firstChild) { bold.parentNode.insertBefore(bold.firstChild, bold); }
+      bold.remove();
+    }
+  });
+
+  doc.querySelectorAll('span').forEach(span => {
+    if (span.closest('.ai-overview-block')) return;
+    while (span.firstChild) { span.parentNode.insertBefore(span.firstChild, span); }
+    span.remove();
+  });
 
   return doc.body.innerHTML;
 };
@@ -324,6 +397,8 @@ const ContentEditorPanel = () => {
       multicolor: true,
     }),
     FaqExtension,
+    OverviewBlock,
+    QuickAnswer,
   ];
 
   // Main Content Editor
@@ -343,54 +418,7 @@ const ContentEditorPanel = () => {
         return upgradeLegacyFaqs(html);
       },
       handlePaste: (view, event) => {
-        const text = event.clipboardData?.getData('text/plain');
-        if (!text) return false;
-
-        // Senior Engineer Fix: Advanced Structural FAQ Detection
-        // Triggers if text contains "FAQ" or "Frequently Asked Questions" OR has multiple ? patterns
-        const hasFaqHeader = /frequently\s*asked\s*questions|faq/i.test(text);
-        const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
-        
-        let detectedFaqs = [];
-        let currentQuestion = null;
-        let currentAnswer = [];
-
-        for (let i = 0; i < lines.length; i++) {
-          const line = lines[i];
-
-          // HEURISTIC: A line ending in ? is a potential question
-          // (Max length check to avoid accidentally catching long prose ending in ?)
-          if (line.endsWith('?') && line.length < 200) {
-            // If we already had a question/answer pair, save it
-            if (currentQuestion && currentAnswer.length > 0) {
-              detectedFaqs.push({ q: currentQuestion, a: currentAnswer.join('\n\n') });
-            }
-            currentQuestion = line;
-            currentAnswer = [];
-          } else if (currentQuestion) {
-            // Everything after a question is part of the answer until the next question
-            currentAnswer.push(line);
-          }
-        }
-
-        // Catch the last pair
-        if (currentQuestion && currentAnswer.length > 0) {
-          detectedFaqs.push({ q: currentQuestion, a: currentAnswer.join('\n\n') });
-        }
-
-        // Final Validation: 
-        // If we found multiple pairs (or a specific FAQ header was present + at least 1 pair)
-        if (detectedFaqs.length >= 2 || (hasFaqHeader && detectedFaqs.length >= 1)) {
-          const node = view.state.schema.nodes.faqSection.create({ faqs: detectedFaqs });
-          const tr = view.state.tr;
-          tr.replaceSelectionWith(node);
-          view.dispatch(tr);
-          
-          toast.success(`Dynamically detected ${detectedFaqs.length} FAQ items!`);
-          return true;
-        }
-
-        return false;
+        return false; // Let transformPastedHTML handle the structural conversion and cleaning
       }
     },
   });
@@ -1642,8 +1670,19 @@ const ContentEditorPanel = () => {
                       editor?.chain().focus().toggleHeading({ level: 3 }).run();
                     }}
                     disabled={!editor}
+                    className={editor?.isActive('heading', { level: 3 }) ? 'is-active' : ''}
                   >
                     H3
+                  </button>
+                  <button
+                    onClick={() => {
+                      console.log('H4 clicked');
+                      editor?.chain().focus().toggleHeading({ level: 4 }).run();
+                    }}
+                    disabled={!editor}
+                    className={editor?.isActive('heading', { level: 4 }) ? 'is-active' : ''}
+                  >
+                    H4
                   </button>
                 </div>
 

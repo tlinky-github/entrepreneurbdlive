@@ -330,7 +330,7 @@ const EntrepreneurDetail = () => {
                             const faqs = JSON.parse(faqsJson.replace(/&apos;/g, "'").replace(/&quot;/g, '"'));
                             return (
                               <div key={index} className="mt-10 mb-6">
-                                <h2 className="text-[1.875rem] font-bold text-stone-900 border-b border-stone-200 pb-2 mb-5">
+                                <h2 className="text-[1.875rem] font-bold text-stone-900 mb-5">
                                   Frequently Asked Questions
                                 </h2>
                                 <div className="faq-list">

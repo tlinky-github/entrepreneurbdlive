@@ -405,14 +405,80 @@ const BlogDetail = () => {
             if (!content) return null;
 
             // Senior Engineer Fix: Strip leading/trailing empty noise and redundant AI metadata (Google Docs compatible)
+            // Senior Engineer Fix: Advanced Frontend Smart Styler
+            // Automatically upgrades legacy content to the premium emerald design on-the-fly
+            const applySmartDesign = (html) => {
+              if (!html) return '';
+              const parser = new DOMParser();
+              const doc = parser.parseFromString(html, 'text/html');
+              
+              // 1. Surgical Style Cleaning (Preserves our specific premium classes)
+              doc.querySelectorAll('[style]').forEach(el => {
+                if (el.closest('.ai-overview-block')) return;
+                const style = el.getAttribute('style').toLowerCase();
+                if (el.innerText.length > 300) el.style.fontWeight = 'normal';
+                
+                // Remove Google Docs junk but keep intentional layout
+                const junk = ['color', 'background-color', 'font-family', 'font-size', 'line-height'];
+                junk.forEach(prop => { el.style[prop] = ''; });
+                if (!el.style.length) el.removeAttribute('style');
+              });
+
+              // 2. Discover Overview Blocks
+              const allElements = Array.from(doc.body.querySelectorAll('p, h1, h2, h3, h4, div'));
+              let overviewData = { answer: null, takeaways: [], markerNode: null };
+              let foundSomething = false;
+              let nodesToRemove = new Set();
+
+              const answerNode = allElements.find(el => /^(quick\s*answer|quick\s*overview):/i.test(el.innerText.trim()));
+              if (answerNode) {
+                overviewData.answer = answerNode.innerText.trim().replace(/^(quick\s*answer|quick\s*overview):\s*/i, '<strong>Quick Answer:</strong> ');
+                overviewData.markerNode = answerNode;
+                nodesToRemove.add(answerNode);
+                foundSomething = true;
+              }
+
+              const takeawaysHeader = allElements.find(el => /^(key\s*takeaways|key\s*highlights|takeaways)$/i.test(el.innerText.trim()));
+              if (takeawaysHeader) {
+                if (!overviewData.markerNode) overviewData.markerNode = takeawaysHeader;
+                nodesToRemove.add(takeawaysHeader);
+                foundSomething = true;
+                let next = takeawaysHeader.nextElementSibling;
+                let attempts = 0;
+                while (next && attempts < 5) {
+                  if (next.tagName === 'UL' || next.tagName === 'OL') {
+                    overviewData.takeaways = Array.from(next.querySelectorAll('li')).map(li => li.innerText.trim());
+                    nodesToRemove.add(next);
+                    break;
+                  }
+                  next = next.nextElementSibling;
+                  attempts++;
+                }
+              }
+
+              if (foundSomething) {
+                const aside = document.createElement('aside');
+                aside.className = 'ai-overview-block';
+                const answerHtml = overviewData.answer ? `<div class="quick-answer">${overviewData.answer}</div>` : '';
+                const takeawaysHtml = overviewData.takeaways.length > 0 
+                  ? `<h2>Key Takeaways</h2><ul>${overviewData.takeaways.map(t => `<li>${t}</li>`).join('')}</ul>`
+                  : '';
+                aside.innerHTML = `${answerHtml}${takeawaysHtml}`;
+                if (overviewData.markerNode && overviewData.markerNode.parentNode) {
+                  overviewData.markerNode.parentNode.insertBefore(aside, overviewData.markerNode);
+                }
+                nodesToRemove.forEach(node => { try { node.remove(); } catch(e) {} });
+              }
+              
+              return doc.body.innerHTML;
+            };
+
+            content = applySmartDesign(content);
+
+            // Clean up redundant AI strings
             content = content
-              .replace(/^(<p>\s*<br\s*\/?>\s*<\/p>|<p>\s*<\/p>|<br\s*\/?>|\s)+/gi, '') // Trim total start
-              .replace(/(<p>\s*<br\s*\/?>\s*<\/p>|<p>\s*<\/p>|<br\s*\/?>|\s)+$/gi, '') // Trim total end
-              .replace(/<p[^>]*>(?:<[^>]+>)*\s*SEO Title:[\s\S]*?<\/p>/gi, '') // Remove SEO Title even with spans/styles
-              .replace(/<p[^>]*>(?:<[^>]+>)*\s*Meta Description:[\s\S]*?<\/p>/gi, '') // Remove Meta Desc even with spans/styles
-              .replace(/(<p>\s*<br\s*\/?>\s*<\/p>){2,}/gi, '<p><br></p>') // Consolidate 2+ empty paras into one
-              .replace(/ style="[^"]*"/gi, '') // Senior Engineer Fix: Strip all hardcoded styles from old posts
-              .replace(/<span[^>]*>([\s\S]*?)<\/span>/gi, '$1'); // Senior Engineer Fix: Unwrap all spans from old posts
+              .replace(/<p[^>]*>(?:<[^>]+>)*\s*SEO Title:[\s\S]*?<\/p>/gi, '')
+              .replace(/<p[^>]*>(?:<[^>]+>)*\s*Meta Description:[\s\S]*?<\/p>/gi, '');
 
             // Senior Engineer Fix: Relocate featured image after 2nd H2 (or 1st H2 as fallback)
             if (post.featured_image) {
@@ -468,7 +534,7 @@ const BlogDetail = () => {
                     const faqs = JSON.parse(faqsJson.replace(/&apos;/g, "'").replace(/&quot;/g, '"'));
                     return (
                       <div key={`faq-${index}`} className="mt-10 mb-6">
-                        <h2 className="text-[1.875rem] font-bold text-stone-900 border-b border-stone-200 pb-2 mb-5">
+                        <h2 className="text-[1.875rem] font-bold text-stone-900 mb-5">
                           Frequently Asked Questions
                         </h2>
                         <div className="faq-list">
