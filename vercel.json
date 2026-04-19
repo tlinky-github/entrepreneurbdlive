@@ -19,58 +19,39 @@
       "destination": "/api/seo-handler?render=image"
     },
     {
-      "source": "/",
-      "has": [
-        {
-          "type": "header",
-          "key": "user-agent",
-          "value": "(?i).*(bot|googlebot|crawler|spider|facebookexternalhit|whatsapp|linkedinbot|twitterbot|slackbot|discordbot|telegrambot|applebot|bingbot|yandexbot|baiduspider|metainspector).*"
-        }
-      ],
-      "destination": "/api/seo-handler?path=home"
+      "source": "/blog/:slug",
+      "has": [{ "type": "query", "key": "no_bot", "value": "1" }],
+      "destination": "/index.html"
+    },
+    {
+      "source": "/directory/:slug",
+      "has": [{ "type": "query", "key": "no_bot", "value": "1" }],
+      "destination": "/index.html"
+    },
+    {
+      "source": "/entrepreneurs/:slug",
+      "has": [{ "type": "query", "key": "no_bot", "value": "1" }],
+      "destination": "/index.html"
+    },
+    {
+      "source": "/knowledge/:slug",
+      "has": [{ "type": "query", "key": "no_bot", "value": "1" }],
+      "destination": "/index.html"
     },
     {
       "source": "/blog/:slug",
-      "has": [
-        {
-          "type": "header",
-          "key": "user-agent",
-          "value": "(?i).*(bot|googlebot|crawler|spider|facebookexternalhit|whatsapp|linkedinbot|twitterbot|slackbot|discordbot|telegrambot|applebot|bingbot|yandexbot|baiduspider|metainspector).*"
-        }
-      ],
       "destination": "/api/seo-handler?path=blog/:slug"
     },
     {
       "source": "/directory/:slug",
-      "has": [
-        {
-          "type": "header",
-          "key": "user-agent",
-          "value": "(?i).*(bot|googlebot|crawler|spider|facebookexternalhit|whatsapp|linkedinbot|twitterbot|slackbot|discordbot|telegrambot|applebot|bingbot|yandexbot|baiduspider|metainspector).*"
-        }
-      ],
       "destination": "/api/seo-handler?path=directory/:slug"
     },
     {
       "source": "/entrepreneurs/:slug",
-      "has": [
-        {
-          "type": "header",
-          "key": "user-agent",
-          "value": "(?i).*(bot|googlebot|crawler|spider|facebookexternalhit|whatsapp|linkedinbot|twitterbot|slackbot|discordbot|telegrambot|applebot|bingbot|yandexbot|baiduspider|metainspector).*"
-        }
-      ],
       "destination": "/api/seo-handler?path=entrepreneurs/:slug"
     },
     {
       "source": "/knowledge/:slug",
-      "has": [
-        {
-          "type": "header",
-          "key": "user-agent",
-          "value": "(?i).*(bot|googlebot|crawler|spider|facebookexternalhit|whatsapp|linkedinbot|twitterbot|slackbot|discordbot|telegrambot|applebot|bingbot|yandexbot|baiduspider|metainspector).*"
-        }
-      ],
       "destination": "/api/seo-handler?path=knowledge/:slug"
     },
     {

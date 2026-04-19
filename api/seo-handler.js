@@ -231,11 +231,14 @@ module.exports = async (req, res) => {
     const userAgent = req.headers['user-agent'] || '';
     const isBot = /bot|googlebot|crawler|spider|facebookexternalhit|whatsapp|linkedinbot|twitterbot|slackbot|discordbot|telegrambot|applebot|bingbot|yandexbot|baiduspider|metainspector/i.test(userAgent);
 
+    // HUMAN HANDOFF (Dancing Routing):
     if (!isBot && !req.query.force_bot) {
-      return res.status(200).send(HTML_SHELL.replace('{{META_TAGS}}', '').replace('{{REDIRECT_PATH}}', finalPath));
+      const sep = finalPath.includes('?') ? '&' : '?';
+      res.setHeader('Location', `${finalPath}${sep}no_bot=1`);
+      return res.status(301).end();
     }
 
-    const currentAbsoluteUrl = `${SITE_URL}${finalPath}`;
+    const currentAbsoluteUrl = `https://${host}${finalPath}`;
     const dynamicOgUrl = `${SITE_URL}/api/og-image?title=${encodeURIComponent(title)}&description=${encodeURIComponent(description)}&image=${encodeURIComponent(image)}&category=${category}`;
 
     // Schemas
