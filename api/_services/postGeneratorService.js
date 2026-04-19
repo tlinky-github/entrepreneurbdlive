@@ -208,9 +208,10 @@ Next Section of Post (HTML):`;
       const overviewBlock = await this.generateSummary(apiKey, providerService, model, fullContent, options.tokenMode);
 
       // Senior Engineer Fix: Extract clean text "Quick Answer" for the Short Description field
+      // We keep the "Quick Answer: " prefix as requested by the user
       const quickAnswerMatch = (overviewBlock || "").match(/<div class="quick-answer">([\s\S]*?)<\/div>/i);
       const cleanQuickAnswer = quickAnswerMatch 
-        ? quickAnswerMatch[1].replace(/<strong>Quick Answer:<\/strong>/i, '').replace(/<[^>]*>?/gm, '').trim()
+        ? "Quick Answer: " + quickAnswerMatch[1].replace(/<strong>Quick Answer:<\/strong>/i, '').replace(/<[^>]*>?/gm, '').trim()
         : '';
 
       // Related Content Widget
