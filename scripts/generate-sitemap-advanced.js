@@ -122,100 +122,6 @@ async function fetchDynamicRoutes() {
 /**
  * Fetch local MDX blog posts
  */
-function fetchLocalPostRoutes() {
-  const localRoutes = [];
-  try {
-    if (fs.existsSync(POSTS_DIR)) {
-      console.log('  Scanning local blog posts...');
-      const files = fs.readdirSync(POSTS_DIR);
-      const mdxFiles = files.filter(file => file.endsWith('.mdx'));
-
-      mdxFiles.forEach(file => {
-        const slug = file.replace(/\.mdx$/, '');
-        localRoutes.push({
-          url: `/blog/${slug}`,
-          changefreq: 'weekly',
-          priority: 0.8
-        });
-      });
-      console.log(`    ✓ Found ${localRoutes.length} local posts`);
-    } else {
-      console.warn(`  ⚠ Posts directory not found: ${POSTS_DIR}`);
-    }
-  } catch (error) {
-    console.warn('  ⚠ Could not scan local posts:', error.message);
-  }
-  return localRoutes;
-}
-
-/**
- * Fetch routes from data files
- */
-function fetchDataRoutes() {
-  const dataRoutes = [];
-  try {
-    if (fs.existsSync(DATA_DIR)) {
-      console.log('  Scanning data files...');
-
-      // 1. Process blog-data.js for posts
-      const blogDataPath = path.join(DATA_DIR, 'blog-data.js');
-      if (fs.existsSync(blogDataPath)) {
-        const content = fs.readFileSync(blogDataPath, 'utf-8');
-        // Extract posts array content
-        const postsMatch = content.split('export const posts = [')[1];
-        if (postsMatch) {
-          const postsContent = postsMatch.split('];')[0];
-          // Find all slugs
-          const slugRegex = /slug:\s*["']([^"']+)["']/g;
-          let match;
-          let count = 0;
-          while ((match = slugRegex.exec(postsContent)) !== null) {
-            dataRoutes.push({
-              url: `/blog/${match[1]}`,
-              changefreq: 'weekly',
-              priority: 0.8
-            });
-            count++;
-          }
-          console.log(`    ✓ Found ${count} posts in blog-data.js`);
-        }
-      }
-
-      // 2. Process mock.js for knowledge pages
-      const mockDataPath = path.join(DATA_DIR, 'mock.js');
-      if (fs.existsSync(mockDataPath)) {
-        const content = fs.readFileSync(mockDataPath, 'utf-8');
-
-        // Helper to extract IDs from a variable block
-        const extractIds = (varName) => {
-          const part = content.split(`export const ${varName} = [`)[1];
-          if (!part) return 0;
-          const block = part.split('];')[0];
-          const idRegex = /id:\s*["']([^"']+)["']/g;
-          let match;
-          let count = 0;
-          while ((match = idRegex.exec(block)) !== null) {
-            dataRoutes.push({
-              url: `/knowledge/${match[1]}`,
-              changefreq: 'weekly',
-              priority: 0.8
-            });
-            count++;
-          }
-          return count;
-        };
-
-        const count1 = extractIds('pillarPages');
-        const count2 = extractIds('pillarPagesPart2');
-        console.log(`    ✓ Found ${count1 + count2} knowledge articles in mock.js`);
-      }
-
-    }
-  } catch (error) {
-    console.warn('  ⚠ Could not scan data files:', error.message);
-  }
-  return dataRoutes;
-}
 
 /**
  * Main function to generate and write sitemap
@@ -226,20 +132,12 @@ async function main() {
 
     let allRoutes = [...staticRoutes];
 
-    // Add local posts
-    const localRoutes = fetchLocalPostRoutes();
-    allRoutes = [...allRoutes, ...localRoutes];
-
-    // Add data routes
-    const dataRoutes = fetchDataRoutes();
-    allRoutes = [...allRoutes, ...dataRoutes];
-
-    // Fetch dynamic routes if enabled
-    if (INCLUDE_DYNAMIC) {
-      console.log('📡 Fetching dynamic routes from API...');
+    // Fetch dynamic routes (Firestore)
+    // Dynamic routes are now the primary source for blog/directory/entrepreneur content
+    if (INCLUDE_DYNAMIC || true) { // Force fetch from Firestore for live accuracy
+      console.log('📡 Fetching live dynamic routes from Firestore...');
       const dynamicRoutes = await fetchDynamicRoutes();
       allRoutes = [...allRoutes, ...dynamicRoutes];
-      console.log(`\n  Total dynamic routes added: ${dynamicRoutes.length}`);
     }
 
     // Deduplicate routes based on URL
@@ -262,11 +160,8 @@ async function main() {
     console.log(`  Total URLs: ${allRoutes.length}`);
     console.log(`  Site URL: ${SITE_URL}`);
     console.log(`  Static routes: ${staticRoutes.length}`);
-    console.log(`  Local posts: ${localRoutes.length}`);
-    console.log(`  Data routes: ${dataRoutes.length}`);
-    if (INCLUDE_DYNAMIC) {
-      console.log(`  Dynamic routes: ${allRoutes.length - staticRoutes.length - localRoutes.length - dataRoutes.length}`);
-    }
+    console.log(`  Dynamic routes: ${allRoutes.length - staticRoutes.length}`);
+
   } catch (error) {
     console.error('✗ Error generating sitemap:', error.message);
     if (!WATCH_MODE) process.exit(1);

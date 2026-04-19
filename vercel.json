@@ -7,6 +7,10 @@
   },
   "rewrites": [
     {
+      "source": "/sitemap.xml",
+      "destination": "/api/seo-handler?action=sitemap"
+    },
+    {
       "source": "/api/ai/generate",
       "destination": "/api/ai/ai-router?target=generate"
     },

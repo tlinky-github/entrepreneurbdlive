@@ -1123,3 +1123,70 @@ export default {
   blogCategoryAPI, industryAPI, cityAPI, taxonomyAPI, settingsAPI, authorAPI, mediaAPI,
   guidesAPI, faqCategoriesAPI, glossaryAPI, codeSnippetsAPI
 };
+// --- Redirects API ---
+export const redirectAPI = {
+  list: async () => {
+    try {
+      const q = query(collection(db, 'redirects'), orderBy('created_at', 'desc'));
+      const snapshot = await getDocs(q);
+      return { data: snapshot.docs.map(docToData) };
+    } catch (error) {
+      console.error('Redirects List Error:', error);
+      return { data: [] };
+    }
+  },
+  create: async (data) => {
+    const res = await addDoc(collection(db, 'redirects'), {
+      ...data,
+      created_at: serverTimestamp(),
+      hit_count: 0
+    });
+    return { id: res.id, ...data };
+  },
+  delete: async (id) => {
+    await deleteDoc(doc(db, 'redirects', id));
+    return { success: true };
+  }
+};
+
+// --- Dead Links API (404 Tracker) ---
+export const deadLinkAPI = {
+  list: async () => {
+    try {
+      const q = query(collection(db, 'dead_links'), orderBy('hit_count', 'desc'), limit(50));
+      const snapshot = await getDocs(q);
+      return { data: snapshot.docs.map(docToData) };
+    } catch (error) {
+      console.error('Dead Links List Error:', error);
+      return { data: [] };
+    }
+  },
+  log: async (path) => {
+    try {
+      // Use the path as ID to count hits for the same URL efficiently
+      const id = path.replace(/[\/\.]/g, '_') || 'root';
+      const docRef = doc(db, 'dead_links', id);
+      const snap = await getDoc(docRef);
+      
+      if (snap.exists()) {
+        await updateDoc(docRef, {
+          hit_count: increment(1),
+          last_hit: serverTimestamp()
+        });
+      } else {
+        await setDoc(docRef, {
+          path,
+          hit_count: 1,
+          created_at: serverTimestamp(),
+          last_hit: serverTimestamp()
+        });
+      }
+    } catch (e) {
+      console.warn('Silent 404 Logging Failed:', e);
+    }
+  },
+  delete: async (id) => {
+    await deleteDoc(doc(db, 'dead_links', id));
+    return { success: true };
+  }
+};

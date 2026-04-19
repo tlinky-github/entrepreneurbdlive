@@ -295,15 +295,28 @@ const BlogDetail = () => {
 
   if (!post) {
     return (
-      <div className="bg-stone-50 min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-stone-900 mb-4">Article Not Found</h1>
-          <Link to="/blog">
-            <Button className="bg-emerald-900 hover:bg-emerald-800">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Blog
-            </Button>
-          </Link>
+      <div className="bg-stone-50 min-h-screen flex items-center justify-center p-4">
+        <div className="text-center max-w-md">
+          <div className="w-16 h-16 bg-stone-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <ArrowLeft className="w-8 h-8 text-stone-400" />
+          </div>
+          <h1 className="text-2xl font-bold text-stone-900 mb-2">Article Not Found</h1>
+          <p className="text-stone-600 mb-8">
+            The article you are looking for may have been moved or deleted.
+            Redirecting you to our blog in a moment...
+          </p>
+          <div className="space-x-4">
+            <Link to="/blog">
+              <Button className="bg-emerald-900 hover:bg-emerald-800">
+                Go to Blog Now
+              </Button>
+            </Link>
+          </div>
+          <script>{`
+            setTimeout(() => {
+              window.location.href = '/blog';
+            }, 3000);
+          `}</script>
         </div>
       </div>
     );

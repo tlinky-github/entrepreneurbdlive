@@ -107,15 +107,28 @@ const EntrepreneurDetail = () => {
 
   if (!profile) {
     return (
-      <div className="bg-stone-50 min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-stone-900 mb-4">Profile Not Found</h1>
-          <Link to="/entrepreneurs">
-            <Button className="bg-emerald-900 hover:bg-emerald-800">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Entrepreneurs
-            </Button>
-          </Link>
+      <div className="bg-stone-50 min-h-screen flex items-center justify-center p-4">
+        <div className="text-center max-w-md">
+          <div className="w-16 h-16 bg-stone-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <ArrowLeft className="w-8 h-8 text-stone-400" />
+          </div>
+          <h1 className="text-2xl font-bold text-stone-900 mb-2">Profile Not Found</h1>
+          <p className="text-stone-600 mb-8">
+            This profile may have been private, moved, or deleted. 
+            Redirecting you to our community in a moment...
+          </p>
+          <div className="space-x-4">
+            <Link to="/entrepreneurs">
+              <Button className="bg-emerald-900 hover:bg-emerald-800">
+                Browse Community
+              </Button>
+            </Link>
+          </div>
+          <script>{`
+            setTimeout(() => {
+              window.location.href = '/entrepreneurs';
+            }, 3000);
+          `}</script>
         </div>
       </div>
     );

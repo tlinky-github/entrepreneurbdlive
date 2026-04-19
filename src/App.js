@@ -1,3 +1,59 @@
+import React, { lazy, Suspense } from 'react';
+
+// --- LAZY-LOADED PUBLIC PAGES ---
+const Home = lazy(() => import('./pages/Home'));
+const BlogList = lazy(() => import('./pages/blog/BlogList'));
+const BlogDetail = lazy(() => import('./pages/blog/BlogDetail'));
+const EntrepreneurList = lazy(() => import('./pages/entrepreneurs/EntrepreneurList'));
+const EntrepreneurDetail = lazy(() => import('./pages/entrepreneurs/EntrepreneurDetail'));
+const DirectoryList = lazy(() => import('./pages/directory/DirectoryList'));
+const DirectoryDetail = lazy(() => import('./pages/directory/DirectoryDetail'));
+const ResourceList = lazy(() => import('./pages/resources/ResourceList'));
+const ResourceDetail = lazy(() => import('./pages/resources/ResourceDetail'));
+const AuthorDetail = lazy(() => import('./pages/AuthorDetail'));
+const SubmissionPage = lazy(() => import('./pages/submit/SubmissionPage'));
+const SubmissionSuccess = lazy(() => import('./pages/submit/SubmissionSuccess'));
+
+// --- LAZY-LOADED AUTH PAGES ---
+const Login = lazy(() => import('./pages/auth/Login'));
+const Register = lazy(() => import('./pages/auth/Register'));
+
+// --- LAZY-LOADED ADMIN PAGES ---
+const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'));
+const AdminDashboard = lazy(() => import('./pages/admin/AdminLayout').then(m => ({ default: m.AdminDashboard })));
+const AdminAuthors = lazy(() => import('./pages/admin/AdminAuthors'));
+const AdminPosts = lazy(() => import('./pages/admin/AdminPosts'));
+const AdminEntrepreneurs = lazy(() => import('./pages/admin/AdminEntrepreneurs'));
+const AdminDirectory = lazy(() => import('./pages/admin/AdminDirectory'));
+const AdminResources = lazy(() => import('./pages/admin/AdminResources'));
+const AdminUsers = lazy(() => import('./pages/admin/AdminUsers'));
+const AdminSettings = lazy(() => import('./pages/admin/AdminSettings'));
+const AISettings = lazy(() => import('./pages/admin/AISettings'));
+const AdminPages = lazy(() => import('./pages/admin/AdminPages'));
+const AdminAnalytics = lazy(() => import('./pages/admin/AdminAnalytics'));
+const AdminContentManager = lazy(() => import('./pages/admin/AdminContentManager'));
+const ContentEditorPanel = lazy(() => import('./pages/admin/ContentEditorPanel'));
+const AdminTaxonomies = lazy(() => import('./pages/admin/AdminTaxonomies'));
+const AdminMedia = lazy(() => import('./pages/admin/AdminMedia'));
+const AdminKnowledgeHub = lazy(() => import('./pages/admin/AdminKnowledgeHub'));
+const AdminReports = lazy(() => import('./pages/admin/AdminReports'));
+const AdminSubmissions = lazy(() => import('./pages/admin/AdminSubmissions'));
+const AdminTrafficCenter = lazy(() => import('./pages/admin/AdminTrafficCenter'));
+const TestEditor = lazy(() => import('./pages/admin/TestEditor'));
+
+// --- LAZY-LOADED STATIC & MIGRATED PAGES ---
+const AboutPage = lazy(() => import('./pages/AboutPage'));
+const ContactPage = lazy(() => import('./pages/ContactPage'));
+const PrivacyPage = lazy(() => import('./pages/PrivacyPage'));
+const DisclaimerPage = lazy(() => import('./pages/DisclaimerPage'));
+const EditorialPage = lazy(() => import('./pages/EditorialPage'));
+const KnowledgeHubPage = lazy(() => import('./pages/KnowledgeHubPage'));
+const KnowledgeArticlePage = lazy(() => import('./pages/KnowledgeArticlePage'));
+const GuidesPage = lazy(() => import('./pages/GuidesPage'));
+const FAQsPage = lazy(() => import('./pages/FAQsPage'));
+const GlossaryPage = lazy(() => import('./pages/GlossaryPage'));
+const VisualEditor = lazy(() => import('./pages/VisualEditor/VisualEditor'));
+
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 import { AuthProvider, useAuth } from './lib/auth';
@@ -39,64 +95,6 @@ class ErrorBoundary extends React.Component {
     return this.props.children;
   }
 }
-
-// Public Pages
-import Home from './pages/Home';
-import BlogList from './pages/blog/BlogList';
-import BlogDetail from './pages/blog/BlogDetail';
-import EntrepreneurList from './pages/entrepreneurs/EntrepreneurList';
-import EntrepreneurDetail from './pages/entrepreneurs/EntrepreneurDetail';
-import DirectoryList from './pages/directory/DirectoryList';
-import DirectoryDetail from './pages/directory/DirectoryDetail';
-import ResourceList from './pages/resources/ResourceList';
-import ResourceDetail from './pages/resources/ResourceDetail';
-import AuthorDetail from './pages/AuthorDetail';
-import SubmissionPage from './pages/submit/SubmissionPage';
-import SubmissionSuccess from './pages/submit/SubmissionSuccess';
-
-// Auth Pages
-import Login from './pages/auth/Login';
-import Register from './pages/auth/Register';
-// Unused Auth Pages removed
-
-// Admin Pages
-import AdminLayout, { AdminDashboard } from './pages/admin/AdminLayout';
-import AdminAuthors from './pages/admin/AdminAuthors';
-import AdminPosts from './pages/admin/AdminPosts';
-import PostEditor from './pages/admin/PostEditor';
-import AdminEntrepreneurs from './pages/admin/AdminEntrepreneurs';
-import AdminDirectory from './pages/admin/AdminDirectory';
-import AdminResources from './pages/admin/AdminResources';
-import AdminUsers from './pages/admin/AdminUsers';
-import AdminSettings from './pages/admin/AdminSettings';
-import AISettings from './pages/admin/AISettings';
-import AdminPages from './pages/admin/AdminPages';
-import AdminAnalytics from './pages/admin/AdminAnalytics';
-import AdminContentManager from './pages/admin/AdminContentManager';
-import ContentEditorPanel from './pages/admin/ContentEditorPanel';
-import AdminTaxonomies from './pages/admin/AdminTaxonomies';
-import AdminMedia from './pages/admin/AdminMedia';
-import AdminKnowledgeHub from './pages/admin/AdminKnowledgeHub';
-import AdminReports from './pages/admin/AdminReports';
-import AdminSubmissions from './pages/admin/AdminSubmissions';
-import TestEditor from './pages/admin/TestEditor';
-
-// Migrated Pages
-import AboutPage from './pages/AboutPage';
-import ContactPage from './pages/ContactPage';
-import PrivacyPage from './pages/PrivacyPage';
-import DisclaimerPage from './pages/DisclaimerPage';
-import EditorialPage from './pages/EditorialPage';
-import KnowledgeHubPage from './pages/KnowledgeHubPage';
-import KnowledgeArticlePage from './pages/KnowledgeArticlePage';
-import GuidesPage from './pages/GuidesPage';
-import FAQsPage from './pages/FAQsPage';
-import GlossaryPage from './pages/GlossaryPage';
-
-// Visual Editor
-import VisualEditor from './pages/VisualEditor/VisualEditor';
-
-// Protected Route Component
 const ProtectedRoute = ({ children, adminOnly = false }) => {
   const { isAuthenticated, isAdmin, loading } = useAuth();
   
@@ -133,7 +131,15 @@ const AuthLayout = ({ children }) => (
 
 function AppRoutes() {
   return (
-    <Routes>
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-stone-50">
+        <div className="flex flex-col items-center gap-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-900"></div>
+          <p className="text-stone-500 font-medium animate-pulse">Loading experience...</p>
+        </div>
+      </div>
+    }>
+      <Routes>
       {/* Public Routes */}
       <Route path="/" element={<PublicLayout><Home /></PublicLayout>} />
       <Route path="/blog" element={<PublicLayout><BlogList /></PublicLayout>} />
@@ -176,6 +182,7 @@ function AppRoutes() {
         <Route path="resources/new" element={<ContentEditorPanel />} />
         <Route path="resources/:id/edit" element={<ContentEditorPanel />} />
         <Route path="media" element={<AdminMedia />} />
+        <Route path="traffic-center" element={<AdminTrafficCenter />} />
         <Route path="users" element={<AdminUsers />} />
         <Route path="taxonomies" element={<AdminTaxonomies />} />
         <Route path="knowledge-hub" element={<AdminKnowledgeHub />} />
@@ -236,7 +243,8 @@ function AppRoutes() {
       {/* 404 */}
       <Route path="*" element={<PublicLayout><NotFound /></PublicLayout>} />
     </Routes>
-  );
+  </Suspense>
+);
 }
 
 // Simple Resource Editor (placeholder)
@@ -344,8 +352,7 @@ const DynamicPage = () => {
   );
 };
 
-// Import React for DynamicPage
-import React from 'react';
+
 
 
 
@@ -359,13 +366,62 @@ const TermsPage = () => (
   </div>
 );
 
-const NotFound = () => (
-  <div className="max-w-4xl mx-auto px-4 py-16 text-center">
-    <h1 className="text-6xl font-bold text-stone-900 mb-4">404</h1>
-    <p className="text-xl text-stone-600 mb-8">Page not found</p>
-    <a href="/" className="text-emerald-900 hover:text-emerald-700 font-medium">← Back to Home</a>
-  </div>
-);
+const NotFound = () => {
+  const { pathname } = useLocation();
+  const navigate = useNavigate();
+  const [checking, setChecking] = React.useState(true);
+
+  React.useEffect(() => {
+    const checkRedirects = async () => {
+      try {
+        const { collection, query, where, getDocs, limit, doc, updateDoc, increment } = await import('firebase/firestore');
+        const { db } = await import('./lib/firebase');
+        
+        // Search for a matching redirect (case-insensitive usually handled by normalization)
+        const path = pathname.replace(/\/$/, '') || '/';
+        const q = query(collection(db, 'redirects'), where('fromPath', '==', path), limit(1));
+        const snap = await getDocs(q);
+
+        if (!snap.empty) {
+          const data = snap.docs[0].data();
+          // Hit Tracking
+          updateDoc(doc(db, 'redirects', snap.docs[0].id), {
+            hit_count: increment(1),
+            last_hit: new Date()
+          }).catch(() => {});
+          
+          navigate(data.toPath, { replace: true });
+        }
+      } catch (err) {
+        console.error('Redirect check failed:', err);
+      } finally {
+        setChecking(false);
+        // Log the dead link if we reached this point (didn't redirect)
+        const { deadLinkAPI } = await import('./lib/api');
+        deadLinkAPI.log(pathname);
+      }
+    };
+    checkRedirects();
+  }, [pathname, navigate]);
+
+  if (checking) return (
+    <div className="bg-stone-50 min-h-screen py-8">
+      <div className="max-w-4xl mx-auto px-4">
+        <PageLoader message="Verifying link..." />
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="max-w-4xl mx-auto px-4 py-16 text-center">
+      <h1 className="text-6xl font-bold text-stone-900 mb-4">404</h1>
+      <p className="text-xl text-stone-600 mb-8">Page not found</p>
+      <Link to="/" className="text-emerald-900 hover:text-emerald-700 font-medium tracking-tight">
+        ← Back to Home
+      </Link>
+    </div>
+  );
+};
 
 import ScrollToTop from './components/common/ScrollToTop';
 
