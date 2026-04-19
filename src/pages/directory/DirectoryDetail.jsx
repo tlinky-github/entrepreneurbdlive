@@ -111,10 +111,23 @@ const DirectoryDetail = () => {
       )}
       <SEO
         title={listing.seoTitle || listing.business_name}
-        description={listing.metaDescription || listing.short_description}
+        description={listing.metaDescription || listing.short_description || listing.details}
         image={listing.logo}
         type="business.business"
         faqs={listing.faqs}
+        businessData={{
+          business_name: listing.business_name,
+          logo: listing.logo,
+          email: listing.email,
+          phone: listing.phone,
+          city: listing.city,
+          socialLinks: [
+            listing.social_linkedin,
+            listing.social_twitter,
+            listing.social_facebook,
+            listing.website
+          ].filter(Boolean)
+        }}
         keywords={[listing.category, listing.city, listing.listing_type, 'Business Directory', 'Bangladesh'].filter(Boolean)}
         breadcrumbs={[
           { name: 'Home', path: '/' },

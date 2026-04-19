@@ -150,6 +150,19 @@ const EntrepreneurDetail = () => {
         type="profile"
         author={authorData?.name || "Entrepreneur BD"}
         faqs={profile.faqs}
+        profileData={{
+          name: profile.name,
+          photo: profile.photo || profile.featured_image,
+          designation: profile.designation || profile.role_title,
+          company_name: profile.company_name || profile.business_name,
+          short_bio: profile.short_bio || profile.details,
+          socialLinks: [
+            profile.linkedin || profile.social_linkedin,
+            profile.twitter || profile.social_twitter,
+            profile.facebook || profile.social_facebook,
+            profile.website || profile.company_page_url
+          ].filter(Boolean)
+        }}
         keywords={[profile.industry, profile.city, profile.role_title, profile.company_name, 'Entrepreneur', 'Bangladesh'].filter(Boolean)}
         breadcrumbs={[
           { name: 'Home', path: '/' },
