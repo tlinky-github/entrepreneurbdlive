@@ -114,11 +114,13 @@ export default async function HomePage() {
             and get discovered by the stakeholders who matter most.
           </p>
           <div className="flex flex-wrap justify-center gap-6">
+{/* 
             <Link href="/register">
               <Button size="lg" className="bg-white text-emerald-900 hover:bg-stone-200 px-10 h-16 rounded-2xl font-bold text-lg shadow-2xl transition-all hover:scale-105 active:scale-95">
                 Join the Ecosystem
               </Button>
-            </Link>
+            </Link> 
+            */}
             <Link href="/submit">
               <Button size="lg" variant="outline" className="border-emerald-100/40 text-emerald-100 hover:bg-white/10 px-10 h-16 rounded-2xl font-bold text-lg backdrop-blur-sm shadow-xl">
                 Apply for Feature
@@ -232,13 +234,15 @@ export default async function HomePage() {
             Create your profile, list your business, and connect with thousands of entrepreneurs across the nation.
           </p>
           <div className="flex flex-wrap justify-center gap-6">
+{/* 
             <Link href="/register">
               <Button size="lg" className="bg-emerald-900 text-white hover:bg-emerald-800 px-12 h-16 rounded-2xl font-bold text-lg shadow-2xl transition-all hover:scale-105 active:scale-95">
                 Create Free Account
               </Button>
-            </Link>
+            </Link> 
+            */}
             <Link href="/blog">
-              <Button size="lg" variant="outline" className="border-stone-300 text-stone-700 hover:bg-white px-12 h-16 rounded-2xl font-bold text-lg shadow-sm">
+              <Button size="lg" variant="outline" className="border-stone-300 text-stone-700 hover:bg-emerald-900 hover:text-white hover:border-emerald-900 px-12 h-16 rounded-2xl font-bold text-lg shadow-sm transition-all">
                 Join the Community
               </Button>
             </Link>
