@@ -9,9 +9,12 @@ import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { BookOpen, Lightbulb, FileText, ChevronRight } from 'lucide-react';
 
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://entrepreneurs.com.bd';
+
 export async function generateMetadata() {
   const config = SEO_CONFIG.home;
   return {
+    metadataBase: new URL(BASE_URL),
     title: config.title,
     description: config.description,
     keywords: config.keywords,
@@ -19,16 +22,19 @@ export async function generateMetadata() {
       title: config.title,
       description: config.description,
       type: 'website',
-      url: 'https://entrepreneurs.bd',
+      url: '/',
       siteName: 'Entrepreneurs BD',
       locale: 'en_BD',
       images: [
         {
-          url: 'https://images.unsplash.com/photo-1627599936744-51d288f89af4?w=1200&h=630&fit=crop',
+          url: '/og-default.png', // Use our high-fidelity production asset
           width: 1200,
           height: 630,
         }
       ],
+    },
+    alternates: {
+      canonical: '/',
     },
   };
 }

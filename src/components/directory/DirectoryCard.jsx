@@ -26,11 +26,11 @@ export default function DirectoryCard({ listing, isFeatured = false }) {
               </div>
               
               <div className="flex flex-wrap gap-2">
-                <Badge className="bg-emerald-50 text-emerald-900 border-none font-bold text-[10px] uppercase tracking-wider">
+                <Badge className="bg-emerald-50 text-emerald-900 border-none font-bold text-xs uppercase tracking-wider">
                   {listing.listing_type_name || listing.listing_type?.replace('_', ' ') || 'Enterprise'}
                 </Badge>
                 {listing.is_verified && (
-                  <Badge className="bg-blue-50 text-blue-700 border-none font-bold text-[10px] uppercase tracking-wider flex items-center gap-1">
+                  <Badge className="bg-blue-50 text-blue-700 border-none font-bold text-xs uppercase tracking-wider flex items-center gap-1">
                     <CheckCircle className="w-3 h-3" /> Verified
                   </Badge>
                 )}
@@ -56,7 +56,7 @@ export default function DirectoryCard({ listing, isFeatured = false }) {
           {/* Industry Slot */}
           {listing.category_name && (
              <div className="mb-8">
-                <Badge variant="outline" className="border-stone-200 text-stone-500 font-bold text-[10px] px-3 py-1">
+                <Badge variant="outline" className="border-stone-200 text-stone-500 font-bold text-xs px-3 py-1">
                   {listing.category_name}
                 </Badge>
              </div>

@@ -3,6 +3,7 @@ import { siteConfig, editorialPrinciples } from '@/data/mock';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import Breadcrumbs from '@/components/common/Breadcrumbs';
 import { 
   Rocket, 
   Target, 
@@ -23,16 +24,20 @@ export const metadata = {
 
 export default function AboutPage() {
   return (
-    <div className="bg-stone-50 overflow-hidden">
+    <div className="bg-stone-50 overflow-hidden min-h-screen">
+      {/* 🚀 The Perfect Breadcrumb Engine */}
+      <Breadcrumbs />
+
       {/* 🛡️ Aesthetic Deck: Hero Narrative */}
       <section className="relative py-24 lg:py-32 bg-white">
         <div className="absolute top-0 right-0 p-24 opacity-5 pointer-events-none">
            <Rocket size={400} className="text-emerald-900" />
         </div>
         <div className="max-w-7xl mx-auto px-4 text-center">
-          <Badge className="bg-emerald-100 text-emerald-900 border-none mb-8 px-6 py-2 uppercase tracking-[0.2em] text-[10px] font-black shadow-sm">
-            Our Heritage
-          </Badge>
+          <div className="inline-flex items-center gap-3 px-6 py-2 rounded-full bg-emerald-50 border border-emerald-100 mb-8 shadow-sm">
+            <Sparkles className="w-4 h-4 text-emerald-900" />
+            <span className="text-xs font-bold text-stone-900">Our Heritage</span>
+          </div>
           <h1 className="text-5xl sm:text-7xl lg:text-8xl font-black text-stone-900 mb-10 tracking-tighter leading-none">
             About <span className="text-emerald-900 font-serif italic">{siteConfig.name}</span>
           </h1>
@@ -47,7 +52,7 @@ export default function AboutPage() {
         <div className="max-w-6xl mx-auto px-4">
           <div className="grid lg:grid-cols-2 gap-20 items-center">
             <div>
-               <h2 className="text-4xl font-black text-stone-900 mb-8 tracking-tight">Our <span className="text-emerald-900">Purpose.</span></h2>
+               <h2 className="text-4xl font-black text-stone-900 mb-8 tracking-tight">Our <span className="text-emerald-900 font-serif italic">Purpose.</span></h2>
                <div className="space-y-6 text-lg text-stone-600 font-medium leading-relaxed">
                   <p>
                     {siteConfig.name} was forged to be the premier destination for visionaries seeking high-fidelity,
@@ -107,7 +112,7 @@ export default function AboutPage() {
                    </div>
                    <div className="text-center lg:text-left">
                       <h3 className="text-4xl font-black mb-2 tracking-tight">{siteConfig.founder.name}</h3>
-                      <p className="text-emerald-400 font-bold uppercase tracking-widest text-xs mb-8">{siteConfig.founder.title}</p>
+                      <p className="text-emerald-400 font-black uppercase tracking-widest text-xs mb-8">{siteConfig.founder.title}</p>
                       <div className="flex justify-center lg:justify-start gap-4">
                         <a href={siteConfig.founder.linkedin} target="_blank" className="w-12 h-12 rounded-2xl bg-emerald-900 flex items-center justify-center border border-emerald-800 hover:bg-emerald-800 transition-all">
                            <Linkedin size={20} className="text-emerald-100" />
@@ -121,9 +126,10 @@ export default function AboutPage() {
              </div>
 
              <div className="lg:col-span-2 space-y-10">
-                <Badge className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-6 py-2 uppercase tracking-[0.2em] text-[10px] font-black">
-                   Founder Spotlight
-                </Badge>
+                <div className="inline-flex items-center gap-3 px-6 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/20 shadow-sm animate-fade-in-up">
+                  <Star className="w-4 h-4 text-emerald-400 fill-current" />
+                  <span className="text-xs font-bold text-emerald-400">Founder Spotlight</span>
+                </div>
                 <div className="space-y-8 text-xl text-emerald-100/80 font-medium leading-relaxed">
                    <p>{siteConfig.founder.bio}</p>
                    <p>
@@ -149,7 +155,7 @@ export default function AboutPage() {
                            <div className="w-4 h-4 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center group-hover:bg-emerald-500 transition-all">
                               <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 group-hover:bg-white" />
                            </div>
-                           <span className="text-sm font-bold uppercase tracking-widest text-emerald-100/60 group-hover:text-white transition-all">{item}</span>
+                           <span className="text-xs font-bold uppercase tracking-widest text-emerald-100/60 group-hover:text-white transition-all">{item}</span>
                         </div>
                       ))}
                    </div>
@@ -163,8 +169,8 @@ export default function AboutPage() {
       <section className="py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4">
            <div className="text-center mb-20">
-              <h2 className="text-4xl font-black text-stone-900 mb-4 tracking-tight">The <span className="text-emerald-900 font-serif italic">Values</span> that Drive Us.</h2>
-              <p className="text-stone-500 font-bold uppercase tracking-widest text-[10px]">Guided by precision, integrity, and depth.</p>
+              <h2 className="text-4xl font-black text-stone-900 mb-4 tracking-tight leading-none">The <span className="text-emerald-900 font-serif italic">Values</span> that Drive Us.</h2>
+              <p className="text-xs font-bold text-stone-400 uppercase tracking-widest">Guided by precision, integrity, and depth.</p>
            </div>
            
            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -184,7 +190,7 @@ export default function AboutPage() {
       {/* 🛡️ Final Call to Action */}
       <section className="py-24 bg-stone-50 border-t border-stone-200/50">
         <div className="max-w-4xl mx-auto px-4 text-center">
-           <h2 className="text-4xl font-black text-stone-900 mb-8 tracking-tight">Begin your <span className="text-emerald-900">Transformation.</span></h2>
+           <h2 className="text-4xl font-black text-stone-900 mb-8 tracking-tight">Begin your <span className="text-emerald-900 font-serif italic">Transformation.</span></h2>
            <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
               <Link href="/knowledge">
                  <Button className="h-16 px-12 rounded-2xl bg-emerald-900 hover:bg-emerald-800 text-white font-black uppercase tracking-widest text-xs shadow-2xl shadow-emerald-950/20 min-w-[220px]">
@@ -193,7 +199,7 @@ export default function AboutPage() {
               </Link>
               <Link href="/contact">
                  <Button variant="outline" className="h-16 px-12 rounded-2xl border-emerald-900 text-emerald-900 hover:bg-emerald-50 font-black uppercase tracking-widest text-xs min-w-[220px]">
-                    Contact Hub &rarr;
+                    Join The Community →
                  </Button>
               </Link>
            </div>

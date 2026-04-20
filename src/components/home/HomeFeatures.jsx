@@ -25,7 +25,7 @@ export default function HomeFeatures() {
     <section className="py-20 lg:py-28 bg-stone-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16 animate-fade-in">
-          <Badge className="bg-emerald-100 text-emerald-900 mb-4 px-4 py-1 border-none font-bold uppercase tracking-wider text-[10px]">
+          <Badge className="bg-emerald-100 text-emerald-900 mb-4 px-4 py-1 border-none font-bold uppercase tracking-wider text-xs">
             Platform Features
           </Badge>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-stone-900 mb-4 tracking-tight">

@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Input } from '@/components/ui/input';
 import { Search, Filter, Building2, LayoutGrid } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Select,
   SelectContent,
@@ -10,12 +11,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@/components/ui/tabs';
 
 export default function DirectoryFilters({ categories = [], listingTypes = [] }) {
   const router = useRouter();
@@ -37,29 +32,40 @@ export default function DirectoryFilters({ categories = [], listingTypes = [] })
     router.push(`/directory?${params.toString()}`, { scroll: false });
   };
 
+  const allTiers = [{ id: 'all', name: 'All Tiers', slug: 'all' }, ...listingTypes];
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* 🛡️ Listing Type Selection (Tabs on Desktop, Select on Mobile) */}
-      <div className="mb-8">
+      {/* 🛡️ Listing Type Selection (High-Fidelity Sliding Tabs) */}
+      <div className="mb-8 overflow-x-auto pb-2 scrollbar-hide">
         <div className="hidden sm:block">
-          <Tabs value={typeSlug} onValueChange={(v) => updateParams({ type: v })}>
-            <TabsList className="bg-white border border-stone-200 p-1 rounded-2xl h-14 shadow-sm">
-              <TabsTrigger value="all" className="data-[state=active]:bg-emerald-900 data-[state=active]:text-white rounded-xl px-8 h-full font-bold transition-all">
-                <LayoutGrid className="w-4 h-4 mr-2" /> All Tiers
-              </TabsTrigger>
-              {listingTypes.map((type) => (
-                <TabsTrigger 
-                  key={type.id} 
-                  value={type.slug} 
-                  className="data-[state=active]:bg-emerald-900 data-[state=active]:text-white rounded-xl px-8 h-full font-bold transition-all"
-                >
-                  {type.name}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
+           <div className="inline-flex bg-white border border-stone-200 p-1.5 rounded-2xl h-14 shadow-sm relative">
+             {allTiers.map((type) => {
+               const isActive = typeSlug === type.slug;
+               return (
+                 <button
+                   key={type.id}
+                   onClick={() => updateParams({ type: type.slug })}
+                   className={`relative px-8 h-full flex items-center justify-center text-sm font-bold transition-colors duration-300 z-10 whitespace-nowrap ${
+                     isActive ? 'text-white' : 'text-stone-500 hover:text-stone-900'
+                   }`}
+                 >
+                   {isActive && (
+                     <motion.div
+                       layoutId="activeTabBackground"
+                       className="absolute inset-0 bg-emerald-900 rounded-xl z-[-1] shadow-lg shadow-emerald-900/20"
+                       transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                     />
+                   )}
+                   {type.slug === 'all' && <LayoutGrid className={`w-4 h-4 mr-2 ${isActive ? 'text-emerald-300' : 'text-stone-400'}`} />}
+                   {type.name}
+                 </button>
+               );
+             })}
+           </div>
         </div>
         
+        {/* Mobile Selection Port */}
         <div className="sm:hidden">
           <Select value={typeSlug} onValueChange={(v) => updateParams({ type: v })}>
             <SelectTrigger className="w-full h-12 rounded-xl bg-white border-stone-200">
@@ -87,7 +93,7 @@ export default function DirectoryFilters({ categories = [], listingTypes = [] })
                 const timeoutId = setTimeout(() => updateParams({ search: value }), 500);
                 return () => clearTimeout(timeoutId);
             }}
-            className="pl-12 h-12 bg-white border-stone-200 rounded-xl focus:border-emerald-900 focus:ring-emerald-900/20"
+            className="pl-12 h-12 bg-white border-stone-200 rounded-xl focus:border-emerald-900 focus:ring-emerald-900/20 text-sm"
           />
         </div>
         
@@ -98,13 +104,13 @@ export default function DirectoryFilters({ categories = [], listingTypes = [] })
           <SelectTrigger className="w-full sm:w-56 h-12 bg-white border-stone-200 rounded-xl">
             <div className="flex items-center gap-2">
               <Filter className="w-4 h-4 text-emerald-900" />
-              <SelectValue placeholder="Industry Sector" />
+              <SelectValue placeholder="Industry Sector" className="text-sm" />
             </div>
           </SelectTrigger>
           <SelectContent className="rounded-xl border-stone-200">
-            <SelectItem value="all">All Sectors</SelectItem>
+            <SelectItem value="all" className="text-sm">All Sectors</SelectItem>
             {categories.map((cat) => (
-              <SelectItem key={cat.id} value={cat.slug || String(cat.id)}>
+              <SelectItem key={cat.id} value={cat.slug || String(cat.id)} className="text-sm">
                 {cat.name}
               </SelectItem>
             ))}

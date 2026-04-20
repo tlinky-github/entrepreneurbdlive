@@ -37,10 +37,10 @@ const AdminShell = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
-    if (!isAdmin) {
+    if (!loading && !isAdmin) {
       router.push('/');
     }
-  }, [isAdmin, router]);
+  }, [isAdmin, loading, router]);
 
   const menuItems = [
     { href: '/admin', label: 'Dashboard', icon: LayoutDashboard, exact: true },
@@ -69,6 +69,22 @@ const AdminShell = ({ children }) => {
     logout();
     router.push('/');
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-stone-100 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-6">
+          <div className="w-16 h-16 bg-emerald-900 rounded-2xl flex items-center justify-center animate-pulse shadow-2xl shadow-emerald-900/20">
+            <span className="text-white font-bold text-3xl">e</span>
+          </div>
+          <div className="space-y-2 text-center">
+            <p className="text-[10px] font-black text-stone-400 uppercase tracking-[0.2em] animate-pulse">Identity Hub</p>
+            <p className="text-sm font-bold text-stone-600">Authenticating Narrative...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!isAdmin) return null;
 

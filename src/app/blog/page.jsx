@@ -4,12 +4,13 @@ import BlogFilters from '@/components/blog/BlogFilters';
 import BlogPostCard from '@/components/blog/BlogPostCard';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Search } from 'lucide-react';
+import Breadcrumbs from '@/components/common/Breadcrumbs';
+import { Search, Sparkles } from 'lucide-react';
 import Link from 'next/link';
+import { getBreadcrumbSchema } from '@/lib/seo-schemas';
 
 export async function generateMetadata({ searchParams }) {
-  const search = searchParams.search || '';
-  const categoryId = searchParams.category || '';
+  const { search = '', category: categoryId = '' } = await searchParams;
   const config = SEO_CONFIG.blog;
 
   let title = config.title;
@@ -23,8 +24,7 @@ export async function generateMetadata({ searchParams }) {
 }
 
 export default async function BlogPage({ searchParams }) {
-  const search = searchParams.search || '';
-  const categoryId = searchParams.category || '';
+  const { search = '', category: categoryId = '' } = await searchParams;
 
   // Parallel Data Ingestion
   const [postsRes, catsRes] = await Promise.all([
@@ -43,8 +43,18 @@ export default async function BlogPage({ searchParams }) {
   const featuredPost = posts.find(p => p.is_featured);
   const regularPosts = posts.filter(p => !p.is_featured || posts.indexOf(p) > 0);
 
+  const breadcrumbSchema = getBreadcrumbSchema([
+    { name: 'Home', path: '/' },
+    { name: 'Blog', path: '/blog' }
+  ]);
+
   return (
     <div className="bg-stone-50 min-h-screen">
+      {breadcrumbSchema && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />}
+      
+      {/* 🚀 The Perfect Breadcrumb Engine */}
+      <Breadcrumbs />
+
       {/* 🛡️ Editorial Header */}
       <div className="bg-emerald-900 py-20 lg:py-32 relative overflow-hidden">
         <div className="absolute inset-0 opacity-10">
@@ -53,10 +63,11 @@ export default async function BlogPage({ searchParams }) {
           }} />
         </div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
-          <Badge className="bg-emerald-800 text-emerald-100 mb-8 px-5 py-2 border-none font-bold uppercase tracking-widest text-[10px]">
-            Platform Insights
-          </Badge>
-          <h1 className="text-4xl lg:text-6xl font-bold text-white mb-8 tracking-tight">
+          <div className="inline-flex items-center gap-3 px-6 py-2 rounded-full bg-emerald-800/50 border border-emerald-700/50 mb-8 shadow-sm">
+            <Sparkles className="w-4 h-4 text-emerald-300" />
+            <span className="text-xs font-bold text-emerald-50">Platform Insights</span>
+          </div>
+          <h1 className="text-4xl lg:text-6xl font-black text-white mb-8 tracking-tight">
             Insights & <span className="text-emerald-400">Stories</span>
           </h1>
           <p className="text-xl text-emerald-100/80 max-w-2xl mx-auto font-medium leading-relaxed">
@@ -84,7 +95,7 @@ export default async function BlogPage({ searchParams }) {
             {(search || categoryId) && (
               <Link href="/blog">
                 <Button variant="outline" className="h-14 px-10 rounded-2xl border-stone-300 font-bold hover:bg-emerald-900 hover:text-white hover:border-emerald-900 transition-all">
-                  Reset Discovery Hub
+                   Reset Discovery Hub
                 </Button>
               </Link>
             )}

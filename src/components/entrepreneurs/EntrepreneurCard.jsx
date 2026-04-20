@@ -49,19 +49,19 @@ export default function EntrepreneurCard({ profile, isFeatured = false }) {
           {/* 🛡️ Context Deck */}
           <div className="flex flex-wrap justify-center gap-2 mb-6">
             {profile.industry && (
-              <Badge variant="outline" className="border-stone-100 text-stone-500 font-bold text-[10px] px-3">
+              <Badge variant="outline" className="border-stone-100 text-stone-500 font-bold text-xs px-3">
                 {profile.industry}
               </Badge>
             )}
             {profile.startup_stage && (
-               <Badge className="bg-emerald-50 text-emerald-800 border-none font-bold text-[10px]">
+               <Badge className="bg-emerald-50 text-emerald-800 border-none font-bold text-xs">
                  {profile.startup_stage}
                </Badge>
             )}
           </div>
 
           {(profile.city || profile.headquarters) && (
-            <div className="flex items-center justify-center gap-2 text-stone-400 font-bold text-[10px] mb-8 uppercase tracking-widest">
+            <div className="flex items-center justify-center gap-2 text-stone-400 font-bold text-xs mb-8 uppercase tracking-widest">
               <MapPin className="w-3.5 h-3.5 text-emerald-900" />
               {profile.headquarters || profile.city}
             </div>
@@ -77,7 +77,7 @@ export default function EntrepreneurCard({ profile, isFeatured = false }) {
           </div>
           
           <div className="mt-6">
-             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-300 group-hover:text-emerald-900 transition-colors flex items-center gap-2">
+             <span className="text-xs font-black uppercase tracking-[0.2em] text-stone-300 group-hover:text-emerald-900 transition-colors flex items-center gap-2">
                 Discovery <ArrowRight className="w-3.5 h-3.5" />
              </span>
           </div>

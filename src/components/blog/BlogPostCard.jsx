@@ -72,8 +72,8 @@ export default function BlogPostCard({ post, isFeatured = false }) {
               category={post.category_name} 
             />
           )}
-          {post.category_name && (
-            <Badge className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm text-emerald-900 border-none font-bold text-[10px] px-3">
+          {post.featured_image && post.category_name && (
+            <Badge className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm text-emerald-900 border-none font-bold text-xs px-3">
               {post.category_name}
             </Badge>
           )}

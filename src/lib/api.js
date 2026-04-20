@@ -58,6 +58,7 @@ const fileToBase64 = (file) => new Promise((resolve, reject) => {
 // --- Blog Posts API ---
 export const postAPI = {
   list: async (params = {}) => {
+    if (!db) return { data: [] };
     try {
       let constraints = [];
       
@@ -119,6 +120,7 @@ export const postAPI = {
     }
   },
   get: async (slug) => {
+    if (!db) return { data: null };
     try {
       const q = query(collection(db, 'posts'), where('slug', '==', slug), limit(1));
       const snapshot = await getDocs(q);
@@ -141,6 +143,7 @@ export const postAPI = {
 // --- Entrepreneurs (Profiles) API ---
 export const profileAPI = {
   list: async (params = {}) => {
+    if (!db) return { data: [] };
     try {
       let constraints = [];
       
@@ -179,6 +182,7 @@ export const profileAPI = {
     }
   },
   get: async (slug) => {
+    if (!db) return { data: null };
     try {
       const q = query(collection(db, 'profiles'), where('slug', '==', slug), limit(1));
       const snapshot = await getDocs(q);
@@ -218,6 +222,7 @@ export const profileAPI = {
 // --- Business Directory (Listings) API ---
 export const listingAPI = {
   list: async (params = {}) => {
+    if (!db) return { data: [] };
     try {
       let constraints = [];
       
@@ -261,6 +266,7 @@ export const listingAPI = {
     }
   },
   get: async (slug) => {
+    if (!db) return { data: null };
     try {
       const q = query(collection(db, 'listings'), where('slug', '==', slug), limit(1));
       const snapshot = await getDocs(q);
@@ -300,6 +306,7 @@ export const listingAPI = {
 // --- General Content API (Used by ContentEditorPanel) ---
 export const contentAPI = {
   list: async (type) => {
+    if (!db) return { data: [] };
     const collectionMap = {
       blog: 'posts',
       entrepreneurs: 'profiles',
@@ -311,6 +318,7 @@ export const contentAPI = {
     return { data: snapshot.docs.map(docToData) };
   },
   get: async (type, id) => {
+    if (!db) return { data: null };
     const collectionMap = {
       blog: 'posts',
       entrepreneurs: 'profiles',
@@ -761,6 +769,7 @@ export const adminAPI = {
 // Taxonomy API (Categories, Industries, Cities)
 export const taxonomyAPI = {
   list: async (type) => {
+    if (!db) return { data: [] };
     const colMap = {
       categories: 'categories',
       blog_categories: 'blog_categories',
@@ -789,6 +798,7 @@ export const taxonomyAPI = {
 // --- Authors API ---
 export const authorAPI = {
   list: async () => {
+    if (!db) return { data: [] };
     try {
       const q = query(collection(db, 'authors'), orderBy('name', 'asc'));
       const snapshot = await getDocs(q);
@@ -799,6 +809,7 @@ export const authorAPI = {
     }
   },
   get: async (id) => {
+    if (!db) return { data: null };
     try {
       const docSnap = await getDoc(doc(db, 'authors', id));
       return { data: docToData(docSnap) };
@@ -808,6 +819,7 @@ export const authorAPI = {
     }
   },
   getBySlug: async (slug) => {
+    if (!db) return { data: null };
     try {
       const q = query(collection(db, 'authors'), where('slug', '==', slug), limit(1));
       const snapshot = await getDocs(q);
@@ -846,6 +858,7 @@ export const authorAPI = {
 // --- Media Library API ---
 export const mediaAPI = {
   list: async (params = {}) => {
+    if (!db) return { data: [] };
     try {
       let q = collection(db, 'media');
       

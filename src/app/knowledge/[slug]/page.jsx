@@ -5,6 +5,7 @@ import { contentAPI } from '@/lib/api';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import Breadcrumbs from '@/components/common/Breadcrumbs';
 import { 
   Accordion, 
   AccordionContent, 
@@ -40,7 +41,10 @@ async function getArticleData(slug) {
 }
 
 export async function generateMetadata({ params }) {
-  const article = await getArticleData(params.slug);
+  const { slug } = await params;
+  if (!slug) return { title: 'Intelligence Not Found' };
+  
+  const article = await getArticleData(slug);
   if (!article) return { title: 'Intelligence Not Found' };
   
   return {
@@ -50,7 +54,10 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function KnowledgeDetailPage({ params }) {
-  const article = await getArticleData(params.slug);
+  const { slug } = await params;
+  if (!slug) notFound();
+  
+  const article = await getArticleData(slug);
   if (!article) notFound();
 
   const isMock = !article.source && (pillarPages.some(p => p.id === article.id) || pillarPagesPart2.some(p => p.id === article.id));
@@ -64,18 +71,8 @@ export default async function KnowledgeDetailPage({ params }) {
 
   return (
     <div className="bg-white min-h-screen pb-24">
-      {/* 🛡️ Aesthetic Breadcrumb Deck */}
-      <div className="bg-stone-50 border-b border-stone-200/60 sticky top-0 z-40 backdrop-blur-md bg-stone-50/80">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <nav className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-stone-400">
-            <Link href="/" className="hover:text-emerald-900 transition-colors">Home</Link>
-            <ChevronRight size={12} className="text-stone-300" />
-            <Link href="/knowledge" className="hover:text-emerald-900 transition-colors">Knowledge Hub</Link>
-            <ChevronRight size={12} className="text-stone-300" />
-            <span className="text-emerald-900 truncate max-w-[150px] sm:max-w-none">{article.title}</span>
-          </nav>
-        </div>
-      </div>
+      {/* 🚀 The Perfect Breadcrumb Engine */}
+      <Breadcrumbs />
 
       {/* 🛡️ Narrative Header Section */}
       <section className="py-20 lg:py-28 bg-stone-50 overflow-hidden relative">
@@ -83,9 +80,9 @@ export default async function KnowledgeDetailPage({ params }) {
            <Lightbulb size={400} className="text-emerald-900" />
         </div>
         <div className="max-w-5xl mx-auto px-4 relative z-10 text-center">
-          <div className="inline-flex items-center gap-3 px-6 py-2 rounded-full bg-white border border-stone-200 mb-10 shadow-sm animate-fade-in-up">
+          <div className="inline-flex items-center gap-3 px-6 py-2 rounded-full bg-white border border-stone-200/60 mb-10 shadow-sm animate-fade-in-up">
             <BookOpen className="w-4 h-4 text-emerald-900" />
-            <span className="text-[10px] font-black text-emerald-900 uppercase tracking-[0.2em]">Strategy Insight</span>
+            <span className="text-xs font-bold text-stone-900">Strategy Insight</span>
           </div>
           <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black text-stone-900 mb-8 tracking-tighter leading-none">
             {article.title}
@@ -107,8 +104,8 @@ export default async function KnowledgeDetailPage({ params }) {
             {/* Table of Contents - Sidebar */}
             <aside className="lg:col-span-3 hidden lg:block">
               <div className="sticky top-32">
-                <h3 className="text-xs font-black text-stone-900 mb-8 uppercase tracking-[0.2em] flex items-center gap-3">
-                   <Target size={16} className="text-emerald-700" /> In This Article
+                <h3 className="text-sm font-black text-stone-900 mb-8 uppercase tracking-widest flex items-center gap-3">
+                   <Target size={18} className="text-emerald-700" /> In This Article
                 </h3>
                 <nav className="space-y-4">
                   <a href="#introduction" className="block text-sm font-bold text-stone-400 hover:text-emerald-900 py-1 transition-all hover:translate-x-1">00 Introduction</a>
@@ -118,7 +115,7 @@ export default async function KnowledgeDetailPage({ params }) {
                     </a>
                   ))}
                   {faqs.length > 0 && (
-                    <a href="#faqs" className="block text-sm font-bold text-stone-400 hover:text-emerald-900 py-1 transition-all hover:translate-x-1 uppercase tracking-widest text-[11px]">
+                    <a href="#faqs" className="block text-sm font-bold text-stone-400 hover:text-emerald-900 py-1 transition-all hover:translate-x-1 uppercase tracking-widest text-xs">
                        Intellectual FAQs
                     </a>
                   )}
@@ -131,7 +128,7 @@ export default async function KnowledgeDetailPage({ params }) {
                    <h4 className="text-lg font-black mb-4 tracking-tight">Need Strategy?</h4>
                    <p className="text-emerald-100/70 text-sm mb-8 font-medium leading-relaxed">Discover battle-tested guides for founders.</p>
                    <Link href="/resources/guides">
-                      <Button variant="outline" className="w-full bg-white/5 border-white/20 hover:bg-white/10 text-white font-black text-[10px] uppercase tracking-widest h-12 rounded-xl">
+                      <Button variant="outline" className="w-full bg-white/5 border-white/20 hover:bg-white/10 text-white font-black text-xs uppercase tracking-widest h-12 rounded-xl">
                         Browse Guides
                       </Button>
                    </Link>
@@ -176,7 +173,7 @@ export default async function KnowledgeDetailPage({ params }) {
                            </div>
                            <div>
                               <h2 className="text-3xl font-black text-stone-900 tracking-tight leading-none mb-2 font-serif italic">Operational FAQs</h2>
-                              <p className="text-stone-400 font-bold uppercase tracking-widest text-[10px]">Strategic answers for aspiring founders</p>
+                              <p className="text-stone-400 font-bold uppercase tracking-widest text-xs">Strategic answers for founders</p>
                            </div>
                         </div>
                         
@@ -211,7 +208,7 @@ export default async function KnowledgeDetailPage({ params }) {
                     <Link href={`/knowledge/${prevArticle.id}`} className="group p-10 rounded-[2.5rem] border border-stone-100 bg-stone-50/50 hover:bg-white hover:border-emerald-200 hover:shadow-xl hover:shadow-emerald-900/5 transition-all">
                        <div className="flex items-center gap-3 text-stone-400 mb-6 group-hover:text-emerald-600 transition-colors">
                           <ArrowLeft size={16} />
-                          <span className="text-[10px] font-black uppercase tracking-[0.2em]">Previous Unit</span>
+                          <span className="text-xs font-black uppercase tracking-widest">Previous Unit</span>
                        </div>
                        <p className="text-xl font-black text-stone-900 group-hover:text-emerald-900 transition-colors line-clamp-2 leading-tight">
                           {prevArticle.title}
@@ -222,7 +219,7 @@ export default async function KnowledgeDetailPage({ params }) {
                   {nextArticle ? (
                     <Link href={`/knowledge/${nextArticle.id}`} className="group p-10 rounded-[2.5rem] border border-stone-100 bg-stone-50/50 hover:bg-white hover:border-emerald-200 hover:shadow-xl hover:shadow-emerald-900/5 transition-all text-right">
                        <div className="flex items-center justify-end gap-3 text-stone-400 mb-6 group-hover:text-emerald-600 transition-colors">
-                          <span className="text-[10px] font-black uppercase tracking-[0.2em]">Next Strategy</span>
+                          <span className="text-xs font-black uppercase tracking-widest">Next Strategy</span>
                           <ArrowRight size={16} />
                        </div>
                        <p className="text-xl font-black text-stone-900 group-hover:text-emerald-900 transition-colors line-clamp-2 leading-tight">

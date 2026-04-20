@@ -27,7 +27,9 @@ export default function PublicRichEditor({ value, onChange, placeholder = 'Write
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
-        heading: false, // Use our custom Heading config
+        heading: false,
+        code: false,
+        codeBlock: false,
       }),
       Heading.configure({
         levels: [2, 3],
@@ -37,7 +39,7 @@ export default function PublicRichEditor({ value, onChange, placeholder = 'Write
         openOnClick: false,
         HTMLAttributes: {
           class: 'text-emerald-900 underline font-bold tracking-tight',
-          rel: 'nofollow noopener noreferrer', // Force nofollow for public submissions
+          rel: 'nofollow noopener noreferrer',
         },
       }),
     ],

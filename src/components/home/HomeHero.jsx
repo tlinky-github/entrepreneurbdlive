@@ -37,7 +37,7 @@ export default function HomeHero() {
               <Link href="/submit">
                 <Button
                   size="lg"
-                  className="bg-white text-emerald-900 hover:bg-stone-100 px-8 h-14 rounded-xl font-bold shadow-xl transition-all hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95"
+                  className="bg-white text-emerald-900 hover:bg-stone-100 px-8 h-14 rounded-[2rem] font-bold shadow-xl transition-all hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95"
                 >
                   <Plus className="mr-2 w-5 h-5" />
                   Get Featured
@@ -47,7 +47,7 @@ export default function HomeHero() {
                 <Button
                   size="lg"
                   variant="outline"
-                  className="border-white/30 text-white hover:bg-white/10 px-8 h-14 rounded-xl backdrop-blur-sm transition-all"
+                  className="border-white/30 text-white hover:bg-white/10 px-8 h-14 rounded-[2rem] backdrop-blur-sm transition-all"
                 >
                   Explore Ecosystem
                 </Button>
@@ -61,15 +61,15 @@ export default function HomeHero() {
               <img
                 src="https://images.unsplash.com/photo-1627599936744-51d288f89af4?w=800&h=600&fit=crop"
                 alt="Bangladeshi entrepreneurs collaborating"
-                className="relative rounded-2xl shadow-2xl border border-white/10 brightness-110"
+                className="relative rounded-[2rem] shadow-2xl border border-white/10 brightness-110"
               />
-              <div className="absolute -bottom-6 -left-6 bg-white p-6 rounded-2xl shadow-2xl border border-stone-100 flex items-center gap-4 animate-bounce-slow">
+              <div className="absolute -bottom-6 -left-6 bg-white p-4 rounded-[2rem] shadow-2xl border border-stone-100 flex items-center gap-4 animate-bounce-slow">
                 <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center">
                   <span className="text-emerald-900 font-bold text-xl">1M</span>
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-stone-900">Ecosystem Mission</p>
-                  <p className="text-[10px] text-stone-500">Empowering Founders by 2030</p>
+                  <p className="text-base font-bold text-stone-900 leading-tight">Ecosystem Mission</p>
+                  <p className="text-xs text-stone-500 font-medium">Empowering Founders by 2030</p>
                 </div>
               </div>
             </div>

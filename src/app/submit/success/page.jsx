@@ -1,5 +1,6 @@
 'use client';
 
+import React, { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -7,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { CheckCircle2, ArrowRight, Building2, User, Sparkles, Network } from 'lucide-react';
 import Link from 'next/link';
 
-export default function SubmissionSuccessPage() {
+function SuccessContent() {
   const searchParams = useSearchParams();
   const name = searchParams.get('name') || 'Innovator';
   const type = searchParams.get('type') || 'entrepreneur';
@@ -112,5 +113,13 @@ export default function SubmissionSuccessPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SubmissionSuccessPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-stone-50 flex items-center justify-center font-black text-emerald-900 uppercase tracking-widest animate-pulse">Initializing Identity...</div>}>
+      <SuccessContent />
+    </Suspense>
   );
 }

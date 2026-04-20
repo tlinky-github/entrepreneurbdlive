@@ -1,110 +1,94 @@
+import React from 'react';
 import Link from 'next/link';
-import { BookOpen, ChevronRight, ArrowRight } from 'lucide-react';
-import { guides as mockGuides } from '@/data/mock';
-import { guidesAPI } from '@/lib/api';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { BookOpen, ChevronRight, ArrowRight, Target, Sparkles, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import Breadcrumbs from '@/components/common/Breadcrumbs';
+import { guidesAPI } from '@/lib/api';
+import { guides as mockGuides } from '@/data/mock';
 
 export const metadata = {
-  title: "Practical Business Guides | Entrepreneurs BD",
-  description: "Frameworks and actionable guides for starting and scaling your business in Bangladesh.",
+  title: 'Practical Business Guides | Frameworks for Success',
+  description: 'Structured frameworks and tactical considerations for navigating common entrepreneurial challenges. Navigate with confidence.',
 };
 
 export default async function GuidesPage() {
-  // --- SERVER DATA FETCHING ---
-  const res = await guidesAPI.list().catch(() => ({ data: [] }));
-  const firestoreGuides = (res.data || []).filter(g => g.status === 'published');
-  
+  let firestoreGuides = [];
+
+  try {
+    const res = await guidesAPI.list();
+    firestoreGuides = (res.data || []).filter(g => g.status === 'published');
+  } catch (error) {
+    console.error('[Guides Hub] Firestore ingestion failed:', error);
+  }
+
+  // 🛡️ Data Ingestion Protocol: Hybrid Firestore + Mock
   const allGuides = [...firestoreGuides, ...mockGuides];
 
-  // --- SCHEMAS ---
-  const siteUrl = "https://entrepreneurs.bd";
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "CollectionPage",
-    "name": "Practical Business Guides Hub",
-    "description": "Actionable frameworks for entrepreneurs.",
-    "url": `${siteUrl}/resources/guides`,
-    "mainEntity": {
-      "@type": "ItemList",
-      "itemListElement": allGuides.map((g, i) => ({
-        "@type": "ListItem",
-        "position": i + 1,
-        "url": `${siteUrl}/resources/guides/${g.id || g.slug}`,
-        "name": g.title
-      }))
-    }
-  };
-
   return (
-    <div className="bg-stone-50 min-h-screen">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      
-      {/* Hero Section */}
-      <section className="py-24 bg-emerald-950 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#fff_1px,transparent_0)] bg-[size:25px_25px]" />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-          <div className="max-w-3xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-900/50 border border-emerald-800 mb-6 shadow-sm">
-              <BookOpen className="w-4 h-4 text-emerald-100" />
-              <span className="text-sm font-black uppercase tracking-widest text-emerald-100">Practical Resources</span>
-            </div>
-            <h1 className="text-4xl sm:text-5xl lg:text-7xl font-black text-white mb-6 tracking-tighter">
-              Founder Playbooks
-            </h1>
-            <p className="text-xl text-emerald-100/80 leading-relaxed font-medium">
-              Structured frameworks and step-by-step considerations for 
-              navigating the toughest challenges in business building.
-            </p>
+    <div className="bg-white min-h-screen pb-24">
+      {/* 🛡️ Aesthetic Breadcrumb Deck */}
+      <Breadcrumbs />
+
+      {/* 🛡️ Narrative Header */}
+      <section className="py-20 lg:py-32 bg-stone-50 relative overflow-hidden">
+        <div className="absolute top-0 right-0 p-24 opacity-5 pointer-events-none">
+           <BookOpen size={400} className="text-emerald-900" />
+        </div>
+        <div className="max-w-7xl mx-auto px-4 relative z-10 text-center">
+          <div className="inline-flex items-center gap-2 px-6 py-2 rounded-full bg-white border border-stone-200 mb-8 shadow-sm">
+            <ShieldCheck className="w-4 h-4 text-emerald-900" />
+            <span className="text-[10px] font-black text-emerald-900 uppercase tracking-widest">Growth Frameworks</span>
           </div>
+          <h1 className="text-5xl sm:text-7xl font-black text-stone-900 mb-8 tracking-tighter leading-tight">
+            Practical Guides
+          </h1>
+          <p className="text-xl text-stone-500 font-medium max-w-2xl mx-auto leading-relaxed">
+            Structured frameworks for navigating the most complex entrepreneurial inflection points.
+          </p>
         </div>
       </section>
 
-      {/* Guides Engine */}
-      <section className="py-20 lg:py-32 bg-white">
+      {/* 🛡️ Guides Listing Interaction */}
+      <section className="py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto space-y-12">
-            {allGuides.map((guide) => (
-              <Card key={guide.id} className="border-none shadow-xl shadow-stone-200/50 rounded-[3rem] overflow-hidden group">
-                <CardHeader className="bg-stone-900 border-none p-10 md:p-12 relative overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-r from-emerald-950 to-stone-900 opacity-90" />
-                  <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
-                    <div className="w-20 h-20 rounded-3xl bg-emerald-100 flex items-center justify-center flex-shrink-0 group-hover:rotate-6 transition-transform">
-                      <BookOpen className="w-10 h-10 text-emerald-900" />
+            {allGuides.map((guide, index) => (
+              <Card key={guide.id || index} className="border-none shadow-2xl shadow-stone-200/50 bg-white rounded-[3rem] overflow-hidden group hover:translate-y-[-4px] transition-all duration-300">
+                <CardHeader className="p-10 lg:p-14 bg-stone-50/50 border-b border-stone-100 group-hover:bg-stone-50 transition-colors">
+                  <div className="flex flex-col md:flex-row md:items-center gap-10">
+                    <div className="w-20 h-20 bg-emerald-900 rounded-[2rem] flex items-center justify-center text-white shadow-2xl shadow-emerald-900/20 group-hover:scale-110 transition-transform">
+                      <BookOpen size={36} />
                     </div>
-                    <div className="text-center md:text-left">
-                      <CardTitle className="text-3xl font-black text-white mb-3">
+                    <div className="flex-1">
+                      <CardTitle className="text-3xl font-black text-stone-900 tracking-tight mb-4">
                         {guide.title}
                       </CardTitle>
-                      <CardDescription className="text-emerald-100/60 text-lg font-medium">
+                      <CardDescription className="text-xl text-stone-500 font-medium leading-relaxed">
                         {guide.description}
                       </CardDescription>
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="pt-12 p-10 md:p-16">
-                  <div className="grid gap-10">
-                    {(Array.isArray(guide.content) ? guide.content : []).map((section, idx) => (
-                      <div key={idx} className="flex gap-6 group/item">
+                <CardContent className="p-10 lg:p-14">
+                  <div className="space-y-12">
+                    {guide.content.map((section, sectionIndex) => (
+                      <div key={sectionIndex} className="flex gap-8 group/section">
                         <div className="flex-shrink-0">
-                          <div className="w-10 h-10 rounded-2xl bg-stone-50 border border-stone-100 flex items-center justify-center font-black text-emerald-900 shadow-sm group-hover/item:bg-emerald-900 group-hover/item:text-white transition-all">
-                             {String(idx + 1).padStart(2, '0')}
+                          <div className="w-12 h-12 rounded-2xl bg-stone-100 flex items-center justify-center text-stone-400 font-black text-lg group-hover/section:bg-emerald-900 group-hover/section:text-white transition-all">
+                            {sectionIndex + 1}
                           </div>
                         </div>
                         <div>
-                          <h4 className="text-xl font-black text-stone-900 mb-2">
+                          <h4 className="text-xl font-black text-stone-900 mb-4 tracking-tight group-hover/section:text-emerald-900 transition-colors">
                             {section.heading}
                           </h4>
-                          <p className="text-stone-600 leading-relaxed text-lg font-medium">
+                          <p className="text-lg text-stone-500 font-medium leading-relaxed">
                             {section.text}
                           </p>
                         </div>
                       </div>
                     ))}
-                  </div>
-                  
-                  <div className="mt-16 pt-10 border-t border-stone-100 flex justify-center">
-                     <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">Playbook Verified by Editorial Board</span>
                   </div>
                 </CardContent>
               </Card>
@@ -113,33 +97,29 @@ export default async function GuidesPage() {
         </div>
       </section>
 
-      {/* Advisory Note */}
-      <section className="py-12 bg-stone-50">
-        <div className="max-w-7xl mx-auto px-4 text-center">
-            <p className="text-sm text-stone-400 font-bold max-w-2xl mx-auto italic">
-              Disclaimer: These guides provide general frameworks. Outcomes depend on execution and market conditions. 
-              Always adapt these to your specific business context.
+      {/* 🛡️ Narrative Footer */}
+      <section className="py-24 bg-emerald-900 mt-12 border-t border-emerald-800 overflow-hidden relative">
+         <div className="absolute top-0 right-0 p-24 opacity-5 pointer-events-none text-white">
+            <Sparkles size={400} />
+         </div>
+         <div className="max-w-4xl mx-auto px-4 text-center relative z-10">
+            <h2 className="text-4xl font-black text-white mb-8 tracking-tighter">Strategic <span className="text-emerald-300">Hardening.</span></h2>
+            <p className="text-xl text-emerald-100/70 font-medium leading-relaxed mb-12">
+               Our guides are tactical snapshots of complex business processes. Leverage them to harden your strategy, but always maintain operational agility.
             </p>
-        </div>
-      </section>
-
-      {/* Cross-Link Hub */}
-      <section className="py-24 bg-white border-t border-stone-100">
-        <div className="max-w-7xl mx-auto px-4 text-center">
-            <h2 className="text-2xl font-black text-stone-900 mb-12 uppercase tracking-widest">More Resources</h2>
-            <div className="flex flex-col sm:flex-row justify-center gap-6">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
                <Link href="/knowledge">
-                  <Button variant="ghost" className="text-stone-400 font-black tracking-widest text-[10px] uppercase hover:text-emerald-900 transition-colors">
-                    &larr; Knowledge Hub
+                  <Button className="h-16 px-12 rounded-2xl bg-white text-emerald-900 hover:bg-stone-100 font-black uppercase tracking-widest text-xs shadow-2xl min-w-[220px]">
+                     Knowledge Hub Home
                   </Button>
                </Link>
                <Link href="/resources/faqs">
-                  <Button variant="ghost" className="text-stone-400 font-black tracking-widest text-[10px] uppercase hover:text-emerald-900 transition-colors">
-                    Startup FAQs &rarr;
+                  <Button variant="outline" className="h-16 px-12 rounded-2xl border-white/20 bg-white/5 text-white hover:bg-white/10 font-black uppercase tracking-widest text-xs min-w-[220px]">
+                     Browse FAQs &rarr;
                   </Button>
                </Link>
             </div>
-        </div>
+         </div>
       </section>
     </div>
   );

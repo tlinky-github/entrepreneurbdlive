@@ -3,12 +3,14 @@ import { SEO_CONFIG } from '@/data/seo-config';
 import DirectoryFilters from '@/components/directory/DirectoryFilters';
 import DirectoryCard from '@/components/directory/DirectoryCard';
 import { Badge } from '@/components/ui/badge';
-import { Star, Building2, Search } from 'lucide-react';
+import Breadcrumbs from '@/components/common/Breadcrumbs';
+import { Star, Building2, Search, Sparkles } from 'lucide-react';
 import Link from 'next/link';
+import { getBreadcrumbSchema } from '@/lib/seo-schemas';
 import { Button } from '@/components/ui/button';
 
 export async function generateMetadata({ searchParams }) {
-  const search = searchParams.search || '';
+  const { search = '' } = await searchParams;
   const config = SEO_CONFIG.directory;
 
   let title = config.title;
@@ -22,9 +24,7 @@ export async function generateMetadata({ searchParams }) {
 }
 
 export default async function DirectoryPage({ searchParams }) {
-  const search = searchParams.search || '';
-  const listingType = searchParams.get ? searchParams.get('type') : (searchParams.type || '');
-  const category = searchParams.get ? searchParams.get('category') : (searchParams.category || '');
+  const { search = '', type: listingType = '', category = '' } = await searchParams;
 
   // Parallel Data Ingestion
   const [catRes, typeRes, listingsRes] = await Promise.all([
@@ -46,8 +46,18 @@ export default async function DirectoryPage({ searchParams }) {
   const featuredListings = listings.filter(l => l.is_featured);
   const regularListings = listings.filter(l => !l.is_featured);
 
+  const breadcrumbSchema = getBreadcrumbSchema([
+    { name: 'Home', path: '/' },
+    { name: 'Directory', path: '/directory' }
+  ]);
+
   return (
     <div className="bg-stone-50 min-h-screen">
+      {breadcrumbSchema && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />}
+      
+      {/* 🚀 The Perfect Breadcrumb Engine */}
+      <Breadcrumbs />
+
       {/* 🛡️ Enterprise Header */}
       <div className="bg-emerald-900 py-20 lg:py-32 relative overflow-hidden">
         <div className="absolute inset-0 opacity-10">
@@ -56,11 +66,12 @@ export default async function DirectoryPage({ searchParams }) {
           }} />
         </div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
-          <Badge className="bg-emerald-800 text-emerald-100 mb-8 px-5 py-2 border-none font-bold uppercase tracking-widest text-[10px]">
-            Enterprise Ecosystem
-          </Badge>
-          <h1 className="text-4xl lg:text-7xl font-bold text-white mb-8 tracking-tight">
-            Business <span className="text-emerald-400 font-serif italic">Directory</span>
+          <div className="inline-flex items-center gap-3 px-6 py-2 rounded-full bg-emerald-800/50 border border-emerald-700/50 mb-8 shadow-sm">
+            <Sparkles className="w-4 h-4 text-emerald-300" />
+            <span className="text-xs font-bold text-emerald-50">Enterprise Ecosystem</span>
+          </div>
+          <h1 className="text-4xl lg:text-7xl font-black text-white mb-8 tracking-tight">
+            Business <span className="text-emerald-400 font-serif italic">Directory.</span>
           </h1>
           <p className="text-xl text-emerald-100/80 max-w-2xl mx-auto font-medium leading-relaxed">
             Discover the most ambitious businesses and entrepreneurs across Bangladesh.
@@ -88,7 +99,7 @@ export default async function DirectoryPage({ searchParams }) {
             {(search || listingType || category) && (
               <Link href="/directory">
                 <Button variant="outline" className="h-16 px-12 rounded-2xl border-stone-300 font-bold hover:bg-emerald-900 hover:text-white hover:border-emerald-900 transition-all shadow-sm">
-                  Reset Global Directory
+                   Reset Global Directory
                 </Button>
               </Link>
             )}
@@ -99,8 +110,8 @@ export default async function DirectoryPage({ searchParams }) {
             {featuredListings.length > 0 && !search && !category && (
               <div className="mb-20 animate-fade-in">
                 <div className="flex items-center gap-4 mb-10">
-                   <div className="w-12 h-12 bg-emerald-900 rounded-[14px] flex items-center justify-center shadow-lg shadow-emerald-900/20">
-                      <Star className="w-6 h-6 text-white fill-current" />
+                   <div className="w-12 h-12 bg-white border border-stone-100 rounded-[14px] flex items-center justify-center shadow-sm">
+                      <Star className="w-6 h-6 text-emerald-900 fill-current" />
                    </div>
                    <h2 className="text-2xl font-bold text-stone-900 tracking-tight">Featured Operations</h2>
                 </div>
@@ -136,14 +147,14 @@ export default async function DirectoryPage({ searchParams }) {
             <div className="w-20 h-20 bg-emerald-50 rounded-[2rem] flex items-center justify-center mx-auto mb-10 shadow-inner">
                <Star className="w-10 h-10 text-emerald-900" />
             </div>
-            <h2 className="text-3xl sm:text-5xl font-bold text-stone-900 mb-8 tracking-tight leading-tight">
-              Is Your Business <span className="text-emerald-900 underline decoration-emerald-200 underline-offset-8 text-serif italic">Missing</span>?
+            <h2 className="text-3xl sm:text-5xl font-black text-stone-900 mb-8 tracking-tight leading-tight">
+              Is Your Business <span className="text-emerald-900 underline decoration-emerald-200 underline-offset-8 text-serif italic">Missing?</span>
             </h2>
             <p className="text-xl text-stone-500 mb-12 max-w-2xl mx-auto font-medium">
               Join the official directory of Bangladeshi entrepreneurs. Showcase your operations to investors, partners, and customers.
             </p>
             <div className="flex flex-wrap justify-center gap-6">
-                <Link href="/register">
+                <Link href="/submit">
                   <Button size="lg" className="bg-emerald-900 text-white hover:bg-emerald-800 px-12 h-16 rounded-2xl font-bold shadow-2xl transition-all hover:scale-105 active:scale-95">
                     Register Entity
                   </Button>

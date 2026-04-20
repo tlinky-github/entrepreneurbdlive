@@ -1,110 +1,197 @@
+import React from 'react';
 import Link from 'next/link';
-import { ShieldCheck, BookOpen, PenTool, CheckCircle, Search, Target, AlertCircle } from 'lucide-react';
+import { BookOpen, CheckCircle, AlertCircle, ChevronRight, Target, Sparkles, ShieldCheck } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { editorialPrinciples } from '@/data/mock';
 
 export const metadata = {
-  title: "Editorial Principles & Integrity | Entrepreneurs BD",
-  description: "Our commitment to accuracy, depth, and practical utility. Learn about the standards behind entrepreneurs.bd content.",
+  title: 'Editorial Policy | Entrepreneurs BD',
+  description: 'Our commitment to providing accurate, practical, and trustworthy entrepreneurship content. Learn about our content ethics and standards.',
 };
 
-export default async function EditorialPage() {
+export default function EditorialPage() {
   return (
-    <div className="bg-stone-50 min-h-screen">
-      
-      {/* Hero Section */}
-      <section className="py-24 bg-white border-b border-stone-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-50 border border-emerald-100 mb-8">
-              <ShieldCheck className="w-4 h-4 text-emerald-900" />
-              <span className="text-sm font-black uppercase tracking-widest text-emerald-900">Content Integrity</span>
-            </div>
-            <h1 className="text-4xl sm:text-5xl lg:text-7xl font-black text-stone-900 mb-8 tracking-tighter">
-              Editorial Standards.
-            </h1>
-            <p className="text-xl text-stone-500 max-w-2xl mx-auto leading-relaxed border-l-4 border-emerald-900/10 pl-8 font-medium">
-               The principles that guide our research, writing, and fact-checking processes. 
-               Our commitment is to the founder's success, above all else.
-            </p>
+    <div className="bg-white min-h-screen pb-24">
+      {/* 🛡️ Aesthetic Breadcrumb Deck */}
+      <div className="bg-stone-50 border-b border-stone-200/60 sticky top-0 z-40 backdrop-blur-md bg-stone-50/80">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <nav className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-stone-400">
+            <Link href="/" className="hover:text-emerald-900 transition-colors">Home</Link>
+            <ChevronRight size={12} className="text-stone-300" />
+            <span className="text-emerald-900 font-black">Editorial Policy</span>
+          </nav>
+        </div>
+      </div>
+
+      {/* 🛡️ Narrative Header */}
+      <section className="py-20 lg:py-32 bg-stone-50 relative overflow-hidden">
+        <div className="absolute top-0 right-0 p-24 opacity-5 pointer-events-none">
+           <BookOpen size={400} className="text-emerald-900" />
+        </div>
+        <div className="max-w-7xl mx-auto px-4 relative z-10 text-center">
+          <div className="inline-flex items-center gap-2 px-6 py-2 rounded-full bg-white border border-stone-200 mb-8 shadow-sm">
+            <ShieldCheck className="w-4 h-4 text-emerald-900" />
+            <span className="text-[10px] font-black text-emerald-900 uppercase tracking-widest">Content Standards</span>
+          </div>
+          <h1 className="text-5xl sm:text-7xl font-black text-stone-900 mb-8 tracking-tighter">
+            Editorial Principles <br className="hidden lg:block" /> & Content Ethics
+          </h1>
+          <p className="text-2xl text-stone-500 font-serif italic max-w-2xl mx-auto">
+            "Our commitment to providing accurate, practical, and trustworthy entrepreneurship content."
+          </p>
         </div>
       </section>
 
-      {/* Main Principles Grid */}
-      <section className="py-24">
+      {/* 🛡️ Mission Statement */}
+      <section className="py-12 bg-white relative -mt-12 z-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+          <div className="max-w-3xl mx-auto">
+            <Card className="bg-emerald-900 border-none rounded-[3rem] p-10 lg:p-16 text-center shadow-2xl shadow-emerald-900/20 relative overflow-hidden group">
+               <div className="absolute -bottom-10 -right-10 opacity-10 transition-transform group-hover:scale-110">
+                  <Sparkles size={240} className="text-white" />
+               </div>
+               <h2 className="text-3xl font-black text-white mb-8 tracking-tight">Our Editorial Mission</h2>
+               <p className="text-xl text-emerald-50 leading-relaxed font-serif italic">
+                 {editorialPrinciples.mission}
+               </p>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* 🛡️ Core Principles Grid */}
+      <section className="py-24 bg-stone-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-20">
+            <h2 className="text-4xl font-black text-stone-900 mb-4 tracking-tighter uppercase tracking-widest text-xs">The Foundation</h2>
+            <p className="text-xl text-stone-500 font-medium">Core principles that guide every piece of content</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {editorialPrinciples.principles.map((principle, index) => (
-              <div key={index} className="bg-white p-12 rounded-[3.5rem] shadow-sm border border-stone-100 hover:shadow-2xl hover:shadow-emerald-900/5 transition-all duration-500 group">
-                <div className="w-16 h-16 rounded-2xl bg-stone-50 border border-stone-100 flex items-center justify-center mb-8 group-hover:bg-emerald-900 group-hover:text-white transition-all">
-                   <div className="text-xl font-black">0{index + 1}</div>
-                </div>
-                <h2 className="text-2xl font-black text-stone-900 mb-4 group-hover:text-emerald-900 transition-colors">
-                  {principle.title}
-                </h2>
-                <p className="text-lg text-stone-500 font-medium leading-relaxed">
-                  {principle.description}
-                </p>
-              </div>
+              <Card key={index} className="border-none shadow-xl shadow-stone-200/50 bg-white rounded-[2rem] p-4 group hover:translate-y-[-4px] transition-all duration-300">
+                <CardHeader className="flex flex-row items-center gap-6 pb-6">
+                  <div className="w-16 h-16 bg-stone-50 rounded-2xl flex items-center justify-center border border-stone-100 group-hover:bg-emerald-900 group-hover:border-emerald-800 transition-colors">
+                    <span className="text-emerald-900 font-black text-xl group-hover:text-white">{index + 1}</span>
+                  </div>
+                  <CardTitle className="text-2xl font-black text-stone-900 tracking-tight leading-tight">
+                    {principle.title}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-lg text-stone-600 font-medium leading-relaxed pl-22">
+                    {principle.description}
+                  </p>
+                </CardContent>
+              </Card>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Methodology Section */}
-      <section className="py-24 bg-stone-950 text-white relative overflow-hidden">
-        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10" />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-           <div className="max-w-3xl">
-              <h2 className="text-xs font-black uppercase tracking-[0.4em] text-emerald-400 mb-8">Our Research Methodology</h2>
-              <div className="space-y-12">
-                 <div className="flex gap-8 group">
-                    <div className="flex-shrink-0 w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center group-hover:bg-emerald-500 group-hover:text-stone-950 transition-all">
-                       <Search className="w-6 h-6" />
-                    </div>
-                    <div>
-                       <h3 className="text-xl font-black mb-2">Fact-Based Research</h3>
-                       <p className="text-stone-400 font-medium leading-relaxed">We draw on established business research, legislative documentation, and verified industry data. We avoid anecdotal "hacks" in favor of proven systems.</p>
-                    </div>
+      {/* 🛡️ Standards & Integrity Section */}
+      <section className="py-24 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
+            
+            {/* Standards */}
+            <div>
+              <div className="inline-flex items-center gap-3 mb-8">
+                 <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center text-emerald-900">
+                    <Target size={20} />
                  </div>
-                 <div className="flex gap-8 group">
-                    <div className="flex-shrink-0 w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center group-hover:bg-emerald-500 group-hover:text-stone-950 transition-all">
-                       <PenTool className="w-6 h-6" />
-                    </div>
-                    <div>
-                       <h3 className="text-xl font-black mb-2">Independent Writing</h3>
-                       <p className="text-stone-400 font-medium leading-relaxed">Our writers are professionals with specialized knowledge. We do not accept sponsored content that dictates our editorial opinion or assessment.</p>
-                    </div>
-                 </div>
-                 <div className="flex gap-8 group">
-                    <div className="flex-shrink-0 w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center group-hover:bg-emerald-500 group-hover:text-stone-950 transition-all">
-                       <CheckCircle className="w-6 h-6" />
-                    </div>
-                    <div>
-                       <h3 className="text-xl font-black mb-2">Internal Verification</h3>
-                       <p className="text-stone-400 font-medium leading-relaxed">Every guide and article undergoes internal fact-checking by our board to ensure it meets our standards of depth and practical utility.</p>
-                    </div>
-                 </div>
+                 <h2 className="text-3xl font-black text-stone-900 tracking-tight">Content Standards</h2>
               </div>
-           </div>
+              <div className="space-y-4">
+                {editorialPrinciples.contentStandards.map((standard, index) => (
+                  <div key={index} className="flex items-start gap-4 p-8 rounded-3xl bg-stone-50 border border-stone-100 group hover:bg-white hover:shadow-lg transition-all">
+                    <CheckCircle className="w-6 h-6 text-emerald-600 mt-0.5 flex-shrink-0" />
+                    <p className="text-lg text-stone-700 font-medium leading-relaxed">{standard}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* What We Avoid */}
+            <div>
+              <div className="inline-flex items-center gap-3 mb-8">
+                 <div className="w-10 h-10 bg-red-50 rounded-xl flex items-center justify-center text-red-600">
+                    <AlertCircle size={20} />
+                 </div>
+                 <h2 className="text-3xl font-black text-stone-900 tracking-tight">What We Avoid</h2>
+              </div>
+              <div className="space-y-4">
+                {[
+                  "Unverifiable claims about success rates or outcomes",
+                  "Motivational content that oversimplifies challenges",
+                  "Fabricated case studies or invented statistics",
+                  "Promotional content disguised as education",
+                  "Prescriptive advice that ignores individual context",
+                  "Sensationalized headlines or clickbait approaches"
+                ].map((item, index) => (
+                  <div key={index} className="flex items-start gap-4 p-8 rounded-3xl bg-red-50/30 border border-red-100 group hover:bg-white hover:shadow-lg transition-all">
+                    <AlertCircle className="w-6 h-6 text-red-500 mt-0.5 flex-shrink-0" />
+                    <p className="text-lg text-stone-700 font-medium leading-relaxed">{item}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* Feedback Section */}
-      <section className="py-24 bg-white border-t border-stone-100">
-         <div className="max-w-4xl mx-auto px-4 text-center">
-            <div className="w-16 h-16 rounded-full bg-emerald-50 flex items-center justify-center mx-auto mb-8">
-               <AlertCircle className="w-8 h-8 text-emerald-900" />
-            </div>
-            <h2 className="text-3xl font-black text-stone-900 mb-6 tracking-tighter">Spot an error?</h2>
-            <p className="text-stone-500 text-lg font-medium leading-relaxed mb-10">
-               Accuracy is paramount. If you find a discrepancy in our business guides or 
-               knowledge articles, please notify our editorial board immediately.
-            </p>
+      {/* 🛡️ E-E-A-T Commitment Grid */}
+      <section className="py-24 bg-stone-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-20 animate-fade-in">
+             <h2 className="text-4xl font-black text-stone-900 mb-4 tracking-tighter">Our E-E-A-T Commitment</h2>
+             <p className="text-xl text-stone-500 font-medium max-w-2xl mx-auto">Experience, Expertise, Authoritativeness, and Trustworthiness</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[
+              { title: "Experience", desc: "Our content draws on practical experience in entrepreneurship and business operations. We write from a practitioner's perspective." },
+              { title: "Expertise", desc: "Content is developed with deep research and understanding of business building, avoiding oversimplification." },
+              { title: "Authoritativeness", desc: "We build authority through consistent, high-quality content that serves genuine community needs." },
+              { title: "Trustworthiness", desc: "Trust is earned through honesty, transparency, and accuracy. We prioritize reader benefit over engagement metrics." }
+            ].map((eeat, i) => (
+              <Card key={i} className="border-none bg-white rounded-[2rem] p-8 shadow-sm hover:shadow-xl transition-all">
+                <CardHeader className="p-0 mb-4">
+                  <CardTitle className="text-xl font-black text-stone-900 tracking-tight">{eeat.title}</CardTitle>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <p className="text-stone-500 font-medium leading-relaxed">{eeat.desc}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 🛡️ Footer Hub */}
+      <section className="py-20 bg-emerald-900 border-t border-emerald-800 text-white overflow-hidden relative">
+        <div className="absolute top-0 right-0 p-24 opacity-5 pointer-events-none">
+           <Sparkles size={400} />
+        </div>
+        <div className="max-w-7xl mx-auto px-4 relative z-10 text-center">
+          <h2 className="text-4xl font-black text-white mb-6 tracking-tighter">Feedback Welcome</h2>
+          <p className="text-xl text-emerald-100/70 font-medium max-w-2xl mx-auto mb-10 leading-relaxed">
+            If you identify errors or have suggestions for our editorial approach, we welcome your professional input.
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link href="/contact">
-               <button className="h-14 px-12 bg-emerald-900 text-white font-black uppercase tracking-widest text-xs rounded-2xl hover:bg-emerald-800 transition-all shadow-lg shadow-emerald-900/10">
-                 Report a Correction &rarr;
-               </button>
+              <Button variant="outline" className="h-14 px-10 rounded-xl bg-white/5 border-white/20 hover:bg-white/10 text-white font-black uppercase text-xs tracking-widest">
+                Professional Contact
+              </Button>
             </Link>
-         </div>
+            <Link href="/">
+              <Button className="h-14 px-10 rounded-xl bg-white text-emerald-900 hover:bg-stone-100 font-black uppercase text-xs tracking-widest">
+                Growth Hub Home
+              </Button>
+            </Link>
+          </div>
+        </div>
       </section>
     </div>
   );

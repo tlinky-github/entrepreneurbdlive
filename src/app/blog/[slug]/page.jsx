@@ -2,7 +2,9 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { postAPI, authorAPI, commentAPI } from '@/lib/api';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import Breadcrumbs from '@/components/common/Breadcrumbs';
 import { 
   Calendar, 
   ArrowLeft, 
@@ -10,9 +12,16 @@ import {
   Globe, 
   Linkedin, 
   Twitter, 
-  Facebook 
+  Facebook,
+  User,
+  Sparkles
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { 
+  getArticleSchema, 
+  getBreadcrumbSchema, 
+  getFAQSchema 
+} from '@/lib/seo-schemas';
 import BrandedPlaceholder from '@/components/blog/BrandedPlaceholder';
 import BlogInteractions from '@/components/blog/BlogInteractions';
 
@@ -52,6 +61,8 @@ const applyServerSideStyles = (html, featuredImage, title) => {
 // --- DYNAMIC METADATA GENERATION ---
 export async function generateMetadata({ params }) {
   const { slug } = await params;
+  if (!slug) return { title: "Article Not Found" };
+  
   const { data: post } = await postAPI.get(slug).catch(() => ({ data: null }));
   
   if (!post) return { title: "Article Not Found" };
@@ -71,6 +82,7 @@ export async function generateMetadata({ params }) {
 
 export default async function BlogDetailPage({ params }) {
   const { slug } = await params;
+  if (!slug) notFound();
   
   // --- SERVER FETCH ---
   const postRes = await postAPI.get(slug).catch(() => ({ data: null }));
@@ -90,98 +102,84 @@ export default async function BlogDetailPage({ params }) {
 
   const styledContent = applyServerSideStyles(post.content || post.content_html, post.featured_image, post.title);
 
-  // --- PERFECT SCHEMAS ---
-  const siteUrl = "https://entrepreneurs.bd";
-  const currentUrl = `${siteUrl}/blog/${post.slug}`;
-  
-  const articleSchema = {
-    "@context": "https://schema.org",
-    "@type": "BlogPosting",
-    "headline": post.title,
-    "image": post.featured_image || `${siteUrl}/logo.png`,
-    "author": { "@type": "Person", "name": authorData?.name || post.author_name || "Entrepreneurs BD" },
-    "publisher": { "@type": "Organization", "name": "Entrepreneurs BD", "logo": { "@type": "ImageObject", "url": `${siteUrl}/logo.png` } },
-    "datePublished": post.created_at,
-    "mainEntityOfPage": { "@type": "WebPage", "@id": currentUrl }
-  };
+  // --- UNIFIED SCHEMAS (Master Architect) ---
+  const breadcrumbSchema = getBreadcrumbSchema([
+    { name: 'Home', path: '/' },
+    { name: 'Blog', path: '/blog' },
+    { name: post.title, path: `/blog/${post.slug}` }
+  ]);
 
-  const faqSchema = post.faqs?.length > 0 ? {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    "mainEntity": post.faqs.map(faq => ({
-      "@type": "Question",
-      "name": faq.question || faq.q,
-      "acceptedAnswer": { "@type": "Answer", "text": faq.answer || faq.a }
-    }))
-  } : null;
+  const articleSchema = getArticleSchema(post, authorData);
+  const faqSchema = getFAQSchema(post.faqs);
 
   return (
     <div className="bg-stone-50 min-h-screen">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }} />
+      {breadcrumbSchema && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />}
       {faqSchema && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />}
       
       {/* CSS/Head Injection (Native) */}
       {post.custom_css && <style dangerouslySetInnerHTML={{ __html: post.custom_css }} />}
       
-      {/* Back Button */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
-        <Link href="/blog" className="inline-flex items-center gap-2 text-stone-600 hover:text-emerald-900 transition-colors">
-          <ArrowLeft className="w-4 h-4" />
-          Back to Blog
-        </Link>
-      </div>
+      {/* 🚀 The Perfect Breadcrumb Engine */}
+      <Breadcrumbs />
 
       {/* Article Header */}
-      <article className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <header className="mb-8">
+      <article className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-20">
+        <header className="mb-12">
           {post.category_name && (
-            <Badge className="bg-emerald-100 text-emerald-900 mb-4">{post.category_name}</Badge>
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-50 border border-emerald-100 text-emerald-900 mb-8 shadow-sm">
+               <Sparkles className="w-3.5 h-3.5" />
+               <span className="text-xs font-bold">{post.category_name}</span>
+            </div>
           )}
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-stone-900 mb-6 leading-tight">
+          <h1 className="text-4xl sm:text-5xl lg:text-7xl font-black text-stone-900 mb-10 tracking-tighter leading-none">
             {post.title}
           </h1>
           {post.excerpt && (
-            <p className="text-xl text-stone-600 mb-6">{post.excerpt}</p>
+            <p className="text-xl sm:text-2xl text-stone-500 mb-10 leading-relaxed font-medium italic border-l-4 border-emerald-900 pl-8">
+               {post.excerpt}
+            </p>
           )}
 
-           <div className="flex flex-wrap items-center gap-6 text-sm text-stone-500 pb-6 border-b border-stone-200">
-             <div className="flex items-center gap-2">
+           <div className="flex flex-wrap items-center gap-8 text-xs font-bold text-stone-400 pb-10 border-b border-stone-200">
+             <div className="flex items-center gap-3">
                {authorData ? (
-                 <Link href={`/author/${authorData.slug}`} className="flex items-center gap-2 group">
-                   <Avatar className="w-10 h-10 border border-stone-200 group-hover:border-emerald-500 transition-colors">
+                 <Link href={`/author/${authorData.slug}`} className="flex items-center gap-3 group">
+                   <Avatar className="w-12 h-12 border-2 border-white shadow-md group-hover:border-emerald-500 transition-colors">
                      {authorData.photo ? (
                        <img src={authorData.photo} alt={authorData.name} className="w-full h-full object-cover" />
                      ) : (
-                       <AvatarFallback className="bg-emerald-100 text-emerald-900">
+                       <AvatarFallback className="bg-emerald-100 text-emerald-900 font-black">
                          {authorData.name?.charAt(0)}
                        </AvatarFallback>
                      )}
                    </Avatar>
                    <div>
-                     <p className="font-medium text-stone-900 group-hover:text-emerald-900 transition-colors">{authorData.name}</p>
-                     <p className="text-xs">{authorData.designation || 'Professional Author'}</p>
+                     <p className="font-black text-stone-900 group-hover:text-emerald-900 transition-colors uppercase tracking-widest">{authorData.name}</p>
+                     <p className="text-stone-400 uppercase tracking-widest text-[10px]">Strategic Author</p>
                    </div>
                  </Link>
                ) : (
-                 <div className="flex items-center gap-2">
-                   <Avatar className="w-10 h-10">
-                     <AvatarFallback className="bg-emerald-100 text-emerald-900">
+                 <div className="flex items-center gap-3">
+                   <Avatar className="w-12 h-12 border-2 border-white shadow-md">
+                     <AvatarFallback className="bg-emerald-100 text-emerald-900 font-black">
                        {post.author_name?.charAt(0)}
                      </AvatarFallback>
                    </Avatar>
                    <div>
-                     <p className="font-medium text-stone-900">{post.author_name}</p>
-                     <p className="text-xs">Author</p>
+                     <p className="font-black text-stone-900 uppercase tracking-widest">{post.author_name}</p>
+                     <p className="text-stone-400 uppercase tracking-widest text-[10px]">Author</p>
                    </div>
                  </div>
                )}
              </div>
-              <div className="flex items-center gap-2">
-                 <Calendar className="w-4 h-4" />
-                 {post.created_at ? format(new Date(post.created_at), 'MMM d, yyyy') : 'Recently Published'}
+              <div className="flex items-center gap-2.5 uppercase tracking-widest ml-auto sm:ml-0">
+                 <Calendar className="w-4 h-4 text-emerald-900" />
+                 {post.created_at ? format(new Date(post.created_at), 'MMM d, yyyy') : 'Published'}
               </div>
-             <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4" />
+             <div className="flex items-center gap-2.5 uppercase tracking-widest">
+                <Clock className="w-4 h-4 text-emerald-900" />
                 {readingTime} min read
              </div>
            </div>
@@ -189,7 +187,7 @@ export default async function BlogDetailPage({ params }) {
 
         {/* Article Body */}
         <div 
-          className="tiptap-content" 
+          className="tiptap-content text-lg leading-relaxed text-stone-700 font-medium" 
           dangerouslySetInnerHTML={{ __html: styledContent }} 
         />
 
@@ -203,13 +201,13 @@ export default async function BlogDetailPage({ params }) {
 
         {/* Post SEO Footer (The FAQs) */}
         {post.faqs?.length > 0 && (
-          <div className="mt-12 border-t border-stone-200 pt-12">
-            <h2 className="text-2xl font-bold text-stone-900 mb-6">Frequently Asked Questions</h2>
+          <div className="mt-20 border-t border-stone-200 pt-20">
+            <h2 className="text-3xl font-black text-stone-900 mb-10 tracking-tight">Intelligence Briefing <span className="text-emerald-900 font-serif italic">(FAQs)</span></h2>
             <div className="space-y-6">
               {post.faqs.map((faq, idx) => (
-                <div key={idx} className="bg-white p-6 rounded-xl border border-stone-100 shadow-sm">
-                  <p className="font-bold text-stone-900 mb-2">{faq.question || faq.q}</p>
-                  <p className="text-stone-600">{faq.answer || faq.a}</p>
+                <div key={idx} className="bg-white p-8 rounded-3xl border border-stone-100 shadow-sm hover:shadow-xl transition-all">
+                  <p className="font-black text-stone-900 mb-4 text-lg tracking-tight leading-tight">{faq.question || faq.q}</p>
+                  <p className="text-stone-600 leading-relaxed">{faq.answer || faq.a}</p>
                 </div>
               ))}
             </div>
@@ -218,29 +216,37 @@ export default async function BlogDetailPage({ params }) {
 
         {/* Author Box */}
         {authorData && (
-          <div className="mt-12 bg-white border border-stone-200 rounded-2xl p-6 md:p-8 shadow-sm">
-            <div className="flex flex-col md:flex-row gap-6 items-start">
+          <div className="mt-20 bg-emerald-900 rounded-[3rem] p-8 md:p-12 text-white relative overflow-hidden group">
+            <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none text-white">
+               <User size={200} />
+            </div>
+            <div className="flex flex-col md:flex-row gap-8 items-start relative z-10">
               <div className="flex-shrink-0">
-                <div className="w-24 h-24 rounded-full overflow-hidden bg-stone-100 border-2 border-emerald-900 shadow-md">
+                <div className="w-28 h-28 rounded-3xl overflow-hidden bg-white/10 border-2 border-white/20 shadow-2xl group-hover:scale-105 transition-transform duration-500">
                    {authorData.photo ? (
                       <img src={authorData.photo} alt={authorData.name} className="w-full h-full object-cover" />
                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-3xl font-bold text-emerald-900">
+                      <div className="w-full h-full flex items-center justify-center text-4xl font-black text-white">
                          {authorData.name.charAt(0)}
                       </div>
                    )}
                 </div>
               </div>
               <div className="flex-1">
-                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                     <div>
-                       <h3 className="text-xl font-bold text-stone-900">Md Shaddam Hossain</h3>
-                       <p className="text-sm text-emerald-700 font-medium">{authorData.designation || 'Founder'}</p>
+                       <h3 className="text-3xl font-black tracking-tight">{authorData.name}</h3>
+                       <p className="text-emerald-300 font-bold uppercase tracking-widest text-xs mt-1">{authorData.designation || 'Strategic Founder'}</p>
                     </div>
                  </div>
-                 <p className="text-stone-600 leading-relaxed mb-6">
-                    {authorData.bio || `Expert contributor at entrepreneurs.bd, sharing insights to help the next generation of Bangladeshi founders grow.`}
+                 <p className="text-emerald-100/70 text-lg leading-relaxed mb-8 font-medium">
+                    {authorData.bio || `Specialized contributor at entrepreneurs.bd, architecting tactical insights for the next generation of regional market leaders.`}
                  </p>
+                 <Link href={`/author/${authorData.slug}`}>
+                    <Button variant="outline" className="bg-white/5 border-white/20 hover:bg-white text-white hover:text-emerald-900 font-black text-xs uppercase tracking-widest h-14 px-8 rounded-2xl transition-all">
+                       View Complete Intelligence Path
+                    </Button>
+                 </Link>
               </div>
             </div>
           </div>

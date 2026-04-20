@@ -1,122 +1,109 @@
+import React from 'react';
 import Link from 'next/link';
-import { HelpCircle, ChevronRight, MessageSquare, CheckCircle } from 'lucide-react';
-import { faqs as mockFaqs } from '@/data/mock';
-import { 
-  Accordion, 
-  AccordionContent, 
-  AccordionItem, 
-  AccordionTrigger 
+import { HelpCircle, ChevronRight, ArrowLeft, Target, Sparkles, BookOpen } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import Breadcrumbs from '@/components/common/Breadcrumbs';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
 } from '@/components/ui/accordion';
+import { faqs as mockFaqs } from '@/data/mock';
 
 export const metadata = {
-  title: "Startup & Entrepreneurship FAQs | Entrepreneurs BD",
-  description: "Answers to the most common questions about starting and growing a business in Bangladesh.",
+  title: 'Frequently Asked Questions | Entrepreneurs BD',
+  description: 'Answers to common questions about entrepreneurship, business fundamentals, and the challenges of starting and growing a business.',
 };
 
-export default async function FAQsPage() {
-  // --- SCHEMAS ---
-  const siteUrl = "https://entrepreneurs.bd";
-  const faqSchema = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    "mainEntity": mockFaqs.flatMap(cat => cat.questions.map(q => ({
-      "@type": "Question",
-      "name": q.q,
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": q.a
-      }
-    })))
-  };
+export default function FAQsPage() {
+  // 🛡️ Data Ingestion Protocol: Hybrid Firestore + Mock
+  // Note: For now, using mock and established patterns. Firestore dynamic fetch can be added via a client component if needed.
+  const allFaqs = mockFaqs;
 
   return (
-    <div className="bg-stone-50 min-h-screen">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
-      
-      {/* Hero Section */}
-      <section className="py-24 bg-emerald-950 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]" />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-          <div className="max-w-3xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-900/50 border border-emerald-800 mb-6 shadow-sm">
-              <HelpCircle className="w-4 h-4 text-emerald-100" />
-              <span className="text-sm font-black uppercase tracking-widest text-emerald-100">Common Questions</span>
-            </div>
-            <h1 className="text-4xl sm:text-5xl lg:text-7xl font-black text-white mb-6 tracking-tighter">
-              Startup Help Desk
-            </h1>
-            <p className="text-xl text-emerald-100/80 leading-relaxed font-medium">
-              You ask. We answer. Clear, practical answers for Bangladesh's 
-              ambitious founders and innovators.
-            </p>
+    <div className="bg-white min-h-screen pb-24">
+      {/* 🛡️ Aesthetic Breadcrumb Deck */}
+      <Breadcrumbs />
+
+      {/* 🛡️ Narrative Header */}
+      <section className="py-20 lg:py-32 bg-stone-50 relative overflow-hidden">
+        <div className="absolute top-0 right-0 p-24 opacity-5 pointer-events-none">
+           <HelpCircle size={400} className="text-emerald-900" />
+        </div>
+        <div className="max-w-7xl mx-auto px-4 relative z-10 text-center">
+          <div className="inline-flex items-center gap-2 px-6 py-2 rounded-full bg-white border border-stone-200 mb-8 shadow-sm">
+            <HelpCircle className="w-4 h-4 text-emerald-900" />
+            <span className="text-[10px] font-black text-emerald-900 uppercase tracking-widest">Tactical Q&A</span>
           </div>
+          <h1 className="text-5xl sm:text-7xl font-black text-stone-900 mb-8 tracking-tighter">
+            Operational FAQs
+          </h1>
+          <p className="text-xl text-stone-500 font-medium max-w-2xl mx-auto leading-relaxed">
+            Direct answers to the most frequent challenges encountered by founders in the high-growth ecosystem.
+          </p>
         </div>
       </section>
 
-      {/* FAQ Engine */}
+      {/* 🛡️ FAQ Categories Interaction */}
       <section className="py-24 bg-white">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="space-y-24">
-            {mockFaqs.map((category, catIndex) => (
-              <div key={catIndex}>
-                <div className="flex items-center gap-4 mb-10">
-                  <div className="h-px flex-1 bg-stone-100" />
-                  <h2 className="text-xs font-black uppercase tracking-[0.4em] text-emerald-900/40">
-                    {category.category}
-                  </h2>
-                  <div className="h-px flex-1 bg-stone-100" />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-3xl mx-auto space-y-16">
+            {allFaqs.map((category, categoryIndex) => (
+              <div key={categoryIndex} className="animate-fade-in">
+                <div className="flex items-center gap-4 mb-8">
+                   <div className="w-12 h-12 bg-emerald-900 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-emerald-900/10">
+                      <Target size={24} />
+                   </div>
+                   <h2 className="text-3xl font-black text-stone-900 tracking-tight">
+                     {category.category}
+                   </h2>
                 </div>
-
-                <div className="space-y-6">
+                
+                <Accordion type="single" collapsible className="w-full space-y-4">
                   {category.questions.map((faq, faqIndex) => (
-                    <CardWrapper key={faqIndex} question={faq.q}>
-                       {faq.a}
-                    </CardWrapper>
+                    <AccordionItem 
+                      key={faqIndex} 
+                      value={`${categoryIndex}-${faqIndex}`}
+                      className="border-none bg-stone-50 rounded-3xl px-8 py-2 shadow-sm border border-stone-100/50 hover:bg-white hover:shadow-xl hover:translate-y-[-2px] transition-all duration-300"
+                    >
+                      <AccordionTrigger className="text-left text-stone-900 hover:text-emerald-900 hover:no-underline py-6 text-lg font-black tracking-tight">
+                        {faq.q}
+                      </AccordionTrigger>
+                      <AccordionContent className="text-stone-600 pb-8 text-base font-medium leading-relaxed">
+                        {faq.a}
+                      </AccordionContent>
+                    </AccordionItem>
                   ))}
-                </div>
+                </Accordion>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Support CTA */}
-      <section className="py-24 bg-stone-50 border-t border-stone-100">
-        <div className="max-w-4xl mx-auto px-4 text-center">
-          <div className="w-20 h-20 rounded-3xl bg-white border border-stone-100 shadow-sm flex items-center justify-center mx-auto mb-8">
-             <MessageSquare className="w-8 h-8 text-emerald-900" />
-          </div>
-          <h2 className="text-3xl font-black text-stone-900 mb-4">Still have questions?</h2>
-          <p className="text-stone-500 mb-10 font-bold">Our editorial board is here to help you navigate the journey.</p>
-          <Link href="/contact">
-             <button className="h-14 px-12 bg-emerald-900 text-white font-black uppercase tracking-widest text-xs rounded-2xl hover:bg-emerald-800 transition-all shadow-lg shadow-emerald-900/10">
-               Get Personal Advice &rarr;
-             </button>
-          </Link>
-        </div>
+      {/* 🛡️ Narrative Footer */}
+      <section className="py-24 bg-stone-50 mt-12 border-t border-stone-200/60 overflow-hidden relative">
+         <div className="absolute inset-0 bg-stone-100/50 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]" />
+         <div className="max-w-4xl mx-auto px-4 text-center relative z-10">
+            <h2 className="text-4xl font-black text-stone-900 mb-8 tracking-tighter">Unanswered <span className="text-emerald-900">Intelligence?</span></h2>
+            <p className="text-xl text-stone-500 font-medium leading-relaxed mb-12">
+               If you require specific strategic clarity not covered in our hub, our advisory desk is standing by to resolve your operational inquiries.
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+               <Link href="/contact">
+                  <Button className="h-16 px-12 rounded-2xl bg-emerald-900 hover:bg-emerald-800 text-white font-black uppercase tracking-widest text-xs shadow-2xl shadow-emerald-950/20 min-w-[220px]">
+                     Contact Advisory
+                  </Button>
+               </Link>
+               <Link href="/knowledge">
+                  <Button variant="outline" className="h-16 px-12 rounded-2xl border-emerald-900 text-emerald-900 hover:bg-emerald-50 font-black uppercase tracking-widest text-xs min-w-[220px]">
+                     Knowledge Hub &rarr;
+                  </Button>
+               </Link>
+            </div>
+         </div>
       </section>
-      
-      {/* Hub Links */}
-      <div className="py-12 flex justify-center gap-8 text-[10px] font-black uppercase tracking-[0.3em] text-stone-300">
-         <Link href="/resources/guides" className="hover:text-emerald-900 transition-colors">Founder Guides</Link>
-         <Link href="/resources/glossary" className="hover:text-emerald-900 transition-colors">Term Glossary</Link>
-      </div>
     </div>
   );
 }
-
-const CardWrapper = ({ question, children }) => (
-  <Accordion type="single" collapsible className="w-full">
-    <AccordionItem value="item-1" className="border border-stone-100 rounded-[2rem] px-8 bg-stone-50/50 hover:bg-white transition-all overflow-hidden group">
-      <AccordionTrigger className="text-left py-8 text-xl font-black text-stone-900 hover:no-underline group-hover:text-emerald-900">
-        {question}
-      </AccordionTrigger>
-      <AccordionContent className="text-stone-600 text-lg leading-relaxed pb-8 font-medium border-t border-stone-100 mt-2 pt-6">
-        <div className="flex gap-4">
-           <CheckCircle className="w-6 h-6 text-emerald-700 flex-shrink-0 mt-1" />
-           {children}
-        </div>
-      </AccordionContent>
-    </AccordionItem>
-  </Accordion>
-);
