@@ -13,7 +13,8 @@ import {
   ArrowRight, 
   ShieldCheck, 
   Sparkles,
-  BookOpen
+  BookOpen,
+  Star
 } from 'lucide-react';
 import Link from 'next/link';
 
