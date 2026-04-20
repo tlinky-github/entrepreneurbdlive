@@ -595,6 +595,7 @@ export const commentAPI = {
 // --- Admin API ---
 export const adminAPI = {
   getStats: async () => {
+    if (!db) return { data: { total_blog_posts: 0, total_entrepreneurs: 0, total_listings: 0, total_resources: 0, total_users: 0, pending_approvals: 0 } };
     try {
       // Robust settled ingestion: prevent a single Restricted collection from crashing the whole dashboard
       const results = await Promise.allSettled([
@@ -1011,10 +1012,12 @@ export const resourceAPI = { list: () => contentAPI.list('knowledge'), get: (id)
 export const authAPI = { login: () => Promise.resolve({ data: {} }), register: () => Promise.resolve({ data: {} }) };
 export const settingsAPI = { 
   get: async () => {
+    if (!db) return { data: {} };
     const docSnap = await getDoc(doc(db, 'settings', 'global'));
     return { data: docSnap.exists() ? docToData(docSnap) : {} };
   },
   update: async (data) => {
+    if (!db) return { success: false };
     await setDoc(doc(db, 'settings', 'global'), { ...data, updated_at: serverTimestamp() }, { merge: true });
     return { success: true };
   }
@@ -1024,6 +1027,7 @@ export const settingsAPI = {
 
 export const guidesAPI = {
   list: async () => {
+    if (!db) return { data: [] };
     try {
       const snapshot = await getDocs(query(collection(db, 'guides'), orderBy('created_at', 'desc')));
       return { data: snapshot.docs.map(docToData) };
@@ -1054,6 +1058,7 @@ export const guidesAPI = {
 // --- FAQ Categories API ---
 export const faqCategoriesAPI = {
   list: async () => {
+    if (!db) return { data: [] };
     try {
       const snapshot = await getDocs(query(collection(db, 'faq_categories'), orderBy('created_at', 'desc')));
       return { data: snapshot.docs.map(docToData) };
@@ -1084,6 +1089,7 @@ export const faqCategoriesAPI = {
 // --- Glossary API ---
 export const glossaryAPI = {
   list: async () => {
+    if (!db) return { data: [] };
     try {
       const snapshot = await getDocs(query(collection(db, 'glossary'), orderBy('term', 'asc')));
       return { data: snapshot.docs.map(docToData) };
@@ -1114,6 +1120,7 @@ export const glossaryAPI = {
 // --- Code Snippets API (Page-Targeted Custom Code) ---
 export const codeSnippetsAPI = {
   list: async () => {
+    if (!db) return { data: [] };
     try {
       const snapshot = await getDocs(collection(db, 'code_snippets'));
       return { data: snapshot.docs.map(docToData) };
@@ -1145,6 +1152,7 @@ export default {
 // --- Redirects API ---
 export const redirectAPI = {
   list: async () => {
+    if (!db) return { data: [] };
     try {
       const q = query(collection(db, 'redirects'), orderBy('created_at', 'desc'));
       const snapshot = await getDocs(q);
@@ -1171,6 +1179,7 @@ export const redirectAPI = {
 // --- Dead Links API (404 Tracker) ---
 export const deadLinkAPI = {
   list: async () => {
+    if (!db) return { data: [] };
     try {
       const q = query(collection(db, 'dead_links'), orderBy('hit_count', 'desc'), limit(50));
       const snapshot = await getDocs(q);
