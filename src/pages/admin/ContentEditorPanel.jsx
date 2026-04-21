@@ -19,7 +19,7 @@ import { Input } from '../../components/ui/input';
 import { Badge } from '../../components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { toast } from 'sonner';
-import { Save, ChevronLeft, Eye, Settings, Star, HelpCircle, Code, ChevronDown, ChevronUp, FileCode, Calendar, Users, Wand2, Sparkles, Loader2 } from 'lucide-react';
+import { Save, ChevronLeft, Eye, Settings, Star, HelpCircle, Code, ChevronDown, ChevronUp, FileCode, Calendar, Users, Wand2, Sparkles, Loader2, ShieldCheck } from 'lucide-react';
 import { contentAPI, taxonomyAPI, categoryAPI, blogCategoryAPI, authorAPI } from '../../lib/api';
 import aiAPI from '../../lib/aiApi';
 import ImageUploader from '../../components/common/ImageUploader';
@@ -273,6 +273,12 @@ const ContentEditorPanel = () => {
     setManualSlugSet(false);
   }, [itemId, type]);
 
+  const [submittedCategory, setSubmittedCategory] = useState('');
+  const [submittedIndustry, setSubmittedIndustry] = useState('');
+  const [contactEmail, setContactEmail] = useState('');
+  const [contactPhone, setContactPhone] = useState('');
+  const [source, setSource] = useState('');
+
   const [isEditingSlug, setIsEditingSlug] = useState(false);
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
   const [activeLinkData, setActiveLinkData] = useState(null);
@@ -454,9 +460,19 @@ const ContentEditorPanel = () => {
               return;
             }
 
-            setTitle(data.title || '');
+            // Mapping fix for community submissions
+            const finalTitle = data.title || data.name || data.business_name || '';
+            setTitle(finalTitle);
             setSlug(data.slug || '');
             setManualSlugSet(true); // LOCK the slug: once loaded, never auto-generate from title again
+            
+            // Store submission metadata for reference
+            setSubmittedCategory(data.category || '');
+            setSubmittedIndustry(data.industry || '');
+            setContactEmail(data.contact_email || '');
+            setContactPhone(data.contact_phone || '');
+            setSource(data.source || '');
+
             setExcerpt(data.excerpt || '');
             setCategory(data.category_id || '');
             setStatus(data.status || 'draft');
@@ -761,6 +777,14 @@ const ContentEditorPanel = () => {
       toast.error('Title is required');
       return;
     }
+    
+    // IMAGE VALIDATION (Mandatory Photo/Logo)
+    const photoUrl = type === 'blog' ? featuredImage : (type === 'directory' ? (featuredImage || logo) : (featuredImage || photo));
+    if (!photoUrl) {
+      toast.error(`${type === 'directory' ? 'Logo' : 'Profile Photo'} is required`);
+      return;
+    }
+
     if (!category) {
       toast.error('Category is required');
       return;
@@ -1109,6 +1133,11 @@ const ContentEditorPanel = () => {
                        taxType="industry"
                        placeholder="Select Industry"
                      />
+                     {submittedIndustry && (
+                       <p className="text-[10px] text-emerald-600 font-bold px-1 uppercase leading-tight mt-1">
+                         User Submitted: {submittedIndustry}
+                       </p>
+                     )}
                    </div>
                  </>
                )}
@@ -1475,6 +1504,11 @@ const ContentEditorPanel = () => {
                 taxType="category"
                 placeholder="Select a category"
               />
+              {submittedCategory && (
+                <p className="text-[10px] text-emerald-600 font-bold px-1 uppercase leading-tight mt-1">
+                  User Submitted: {submittedCategory}
+                </p>
+              )}
 
               <div>
                 <label>Status</label>
@@ -1593,6 +1627,23 @@ const ContentEditorPanel = () => {
                   Set as Featured Content
                 </label>
               </div>
+              {source === 'public' && (
+                <div className="space-y-4 pt-6 border-t border-stone-200 bg-stone-50/50 p-4 rounded-xl">
+                  <h4 className="text-[10px] font-black text-stone-400 uppercase tracking-widest flex items-center gap-2">
+                    <ShieldCheck className="w-3 h-3" /> Moderation Contact Info
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <p className="text-[10px] font-bold text-stone-500 uppercase">Private Email</p>
+                      <p className="text-sm font-semibold text-stone-900 selection:bg-emerald-100">{contactEmail || 'Not Provided'}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-[10px] font-bold text-stone-500 uppercase">Private Phone</p>
+                      <p className="text-sm font-semibold text-stone-900 selection:bg-emerald-100">{contactPhone || 'Not Provided'}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 

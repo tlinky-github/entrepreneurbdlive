@@ -111,6 +111,7 @@ const SubmissionPage = () => {
     e.preventDefault();
     if (!turnstileToken) return toast.error('Please complete the Captcha');
     if (!pData.name || !pData.email) return toast.error('Name and Display Email are required');
+    if (!pData.photo) return toast.error('Profile Photo URL is required');
     if (!pData.contact_email) return toast.error('Private Contact Email is required for moderation');
 
     setLoading(true);
@@ -127,6 +128,7 @@ const SubmissionPage = () => {
     e.preventDefault();
     if (!turnstileToken) return toast.error('Please complete the Captcha');
     if (!lData.business_name) return toast.error('Business Name is required');
+    if (!lData.logo) return toast.error('Company Logo URL is required');
     if (!lData.contact_email) return toast.error('Private Contact Email is required for moderation');
 
     setLoading(true);
@@ -301,7 +303,7 @@ const SubmissionPage = () => {
 
                       <div className="space-y-3">
                         <label className="text-xs sm:text-sm font-bold text-stone-700 ml-1 flex items-center gap-2 uppercase tracking-wider">
-                          <ImageIcon size={14} className="text-stone-400" /> Profile Photo URL
+                          <ImageIcon size={14} className="text-stone-400" /> Profile Photo URL <span className="text-red-500">*</span>
                         </label>
                         <Input 
                           placeholder="https://example.com/your-photo.jpg" 
@@ -606,7 +608,7 @@ const SubmissionPage = () => {
                       <div className="grid sm:grid-cols-2 gap-6 sm:gap-10">
                         <div className="space-y-3">
                           <label className="text-xs sm:text-sm font-bold text-stone-700 ml-1 flex items-center gap-2 uppercase tracking-wider">
-                           <ImageIcon size={14} className="text-stone-400" /> Logo URL
+                           <ImageIcon size={14} className="text-stone-400" /> Logo URL <span className="text-red-500">*</span>
                           </label>
                           <Input 
                             placeholder="https://example.com/logo.png" 
