@@ -425,9 +425,29 @@ const NotFound = () => {
 
 import ScrollToTop from './components/common/ScrollToTop';
 
+const URLCleaner = () => {
+  const { pathname, search } = require('react-router-dom').useLocation();
+  const navigate = require('react-router-dom').useNavigate();
+
+  React.useEffect(() => {
+    if (search.includes('no_bot=1')) {
+      // Remove no_bot=1 and clean up ? or &
+      const newSearch = search
+        .replace(/[?&]no_bot=1/, '')
+        .replace(/^&/, '?');
+      
+      const cleanUrl = pathname + newSearch;
+      navigate(cleanUrl, { replace: true });
+    }
+  }, [pathname, search, navigate]);
+
+  return null;
+};
+
 function App() {
   return (
     <Router>
+      <URLCleaner />
       <HelmetProvider>
         <ErrorBoundary>
           <ScrollToTop />
