@@ -17,9 +17,11 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '../../components/ui/alert-dialog';
 import { contentAPI, guidesAPI, faqCategoriesAPI, glossaryAPI } from '../../lib/api';
+import { useOutletContext } from 'react-router-dom';
 
 const AdminKnowledgeHub = () => {
   const navigate = useNavigate();
+  const { refreshStats } = useOutletContext();
   const [activeTab, setActiveTab] = useState('articles');
 
   return (
@@ -150,6 +152,7 @@ const GuidesTab = () => {
     try {
       await guidesAPI.delete(deleteId);
       toast.success('Guide deleted');
+      if (refreshStats) refreshStats();
       load();
     } catch (err) { toast.error('Failed to delete'); }
     finally { setDeleteId(null); }
@@ -274,7 +277,7 @@ const FAQsTab = () => {
 
   const handleDelete = async () => {
     if (!deleteId) return;
-    try { await faqCategoriesAPI.delete(deleteId); toast.success('Deleted'); load(); }
+    try { await faqCategoriesAPI.delete(deleteId); toast.success('Deleted'); if (refreshStats) refreshStats(); load(); }
     catch (err) { toast.error('Failed to delete'); }
     finally { setDeleteId(null); }
   };
@@ -393,7 +396,7 @@ const GlossaryTab = () => {
 
   const handleDelete = async () => {
     if (!deleteId) return;
-    try { await glossaryAPI.delete(deleteId); toast.success('Deleted'); load(); }
+    try { await glossaryAPI.delete(deleteId); toast.success('Deleted'); if (refreshStats) refreshStats(); load(); }
     catch (err) { toast.error('Failed to delete'); }
     finally { setDeleteId(null); }
   };

@@ -49,7 +49,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '../../components/ui/alert-dialog';
-import { Link } from 'react-router-dom';
+import { Link, useOutletContext } from 'react-router-dom';
 
 const AdminEntrepreneurs = () => {
   const [profiles, setProfiles] = useState([]);
@@ -115,11 +115,14 @@ const AdminEntrepreneurs = () => {
     }
   };
 
+  const { refreshStats } = useOutletContext();
+
   const handleDelete = async () => {
     if (!deleteId) return;
     try {
       await profileAPI.delete(deleteId);
       toast.success('Profile deleted');
+      if (refreshStats) refreshStats();
       loadProfiles();
     } catch (error) {
       toast.error('Failed to delete profile');

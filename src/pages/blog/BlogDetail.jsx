@@ -201,13 +201,23 @@ const BlogDetail = () => {
           }
         }
         
-        // Load Author Data if exists
+        // Load Author Data (Snapshot priority)
         if (postRes.data.authorId) {
-          try {
-            const authorRes = await authorAPI.get(postRes.data.authorId);
-            setAuthorData(authorRes.data);
-          } catch (err) {
-            console.error('Error fetching author details:', err);
+          if (postRes.data.author_name && postRes.data.author_photo) {
+            setAuthorData({
+              id: postRes.data.authorId,
+              name: postRes.data.author_name,
+              photo: postRes.data.author_photo,
+              designation: postRes.data.author_designation || postRes.data.designation || 'Professional Author',
+              slug: postRes.data.author_slug || postRes.data.authorId // Fallback slug
+            });
+          } else {
+            try {
+              const authorRes = await authorAPI.get(postRes.data.authorId);
+              setAuthorData(authorRes.data);
+            } catch (err) {
+              console.error('Error fetching author details:', err);
+            }
           }
         }
 

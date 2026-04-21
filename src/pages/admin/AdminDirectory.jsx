@@ -49,7 +49,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '../../components/ui/alert-dialog';
-import { Link } from 'react-router-dom';
+import { Link, useOutletContext } from 'react-router-dom';
 
 const AdminDirectory = () => {
   const [listings, setListings] = useState([]);
@@ -127,11 +127,14 @@ const AdminDirectory = () => {
     }
   };
 
+  const { refreshStats } = useOutletContext();
+
   const handleDelete = async () => {
     if (!deleteId) return;
     try {
       await listingAPI.delete(deleteId);
       toast.success('Listing deleted');
+      if (refreshStats) refreshStats();
       loadListings();
     } catch (error) {
       toast.error('Failed to delete listing');

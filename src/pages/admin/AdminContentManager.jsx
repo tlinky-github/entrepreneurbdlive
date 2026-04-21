@@ -2,7 +2,7 @@
 // Unified Content Manager for Blog, Entrepreneurs, Directory, Knowledge Hub
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useOutletContext } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
@@ -39,6 +39,7 @@ import './AdminContentManager.css';
 
 const AdminContentManager = () => {
   const navigate = useNavigate();
+  const { refreshStats } = useOutletContext();
   const [contentType, setContentType] = useState('blog'); // blog, entrepreneurs, directory, knowledge
   const [items, setItems] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -163,6 +164,7 @@ const AdminContentManager = () => {
       await contentAPI.delete(contentType, deleteId);
       setItems(items.filter(item => item.id !== deleteId));
       setDeleteId(null);
+      if (refreshStats) refreshStats();
       toast.success('Item deleted successfully');
     } catch (error) {
       toast.error('Failed to delete item');

@@ -135,6 +135,23 @@ export const postAPI = {
       console.error('Firestore Post Get Error:', error);
       throw error;
     }
+  },
+  create: async (data) => {
+    const res = await addDoc(collection(db, 'posts'), {
+      ...data,
+      created_at: serverTimestamp(),
+      view_count: 0
+    });
+    return { id: res.id, ...data };
+  },
+  update: async (id, data) => {
+    const ref = doc(db, 'posts', id);
+    await updateDoc(ref, { ...data, updated_at: serverTimestamp() });
+    return { id, ...data };
+  },
+  delete: async (id) => {
+    await deleteDoc(doc(db, 'posts', id));
+    return { success: true };
   }
 };
 

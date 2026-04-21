@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { postAPI, categoryAPI } from '../../lib/api';
+import { useOutletContext } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
@@ -66,12 +67,15 @@ const AdminPosts = () => {
     loadPosts();
   }, [loadPosts]);
 
+  const { refreshStats } = useOutletContext();
+
   const handleDelete = async () => {
     if (!deleteId) return;
     setDeleting(true);
     try {
       await postAPI.delete(deleteId);
       toast.success('Post deleted');
+      if (refreshStats) refreshStats();
       loadPosts();
     } catch (error) {
       toast.error('Failed to delete post');

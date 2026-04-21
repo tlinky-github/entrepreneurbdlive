@@ -266,6 +266,12 @@ const ContentEditorPanel = () => {
   const [showQuickAdd, setShowQuickAdd] = useState({ category: false, author: false, listingType: false, stage: false, industry: false, city: false });
   const [quickAddValue, setQuickAddValue] = useState('');
   const [leadershipSearch, setLeadershipSearch] = useState({ founder: '', ceo: '', business: '' });
+  const [manualSlugSet, setManualSlugSet] = useState(false);
+
+  // Senior Engineer Fix: Reset manual state when switching items (Prevents state bleed-over)
+  useEffect(() => {
+    setManualSlugSet(false);
+  }, [itemId, type]);
 
   const [isEditingSlug, setIsEditingSlug] = useState(false);
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
@@ -450,6 +456,7 @@ const ContentEditorPanel = () => {
 
             setTitle(data.title || '');
             setSlug(data.slug || '');
+            setManualSlugSet(true); // LOCK the slug: once loaded, never auto-generate from title again
             setExcerpt(data.excerpt || '');
             setCategory(data.category_id || '');
             setStatus(data.status || 'draft');
@@ -720,14 +727,27 @@ const ContentEditorPanel = () => {
     </div>
   );
 
-  // Auto-generate slug
+  // Auto-generate slug (Only for brand-new items, after search params settle)
   useEffect(() => {
-    const newSlug = title
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)/g, '');
-    setSlug(newSlug);
-  }, [title]);
+    // Safety Barrier: Never auto-generate if we are editing an existing item
+    if (itemId) return;
+    
+    // Safety Barrier: Only auto-generate if the content is ready and user hasn't typed a slug yet
+    if (contentLoaded && !manualSlugSet && title) {
+      const newSlug = title
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
+      setSlug(newSlug);
+    }
+  }, [title, itemId, manualSlugSet, contentLoaded]);
+  
+  // Reset slug manual state only when we truly switch to a NEW post (no itemId)
+  useEffect(() => {
+    if (!itemId) {
+      setManualSlugSet(false);
+    }
+  }, [itemId]);
 
   // Auto-fill SEO title if empty
   useEffect(() => {
@@ -822,8 +842,10 @@ const ContentEditorPanel = () => {
         industry,
         city,
         authorId,
-        website_link_settings: websiteLinkSettings,
         author_name: selectedAuthor?.name || '',
+        author_photo: selectedAuthor?.photo || '',
+        author_designation: selectedAuthor?.designation || '',
+        website_link_settings: websiteLinkSettings,
         logo: type === 'directory' ? (featuredImage || logo) : logo,
         photo: type === 'entrepreneurs' ? (featuredImage || photo) : photo,
         cover_image: featuredImage || coverImage,
@@ -2042,10 +2064,12 @@ const ContentEditorPanel = () => {
                   <div className="preview-url flex items-center space-x-1 text-green-700 text-sm mt-1">
                     <span>yoursite.com/</span>
                     {isEditingSlug ? (
-                      <input
-                        type="text"
-                        value={slug}
-                        onChange={(e) => setSlug(e.target.value)}
+                      <Input 
+                        value={slug} 
+                        onChange={(e) => {
+                          setSlug(e.target.value.toLowerCase().replace(/\s+/g, '-'));
+                          setManualSlugSet(true);
+                        }}
                         onBlur={() => setIsEditingSlug(false)}
                         onKeyDown={(e) => e.key === 'Enter' && setIsEditingSlug(false)}
                         className="border-b border-green-600 outline-none bg-transparent"
