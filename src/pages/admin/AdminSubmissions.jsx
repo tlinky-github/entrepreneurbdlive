@@ -20,6 +20,17 @@ import {
 } from 'lucide-react';
 import { adminAPI } from '../../lib/api';
 
+const formatDate = (date) => {
+  if (!date) return 'N/A';
+  // Handle Firestore Timestamp
+  if (date && typeof date === 'object' && 'seconds' in date) {
+    return new Date(date.seconds * 1000).toLocaleDateString();
+  }
+  // Handle Date strings or objects
+  const d = new Date(date);
+  return isNaN(d.getTime()) ? 'Invalid Date' : d.toLocaleDateString();
+};
+
 const AdminSubmissions = () => {
   const navigate = useNavigate();
   const { refreshStats } = useOutletContext();
@@ -121,7 +132,7 @@ const AdminSubmissions = () => {
                         </div>
                         <p className="text-sm text-stone-600 truncate">{p.designation} at <span className="font-semibold">{p.company_name}</span></p>
                         <div className="flex items-center gap-4 mt-2 text-xs text-stone-400">
-                          <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> Submitted {new Date(p.created_at?.seconds * 1000).toLocaleDateString()}</span>
+                          <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> Submitted {formatDate(p.created_at)}</span>
                           <span className="flex items-center gap-1"><ArrowUpRight className="w-3 h-3" /> {p.industry}</span>
                         </div>
                       </div>
@@ -185,7 +196,7 @@ const AdminSubmissions = () => {
                         </div>
                         <p className="text-sm text-stone-600 truncate">{l.listing_type_name || l.listing_type} • {l.headquarters}</p>
                         <div className="flex items-center gap-4 mt-2 text-xs text-stone-400">
-                           <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> Submitted {new Date(l.created_at?.seconds * 1000).toLocaleDateString()}</span>
+                           <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> Submitted {formatDate(l.created_at)}</span>
                            {l.website && <span className="flex items-center gap-1"><Globe className="w-3 h-3" /> {l.website.replace(/^https?:\/\//, '')}</span>}
                         </div>
                       </div>
