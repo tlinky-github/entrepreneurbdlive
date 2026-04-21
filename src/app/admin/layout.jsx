@@ -53,9 +53,9 @@ const AdminShell = ({ children }) => {
     { href: '/admin/directory', label: 'Directory', icon: Building2, addType: 'directory' },
     { href: '/admin/taxonomies', label: 'Taxonomies', icon: Tag },
     { href: '/admin/media', label: 'Media', icon: ImageIcon },
-    { href: '/admin/traffic-center', label: 'Redirects', icon: ArrowRightLeft },
+    { href: '/admin/traffic', label: 'Redirects', icon: ArrowRightLeft },
     { href: '/admin/users', label: 'Users', icon: Users },
-    { href: '/admin/ai-settings', label: '✨ AI Generator', icon: TrendingUp },
+    { href: '/admin/ai-generator', label: '✨ AI Generator', icon: TrendingUp },
     { href: '/admin/reports', label: 'Reports', icon: AlertTriangle },
     { href: '/admin/settings', label: 'Settings', icon: Settings },
   ];
@@ -91,12 +91,12 @@ const AdminShell = ({ children }) => {
   return (
     <div className="min-h-screen bg-stone-100">
       {/* Mobile Sidebar Toggle */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-white border-b border-stone-200 px-4 py-3">
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-white border-b border-stone-200 px-4 py-3 shadow-sm">
         <div className="flex items-center justify-between">
           <Button variant="ghost" size="sm" onClick={() => setSidebarOpen(!sidebarOpen)}>
             {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </Button>
-          <span className="font-semibold text-stone-900">Admin Dashboard</span>
+          <span className="font-bold text-stone-900">Admin Citadel</span>
           <Link href="/">
             <Button variant="ghost" size="sm">
               <Home className="w-5 h-5" />
@@ -107,45 +107,44 @@ const AdminShell = ({ children }) => {
 
       {/* Sidebar */}
       <aside className={`fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-stone-200 transform transition-transform duration-200 lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-        <div className="flex flex-col h-full">
-          {/* Logo */}
-          <div className="p-6 border-b border-stone-200">
-            <Link href="/admin" className="flex items-center gap-2">
-              <div className="w-10 h-10 bg-emerald-900 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-xl">e</span>
+        <div className="flex flex-col h-full shadow-[4px_0_24px_-12px_rgba(0,0,0,0.1)]">
+          {/* Logo Section */}
+          <div className="p-6 border-b border-stone-100 bg-stone-50/30">
+            <Link href="/admin" className="flex items-center gap-3">
+              <div className="w-11 h-11 bg-emerald-900 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-900/20 rotate-3 group-hover:rotate-0 transition-transform">
+                <span className="text-white font-bold text-2xl">e</span>
               </div>
-              <div>
-                <span className="font-bold text-stone-900">Admin</span>
-                <p className="text-xs text-stone-500">entrepreneurs.bd</p>
+              <div className="flex flex-col">
+                <span className="font-black text-stone-900 tracking-tighter text-lg leading-none">Admin</span>
+                <p className="text-[10px] text-emerald-700 font-bold uppercase tracking-widest mt-1">entrepreneurs.bd</p>
               </div>
             </Link>
           </div>
 
-          {/* Navigation */}
-          <nav className="flex-1 p-4 space-y-1 overflow-y-auto font-sans">
+          {/* Navigation Hub */}
+          <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto font-sans custom-scrollbar">
             {menuItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
                 onClick={() => setSidebarOpen(false)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+                className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all group ${
                   isActive(item.href, item.exact)
-                    ? 'bg-emerald-900 text-white shadow-lg shadow-emerald-900/20'
-                    : 'text-stone-600 hover:bg-stone-100'
+                    ? 'bg-emerald-900 text-white shadow-xl shadow-emerald-900/30'
+                    : 'text-stone-500 hover:bg-stone-50 hover:text-stone-900'
                 }`}
               >
-                <item.icon className="w-5 h-5" />
+                <item.icon className={`w-4.5 h-4.5 transition-colors ${
+                    isActive(item.href, item.exact) ? 'text-emerald-200' : 'text-stone-400 group-hover:text-emerald-700'
+                }`} />
                 <span className="flex-1">{item.label}</span>
+                
                 {item.label === 'Entrepreneurs' && stats?.pending_approvals > 0 && (
-                  <Badge className="ml-auto bg-red-500 text-white text-[10px] px-1.5 min-w-[18px] h-[18px] flex items-center justify-center">
+                  <Badge className="ml-auto bg-red-500 text-white text-[9px] px-1.5 h-5 flex items-center justify-center border-none font-bold">
                     {stats.pending_approvals}
                   </Badge>
                 )}
-                {item.label === 'Submissions' && (stats?.pending_public_submissions > 0) && (
-                  <Badge className="ml-auto bg-blue-500 text-white text-[10px] px-1.5 min-w-[18px] h-[18px] flex items-center justify-center animate-pulse">
-                    {stats.pending_public_submissions}
-                  </Badge>
-                )}
+                
                 {item.addType && (
                   <button
                     onClick={(e) => {
@@ -153,8 +152,8 @@ const AdminShell = ({ children }) => {
                       e.stopPropagation();
                       router.push(`/admin/content-editor?type=${item.addType}`);
                     }}
-                    className={`ml-2 p-1 rounded-md hover:bg-stone-200 transition-colors ${
-                      isActive(item.href) ? 'hover:bg-emerald-800 text-white' : 'text-stone-400 hover:text-stone-700'
+                    className={`ml-1 p-1 rounded-md transition-all ${
+                      isActive(item.href) ? 'hover:bg-emerald-800 text-emerald-200' : 'text-stone-300 hover:text-emerald-700 hover:bg-emerald-50'
                     }`}
                   >
                     <Plus className="w-3.5 h-3.5" />
@@ -164,29 +163,37 @@ const AdminShell = ({ children }) => {
             ))}
           </nav>
 
-          {/* User Info */}
-          <div className="p-4 border-t border-stone-200 bg-stone-50">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center shadow-inner">
-                <span className="text-emerald-900 font-bold">{user?.name?.charAt(0)}</span>
+          {/* Super Admin Profile Hub */}
+          <div className="p-4 border-t border-stone-100 bg-stone-50/50">
+            <div className="bg-white rounded-2xl p-3 border border-stone-200 shadow-sm">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 bg-emerald-900 rounded-xl flex items-center justify-center shadow-md shadow-emerald-900/10">
+                  <span className="text-white font-bold text-lg">{user?.name?.charAt(0) || 'K'}</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-stone-900 truncate text-xs leading-tight">{user?.name || 'Khaled Mahmud'}</p>
+                  <p className="text-[9px] text-emerald-700 uppercase tracking-widest font-black mt-0.5">{user?.role?.replace('_', ' ') || 'super admin'}</p>
+                </div>
+                <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={handleLogout} 
+                    className="h-8 w-8 p-0 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
+                >
+                    <LogOut className="w-3.5 h-3.5" />
+                </Button>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-stone-900 truncate text-sm">{user?.name}</p>
-                <p className="text-[10px] text-stone-500 uppercase tracking-wider font-bold">{user?.role?.replace('_', ' ')}</p>
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <Link href="/" className="flex-1">
-                <Button variant="outline" size="sm" className="w-full text-xs font-semibold">
-                  <Home className="w-3.5 h-3.5 mr-1.5" />
-                  Site
+              <Link href="/">
+                <Button variant="outline" size="sm" className="w-full text-[10px] font-black uppercase tracking-widest h-8 border-stone-200 hover:bg-stone-50 hover:text-emerald-900 transition-all">
+                  <Home className="w-3 h-3 mr-2" />
+                  View Live Site
                 </Button>
               </Link>
-              <Button variant="ghost" size="sm" onClick={handleLogout} className="text-stone-500 hover:text-red-600 hover:bg-red-50">
-                <LogOut className="w-4 h-4" />
-              </Button>
             </div>
           </div>
+        </div>
+      </aside>
+
         </div>
       </aside>
 

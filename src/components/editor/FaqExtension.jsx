@@ -3,7 +3,7 @@ import { ReactNodeViewRenderer, NodeViewWrapper } from '@tiptap/react';
 import React from 'react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
-import { Plus, X, HelpCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, X, HelpCircle } from 'lucide-react';
 
 const FaqComponent = ({ node, updateAttributes, deleteNode, editor }) => {
   const faqs = node.attrs.faqs || [];
@@ -41,22 +41,19 @@ const FaqComponent = ({ node, updateAttributes, deleteNode, editor }) => {
       return;
     }
 
-    // Get the current position of the node
     const pos = editor.state.selection.$from.before();
     
-    // We must execute this in a single transaction
     editor.chain()
       .focus()
       .insertContentAt(pos, html)
       .run();
       
-    // Remove the original FAQ node
     deleteNode();
   };
 
   return (
     <NodeViewWrapper className="faq-section-node my-8">
-      <div contentEditable={false} className="bg-emerald-50/50 border-2 border-dashed border-emerald-200 rounded-2xl p-6 relative group">
+      <div contentEditable={false} className="bg-emerald-50/50 border-2 border-dashed border-emerald-200 rounded-2xl p-6 relative group select-none">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-emerald-600 rounded-full flex items-center justify-center text-white">
@@ -64,7 +61,7 @@ const FaqComponent = ({ node, updateAttributes, deleteNode, editor }) => {
             </div>
             <div>
               <h4 className="font-bold text-emerald-900 leading-tight">Inline FAQ Block</h4>
-              <p className="text-[10px] text-emerald-700 uppercase tracking-wider font-semibold">SEO Optimized Questions</p>
+              <p className="text-[10px] text-emerald-700 uppercase tracking-wider font-bold">SEO Questions Generator</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -73,8 +70,7 @@ const FaqComponent = ({ node, updateAttributes, deleteNode, editor }) => {
               variant="outline" 
               size="sm" 
               onClick={convertToText}
-              className="text-xs h-7 text-stone-500 hover:text-emerald-700 bg-white"
-              title="Convert this block back into normal text headings and paragraphs"
+              className="text-[10px] uppercase font-black tracking-widest h-7 text-stone-500 hover:text-emerald-700 bg-white"
             >
               Convert to Text
             </Button>
@@ -101,7 +97,7 @@ const FaqComponent = ({ node, updateAttributes, deleteNode, editor }) => {
               </button>
               <div className="space-y-3">
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold text-emerald-600 uppercase">Question {index + 1}</label>
+                  <label className="text-[9px] font-black text-emerald-600 uppercase tracking-widest">Question {index + 1}</label>
                   <Input 
                     defaultValue={faq.q}
                     onBlur={(e) => updateFaq(index, 'q', e.target.value)}
@@ -112,7 +108,7 @@ const FaqComponent = ({ node, updateAttributes, deleteNode, editor }) => {
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold text-emerald-600 uppercase">Answer {index + 1}</label>
+                  <label className="text-[9px] font-black text-emerald-600 uppercase tracking-widest">Answer {index + 1}</label>
                   <textarea 
                     defaultValue={faq.a}
                     onBlur={(e) => updateFaq(index, 'a', e.target.value)}
@@ -129,7 +125,7 @@ const FaqComponent = ({ node, updateAttributes, deleteNode, editor }) => {
           <Button 
             onClick={addFaq}
             variant="outline"
-            className="w-full border-dashed border-2 border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:border-emerald-300 h-12"
+            className="w-full border-dashed border-2 border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:border-emerald-300 h-12 font-bold"
           >
             <Plus size={16} className="mr-2" />
             Add Question & Answer
@@ -162,11 +158,7 @@ export default Node.create({
   },
 
   parseHTML() {
-    return [
-      {
-        tag: 'faq-section',
-      },
-    ];
+    return [{ tag: 'faq-section' }];
   },
 
   renderHTML({ HTMLAttributes }) {

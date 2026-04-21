@@ -735,19 +735,69 @@ export const adminAPI = {
       throw error;
     }
   },
-  getUsers: async (params = {}) => {
-    try {
-      let q = collection(db, 'users');
-      if (params.role && params.role !== 'all') {
-        q = query(q, where('role', '==', params.role));
-      }
-      const snapshot = await getDocs(q);
-      let data = snapshot.docs.map(docToData);
-      if (params.search) {
-        const search = params.search.toLowerCase();
-        data = data.filter(u => u.name?.toLowerCase().includes(search) || u.email?.toLowerCase().includes(search));
-      }
       return { data };
+    } catch (error) {
+      console.error('Get Users Error:', error);
+      throw error;
+    }
+  },
+  
+  // --- AI LOGIC RECONSTRUCTION (Genesis Prime) ---
+  generateAIContent: async (params) => {
+    try {
+      const response = await fetch('/api/ai/ai-router', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(params)
+      });
+      const result = await response.json();
+      if (!result.success) throw new Error(result.error);
+      return { success: true, data: result };
+    } catch (error) {
+      console.error('AI Generation API Error:', error);
+      throw error;
+    }
+  },
+
+  getAILogs: async (filter = 'all') => {
+    if (!db) return { data: { logs: [], stats: { totalGenerated: 0, totalPublished: 0, tokensUsedTotal: 0, estimatedCostUSD: 0 } } };
+    try {
+      let q = collection(db, 'ai_logs');
+      if (filter !== 'all') {
+        q = query(q, where('action', '==', filter));
+      }
+      const snap = await getDocs(query(q, orderBy('timestamp', 'desc'), limit(50)));
+      const logs = snap.docs.map(docToData);
+      
+      // Calculate Stats (In React Time parity)
+      const allSnap = await getDocs(collection(db, 'ai_logs'));
+      const allLogs = allSnap.docs.map(d => d.data());
+      
+      const stats = {
+        totalGenerated: allLogs.filter(l => l.action === 'generation').length,
+        totalPublished: allLogs.filter(l => l.action === 'publish').length,
+        tokensUsedTotal: allLogs.reduce((acc, curr) => acc + (curr.metrics?.tokenUsed || 0), 0),
+        estimatedCostUSD: allLogs.reduce((acc, curr) => acc + (curr.metrics?.estimatedCost || 0), 0).toFixed(2)
+      };
+
+      return { data: { logs, stats } };
+    } catch (error) {
+      console.error('AI Logs Error:', error);
+      return { data: { logs: [], stats: { totalGenerated: 0, totalPublished: 0, tokensUsedTotal: 0, estimatedCostUSD: 0 } } };
+    }
+  },
+
+  deleteAILog: async (id) => {
+    try {
+      await deleteDoc(doc(db, 'ai_logs', id));
+      return { success: true };
+    } catch (error) {
+       console.error('Log Delete Error:', error);
+       throw error;
+    }
+  }
+};
+
     } catch (error) {
       console.error('Error fetching users:', error);
       return { data: [] };

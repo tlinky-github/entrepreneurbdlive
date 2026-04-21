@@ -3,7 +3,7 @@ import { Node, mergeAttributes } from '@tiptap/core';
 export const OverviewBlock = Node.create({
   name: 'overviewBlock',
   group: 'block',
-  content: 'block+', // Allows any block content inside
+  content: 'block+',
   
   addAttributes() {
     return {

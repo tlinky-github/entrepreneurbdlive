@@ -600,13 +600,38 @@ export default function EditorForge() {
                       <Button variant="ghost" size="sm" onClick={() => editor?.chain().focus().toggleHeading({level: 2}).run()} className={editor?.isActive('heading', {level: 2}) ? 'bg-stone-200' : ''}>H2</Button>
                       <Button variant="ghost" size="sm" onClick={() => editor?.chain().focus().toggleBulletList().run()} className={editor?.isActive('bulletList') ? 'bg-stone-200' : ''}>LIST</Button>
                       <div className="h-4 w-px bg-stone-200 mx-2" />
-                      <button onClick={() => editor.chain().focus().insertContent({ type: 'faqSection', attrs: { faqs: [{ q: '', a: '' }] } }).run()} className="text-[10px] font-black bg-white border border-stone-100 px-2 py-1.5 rounded hover:bg-stone-50 transition-colors uppercase tracking-tight">+ FAQ BLOCK</button>
-                      
-                      <div className="ml-auto flex items-center gap-1">
+                       <button 
+                         onClick={() => editor.chain().focus().insertContent({ type: 'faqSection', attrs: { faqs: [{ q: '', a: '' }] } }).run()} 
+                         className="text-[10px] font-black bg-white border border-stone-100 px-2.5 py-1.5 rounded-lg hover:border-emerald-500 hover:text-emerald-700 transition-all uppercase tracking-tight shadow-sm"
+                       >
+                         + FAQ BLOCK
+                       </button>
+
+                       <button 
+                         onClick={() => handleCopilot('faq')} 
+                         disabled={isCopilotLoading}
+                         className="text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-200 px-2.5 py-1.5 rounded-lg hover:bg-emerald-900 hover:text-white transition-all uppercase tracking-tight shadow-sm flex items-center gap-1.5"
+                       >
+                         {isCopilotLoading ? <Loader2 size={10} className="animate-spin" /> : <Sparkles size={10} />}
+                         GEN FAQ
+                       </button>
+
+                       <button 
+                         onClick={() => handleCopilot('overview')} 
+                         disabled={isCopilotLoading}
+                         className="text-[10px] font-black bg-indigo-100 text-indigo-800 border border-indigo-200 px-2.5 py-1.5 rounded-lg hover:bg-indigo-900 hover:text-white transition-all uppercase tracking-tight shadow-sm flex items-center gap-1.5"
+                       >
+                         {isCopilotLoading ? <Loader2 size={10} className="animate-spin" /> : <Wand2 size={10} />}
+                         GEN OVERVIEW
+                       </button>
+                       
+                       <div className="ml-auto flex items-center gap-1">
                         {isCopilotLoading ? <Loader2 size={14} className="animate-spin text-emerald-600 mr-2" /> : (
                           <>
-                            <button onClick={() => handleCopilot('rewrite')} className="p-1.5 text-stone-400 hover:text-indigo-600 transition-colors" title="AI Rewrite"><Wand2 size={16} /></button>
-                            <button onClick={() => setShowCustomCopilot(!showCustomCopilot)} className="text-[10px] font-black bg-indigo-600 text-white px-2 py-1 rounded hover:bg-indigo-700 transition-transform active:scale-95 shadow-md uppercase">AI COPILOT</button>
+                            <button onClick={() => setShowCustomCopilot(!showCustomCopilot)} className="flex items-center gap-2 text-[10px] font-black bg-stone-900 text-white px-3 py-1.5 rounded-lg hover:bg-black transition-transform active:scale-95 shadow-lg uppercase tracking-widest border-none">
+                                <Sparkles size={12} className="text-emerald-400" />
+                                AI COPILOT
+                            </button>
                           </>
                         )}
                       </div>
