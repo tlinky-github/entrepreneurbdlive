@@ -141,6 +141,10 @@ module.exports = async (req, res) => {
     let image = `${SITE_URL}/og-default.png`;
     let docData = null;
 
+    // --- ESCAPE PATH (Force Human Mode) ---
+    const sep = finalPath.includes('?') ? '&' : '?';
+    const escapedRedirectPath = `${finalPath}${sep}no_bot=1`;
+
     // --- DATA FETCHING (REST) ---
     if (type !== 'home' && slug) {
       const colMap = { 'blog': 'posts', 'directory': 'listings', 'entrepreneurs': 'profiles', 'knowledge': 'resources' };
@@ -184,10 +188,12 @@ module.exports = async (req, res) => {
 
     res.setHeader('Content-Type', 'text/html');
     res.setHeader('X-SEO-Engine', 'NUCLEAR-REST-v1');
-    return res.status(200).send(HTML_SHELL.replace('{{META_TAGS}}', metaTags).replace('{{REDIRECT_PATH}}', finalPath));
+    return res.status(200).send(HTML_SHELL.replace('{{META_TAGS}}', metaTags).replace('{{REDIRECT_PATH}}', escapedRedirectPath));
 
   } catch (error) {
     console.error('[CRITICAL] SEO failure:', error.message);
-    return res.status(200).send(HTML_SHELL.replace('{{META_TAGS}}', '').replace('{{REDIRECT_PATH}}', finalPath));
+    const sep = finalPath.includes('?') ? '&' : '?';
+    const escapedRedirectPath = `${finalPath}${sep}no_bot=1`;
+    return res.status(200).send(HTML_SHELL.replace('{{META_TAGS}}', '').replace('{{REDIRECT_PATH}}', escapedRedirectPath));
   }
 };
