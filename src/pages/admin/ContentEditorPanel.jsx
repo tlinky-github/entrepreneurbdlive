@@ -493,7 +493,7 @@ const ContentEditorPanel = () => {
             setCeoName(data.ceo_name || '');
             setHeadquarters(data.headquarters || '');
             setEmployeeSize(data.employee_size || '');
-            setCompanyPageUrl(data.company_page_url || '');
+            setCompanyPageUrl(data.company_page_url || data.website || '');
             setLifeAtCompany(data.life_at_company || '');
             setSocialLinkedin(data.social_linkedin || '');
             setSocialTwitter(data.social_twitter || '');
@@ -513,7 +513,7 @@ const ContentEditorPanel = () => {
             setListingType(data.listing_type || '');
             setStartupStage(data.startup_stage || '');
             setIndustry(data.industry || '');
-            setCity(data.city || '');
+            setCity(data.city || data.headquarters || '');
             setAuthorId(data.authorId || '');
             setFaqs(data.faqs || []);
             setIsFeatured(data.is_featured || false);

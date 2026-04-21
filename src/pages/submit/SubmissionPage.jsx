@@ -46,6 +46,7 @@ const SubmissionPage = () => {
     industries: [], 
     listing_types: [],
     startup_stages: [],
+    cities: [],
     employee_sizes: ['1-10', '11-50', '51-200', '201-500', '501-1000', '1001-5000', '5000+'] 
   });
   const [metadataLoading, setMetadataLoading] = useState(true);
@@ -73,6 +74,8 @@ const SubmissionPage = () => {
     category: '', 
     industry: '', 
     headquarters: '',
+    city: '',
+    listing_type: '',
     website: '',
     employee_size: '',
     ceo_name: '',
@@ -547,6 +550,31 @@ const SubmissionPage = () => {
                             value={lData.website}
                             onChange={(e) => setLData({...lData, website: e.target.value})}
                           />
+                        </div>
+                      </div>
+
+                      <div className="grid sm:grid-cols-2 gap-6 sm:gap-8">
+                         <div className="space-y-3">
+                          <label className="text-xs sm:text-sm font-bold text-stone-700 ml-1 uppercase tracking-wider">City</label>
+                          <select 
+                            className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 h-12 sm:h-14 text-sm font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:outline-none transition-all cursor-pointer"
+                            value={lData.city}
+                            onChange={(e) => setLData({...lData, city: e.target.value})}
+                          >
+                            <option value="">Select City</option>
+                            {(metadata.cities || []).map(c => <option key={c} value={c}>{c}</option>)}
+                          </select>
+                        </div>
+                        <div className="space-y-3">
+                          <label className="text-xs sm:text-sm font-bold text-stone-700 ml-1 uppercase tracking-wider">Listing Type</label>
+                          <select 
+                            className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 h-12 sm:h-14 text-sm font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:outline-none transition-all cursor-pointer"
+                            value={lData.listing_type}
+                            onChange={(e) => setLData({...lData, listing_type: e.target.value})}
+                          >
+                            <option value="">Select Type</option>
+                            {(metadata.listing_types || []).map(t => <option key={t} value={t}>{t}</option>)}
+                          </select>
                         </div>
                       </div>
 

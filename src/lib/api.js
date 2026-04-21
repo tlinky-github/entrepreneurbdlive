@@ -626,6 +626,8 @@ export const adminAPI = {
           total_listings: listingsSnap.size,
           total_resources: resourcesSnap.size,
           total_users: usersSnap.size,
+          pending_profiles: pendingProfilesSnap.size,
+          pending_listings: pendingListingsSnap.size,
           pending_approvals: pendingProfilesSnap.size + pendingListingsSnap.size,
           pending_public_submissions: pendingPublicProfiles + pendingPublicListings,
           pending_reports: reportsSnap.size

@@ -137,9 +137,14 @@ const AdminLayout = () => {
               >
                 <item.icon className="w-5 h-5" />
                 <span>{item.label}</span>
-                {item.label === 'Entrepreneurs' && stats?.pending_approvals > 0 && (
+                {item.label === 'Entrepreneurs' && stats?.pending_profiles > 0 && (
                   <Badge className="ml-auto bg-red-500 text-white text-xs mr-2">
-                    {stats.pending_approvals}
+                    {stats.pending_profiles}
+                  </Badge>
+                )}
+                {item.label === 'Directory' && stats?.pending_listings > 0 && (
+                  <Badge className="ml-auto bg-red-500 text-white text-xs mr-2">
+                    {stats.pending_listings}
                   </Badge>
                 )}
                 {item.label === 'Submissions' && (stats?.pending_public_submissions > 0) && (

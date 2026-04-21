@@ -62,7 +62,7 @@ const AdminEntrepreneurs = () => {
   const loadProfiles = useCallback(async () => {
     setLoading(true);
     try {
-      const params = { limit: 50 };
+      const params = { limit: 50, isAdmin: true };
       if (search) params.search = search;
       if (statusFilter !== 'all') params.status = statusFilter;
 

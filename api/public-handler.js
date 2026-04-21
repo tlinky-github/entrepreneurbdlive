@@ -84,6 +84,7 @@ async function handleListMetadata(db, res) {
   const listingTypes = types.docs.find(d => d.id === 'listing_types')?.data()?.items || [];
   const startupStages = types.docs.find(d => d.id === 'startup_stages')?.data()?.items || [];
   const employeeSizes = types.docs.find(d => d.id === 'employee_sizes')?.data()?.items || [];
+  const cityItems = types.docs.find(d => d.id === 'cities')?.data()?.items || [];
   const industryItems = industries.exists ? (industries.data().items || []) : [];
 
   return successResponse(res, {
@@ -91,7 +92,8 @@ async function handleListMetadata(db, res) {
     industries: industryItems,
     listing_types: listingTypes,
     startup_stages: startupStages,
-    employee_sizes: employeeSizes
+    employee_sizes: employeeSizes,
+    cities: cityItems
   });
 }
 
