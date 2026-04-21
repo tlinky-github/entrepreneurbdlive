@@ -275,6 +275,7 @@ const ContentEditorPanel = () => {
 
   const [submittedCategory, setSubmittedCategory] = useState('');
   const [submittedIndustry, setSubmittedIndustry] = useState('');
+  const [submittedCity, setSubmittedCity] = useState('');
   const [contactEmail, setContactEmail] = useState('');
   const [contactPhone, setContactPhone] = useState('');
   const [source, setSource] = useState('');
@@ -469,6 +470,7 @@ const ContentEditorPanel = () => {
             // Store submission metadata for reference
             setSubmittedCategory(data.category || '');
             setSubmittedIndustry(data.industry || '');
+            setSubmittedCity(data.city || data.headquarters || '');
             setContactEmail(data.contact_email || '');
             setContactPhone(data.contact_phone || '');
             setSource(data.source || '');
@@ -859,6 +861,9 @@ const ContentEditorPanel = () => {
         social_facebook: socialFacebook,
         email,
         phone,
+        contact_email: contactEmail,
+        contact_phone: contactPhone,
+        source: source,
         website,
         is_featured: isFeatured,
         listing_type: listingType,
@@ -1138,6 +1143,19 @@ const ContentEditorPanel = () => {
                          User Submitted: {submittedIndustry}
                        </p>
                      )}
+                     <QuickSelector
+                       label="City"
+                       value={city}
+                       onChange={setCity}
+                       options={cities}
+                       taxType="city"
+                       placeholder="Select City"
+                     />
+                     {submittedCity && (
+                       <p className="text-[10px] text-emerald-600 font-bold px-1 uppercase leading-tight mt-1">
+                         User Submitted: {submittedCity}
+                       </p>
+                     )}
                    </div>
                  </>
                )}
@@ -1371,6 +1389,21 @@ const ContentEditorPanel = () => {
                         <option value="500+">500+</option>
                       </select>
                     </div>
+                    <div className="space-y-4">
+                      <QuickSelector
+                        label="City"
+                        value={city}
+                        onChange={setCity}
+                        options={cities}
+                        taxType="city"
+                        placeholder="Select City"
+                      />
+                      {submittedCity && (
+                        <p className="text-[10px] text-emerald-600 font-bold px-1 uppercase leading-tight mt-1">
+                          User Submitted: {submittedCity}
+                        </p>
+                      )}
+                    </div>
                     <QuickSelector
                       label="Listing Type"
                       value={listingType}
@@ -1379,6 +1412,19 @@ const ContentEditorPanel = () => {
                       taxType="listingType"
                       placeholder="Select Type"
                     />
+                    <QuickSelector
+                      label="Industry"
+                      value={industry}
+                      onChange={setIndustry}
+                      options={industries}
+                      taxType="industry"
+                      placeholder="Select Industry"
+                    />
+                    {submittedIndustry && (
+                      <p className="text-[10px] text-emerald-600 font-bold px-1 uppercase leading-tight mt-1">
+                        User Submitted: {submittedIndustry}
+                      </p>
+                    )}
                   </div>
                   <div className="relative">
                     <Input
