@@ -307,7 +307,13 @@ const KnowledgeArticlePage = () => {
                               {faq.q}
                             </AccordionTrigger>
                             <AccordionContent className="text-stone-600 pb-4 leading-relaxed">
-                              {faq.a}
+                              {(() => {
+                                const answerHtml = (faq.a || '')
+                                  .replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+                                  .replace(/&quot;/g, '"').replace(/&amp;apos;/g, "'").replace(/&amp;/g, '&')
+                                  .replace(/style="[^"]*"/gi, ''); // Strip nasty inline styles
+                                return <div dangerouslySetInnerHTML={{ __html: answerHtml }} />;
+                              })()}
                             </AccordionContent>
                           </AccordionItem>
                         ))}

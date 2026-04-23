@@ -332,12 +332,22 @@ const DirectoryDetail = () => {
                                     Frequently Asked Questions
                                   </h2>
                                   <div className="faq-list">
-                                    {faqsData.map((faq, fIndex) => (
-                                      <div key={fIndex} className="mb-6 last:mb-0">
-                                        <p className="font-bold text-stone-900 !m-0 text-lg">{faq.question || faq.q}</p>
-                                        <p className="text-stone-800 leading-[1.8] !mt-1 !mb-0">{faq.answer || faq.a}</p>
-                                      </div>
-                                    ))}
+                                    {faqsData.map((faq, fIndex) => {
+                                      const answerHtml = (faq.answer || faq.a || '')
+                                        .replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+                                        .replace(/&quot;/g, '"').replace(/&amp;apos;/g, "'").replace(/&amp;/g, '&')
+                                        .replace(/style="[^"]*"/gi, ''); // Strip nasty inline styles
+                                        
+                                      return (
+                                        <div key={fIndex} className="mb-6 last:mb-0">
+                                          <p className="font-bold text-stone-900 !m-0 text-lg">{faq.question || faq.q}</p>
+                                          <div 
+                                            className="text-stone-800 leading-[1.8] !mt-1 !mb-0 prose-faq"
+                                            dangerouslySetInnerHTML={{ __html: answerHtml }}
+                                          />
+                                        </div>
+                                      );
+                                    })}
                                   </div>
                                 </div>
                               );

@@ -498,6 +498,7 @@ code {
 /* Premium Responsive Tables */
 .table-wrapper {
   width: 100%;
+  max-width: 100%;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   margin: 2rem 0;
@@ -506,16 +507,18 @@ code {
 }
 
 .tiptap-content table {
-  width: 100%;
-  min-width: 600px; /* Force scroll on mobile for better readability */
+  width: 100% !important;
+  min-width: 100% !important;
   border-collapse: collapse;
   margin: 0;
   font-size: 1.05rem; /* Slightly smaller than body for better table fit, but consistent */
   line-height: 1.5;
+  table-layout: auto;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .tiptap-content table {
+    min-width: 600px; /* Only force min-width on mobile to enable scrolling */
     font-size: 0.95rem;
   }
 }
