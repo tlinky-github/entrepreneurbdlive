@@ -340,6 +340,11 @@
   outline: none;
 }
 
+/* Specificity override for FAQ Answer field */
+.faq-answer-editor.ProseMirror {
+  min-height: 40px !important;
+}
+
 .editor-content .ProseMirror p {
   margin: 12px 0;
   line-height: 1.6;

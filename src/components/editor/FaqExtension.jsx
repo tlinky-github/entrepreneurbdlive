@@ -7,12 +7,22 @@ import { Plus, X, HelpCircle, ChevronDown, ChevronUp, Link as LinkIcon, Bold, It
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
+import LinkDialog from '../admin/LinkDialog';
 
 const FaqAnswerEditor = ({ value, onChange }) => {
+  const [linkDialogOpen, setLinkDialogOpen] = React.useState(false);
+  
   const editor = useEditor({
     extensions: [
       StarterKit.configure({ heading: false }), 
-      Link.configure({ openOnClick: false, HTMLAttributes: { class: 'text-emerald-600 underline' }})
+      Link.configure({ 
+        openOnClick: false, 
+        HTMLAttributes: { 
+          class: 'text-emerald-600 underline hover:text-emerald-700 transition-colors',
+          target: '_blank',
+          rel: 'nofollow noopener noreferrer'
+        }
+      })
     ],
     content: value,
     editable: true,
@@ -21,7 +31,7 @@ const FaqAnswerEditor = ({ value, onChange }) => {
     },
     editorProps: {
       attributes: {
-        class: 'w-full min-h-[80px] p-2 text-sm focus:outline-none bg-stone-50/30 prose prose-sm max-w-none'
+        class: 'w-full min-h-[40px] px-3 py-2 text-sm focus:outline-none bg-stone-50/10 faq-answer-editor'
       }
     }
   });
@@ -34,19 +44,17 @@ const FaqAnswerEditor = ({ value, onChange }) => {
 
   if (!editor) return null;
 
-  const setLink = () => {
-    const previousUrl = editor.getAttributes('link').href;
-    const url = window.prompt('URL', previousUrl);
-    
-    // cancelled
-    if (url === null) return;
-    // empty
-    if (url === '') {
+  const handleSetLink = (url) => {
+    if (!url) {
       editor.chain().focus().extendMarkRange('link').unsetLink().run();
-      return;
+    } else {
+      editor.chain().focus().extendMarkRange('link').setLink({ 
+        href: url,
+        target: '_blank',
+        rel: 'nofollow noopener noreferrer'
+      }).run();
     }
-    // update link
-    editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
+    setLinkDialogOpen(false);
   };
 
   return (
@@ -55,9 +63,16 @@ const FaqAnswerEditor = ({ value, onChange }) => {
         <button type="button" onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().toggleBold().run(); }} className={`p-1.5 text-stone-500 rounded hover:bg-stone-200 ${editor.isActive('bold') ? 'bg-stone-200 text-stone-900' : ''}`}><Bold size={14}/></button>
         <button type="button" onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().toggleItalic().run(); }} className={`p-1.5 text-stone-500 rounded hover:bg-stone-200 ${editor.isActive('italic') ? 'bg-stone-200 text-stone-900' : ''}`}><Italic size={14}/></button>
         <div className="w-px h-4 bg-stone-300 mx-1"></div>
-        <button type="button" onMouseDown={(e) => { e.preventDefault(); setLink(); }} className={`p-1.5 text-stone-500 rounded hover:bg-stone-200 flex items-center gap-1 ${editor.isActive('link') ? 'bg-emerald-100 text-emerald-700' : ''}`}><LinkIcon size={14}/><span className="text-[10px] font-medium leading-none">Link</span></button>
+        <button type="button" onMouseDown={(e) => { e.preventDefault(); setLinkDialogOpen(true); }} className={`p-1.5 text-stone-500 rounded hover:bg-stone-200 flex items-center gap-1 ${editor.isActive('link') ? 'bg-emerald-100 text-emerald-700' : ''}`}><LinkIcon size={14}/><span className="text-[10px] font-medium leading-none">Link</span></button>
       </div>
       <EditorContent editor={editor} onKeyDownCapture={e => e.stopPropagation()} onMouseDownCapture={e => e.stopPropagation()} />
+      
+      <LinkDialog 
+        open={linkDialogOpen} 
+        onOpenChange={setLinkDialogOpen}
+        onSetLink={handleSetLink}
+        defaultUrl={editor.getAttributes('link').href || ''}
+      />
     </div>
   );
 };
