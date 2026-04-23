@@ -2,7 +2,7 @@
 // Advanced Content Editor with SEO, Categories, Rich Text
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate, useBeforeUnload, useBlocker } from 'react-router-dom';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
@@ -217,7 +217,30 @@ const ContentEditorPanel = () => {
   const [showQuickAdd, setShowQuickAdd] = useState({ category: false, author: false, listingType: false, stage: false, industry: false, city: false });
   const [quickAddValue, setQuickAddValue] = useState('');
   const [leadershipSearch, setLeadershipSearch] = useState({ founder: '', ceo: '', business: '' });
+
   const [manualSlugSet, setManualSlugSet] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
+
+  // Prevent data loss on browser refresh
+  useBeforeUnload(
+    useCallback(
+      (event) => {
+        if (isDirty) {
+          event.preventDefault();
+        }
+      },
+      [isDirty]
+    )
+  );
+
+  // BLOCK NAVIGATION: This catches sidebar clicks, logo clicks, etc.
+  const blocker = useBlocker(
+    useCallback(
+      ({ currentLocation, nextLocation }) =>
+        isDirty && currentLocation.pathname !== nextLocation.pathname,
+      [isDirty]
+    )
+  );
 
   // Senior Engineer Fix: Reset manual state when switching items (Prevents state bleed-over)
   useEffect(() => {
@@ -420,6 +443,31 @@ const ContentEditorPanel = () => {
       },
     },
   });
+
+  // Monitor editor for changes
+  useEffect(() => {
+    if (editor && contentLoaded) {
+      const updateHandler = () => setIsDirty(true);
+      editor.on('update', updateHandler);
+      return () => editor.off('update', updateHandler);
+    }
+  }, [editor, contentLoaded]);
+
+  // Monitor specialized editor
+  useEffect(() => {
+    if (lifeAtCompanyEditor && contentLoaded) {
+      const updateHandler = () => setIsDirty(true);
+      lifeAtCompanyEditor.on('update', updateHandler);
+      return () => lifeAtCompanyEditor.off('update', updateHandler);
+    }
+  }, [lifeAtCompanyEditor, contentLoaded]);
+
+  // Monitor form fields for changes
+  useEffect(() => {
+    if (contentLoaded) {
+      setIsDirty(true);
+    }
+  }, [title, slug, excerpt, category, featuredImage, seoTitle, seoDescription, seoKeywords, faqs, isFeatured, status]);
 
   // Debug editor state
   useEffect(() => {
@@ -904,6 +952,7 @@ const ContentEditorPanel = () => {
 
 
       toast.success(`Content ${status === 'published' ? 'published' : 'saved'} successfully!`);
+      setIsDirty(false); // Reset dirty state on successful save
 
       if (!itemId && response?.id) {
         navigate(`/admin/content-editor?type=${type}&id=${response.id}`, { replace: true });
@@ -994,6 +1043,72 @@ const ContentEditorPanel = () => {
           </button>
         </div>
       </div>
+      
+      {isDirty && (
+        <div className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-2xl p-4 mb-8 flex items-center justify-between shadow-xl shadow-emerald-100 border border-emerald-500/20 animate-in fade-in slide-in-from-top-6 duration-500">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-md">
+              <Sparkles className="w-5 h-5 text-white animate-pulse" />
+            </div>
+            <div>
+              <p className="font-bold text-sm leading-tight">Unsaved Draft Progress</p>
+              <p className="text-[11px] text-emerald-100 opacity-90">Changes detected. Save as draft to prevent data loss.</p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button 
+              size="sm" 
+              variant="ghost" 
+              onClick={() => setIsDirty(false)} 
+              className="text-xs h-9 text-white hover:bg-white/10 border-white/20"
+            >
+              Ignore Changes
+            </Button>
+            <Button 
+              size="sm" 
+              onClick={() => handleSave()} 
+              className="text-xs h-9 bg-white text-emerald-700 hover:bg-emerald-50 border-0 font-bold px-5"
+            >
+              Save Draft Now
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Branded Navigation Blocker Dialog */}
+      <Dialog open={blocker.state === 'blocked'} onOpenChange={() => blocker.reset()}>
+        <DialogContent className="sm:max-w-[425px] border-emerald-100 rounded-3xl p-8">
+          <div className="flex flex-col items-center text-center space-y-4">
+            <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mb-2">
+              <ShieldCheck className="w-8 h-8 text-emerald-600" />
+            </div>
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-black text-stone-900 tracking-tight">Unsaved Progress!</DialogTitle>
+              <DialogDescription className="text-stone-500 pt-2">
+                You have unsaved changes in your editor. If you leave now, these changes will be lost forever.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="w-full flex-col sm:flex-row gap-3 pt-6">
+              <Button 
+                variant="outline" 
+                className="flex-1 rounded-xl h-12 border-stone-200"
+                onClick={() => blocker.proceed()}
+              >
+                Leave anyway
+              </Button>
+              <Button 
+                className="flex-1 rounded-xl h-12 bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-200"
+                onClick={async () => {
+                  await handleSave();
+                  // Reset dirty state will automatically close the dialog via blocker state
+                }}
+              >
+                Save & Continue
+              </Button>
+            </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <div className="editor-main">
         {/* Left: Content Editor */}

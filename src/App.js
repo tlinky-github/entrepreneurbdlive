@@ -54,7 +54,7 @@ const FAQsPage = lazy(() => import('./pages/FAQsPage'));
 const GlossaryPage = lazy(() => import('./pages/GlossaryPage'));
 const VisualEditor = lazy(() => import('./pages/VisualEditor/VisualEditor'));
 
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider, createRoutesFromElements, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 import { AuthProvider, useAuth } from './lib/auth';
 import Layout from './components/layout/Layout';
@@ -444,21 +444,25 @@ const URLCleaner = () => {
   return null;
 };
 
-function App() {
-  return (
-    <Router>
-      <URLCleaner />
+const router = createBrowserRouter(
+  createRoutesFromElements(
+    <Route path="*" element={
       <HelmetProvider>
         <ErrorBoundary>
           <ScrollToTop />
+          <URLCleaner />
           <AuthProvider>
             <AppRoutes />
             <Toaster position="top-right" richColors />
           </AuthProvider>
         </ErrorBoundary>
       </HelmetProvider>
-    </Router>
-  );
+    } />
+  )
+);
+
+function App() {
+  return <RouterProvider router={router} />;
 }
 
 export default App;
