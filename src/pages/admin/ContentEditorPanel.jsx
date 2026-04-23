@@ -382,9 +382,12 @@ const ContentEditorPanel = () => {
   const editor = useEditor({
     extensions: [
       ...getSharedExtensions(),
-      Placeholder.configure({ placeholder: 'Write your story...' })
+      Placeholder.configure({ placeholder: 'Start typing here...' })
     ],
-    content: '<p>Start typing here...</p>',
+    content: '',
+    onUpdate: ({ editor }) => {
+      // Any specific logic for update if needed
+    },
     autofocus: true,
     editable: true,
     editorProps: {
