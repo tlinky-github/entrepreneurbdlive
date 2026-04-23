@@ -44,14 +44,14 @@ const FaqAnswerEditor = ({ value, onChange }) => {
 
   if (!editor) return null;
 
-  const handleSetLink = (url) => {
-    if (!url) {
+  const handleApplyLink = (data) => {
+    if (!data.href) {
       editor.chain().focus().extendMarkRange('link').unsetLink().run();
     } else {
       editor.chain().focus().extendMarkRange('link').setLink({ 
-        href: url,
-        target: '_blank',
-        rel: 'nofollow noopener noreferrer'
+        href: data.href,
+        target: data.target || '_blank',
+        rel: data.rel || 'nofollow noopener noreferrer'
       }).run();
     }
     setLinkDialogOpen(false);
@@ -70,8 +70,8 @@ const FaqAnswerEditor = ({ value, onChange }) => {
       <LinkDialog 
         open={linkDialogOpen} 
         onOpenChange={setLinkDialogOpen}
-        onSetLink={handleSetLink}
-        defaultUrl={editor.getAttributes('link').href || ''}
+        onApply={handleApplyLink}
+        initialData={editor.getAttributes('link')}
       />
     </div>
   );
