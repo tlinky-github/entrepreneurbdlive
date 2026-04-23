@@ -187,6 +187,7 @@ module.exports = async (req, res) => {
     `;
 
     res.setHeader('Content-Type', 'text/html');
+    res.setHeader('Cache-Control', 'public, s-maxage=86400, stale-while-revalidate=43200');
     res.setHeader('X-SEO-Engine', 'NUCLEAR-REST-v1');
     return res.status(200).send(HTML_SHELL.replace('{{META_TAGS}}', metaTags).replace('{{REDIRECT_PATH}}', escapedRedirectPath));
 
