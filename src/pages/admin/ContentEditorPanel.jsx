@@ -948,6 +948,7 @@ const ContentEditorPanel = () => {
         city,
         authorId,
         author_name: selectedAuthor?.name || '',
+        author_slug: selectedAuthor?.slug || '',
         author_photo: selectedAuthor?.photo || '',
         author_designation: selectedAuthor?.designation || '',
         website_link_settings: websiteLinkSettings,

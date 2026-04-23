@@ -201,20 +201,32 @@ const BlogDetail = () => {
           }
         }
         
-        // Load Author Data (Snapshot priority)
+        // Load Author Data (Hybrid priority: Snapshot for speed, API for accuracy if slug missing)
         if (postRes.data.authorId) {
-          if (postRes.data.author_name && postRes.data.author_photo) {
+          // If we have a snapshot with a valid slug, use it immediately
+          if (postRes.data.author_name && postRes.data.author_slug && postRes.data.author_slug !== postRes.data.authorId) {
             setAuthorData({
               id: postRes.data.authorId,
               name: postRes.data.author_name,
               photo: postRes.data.author_photo,
               designation: postRes.data.author_designation || postRes.data.designation || 'Professional Author',
-              slug: postRes.data.author_slug || postRes.data.authorId // Fallback slug
+              slug: postRes.data.author_slug
             });
           } else {
+            // Otherwise, fetch fresh data from the author profile to ensure we have the correct slug
             try {
               const authorRes = await authorAPI.get(postRes.data.authorId);
-              setAuthorData(authorRes.data);
+              if (authorRes.data) {
+                setAuthorData(authorRes.data);
+              } else if (postRes.data.author_name) {
+                // Last resort fallback
+                setAuthorData({
+                  id: postRes.data.authorId,
+                  name: postRes.data.author_name,
+                  photo: postRes.data.author_photo,
+                  slug: postRes.data.authorId
+                });
+              }
             } catch (err) {
               console.error('Error fetching author details:', err);
             }
