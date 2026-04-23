@@ -2120,10 +2120,10 @@ const ContentEditorPanel = () => {
                 <Input
                   value={seoTitle}
                   onChange={(e) => setSeoTitle(e.target.value)}
-                  maxLength="60"
-                  placeholder="Max 60 characters"
+                  maxLength="70"
+                  placeholder="Max 70 characters"
                 />
-                <small className="char-count">{seoTitle.length}/60</small>
+                <small className="char-count">{seoTitle.length}/70</small>
               </div>
 
               <div>

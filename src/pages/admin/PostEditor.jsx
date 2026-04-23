@@ -246,11 +246,11 @@ const PostEditor = () => {
                   id="seo_title"
                   value={formData.seo_title}
                   onChange={(e) => handleChange('seo_title', e.target.value)}
-                  placeholder="SEO optimized title (60 characters)"
-                  maxLength={60}
+                  placeholder="SEO optimized title (70 characters)"
+                  maxLength={70}
                   className="mt-1"
                 />
-                <p className="text-xs text-stone-500 mt-1">{formData.seo_title.length}/60</p>
+                <p className="text-xs text-stone-500 mt-1">{formData.seo_title.length}/70</p>
               </div>
               <div>
                 <Label htmlFor="seo_description">Meta Description</Label>

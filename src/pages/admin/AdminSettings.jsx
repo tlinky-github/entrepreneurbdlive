@@ -303,9 +303,9 @@ const AdminSettings = () => {
                   id="seo_title"
                   value={settings.seo_title}
                   onChange={(e) => handleChange('seo_title', e.target.value)}
-                  maxLength={60}
+                  maxLength={70}
                 />
-                <p className="text-xs text-stone-500">{settings.seo_title?.length || 0}/60 characters</p>
+                <p className="text-xs text-stone-500">{settings.seo_title?.length || 0}/70 characters</p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="seo_description">Default Meta Description</Label>
