@@ -470,7 +470,7 @@ const ContentEditorPanel = () => {
     if (contentLoaded) {
       setIsDirty(true);
     }
-  }, [title, slug, excerpt, category, featuredImage, seoTitle, seoDescription, seoKeywords, faqs, isFeatured, status]);
+  }, [title, slug, excerpt, category, featuredImage, seoTitle, seoDescription, seoKeywords, faqs, isFeatured, status, contentLoaded]);
 
   // Debug editor state
   useEffect(() => {
