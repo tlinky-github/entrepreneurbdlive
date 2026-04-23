@@ -1,9 +1,66 @@
 import { Node, mergeAttributes } from '@tiptap/core';
 import { ReactNodeViewRenderer, NodeViewWrapper } from '@tiptap/react';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
-import { Plus, X, HelpCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, X, HelpCircle, ChevronDown, ChevronUp, Link as LinkIcon, Bold, Italic } from 'lucide-react';
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import Link from '@tiptap/extension-link';
+
+const FaqAnswerEditor = ({ value, onChange }) => {
+  const editor = useEditor({
+    extensions: [
+      StarterKit.configure({ heading: false }), 
+      Link.configure({ openOnClick: false, HTMLAttributes: { class: 'text-emerald-600 underline' }})
+    ],
+    content: value,
+    editable: true,
+    onUpdate: ({ editor }) => {
+      onChange(editor.getHTML());
+    },
+    editorProps: {
+      attributes: {
+        class: 'w-full min-h-[80px] p-2 text-sm focus:outline-none bg-stone-50/30 prose prose-sm max-w-none'
+      }
+    }
+  });
+
+  useEffect(() => {
+    if (editor && value && editor.getHTML() !== value) {
+      editor.commands.setContent(value);
+    }
+  }, [value, editor]);
+
+  if (!editor) return null;
+
+  const setLink = () => {
+    const previousUrl = editor.getAttributes('link').href;
+    const url = window.prompt('URL', previousUrl);
+    
+    // cancelled
+    if (url === null) return;
+    // empty
+    if (url === '') {
+      editor.chain().focus().extendMarkRange('link').unsetLink().run();
+      return;
+    }
+    // update link
+    editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
+  };
+
+  return (
+    <div className="flex flex-col border border-stone-200 rounded-md bg-white overflow-hidden focus-within:ring-1 focus-within:ring-emerald-500">
+      <div className="flex px-2 py-1 bg-stone-50 border-b border-stone-200 gap-1 items-center">
+        <button type="button" onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().toggleBold().run(); }} className={`p-1.5 text-stone-500 rounded hover:bg-stone-200 ${editor.isActive('bold') ? 'bg-stone-200 text-stone-900' : ''}`}><Bold size={14}/></button>
+        <button type="button" onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().toggleItalic().run(); }} className={`p-1.5 text-stone-500 rounded hover:bg-stone-200 ${editor.isActive('italic') ? 'bg-stone-200 text-stone-900' : ''}`}><Italic size={14}/></button>
+        <div className="w-px h-4 bg-stone-300 mx-1"></div>
+        <button type="button" onMouseDown={(e) => { e.preventDefault(); setLink(); }} className={`p-1.5 text-stone-500 rounded hover:bg-stone-200 flex items-center gap-1 ${editor.isActive('link') ? 'bg-emerald-100 text-emerald-700' : ''}`}><LinkIcon size={14}/><span className="text-[10px] font-medium leading-none">Link</span></button>
+      </div>
+      <EditorContent editor={editor} onKeyDownCapture={e => e.stopPropagation()} onMouseDownCapture={e => e.stopPropagation()} />
+    </div>
+  );
+};
 
 const FaqComponent = ({ node, updateAttributes, deleteNode, editor }) => {
   const faqs = node.attrs.faqs || [];
@@ -23,6 +80,24 @@ const FaqComponent = ({ node, updateAttributes, deleteNode, editor }) => {
   const updateFaq = (index, field, value) => {
     const newFaqs = [...faqs];
     newFaqs[index][field] = value;
+    updateAttributes({ faqs: newFaqs });
+  };
+
+  const moveFaqUp = (index) => {
+    if (index === 0) return;
+    const newFaqs = [...faqs];
+    const temp = newFaqs[index];
+    newFaqs[index] = newFaqs[index - 1];
+    newFaqs[index - 1] = temp;
+    updateAttributes({ faqs: newFaqs });
+  };
+
+  const moveFaqDown = (index) => {
+    if (index === faqs.length - 1) return;
+    const newFaqs = [...faqs];
+    const temp = newFaqs[index];
+    newFaqs[index] = newFaqs[index + 1];
+    newFaqs[index + 1] = temp;
     updateAttributes({ faqs: newFaqs });
   };
 
@@ -91,20 +166,26 @@ const FaqComponent = ({ node, updateAttributes, deleteNode, editor }) => {
 
         <div className="space-y-4">
           {faqs.map((faq, index) => (
-            <div key={index} className="bg-white border border-emerald-100 rounded-xl p-4 shadow-sm relative">
-              <button 
-                onClick={() => removeFaq(index)}
-                className="absolute top-2 right-2 text-stone-300 hover:text-red-500 transition-colors"
-                type="button"
-              >
-                <X size={14} />
-              </button>
+            <div key={index} className="bg-white border border-emerald-100 rounded-xl p-4 shadow-sm relative pr-10">
+              <div className="absolute top-2 right-2 flex flex-col gap-1 items-center border border-stone-100 bg-stone-50 rounded p-1">
+                <button type="button" onClick={() => moveFaqUp(index)} disabled={index === 0} className={`p-1 rounded ${index === 0 ? 'text-stone-200' : 'text-stone-500 hover:bg-stone-200'}`}>
+                  <ChevronUp size={14} />
+                </button>
+                <div className="w-full h-px bg-stone-200" />
+                <button type="button" onClick={() => removeFaq(index)} className="p-1 rounded text-stone-400 hover:text-red-500 hover:bg-red-50 transition-colors">
+                  <X size={14} />
+                </button>
+                <div className="w-full h-px bg-stone-200" />
+                <button type="button" onClick={() => moveFaqDown(index)} disabled={index === faqs.length - 1} className={`p-1 rounded ${index === faqs.length - 1 ? 'text-stone-200' : 'text-stone-500 hover:bg-stone-200'}`}>
+                  <ChevronDown size={14} />
+                </button>
+              </div>
               <div className="space-y-3">
                 <div className="space-y-1">
                   <label className="text-[9px] font-bold text-emerald-600 uppercase">Question {index + 1}</label>
                   <Input 
-                    defaultValue={faq.q}
-                    onBlur={(e) => updateFaq(index, 'q', e.target.value)}
+                    value={faq.q}
+                    onChange={(e) => updateFaq(index, 'q', e.target.value)}
                     onKeyDownCapture={(e) => e.stopPropagation()}
                     onMouseDownCapture={(e) => e.stopPropagation()}
                     placeholder="Enter question..."
@@ -113,13 +194,9 @@ const FaqComponent = ({ node, updateAttributes, deleteNode, editor }) => {
                 </div>
                 <div className="space-y-1">
                   <label className="text-[9px] font-bold text-emerald-600 uppercase">Answer {index + 1}</label>
-                  <textarea 
-                    defaultValue={faq.a}
-                    onBlur={(e) => updateFaq(index, 'a', e.target.value)}
-                    onKeyDownCapture={(e) => e.stopPropagation()}
-                    onMouseDownCapture={(e) => e.stopPropagation()}
-                    placeholder="Enter answer..."
-                    className="w-full min-h-[80px] p-2 text-sm border border-stone-100 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 bg-stone-50/30"
+                  <FaqAnswerEditor 
+                    value={faq.a} 
+                    onChange={(val) => updateFaq(index, 'a', val)} 
                   />
                 </div>
               </div>

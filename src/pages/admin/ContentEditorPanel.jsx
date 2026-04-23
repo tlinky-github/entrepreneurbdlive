@@ -13,6 +13,10 @@ import { TextStyle } from '@tiptap/extension-text-style';
 import Color from '@tiptap/extension-color';
 import Highlight from '@tiptap/extension-highlight';
 import Placeholder from '@tiptap/extension-placeholder';
+import { Table } from '@tiptap/extension-table';
+import { TableCell } from '@tiptap/extension-table-cell';
+import { TableHeader } from '@tiptap/extension-table-header';
+import { TableRow } from '@tiptap/extension-table-row';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
@@ -55,145 +59,92 @@ import './ContentEditorPanel.css';
 // Senior Engineer Fix: Advanced Multi-Structural Smart Scanner
 // Detects FAQs, Quick Answers, and Key Takeaways for premium styling
 const upgradeLegacyFaqs = (html) => {
-  if (!html) return html;
+  if (!html || !html.includes('<')) return html; // Plain text return early
   
-  // First, do a global scrub of all inline styles and classes that AI might have injected
-  // This satisfies the user's request for "no inline style junk"
-  const sanitizedHtml = html
-    .replace(/\s+class=["'][^"']*["']/gi, '') 
-    .replace(/\s+style=["'][^"']*["']/gi, '');
+  try {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    if (!doc.body || !doc.body.innerHTML) return html;
 
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(sanitizedHtml, 'text/html');
-  const topLevelElements = Array.from(doc.body.children);
-  if (topLevelElements.length === 0) return sanitizedHtml;
-
-  let nodesToRemove = new Set();
-  
-  // --- PART 1: SMART OVERVIEW SCANNER ---
-  // (Logic for overview block remains, but we ensure it's semantic)
-  const scanners = ['key takeaways', 'quick overview', 'quick answer', 'key highlights', 'takeaways'];
-  const processedNodes = new Set();
-  
-  const allPossible = Array.from(doc.body.querySelectorAll('*')).filter(el => {
-    const text = el.innerText.trim().toLowerCase().replace(/[\s\u00A0\u2726]+/g, ' ');
-    return scanners.some(s => text.startsWith(s)) && text.length < 80;
-  });
-
-  allPossible.forEach(el => {
-    if (processedNodes.has(el)) return;
-    if (el.closest('.ai-overview-block')) return;
-    if (allPossible.some(other => other !== el && other.contains(el))) return;
-
-    const sectionData = { headerHtml: el.innerHTML.replace(/[:.]+$/, '').trim(), bodyHtml: '' };
-    const nodesToRemoveCurrent = [el];
-    
-    let next = el.nextElementSibling;
-    let attempts = 0;
-    while (next && attempts < 15) {
-      const tag = next.tagName;
-      if (tag === 'UL' || tag === 'OL') {
-        sectionData.bodyHtml = next.outerHTML; 
-        nodesToRemoveCurrent.push(next);
-        break;
+    // 1. Fix Google Docs Bold Bug: Only unwrap IF we detect the docs-internal-guid or normal weighting
+    doc.querySelectorAll('b, strong').forEach(el => {
+      if (el.style.fontWeight === 'normal' || (el.id && el.id.startsWith('docs-internal-guid'))) {
+        const parent = el.parentNode;
+        while (el.firstChild) parent.insertBefore(el.firstChild, el);
+        parent.removeChild(el);
       }
-      if ((tag === 'P' || tag === 'DIV') && next.innerText.trim().length > 5) {
-        const nt = next.innerText.trim().toLowerCase();
-        if (scanners.some(s => nt.startsWith(s))) break;
-        sectionData.bodyHtml = `<div class="quick-answer">${next.innerHTML}</div>`;
-        nodesToRemoveCurrent.push(next);
-        break;
+    });
+
+    // 2. Scan for FAQs and Overview blocks
+    // We scan top-level elements of the body
+    const elements = Array.from(doc.body.children);
+    const nodesToRemove = new Set();
+    const extractedFaqs = [];
+    let faqInsertionPoint = null;
+
+    // PART A: AI OVERVIEW
+    const overviewHeaders = ['key takeaways', 'quick overview', 'quick answer', 'key highlights', 'takeaways'];
+    elements.forEach(el => {
+      if (nodesToRemove.has(el)) return;
+      const text = el.innerText.trim().toLowerCase();
+      if (overviewHeaders.some(h => text.startsWith(h)) && text.length < 100) {
+        let next = el.nextElementSibling;
+        if (next && (next.tagName === 'UL' || next.tagName === 'OL' || next.tagName === 'P')) {
+          const box = document.createElement('div');
+          box.className = 'ai-overview-block';
+          box.innerHTML = `<h2>${el.innerHTML}</h2>${next.outerHTML}`;
+          el.parentNode.insertBefore(box, el);
+          nodesToRemove.add(el);
+          nodesToRemove.add(next);
+        }
       }
-      next = next.nextElementSibling;
-      attempts++;
-    }
+    });
 
-    if (sectionData.bodyHtml) {
-      const box = document.createElement('div');
-      box.className = 'ai-overview-block';
-      box.innerHTML = `<h2>${sectionData.headerHtml}</h2>${sectionData.bodyHtml}`;
-      el.parentNode.insertBefore(box, el);
-      nodesToRemoveCurrent.forEach(node => {
-        processedNodes.add(node);
-        nodesToRemove.add(node); // Add to global removal list
-      });
-    }
-  });
+    // PART B: FAQs
+    let inFaqZone = false;
+    for (let i = 0; i < elements.length; i++) {
+      const el = elements[i];
+      if (nodesToRemove.has(el)) continue;
 
-  // --- PART 2: SMART FAQ SCANNER (Context-Aware) ---
-  let extractedFaqs = [];
-  let inFaqZone = false; // Senior Engineer Fix: Start as FALSE. Don't snatch unless prompted.
+      const tag = el.tagName;
+      const text = el.innerText.trim();
 
-  for (let i = 0; i < topLevelElements.length; i++) {
-    const el = topLevelElements[i];
-    if (nodesToRemove.has(el)) continue;
-
-    const text = el.innerText.trim();
-    const tag = el.tagName;
-
-    // Detect FAQ Zone Start (H2/H3/H4 containing FAQ keywords)
-    if (tag.match(/^H[2-4]$/) && /faq|frequently asked|questions|q&a/i.test(text)) {
-      inFaqZone = true;
-      nodesToRemove.add(el); // Remove the FAQ header, we'll replace with the block
-      continue;
-    }
-
-    // Capture Questions + Answers ONLY if in FAQ Zone
-    const endsWithQuestion = text.endsWith('?');
-    if (inFaqZone && endsWithQuestion && text.length < 250 && text.length > 5) {
-      let answerParts = [];
-      let gatheredChars = 0;
-      let tempNodes = [];
-      let j = i + 1;
-      
-      while (j < topLevelElements.length) {
-        const nextEl = topLevelElements[j];
-        if (nodesToRemove.has(nextEl)) { j++; continue; }
-        const nextText = nextEl.innerText.trim();
-        if (!nextText) { j++; continue; }
-
-        // Stop if we hit another question or a new section header
-        if (nextText.endsWith('?') && nextText.length < 250) break;
-        if (nextEl.tagName.match(/^H[1-6]$/)) break;
-        if (nextText.length > 1000) break; // If answer is too long, it's probably not a simple FAQ answer
-        
-        answerParts.push(nextText);
-        gatheredChars += nextText.length;
-        tempNodes.push(nextEl);
-        j++;
-        if (answerParts.length >= 3) break;
-      }
-
-      if (answerParts.length > 0) {
-        extractedFaqs.push({ q: text, a: answerParts.join('\n\n') });
+      if (tag.match(/^H[2-4]$/) && /faq|frequently asked|questions|q&a/i.test(text)) {
+        inFaqZone = true;
         nodesToRemove.add(el);
-        tempNodes.forEach(node => nodesToRemove.add(node));
-        i = j - 1;
+        if (!faqInsertionPoint) faqInsertionPoint = { parent: el.parentNode, nextSibling: el };
+        continue;
       }
-    } else if (inFaqZone && tag.match(/^H[1-6]$/) && !/faq|questions/i.test(text)) {
-      // Exit FAQ zone if we hit a new unrelated header
-      inFaqZone = false;
+
+      if (inFaqZone && text.endsWith('?') && text.length < 250) {
+        let next = el.nextElementSibling;
+        if (next && !nodesToRemove.has(next)) {
+           extractedFaqs.push({ q: text, a: next.innerHTML });
+           nodesToRemove.add(el);
+           nodesToRemove.add(next);
+           if (!faqInsertionPoint) faqInsertionPoint = { parent: el.parentNode, nextSibling: el };
+        }
+      } else if (inFaqZone && tag.match(/^H[1-6]$/)) {
+        inFaqZone = false;
+      }
     }
-  }
 
-  // --- PART 3: ASSEMBLY ---
-  if (extractedFaqs.length > 0) {
-    const faqsJson = JSON.stringify(extractedFaqs).replace(/'/g, "&apos;");
-    const faqTag = `<faq-section data-faqs='${faqsJson}'></faq-section>`;
-    
-    // Insert the FAQ section at the first removed node's position
-    const firstRemoved = topLevelElements.find(el => nodesToRemove.has(el));
-    if (firstRemoved && firstRemoved.parentNode) {
-      const tempWrapper = document.createElement('div');
-      tempWrapper.innerHTML = faqTag;
-      firstRemoved.parentNode.insertBefore(tempWrapper.firstChild, firstRemoved);
+    // PART C: Insert FAQ Section
+    if (extractedFaqs.length > 0 && faqInsertionPoint) {
+      const faqsJson = JSON.stringify(extractedFaqs).replace(/'/g, "&apos;");
+      const faqTag = document.createElement('faq-section');
+      faqTag.setAttribute('data-faqs', faqsJson);
+      faqInsertionPoint.parent.insertBefore(faqTag, faqInsertionPoint.nextSibling);
     }
+
+    // Final Scrub: Only remove the nodes we converted to blocks
+    nodesToRemove.forEach(node => { if(node.parentNode) node.parentNode.removeChild(node); });
+
+    return doc.body.innerHTML;
+  } catch (e) {
+    console.warn('[Upgrade Scanner Fail]', e);
+    return html;
   }
-
-  // Final removal of source nodes
-  nodesToRemove.forEach(node => { try { node.remove(); } catch(e) {} });
-
-  return doc.body.innerHTML;
 };
 
 const ContentEditorPanel = () => {
@@ -378,6 +329,27 @@ const ContentEditorPanel = () => {
     Highlight.configure({
       multicolor: true,
     }),
+    Table.configure({
+      resizable: true,
+      HTMLAttributes: {
+        class: 'border-collapse table-auto w-full border border-stone-200 shadow-sm rounded-md overflow-hidden my-4',
+      },
+    }),
+    TableRow.configure({
+      HTMLAttributes: {
+        class: 'border-b border-stone-100 last:border-0 hover:bg-stone-50/50 transition-colors',
+      },
+    }),
+    TableHeader.configure({
+      HTMLAttributes: {
+        class: 'bg-emerald-50/80 border border-stone-200 px-4 py-3 text-left text-sm font-bold text-emerald-900 border-b-2',
+      },
+    }),
+    TableCell.configure({
+      HTMLAttributes: {
+        class: 'border border-stone-200 px-4 py-3 text-sm text-stone-700 align-top break-words',
+      },
+    }),
     FaqExtension,
     OverviewBlock,
     QuickAnswer,
@@ -421,18 +393,28 @@ const ContentEditorPanel = () => {
         // Senior Engineer Fix: Bulletproof DOM-based cleaning for Google Docs/External junk
         const parser = new DOMParser();
         const doc = parser.parseFromString(html, 'text/html');
-        doc.querySelectorAll('[style]').forEach(el => el.removeAttribute('style'));
-        doc.querySelectorAll('span').forEach(span => {
-          while (span.firstChild) {
-            span.parentNode.insertBefore(span.firstChild, span);
+
+        // Fix Google Docs bold wrapper issue
+        doc.querySelectorAll('b, strong').forEach(el => {
+          if (el.style.fontWeight === 'normal' || (el.id && el.id.startsWith('docs-internal-guid'))) {
+            const fragment = document.createDocumentFragment();
+            while (el.firstChild) fragment.appendChild(el.firstChild);
+            el.parentNode.replaceChild(fragment, el);
           }
-          span.remove();
         });
-        doc.querySelectorAll('font').forEach(font => {
-          while (font.firstChild) {
-            font.parentNode.insertBefore(font.firstChild, font);
+
+        doc.querySelectorAll('*').forEach(el => {
+          if (el.tagName !== 'TABLE' && el.tagName !== 'TD' && el.tagName !== 'TH' && el.tagName !== 'TR') {
+            el.removeAttribute('style');
+            el.removeAttribute('class');
           }
-          font.remove();
+        });
+        
+        doc.querySelectorAll('span, font').forEach(el => {
+          while (el.firstChild) {
+            el.parentNode.insertBefore(el.firstChild, el);
+          }
+          el.remove();
         });
         return doc.body.innerHTML;
       },
@@ -1855,6 +1837,35 @@ const ContentEditorPanel = () => {
                     disabled={!editor}
                   >
                     Link
+                  </button>
+                  <button
+                    onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}
+                    disabled={!editor}
+                    title="Insert Table"
+                  >
+                    Table
+                  </button>
+                  <button
+                    onClick={() => editor.chain().focus().addColumnBefore().run()}
+                    disabled={!editor || !editor.isActive('table')}
+                    title="Add Column Before"
+                  >
+                    +Col Left
+                  </button>
+                  <button
+                    onClick={() => editor.chain().focus().addRowAfter().run()}
+                    disabled={!editor || !editor.isActive('table')}
+                    title="Add Row After"
+                  >
+                    +Row Below
+                  </button>
+                  <button
+                    onClick={() => editor.chain().focus().deleteTable().run()}
+                    disabled={!editor || !editor.isActive('table')}
+                    title="Delete Table"
+                    className="text-red-500 hover:text-red-600"
+                  >
+                    Del Table
                   </button>
                   <button
                     onClick={() => editor.chain().focus().insertContent({ type: 'faqSection', attrs: { faqs: [{ q: '', a: '' }] } }).run()}
