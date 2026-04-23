@@ -494,3 +494,41 @@ code {
 .related-post-thumb {
   aspect-ratio: 3 / 2 !important;
 }
+
+/* Premium Responsive Tables */
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 2rem 0;
+  border-radius: 0.75rem;
+  background: white;
+}
+
+.tiptap-content table {
+  width: 100%;
+  min-width: 600px; /* Force scroll on mobile for better readability */
+  border-collapse: collapse;
+  margin: 0;
+  font-size: 1.05rem; /* Slightly smaller than body for better table fit, but consistent */
+  line-height: 1.5;
+}
+
+@media (max-width: 640px) {
+  .tiptap-content table {
+    font-size: 0.95rem;
+  }
+}
+
+.tiptap-content th,
+.tiptap-content td {
+  padding: 12px 16px;
+  border: 1px solid #e5e7eb;
+  text-align: left;
+}
+
+.tiptap-content th {
+  background-color: #f9fafb;
+  font-weight: 700;
+  color: #111827;
+}

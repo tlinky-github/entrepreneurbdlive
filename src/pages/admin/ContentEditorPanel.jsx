@@ -163,6 +163,16 @@ const upgradeLegacyFaqs = (html) => {
       }
     });
 
+    // 4. Fix tables for responsiveness (Wrap in scrollable container)
+    doc.querySelectorAll('table').forEach(table => {
+      if (table.parentNode && table.parentNode.className !== 'table-wrapper') {
+        const wrapper = doc.createElement('div');
+        wrapper.className = 'table-wrapper';
+        table.parentNode.insertBefore(wrapper, table);
+        wrapper.appendChild(table);
+      }
+    });
+
     // Final Scrub: Only remove the nodes we converted to blocks
     nodesToRemove.forEach(node => { if(node.parentNode) node.parentNode.removeChild(node); });
 

@@ -255,6 +255,16 @@ const KnowledgeArticlePage = () => {
                             }
                           }
                         });
+                        
+                        // 4. Fix tables for responsiveness (Wrap in scrollable container)
+                        doc.querySelectorAll('table').forEach(table => {
+                          if (table.parentNode && table.parentNode.className !== 'table-wrapper') {
+                            const wrapper = doc.createElement('div');
+                            wrapper.className = 'table-wrapper';
+                            table.parentNode.insertBefore(wrapper, table);
+                            wrapper.appendChild(table);
+                          }
+                        });
 
                         return doc.body.innerHTML;
                       };
