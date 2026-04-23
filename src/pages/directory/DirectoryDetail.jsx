@@ -251,15 +251,59 @@ const DirectoryDetail = () => {
                       let contentHtml = listing.content || '';
                       if (!contentHtml) return null;
 
-                      // Senior Engineer Fix: Strip leading/trailing empty noise and redundant AI metadata (Google Docs compatible)
+                      // Senior Engineer Fix: Advanced Frontend Smart Styler
+                      // Automatically upgrades legacy content to the premium emerald design on-the-fly
+                      const applySmartDesign = (html) => {
+                        if (!html) return '';
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(html, 'text/html');
+                        
+                        // 1. Surgical Style Cleaning (Preserves our specific premium classes)
+                        doc.querySelectorAll('[style]').forEach(el => {
+                          const style = el.getAttribute('style').toLowerCase();
+                          if (el.innerText.length > 300) el.style.fontWeight = 'normal';
+                          
+                          // Remove Google Docs junk but keep intentional layout
+                          const junk = ['color', 'background-color', 'font-family', 'font-size', 'line-height'];
+                          junk.forEach(prop => { el.style[prop] = ''; });
+                          if (!el.style.length) el.removeAttribute('style');
+                        });
+
+                        // 2. Fix links with leading/trailing spaces in their text (Premium Content Repair)
+                        doc.querySelectorAll('a').forEach(link => {
+                          const h = link.innerHTML;
+                          const t = h.trim();
+                          if (h !== t) {
+                            const leadMatch = h.match(/^\s+/);
+                            const trailMatch = h.match(/\s+$/);
+                            
+                            if (leadMatch) {
+                              const leadNode = doc.createTextNode(leadMatch[0]);
+                              link.parentNode.insertBefore(leadNode, link);
+                            }
+                            
+                            link.innerHTML = t;
+                            
+                            if (trailMatch) {
+                              const trailNode = doc.createTextNode(trailMatch[0]);
+                              if (link.nextSibling) {
+                                link.parentNode.insertBefore(trailNode, link.nextSibling);
+                              } else {
+                                link.parentNode.appendChild(trailNode);
+                              }
+                            }
+                          }
+                        });
+                        
+                        return doc.body.innerHTML;
+                      };
+
+                      contentHtml = applySmartDesign(contentHtml);
+                      
+                      // Clean up redundant AI strings
                       contentHtml = contentHtml
-                        .replace(/^(<p>\s*<br\s*\/?>\s*<\/p>|<p>\s*<\/p>|<br\s*\/?>|\s)+/gi, '')
-                        .replace(/(<p>\s*<br\s*\/?>\s*<\/p>|<p>\s*<\/p>|<br\s*\/?>|\s)+$/gi, '')
                         .replace(/<p[^>]*>(?:<[^>]+>)*\s*SEO Title:[\s\S]*?<\/p>/gi, '')
-                        .replace(/<p[^>]*>(?:<[^>]+>)*\s*Meta Description:[\s\S]*?<\/p>/gi, '')
-                        .replace(/(<p>\s*<br\s*\/?>\s*<\/p>){2,}/gi, '<p><br></p>')
-                        .replace(/ style="[^"]*"/gi, '') // Strip all hardcoded styles
-                        .replace(/<span[^>]*>([\s\S]*?)<\/span>/gi, '$1'); // Unwrap all spans
+                        .replace(/<p[^>]*>(?:<[^>]+>)*\s*Meta Description:[\s\S]*?<\/p>/gi, '');
 
                       const parts = contentHtml.split(/(<faq-section[^>]*>.*?<\/faq-section>|<faq-section[^>]*\/>)/gi);
                       

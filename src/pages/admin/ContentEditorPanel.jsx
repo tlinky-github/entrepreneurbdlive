@@ -137,6 +137,32 @@ const upgradeLegacyFaqs = (html) => {
       faqInsertionPoint.parent.insertBefore(faqTag, faqInsertionPoint.nextSibling);
     }
 
+    // 3. Fix links with leading/trailing spaces in their text (Premium Content Repair)
+    doc.querySelectorAll('a').forEach(link => {
+      const html = link.innerHTML;
+      const trimmed = html.trim();
+      if (html !== trimmed) {
+        const leadMatch = html.match(/^\s+/);
+        const trailMatch = html.match(/\s+$/);
+        
+        if (leadMatch) {
+          const leadNode = doc.createTextNode(leadMatch[0]);
+          link.parentNode.insertBefore(leadNode, link);
+        }
+        
+        link.innerHTML = trimmed;
+        
+        if (trailMatch) {
+          const trailNode = doc.createTextNode(trailMatch[0]);
+          if (link.nextSibling) {
+            link.parentNode.insertBefore(trailNode, link.nextSibling);
+          } else {
+            link.parentNode.appendChild(trailNode);
+          }
+        }
+      }
+    });
+
     // Final Scrub: Only remove the nodes we converted to blocks
     nodesToRemove.forEach(node => { if(node.parentNode) node.parentNode.removeChild(node); });
 
@@ -2421,6 +2447,24 @@ const ContentEditorPanel = () => {
             toast.success('Link settings applied');
           } else {
             if (data.href) {
+              // Senior Engineer Fix: Trim selection to avoid linking leading/trailing spaces
+              const { from, to } = editor.state.selection;
+              const text = editor.state.doc.textBetween(from, to);
+              
+              if (text) {
+                const leadSpaces = text.match(/^\s*/)[0].length;
+                const trailSpaces = text.match(/\s*$/)[0].length;
+                
+                if (leadSpaces > 0 || trailSpaces > 0) {
+                  editor.chain()
+                    .focus()
+                    .setTextSelection({ from: from + leadSpaces, to: to - trailSpaces })
+                    .setLink(data)
+                    .run();
+                  return;
+                }
+              }
+              
               editor.chain().focus().setLink(data).run();
             } else {
               editor.chain().focus().unsetLink().run();

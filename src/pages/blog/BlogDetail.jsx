@@ -501,6 +501,32 @@ const BlogDetail = () => {
                 }
               });
               
+              // 3. Fix links with leading/trailing spaces in their text (Premium Content Repair)
+              doc.querySelectorAll('a').forEach(link => {
+                const html = link.innerHTML;
+                const trimmed = html.trim();
+                if (html !== trimmed) {
+                  const leadMatch = html.match(/^\s+/);
+                  const trailMatch = html.match(/\s+$/);
+                  
+                  if (leadMatch) {
+                    const leadNode = doc.createTextNode(leadMatch[0]);
+                    link.parentNode.insertBefore(leadNode, link);
+                  }
+                  
+                  link.innerHTML = trimmed;
+                  
+                  if (trailMatch) {
+                    const trailNode = doc.createTextNode(trailMatch[0]);
+                    if (link.nextSibling) {
+                      link.parentNode.insertBefore(trailNode, link.nextSibling);
+                    } else {
+                      link.parentNode.appendChild(trailNode);
+                    }
+                  }
+                }
+              });
+
               return doc.body.innerHTML;
             };
 
