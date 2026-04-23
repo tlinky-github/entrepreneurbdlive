@@ -93,9 +93,9 @@
     "bridge": "node scripts/local-bridge.js",
     "build": "craco build",
     "test": "craco test",
-    "generate-sitemap": "node scripts/generate-sitemap-advanced.js",
-    "sitemap": "node scripts/generate-sitemap-advanced.js",
-    "watch:sitemap": "node scripts/generate-sitemap-advanced.js --watch"
+    "generate-sitemap": "node scripts/generate-sitemap.js",
+    "sitemap": "node scripts/generate-sitemap.js",
+    "watch:sitemap": "node scripts/generate-sitemap.js --watch"
   },
   "browserslist": {
     "production": [

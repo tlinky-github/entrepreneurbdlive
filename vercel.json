@@ -8,7 +8,7 @@
   "rewrites": [
     {
       "source": "/sitemap.xml",
-      "destination": "/api/seo-handler?action=sitemap"
+      "destination": "/api/sitemap"
     },
     {
       "source": "/sitemap-news.xml",
