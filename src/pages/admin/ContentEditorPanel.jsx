@@ -780,12 +780,19 @@ const ContentEditorPanel = () => {
       return;
     }
     
-    // IMAGE VALIDATION (Mandatory Photo/Logo)
-    const photoUrl = type === 'blog' ? featuredImage : (type === 'directory' ? (featuredImage || logo) : (featuredImage || photo));
-    if (!photoUrl) {
-      toast.error(`${type === 'directory' ? 'Logo' : 'Profile Photo'} is required`);
-      return;
-    }
+
+      // IMAGE VALIDATION (Mandatory only for directory/profile, NOT blog)
+      if (type === 'directory') {
+        if (!(featuredImage || logo)) {
+          toast.error('Logo is required');
+          return;
+        }
+      } else if (type !== 'blog') {
+        if (!(featuredImage || photo)) {
+          toast.error('Profile Photo is required');
+          return;
+        }
+      }
 
     if (!category) {
       toast.error('Category is required');
