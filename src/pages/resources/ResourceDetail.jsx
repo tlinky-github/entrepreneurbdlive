@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { resourceAPI, authorAPI } from '../../lib/api';
 import { SEO } from '../../components/SEO';
+import NotFound from '../../components/common/NotFound';
 import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent } from '../../components/ui/card';
@@ -74,14 +75,7 @@ const ResourceDetail = () => {
   };
 
   if (loading) return <PageLoader message="Loading resource..." />;
-  if (!resource) return (
-    <div className="max-w-4xl mx-auto px-4 py-20 text-center">
-      <h2 className="text-2xl font-bold text-stone-900 mb-4">Resource not found</h2>
-      <Link to="/resources">
-        <Button variant="outline">Back to Resources</Button>
-      </Link>
-    </div>
-  );
+  if (!resource) return <NotFound />;
 
   return (
     <div className="bg-stone-50 min-h-screen pb-20">

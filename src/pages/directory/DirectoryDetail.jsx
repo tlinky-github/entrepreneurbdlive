@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { listingAPI } from '../../lib/api';
 import CustomCodeInjector from '../../components/common/CustomCodeInjector';
 import { SEO } from '../../components/SEO';
+import NotFound from '../../components/common/NotFound';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
@@ -85,19 +86,7 @@ const DirectoryDetail = () => {
   }
 
   if (!listing) {
-    return (
-      <div className="bg-stone-50 min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-stone-900 mb-4">Business Not Found</h1>
-          <Link to="/directory">
-            <Button className="bg-emerald-900 hover:bg-emerald-800">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Directory
-            </Button>
-          </Link>
-        </div>
-      </div>
-    );
+    return <NotFound />;
   }
 
   return (
