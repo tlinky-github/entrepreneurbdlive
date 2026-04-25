@@ -234,7 +234,7 @@ module.exports = async (req, res) => {
     const safeTitle = esc(title);
     const safeDescription = esc(description);
     const currentAbsoluteUrl = `https://${host}${finalPath}`;
-    const dynamicOgUrl = `${SITE_URL}/api/og-image?title=${encodeURIComponent(title.substring(0, 100))}&description=${encodeURIComponent(description.substring(0, 160))}&image=${encodeURIComponent(image)}&category=${encodeURIComponent(type)}`;
+    const dynamicOgUrl = `${SITE_URL}/api/og-image?title=${encodeURIComponent(title.substring(0, 100))}&amp;description=${encodeURIComponent(description.substring(0, 160))}&amp;image=${encodeURIComponent(image)}&amp;category=${encodeURIComponent(type)}`;
 
     const orgSchema = { 
       "@context": "https://schema.org", "@type": "Organization", "name": "Entrepreneurs BD", 
