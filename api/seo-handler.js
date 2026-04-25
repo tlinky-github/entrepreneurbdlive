@@ -137,13 +137,22 @@ async function generateOgImage(title, description, image, category) {
     </svg>
   `;
 
-  return await sharp(Buffer.from(svg)).png().toBuffer();
+  try {
+    return await sharp({
+      create: { width: 1200, height: 630, channels: 4, background: '#064e3b' }
+    }).composite([{ input: Buffer.from(svg) }]).png().toBuffer();
+  } catch (e) {
+    console.error('[OG Engine] Sharp Crash:', e.message);
+    throw e;
+  }
 }
 
 module.exports = async (req, res) => {
   const userAgent = req.headers['user-agent'] || '';
   const isBot = /bot|google|crawler|spider|facebook|whatsapp|linkedin|twitter|slack|discord|telegram|apple|bing|yandex|baiduspider|metainspector|structured-data|rich-results/i.test(userAgent);
   const host = req.headers.host || 'entrepreneurs.bd';
+  
+  console.log(`[SEO Engine] Req: ${req.url} | Bot: ${isBot}`);
 
   // --- 1. IMAGE RENDERING BRANCH (CRITICAL FIX) ---
   if (req.query.render === 'image') {
@@ -151,7 +160,8 @@ module.exports = async (req, res) => {
     try {
       const buffer = await generateOgImage(title, description, image, category);
       res.setHeader('Content-Type', 'image/png');
-      res.setHeader('Cache-Control', 'public, max-age=86400, stale-while-revalidate=43200');
+      // "Ironclad" Caching: Cache for 1 year, but allow revalidation
+      res.setHeader('Cache-Control', 'public, max-age=31536000, s-maxage=31536000, stale-while-revalidate=604800');
       return res.status(200).send(buffer);
     } catch (e) {
       console.error('[OG Engine] Render Fail:', e.message);
@@ -211,7 +221,8 @@ module.exports = async (req, res) => {
     const safeDescription = esc(description);
 
     const currentAbsoluteUrl = `https://${host}${finalPath}`;
-    const dynamicOgUrl = `${SITE_URL}/api/og-image?title=${encodeURIComponent(title.substring(0, 100))}&image=${encodeURIComponent(image)}&category=${encodeURIComponent(type)}`;
+    const version = docData?.updated_at?.seconds || docData?.updated_at?._seconds || Date.now();
+    const dynamicOgUrl = `${SITE_URL}/api/og-image?title=${encodeURIComponent(title.substring(0, 100))}&image=${encodeURIComponent(image)}&category=${encodeURIComponent(type)}&v=${version}`;
 
     // --- SCHEMAS ---
     const orgSchema = { 
