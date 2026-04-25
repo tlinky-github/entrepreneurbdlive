@@ -157,22 +157,17 @@ module.exports = async (req, res) => {
   const type = (finalPath === '/' || segments.length === 0) ? 'home' : segments[0];
   const slug = segments.length > 1 ? segments[1] : null;
 
-  // --- 4. HUMAN ESCAPE HATCH ---
-  if (!isBot && !req.query.force_bot) {
-    const sep = finalPath.includes('?') ? '&' : '?';
-    res.setHeader('Location', `${finalPath}${sep}no_bot=1`);
-    return res.status(301).end();
-  }
+  // --- 4. HUMAN/BOT LOGIC ---
+  // Senior Engineer Fix: Remove 301 redirect. 
+  // We serve SEO tags to EVERYONE first to ensure 100% crawler hit rate.
+  // Real humans will be instantly transitioned by the JS redirect in the shell.
+  const escapedRedirectPath = `${finalPath}${finalPath.includes('?') ? '&' : '?'}no_bot=1`;
 
   try {
     let title = "Entrepreneurs BD | The National Engine of Growth";
     let description = "Developing 1 million entrepreneurs by 2030. Connect, discover, and scale your startup on Bangladesh's premier growth hub.";
     let image = `${SITE_URL}/og-default.png`;
     let docData = null;
-
-    // --- ESCAPE PATH (Force Human Mode for scripts) ---
-    const sep = finalPath.includes('?') ? '&' : '?';
-    const escapedRedirectPath = `${finalPath}${sep}no_bot=1`;
 
     // --- DATA FETCHING (REST) ---
     if (type !== 'home' && slug) {
@@ -226,6 +221,7 @@ module.exports = async (req, res) => {
       <meta name="twitter:image" content="${dynamicOgUrl}">
       <script type="application/ld+json">${JSON.stringify(orgSchema)}</script>
       <script type="application/ld+json">${JSON.stringify(mainSchema)}</script>
+      <!-- SEO Debug: Type=${type}, Slug=${slug}, DataFound=${!!docData}, Engine=NUCLEAR-REST-v3 -->
     `;
 
     res.setHeader('Content-Type', 'text/html');

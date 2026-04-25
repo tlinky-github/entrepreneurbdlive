@@ -20,26 +20,6 @@
     },
     {
       "source": "/blog/:slug",
-      "has": [{ "type": "query", "key": "no_bot", "value": "1" }],
-      "destination": "/index.html"
-    },
-    {
-      "source": "/directory/:slug",
-      "has": [{ "type": "query", "key": "no_bot", "value": "1" }],
-      "destination": "/index.html"
-    },
-    {
-      "source": "/entrepreneurs/:slug",
-      "has": [{ "type": "query", "key": "no_bot", "value": "1" }],
-      "destination": "/index.html"
-    },
-    {
-      "source": "/knowledge/:slug",
-      "has": [{ "type": "query", "key": "no_bot", "value": "1" }],
-      "destination": "/index.html"
-    },
-    {
-      "source": "/blog/:slug",
       "destination": "/api/seo-handler?path=blog/:slug"
     },
     {
@@ -53,6 +33,26 @@
     {
       "source": "/knowledge/:slug",
       "destination": "/api/seo-handler?path=knowledge/:slug"
+    },
+    {
+      "source": "/blog/:slug",
+      "has": [{ "type": "query", "key": "no_bot", "value": "1" }],
+      "destination": "/index.html"
+    },
+    {
+      "source": "/directory/:slug",
+      "has": [{ "type": "query", "key": "no_bot", "value": "1" }],
+      "destination": "/index.html"
+    },
+    {
+      "source": "/entrepreneurs/:slug",
+      "has": [{ "type": "query", "key": "no_bot", "value": "1" }],
+      "destination": "/index.html"
+    },
+    {
+      "source": "/knowledge/:slug",
+      "has": [{ "type": "query", "key": "no_bot", "value": "1" }],
+      "destination": "/index.html"
     },
     {
       "source": "/api/:path*",
