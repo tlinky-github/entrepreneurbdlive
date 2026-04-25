@@ -5,6 +5,12 @@
   "env": {
     "SKIP_ENV_VALIDATION": "true"
   },
+  "functions": {
+    "api/seo-handler.js": {
+      "memory": 1024,
+      "maxDuration": 10
+    }
+  },
   "rewrites": [
     {
       "source": "/sitemap.xml",

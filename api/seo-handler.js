@@ -1,67 +1,24 @@
-import { ImageResponse } from '@vercel/og';
+const sharp = require('sharp');
+const axios = require('axios');
 
-export const config = {
-  runtime: 'edge',
-};
-
-const PROJECT_ID = process.env.REACT_APP_FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID || 'entrepreneurbdlive'; 
+// --- CONFIG ---
+const PROJECT_ID = process.env.REACT_APP_FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID;
 const API_KEY = process.env.REACT_APP_FIREBASE_API_KEY || process.env.VITE_FIREBASE_API_KEY || process.env.FIREBASE_API_KEY;
 const SITE_URL = 'https://entrepreneurs.bd';
+const FONT_URL = 'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/notosans/NotoSans%5Bwdth%2Cwght%5D.ttf';
 
-// --- HELPER: FIRESTORE REST ---
-async function fetchFirestoreDoc(collection, slug) {
+// --- FONT CACHE ---
+let fontBuffer = null;
+async function getFont() {
+  if (fontBuffer) return fontBuffer;
   try {
-    const url = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents:runQuery`;
-    const query = {
-      structuredQuery: {
-        from: [{ collectionId: collection }],
-        where: {
-          fieldFilter: {
-            field: { fieldPath: 'slug' },
-            op: 'EQUAL',
-            value: { stringValue: slug }
-          }
-        },
-        limit: 1
-      }
-    };
-    
-    const res = await fetch(`${url}?key=${API_KEY}`, {
-      method: 'POST',
-      body: JSON.stringify(query),
-      headers: { 'Content-Type': 'application/json' }
-    });
-    
-    if (!res.ok) return null;
-    const results = await res.json();
-    if (!results || !results[0] || !results[0].document) return null;
-    
-    const doc = results[0].document;
-    const fields = doc.fields;
-    const data = {};
-    
-    for (const key in fields) {
-      const val = fields[key];
-      if (val.stringValue !== undefined) data[key] = val.stringValue;
-      else if (val.integerValue !== undefined) data[key] = parseInt(val.integerValue);
-      else if (val.doubleValue !== undefined) data[key] = parseFloat(val.doubleValue);
-      else if (val.booleanValue !== undefined) data[key] = val.booleanValue;
-      else if (val.timestampValue !== undefined) data[key] = val.timestampValue;
-      else if (val.mapValue && val.mapValue.fields) {
-        const subData = {};
-        for (const k in val.mapValue.fields) {
-          subData[k] = val.mapValue.fields[k].stringValue || val.mapValue.fields[k].integerValue || "";
-        }
-        data[key] = subData;
-      }
-      else if (val.arrayValue && val.arrayValue.values) {
-        data[key] = val.arrayValue.values.map(v => v.stringValue || v.integerValue || v.booleanValue || "");
-      }
-    }
-    return data;
+    const res = await axios.get(FONT_URL, { responseType: 'arraybuffer', timeout: 8000 });
+    fontBuffer = Buffer.from(res.data);
+    return fontBuffer;
   } catch (e) { return null; }
 }
 
+// --- HTML SHELL ---
 const HTML_SHELL = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -92,56 +49,164 @@ const HTML_SHELL = `<!DOCTYPE html>
 </body>
 </html>`;
 
-export default async function handler(req) {
-  const { searchParams } = new URL(req.url);
-  const host = req.headers.get('host') || 'entrepreneurs.bd';
-  
-  // --- 1. IMAGE RENDERING (THE "BRANDED CARD" LOOK) ---
-  if (searchParams.get('render') === 'image') {
-    const title = searchParams.get('title') || 'Entrepreneurs BD';
-    const description = searchParams.get('description') || '';
-    const category = (searchParams.get('category') || 'Startup').toUpperCase();
-    const image = searchParams.get('image');
+// --- FIRESTORE REST ---
+async function fetchFirestoreDoc(collection, slug) {
+  try {
+    const url = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents:runQuery`;
+    const query = {
+      structuredQuery: {
+        from: [{ collectionId: collection }],
+        where: { fieldFilter: { field: { fieldPath: 'slug' }, op: 'EQUAL', value: { stringValue: slug } } },
+        limit: 1
+      }
+    };
+    const res = await axios.post(`${url}?key=${API_KEY}`, query, { timeout: 8000 });
+    if (res.data && res.data[0] && res.data[0].document) {
+      const fields = res.data[0].document.fields;
+      const data = {};
+      for (const key in fields) {
+        const val = fields[key];
+        if (val.stringValue !== undefined) data[key] = val.stringValue;
+        else if (val.integerValue !== undefined) data[key] = parseInt(val.integerValue);
+        else if (val.doubleValue !== undefined) data[key] = parseFloat(val.doubleValue);
+        else if (val.booleanValue !== undefined) data[key] = val.booleanValue;
+        else if (val.timestampValue !== undefined) data[key] = val.timestampValue;
+        else if (val.mapValue && val.mapValue.fields) data[key] = val.mapValue.fields;
+        else if (val.arrayValue && val.arrayValue.values) {
+          data[key] = val.arrayValue.values.map(v => v.stringValue || v.integerValue || v.booleanValue || "");
+        }
+      }
+      return data;
+    }
+    return null;
+  } catch (e) {
+    console.error(`[Firestore REST] Error for ${collection}/${slug}:`, e.message);
+    return null;
+  }
+}
 
-    return new ImageResponse(
-      (
-        <div style={{ height: '100%', width: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', backgroundColor: '#064e3b', backgroundImage: image ? `linear-gradient(rgba(6, 78, 59, 0.85), rgba(6, 78, 59, 0.92)), url(${image})` : 'linear-gradient(135deg, #064e3b 0%, #065f46 50%, #047857 100%)', backgroundSize: 'cover', backgroundPosition: 'center', padding: '60px', position: 'relative', overflow: 'hidden' }}>
-          
-          {/* Decorative circles (no filter — Satori doesn't support it) */}
-          <div style={{ position: 'absolute', top: '-80px', right: '-80px', width: '300px', height: '300px', borderRadius: '150px', background: 'rgba(255,255,255,0.04)' }} />
-          <div style={{ position: 'absolute', bottom: '-80px', left: '-80px', width: '300px', height: '300px', borderRadius: '150px', background: 'rgba(16,185,129,0.08)' }} />
+// --- OG IMAGE ENGINE (Pango text with downloaded font) ---
+async function generateOgImage(title, description, image, category) {
+  const clean = (s) => (s || '').replace(/[^\x20-\x7E\u0980-\u09FF]/g, '').trim();
+  const pEsc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const cleanTitle = pEsc(clean(title) || 'Entrepreneurs BD');
+  const cleanCat = pEsc(clean(category) || 'STARTUP').toUpperCase();
 
-          {/* Header — matches BrandedPlaceholder */}
-          <div style={{ display: 'flex', width: '100%', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-              <div style={{ display: 'flex', width: '45px', height: '45px', backgroundColor: '#ecfdf5', borderRadius: '10px', alignItems: 'center', justifyContent: 'center' }}>
-                <span style={{ color: '#064e3b', fontSize: '26px', fontWeight: 900 }}>e</span>
-              </div>
-              <span style={{ fontSize: '22px', fontWeight: 700, color: '#ecfdf5', letterSpacing: '3px' }}>ENTREPRENEURS BD</span>
-            </div>
-            <div style={{ display: 'flex', backgroundColor: '#065f46', padding: '8px 24px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.15)', color: '#ecfdf5', fontSize: '18px', fontWeight: 700 }}>{category}</div>
-          </div>
-
-          {/* Title — large, bold, white (like BrandedPlaceholder h3) */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginTop: 'auto' }}>
-            <div style={{ fontSize: title.length > 60 ? '48px' : title.length > 40 ? '56px' : '68px', fontWeight: 700, color: 'white', lineHeight: 1.15 }}>{title}</div>
-            <div style={{ width: '80px', height: '6px', backgroundColor: '#10b981', borderRadius: '3px', opacity: 0.5 }} />
-          </div>
-
-          {/* Footer watermark — matches BrandedPlaceholder */}
-          <div style={{ position: 'absolute', bottom: '25px', right: '40px', fontSize: '16px', color: 'white', opacity: 0.2, fontStyle: 'italic' }}>entrepreneurs.bd</div>
-        </div>
-      ),
-      { width: 1200, height: 630 }
-    );
+  const font = await getFont();
+  const fontFile = font ? '/tmp/_og_font.ttf' : undefined;
+  if (font) {
+    const fs = require('fs');
+    try { fs.writeFileSync('/tmp/_og_font.ttf', font); } catch (e) {}
   }
 
-  // --- 2. SEO HTML RENDERING ---
-  const pathParam = searchParams.get('path') || '';
+  // Background
+  let bg = sharp({ create: { width: 1200, height: 630, channels: 4, background: '#064e3b' } }).png();
+  let layers = [];
+
+  // Blurred featured image overlay
+  try {
+    if (image && image.startsWith('http')) {
+      const imgRes = await axios.get(image, { responseType: 'arraybuffer', timeout: 4000 });
+      const blurred = await sharp(imgRes.data).resize(1200, 630, { fit: 'cover' }).blur(25).modulate({ brightness: 0.3 }).png().toBuffer();
+      layers.push({ input: blurred, top: 0, left: 0 });
+    }
+  } catch (e) {}
+
+  // Title text via Pango
+  const titleOpts = { text: { text: `<span foreground="white" font_weight="bold">${cleanTitle}</span>`, font: 'Noto Sans', rgba: true, width: 1040, height: 300 } };
+  if (fontFile) titleOpts.text.fontfile = fontFile;
+  try {
+    const titleBuf = await sharp(titleOpts).png().toBuffer();
+    layers.push({ input: titleBuf, top: 220, left: 80 });
+  } catch (e) {}
+
+  // Brand name via Pango
+  const brandOpts = { text: { text: `<span foreground="white" font_weight="bold" font_size="22pt">ENTREPRENEURS BD</span>`, font: 'Noto Sans', rgba: true } };
+  if (fontFile) brandOpts.text.fontfile = fontFile;
+  try {
+    const brandBuf = await sharp(brandOpts).png().toBuffer();
+    layers.push({ input: brandBuf, top: 90, left: 155 });
+  } catch (e) {}
+
+  // Category via Pango
+  const catOpts = { text: { text: `<span foreground="white" font_weight="bold" font_size="16pt">${cleanCat}</span>`, font: 'Noto Sans', rgba: true } };
+  if (fontFile) catOpts.text.fontfile = fontFile;
+  try {
+    const catBuf = await sharp(catOpts).png().toBuffer();
+    layers.push({ input: catBuf, top: 92, left: 960 });
+  } catch (e) {}
+
+  // Logo box (white rounded rect with "e")
+  const logoSvg = Buffer.from(`<svg width="50" height="50"><rect width="50" height="50" rx="10" fill="#ecfdf5"/><text x="25" y="36" text-anchor="middle" font-size="30" font-weight="900" fill="#064e3b">e</text></svg>`);
+  layers.push({ input: logoSvg, top: 78, left: 80 });
+
+  // Category badge background
+  const badgeSvg = Buffer.from(`<svg width="160" height="40"><rect width="160" height="40" rx="8" fill="#065f46" stroke="rgba(255,255,255,0.15)" stroke-width="1"/></svg>`);
+  layers.push({ input: badgeSvg, top: 80, left: 940 });
+
+  // Green accent bar
+  const barSvg = Buffer.from(`<svg width="80" height="6"><rect width="80" height="6" rx="3" fill="#10b981" opacity="0.5"/></svg>`);
+  layers.push({ input: barSvg, top: 540, left: 80 });
+
+  // Footer watermark
+  const footOpts = { text: { text: `<span foreground="white" font_size="12pt" font_style="italic">entrepreneurs.bd</span>`, font: 'Noto Sans', rgba: true } };
+  if (fontFile) footOpts.text.fontfile = fontFile;
+  try {
+    const footBuf = await sharp(footOpts).png().toBuffer();
+    // Make it semi-transparent
+    const footFinal = await sharp(footBuf).ensureAlpha().composite([{
+      input: Buffer.from([0, 0, 0, 50]),
+      raw: { width: 1, height: 1, channels: 4 },
+      tile: true,
+      blend: 'dest-in'
+    }]).png().toBuffer();
+    layers.push({ input: footFinal, top: 580, left: 1020 });
+  } catch (e) {}
+
+  return await bg.toBuffer().then(base => sharp(base).composite(layers).png().toBuffer());
+}
+
+// --- MAIN HANDLER ---
+module.exports = async (req, res) => {
+  const userAgent = req.headers['user-agent'] || '';
+  const host = req.headers.host || 'entrepreneurs.bd';
+  const protocol = req.headers['x-forwarded-proto'] || 'https';
+  const SITE_URL_DYN = `${protocol}://${host}`;
+  const isBot = /bot|google|crawler|spider|facebook|whatsapp|linkedin|twitter|slack|discord|telegram|apple|bing|yandex|baiduspider|metainspector|structured-data|rich-results/i.test(userAgent);
+
+  // --- 1. IMAGE RENDERING ---
+  if (req.query.render === 'image') {
+    const { title, description, image, category } = req.query;
+    try {
+      const buffer = await generateOgImage(title, description, image, category);
+      res.setHeader('Content-Type', 'image/png');
+      res.setHeader('Cache-Control', 'public, max-age=31536000, s-maxage=31536000, stale-while-revalidate=604800');
+      return res.status(200).send(buffer);
+    } catch (e) {
+      console.error('[OG Engine] Render Fail:', e.message);
+      try {
+        const fallback = await generateOgImage(title, description, null, category);
+        res.setHeader('Content-Type', 'image/png');
+        return res.status(200).send(fallback);
+      } catch (err) {
+        return res.status(500).send('Image generation failed');
+      }
+    }
+  }
+
+  // --- 2. SITEMAP ---
+  if (req.query.action === 'sitemap-news') {
+    res.setHeader('Content-Type', 'application/xml');
+    return res.status(200).send('<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>');
+  }
+
+  // --- 3. PATH RESOLVER ---
+  const pathParam = req.query.path || '';
   const finalPath = (pathParam === 'home' || !pathParam) ? '/' : (pathParam.startsWith('/') ? pathParam : `/${pathParam}`);
   const segments = finalPath.split('/').filter(Boolean);
   const type = (finalPath === '/' || segments.length === 0) ? 'home' : segments[0];
   const slug = segments.length > 1 ? segments[1] : null;
+  const escapedRedirectPath = `${finalPath}${finalPath.includes('?') ? '&' : '?'}no_bot=1`;
 
   try {
     let title = "Entrepreneurs BD | The National Engine of Growth";
@@ -168,29 +233,17 @@ export default async function handler(req) {
     const currentAbsoluteUrl = `https://${host}${finalPath}`;
     const dynamicOgUrl = `${SITE_URL}/api/og-image?title=${encodeURIComponent(title.substring(0, 100))}&description=${encodeURIComponent(description.substring(0, 160))}&image=${encodeURIComponent(image)}&category=${encodeURIComponent(type)}`;
 
-    // --- RESTORED SCHEMAS ---
     const orgSchema = { 
-      "@context": "https://schema.org", 
-      "@type": "Organization", 
-      "name": "Entrepreneurs BD", 
-      "url": SITE_URL, 
-      "logo": `${SITE_URL}/logo.png`, 
+      "@context": "https://schema.org", "@type": "Organization", "name": "Entrepreneurs BD", 
+      "url": SITE_URL, "logo": `${SITE_URL}/logo.png`, 
       "contactPoint": { "@type": "ContactPoint", "telephone": "+8801700000000", "contactType": "customer service" },
       "sameAs": ["https://www.facebook.com/entrepreneursbd.official/"] 
     };
     const websiteSchema = {
-      "@context": "https://schema.org",
-      "@type": "WebSite",
-      "name": "Entrepreneurs BD",
-      "url": SITE_URL,
-      "potentialAction": {
-        "@type": "SearchAction",
-        "target": `${SITE_URL}/search?q={search_term_string}`,
-        "query-input": "required name=search_term_string"
-      }
+      "@context": "https://schema.org", "@type": "WebSite", "name": "Entrepreneurs BD", "url": SITE_URL,
+      "potentialAction": { "@type": "SearchAction", "target": `${SITE_URL}/search?q={search_term_string}`, "query-input": "required name=search_term_string" }
     };
     let mainSchema = { "@context": "https://schema.org", "@type": "WebPage", "headline": title, "description": description, "image": image, "url": currentAbsoluteUrl };
-    
     if (type === 'blog' && slug) {
       mainSchema = { "@context": "https://schema.org", "@type": "BlogPosting", "headline": title, "description": description, "image": image, "datePublished": new Date().toISOString(), "publisher": orgSchema };
     }
@@ -219,15 +272,18 @@ export default async function handler(req) {
       <link rel="icon" type="image/x-icon" href="/favicon.ico">
       <link rel="shortcut icon" href="/favicon.ico">
       <link rel="apple-touch-icon" sizes="180x180" href="/logo192.png">
-      <!-- SEO Debug: Time=${new Date().toISOString()}, Type=${type}, Slug=${slug}, DataFound=${!!docData}, Engine=EDGE-v1 -->
+      <!-- SEO Debug: Time=${new Date().toISOString()}, Type=${type}, Slug=${slug}, DataFound=${!!docData}, Engine=PANGO-v1 -->
     `;
 
-    const redirectPath = `${finalPath}${finalPath.includes('?') ? '&' : '?'}no_bot=1`;
-    const body = HTML_SHELL.replace('{{META_TAGS}}', metaTags).replace('{{REDIRECT_PATH}}', redirectPath);
+    res.setHeader('Content-Type', 'text/html');
+    res.setHeader('Cache-Control', 'public, s-maxage=86400, stale-while-revalidate=43200');
+    res.setHeader('X-SEO-Engine', 'PANGO-v1');
+    return res.status(200).send(HTML_SHELL.replace('{{META_TAGS}}', metaTags).replace('{{REDIRECT_PATH}}', escapedRedirectPath));
 
-    return new Response(body, { headers: { 'Content-Type': 'text/html', 'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=43200' } });
-  } catch (e) {
-    const fallbackRedirect = `${finalPath}${finalPath.includes('?') ? '&' : '?'}no_bot=1`;
-    return new Response(HTML_SHELL.replace('{{META_TAGS}}', '').replace('{{REDIRECT_PATH}}', fallbackRedirect), { headers: { 'Content-Type': 'text/html' } });
+  } catch (error) {
+    console.error('[CRITICAL] SEO failure:', error.message);
+    const sep = finalPath.includes('?') ? '&' : '?';
+    const fallbackPath = `${finalPath}${sep}no_bot=1`;
+    return res.status(200).send(HTML_SHELL.replace('{{META_TAGS}}', '').replace('{{REDIRECT_PATH}}', fallbackPath));
   }
-}
+};
