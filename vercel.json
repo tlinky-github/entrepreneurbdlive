@@ -19,6 +19,15 @@
       "destination": "/api/seo-handler?render=image"
     },
     {
+      "source": "/",
+      "has": [{ "type": "query", "key": "no_bot", "value": "1" }],
+      "destination": "/index.html"
+    },
+    {
+      "source": "/",
+      "destination": "/api/seo-handler?path=home"
+    },
+    {
       "source": "/blog/:slug",
       "has": [{ "type": "query", "key": "no_bot", "value": "1" }],
       "destination": "/index.html"

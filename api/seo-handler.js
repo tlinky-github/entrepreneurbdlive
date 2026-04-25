@@ -101,41 +101,39 @@ async function generateOgImage(title, description, image, category) {
   } catch (e) { console.warn('[OG Engine] BG Fail:', e.message); }
 
   const svg = `
-    <svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <style>
-          .title { font-family: sans-serif; font-size: 64px; font-weight: 800; fill: #ffffff; line-height: 1.2; }
-          .brand { font-family: sans-serif; font-size: 24px; font-weight: 700; fill: #ffffff; letter-spacing: 1.5px; }
-          .domain { font-family: sans-serif; font-size: 22px; font-weight: 600; fill: #10b981; opacity: 0.6; }
-          .badge-text { font-family: sans-serif; font-size: 22px; font-weight: 700; fill: #ffffff; }
-        </style>
-      </defs>
-      
-      <!-- Background -->
-      <rect width="1200" height="630" fill="#064e3b" />
-      ${backgroundBuffer ? `<image href="data:image/png;base64,${backgroundBuffer.toString('base64')}" width="1200" height="630" preserveAspectRatio="xMidYMid slice" />` : ''}
-      
       <!-- Header Overlay -->
       <rect x="80" y="80" width="60" height="60" rx="12" fill="#ffffff" />
-      <text x="110" y="118" font-family="sans-serif" font-size="32" font-weight="900" fill="#064e3b" text-anchor="middle">e</text>
-      <text x="160" y="118" class="brand">ENTREPRENEURS BD</text>
+      <text x="110" y="122" font-family="sans-serif" font-size="36" font-weight="900" fill="#064e3b" text-anchor="middle">e</text>
+      <text x="160" y="120" font-family="sans-serif" font-size="28" font-weight="700" fill="#ffffff">ENTREPRENEURS BD</text>
       
       <!-- Category Badge -->
-      <rect x="980" y="80" width="140" height="48" rx="24" fill="#059669" opacity="0.9" />
-      <text x="1050" y="112" class="badge-text" text-anchor="middle">${cleanCategory}</text>
+      <rect x="940" y="80" width="180" height="50" rx="25" fill="#059669" opacity="0.9" />
+      <text x="1030" y="114" font-family="sans-serif" font-size="22" font-weight="700" fill="#ffffff" text-anchor="middle">${cleanCategory}</text>
       
-      <!-- Content Area -->
-      <foreignObject x="80" y="240" width="1040" height="300">
-        <div xmlns="http://www.w3.org/1999/xhtml" style="color: white; font-family: sans-serif; font-size: 68px; font-weight: 800; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;">
-          ${cleanTitle}
-        </div>
-      </foreignObject>
+      <!-- Content Area (Manual Line Wrapping for Compatibility) -->
+      ${(() => {
+        const words = cleanTitle.split(' ');
+        let lines = [];
+        let currentLine = '';
+        words.forEach(word => {
+          if ((currentLine + word).length > 25) {
+            lines.push(currentLine);
+            currentLine = word + ' ';
+          } else {
+            currentLine += word + ' ';
+          }
+        });
+        lines.push(currentLine);
+        return lines.slice(0, 3).map((line, i) => 
+          `<text x="80" y="${280 + (i * 85)}" font-family="sans-serif" font-size="72" font-weight="800" fill="#ffffff">${line.trim()}</text>`
+        ).join('');
+      })()}
       
       <!-- Accent Line -->
-      <rect x="80" y="520" width="120" height="8" rx="4" fill="#10b981" />
+      <rect x="80" y="520" width="120" height="10" rx="5" fill="#10b981" />
       
       <!-- Footer Branding -->
-      <text x="1120" y="560" class="domain" text-anchor="end">entrepreneurs.bd</text>
+      <text x="1120" y="570" font-family="sans-serif" font-size="24" font-weight="600" fill="#10b981" opacity="0.7" text-anchor="end">entrepreneurs.bd</text>
     </svg>
   `;
 
@@ -213,7 +211,7 @@ module.exports = async (req, res) => {
     const safeDescription = esc(description);
 
     const currentAbsoluteUrl = `https://${host}${finalPath}`;
-    const dynamicOgUrl = `${SITE_URL}/api/og-image?title=${encodeURIComponent(title)}&description=${encodeURIComponent(description)}&image=${encodeURIComponent(image)}&category=${encodeURIComponent(type)}`;
+    const dynamicOgUrl = `${SITE_URL}/api/og-image?title=${encodeURIComponent(title.substring(0, 100))}&image=${encodeURIComponent(image)}&category=${encodeURIComponent(type)}`;
 
     // --- SCHEMAS ---
     const orgSchema = { "@context": "https://schema.org", "@type": "Organization", "name": "Entrepreneurs BD", "url": SITE_URL, "logo": `${SITE_URL}/logo.png`, "sameAs": ["https://www.facebook.com/entrepreneursbd.official/"] };
@@ -227,12 +225,17 @@ module.exports = async (req, res) => {
       <title>${safeTitle}</title>
       <meta name="description" content="${safeDescription}">
       <link rel="canonical" href="${currentAbsoluteUrl}">
+      <meta property="og:site_name" content="Entrepreneurs BD">
       <meta property="og:type" content="${type === 'blog' ? 'article' : 'website'}">
       <meta property="og:title" content="${safeTitle}">
       <meta property="og:description" content="${safeDescription}">
       <meta property="og:image" content="${dynamicOgUrl}">
+      <meta property="og:image:width" content="1200">
+      <meta property="og:image:height" content="630">
+      <meta property="og:image:type" content="image/png">
       <meta property="og:url" content="${currentAbsoluteUrl}">
       <meta name="twitter:card" content="summary_large_image">
+      <meta name="twitter:site" content="@entrepreneursbd">
       <meta name="twitter:title" content="${safeTitle}">
       <meta name="twitter:description" content="${safeDescription}">
       <meta name="twitter:image" content="${dynamicOgUrl}">
