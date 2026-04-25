@@ -268,7 +268,7 @@ const AdminTrafficCenter = () => {
                       <tr key={dl.id} className="group hover:bg-stone-50 transition-colors">
                         <td className="px-6 py-4">
                           <p className="font-medium text-stone-900 truncate max-w-[180px]" title={dl.path}>{dl.path}</p>
-                          <p className="text-[10px] text-stone-400">First seen: {new Date(dl.created_at?.toDate()).toLocaleDateString()}</p>
+                          <p className="text-[10px] text-stone-400">First seen: {dl.created_at ? new Date(dl.created_at).toLocaleDateString() : 'Recently'}</p>
                         </td>
                         <td className="px-6 py-4">
                            <Badge variant="secondary" className="bg-stone-100 text-stone-600 border-none font-medium">
