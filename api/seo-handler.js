@@ -214,7 +214,26 @@ module.exports = async (req, res) => {
     const dynamicOgUrl = `${SITE_URL}/api/og-image?title=${encodeURIComponent(title.substring(0, 100))}&image=${encodeURIComponent(image)}&category=${encodeURIComponent(type)}`;
 
     // --- SCHEMAS ---
-    const orgSchema = { "@context": "https://schema.org", "@type": "Organization", "name": "Entrepreneurs BD", "url": SITE_URL, "logo": `${SITE_URL}/logo.png`, "sameAs": ["https://www.facebook.com/entrepreneursbd.official/"] };
+    const orgSchema = { 
+      "@context": "https://schema.org", 
+      "@type": "Organization", 
+      "name": "Entrepreneurs BD", 
+      "url": SITE_URL, 
+      "logo": `${SITE_URL}/logo.png`, 
+      "contactPoint": { "@type": "ContactPoint", "telephone": "+8801700000000", "contactType": "customer service" },
+      "sameAs": ["https://www.facebook.com/entrepreneursbd.official/"] 
+    };
+    const websiteSchema = {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Entrepreneurs BD",
+      "url": SITE_URL,
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": `${SITE_URL}/search?q={search_term_string}`,
+        "query-input": "required name=search_term_string"
+      }
+    };
     let mainSchema = { "@context": "https://schema.org", "@type": "WebPage", "headline": title, "description": description, "image": image, "url": currentAbsoluteUrl };
     
     if (type === 'blog' && slug) {
@@ -240,8 +259,12 @@ module.exports = async (req, res) => {
       <meta name="twitter:description" content="${safeDescription}">
       <meta name="twitter:image" content="${dynamicOgUrl}">
       <script type="application/ld+json">${JSON.stringify(orgSchema)}</script>
+      <script type="application/ld+json">${JSON.stringify(websiteSchema)}</script>
       <script type="application/ld+json">${JSON.stringify(mainSchema)}</script>
-      <!-- SEO Debug: Type=${type}, Slug=${slug}, DataFound=${!!docData}, Engine=NUCLEAR-REST-v3 -->
+      <link rel="icon" type="image/x-icon" href="/favicon.ico">
+      <link rel="shortcut icon" href="/favicon.ico">
+      <link rel="apple-touch-icon" sizes="180x180" href="/logo192.png">
+      <!-- SEO Debug: Time=${new Date().toISOString()}, Type=${type}, Slug=${slug}, DataFound=${!!docData}, Engine=NUCLEAR-REST-v3 -->
     `;
 
     res.setHeader('Content-Type', 'text/html');
