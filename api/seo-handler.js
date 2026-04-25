@@ -1,46 +1,14 @@
-const axios = require('axios');
-const fs = require('fs');
-const path = require('path');
-const sharp = require('sharp');
+import { ImageResponse } from '@vercel/og';
 
-// --- CONFIG ---
-const PROJECT_ID = process.env.REACT_APP_FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID;
+export const config = {
+  runtime: 'edge',
+};
+
+const PROJECT_ID = process.env.REACT_APP_FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID || 'entrepreneurbdlive'; 
 const API_KEY = process.env.REACT_APP_FIREBASE_API_KEY || process.env.VITE_FIREBASE_API_KEY || process.env.FIREBASE_API_KEY;
 const SITE_URL = 'https://entrepreneurs.bd';
-const LOGO_URL = 'https://entrepreneurs.bd/logo.png';
 
-// --- IRONCLAD MASTER HTML SHELL ---
-const HTML_SHELL = `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" href="/favicon.ico" />
-    <link rel="apple-touch-icon" href="/logo192.png" />
-    <link rel="manifest" href="/manifest.json" />
-    <meta name="theme-color" content="#064e3b" />
-    <style>
-        body { margin: 0; font-family: 'Inter', sans-serif, system-ui; background: #fafaf9; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
-        .loader { display: flex; flex-direction: column; align-items: center; gap: 20px; animation: fadeIn 0.5s ease-out; text-align: center; }
-        .logo { width: 120px; height: auto; animation: pulse 2s infinite ease-in-out; }
-        @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.7; transform: scale(0.95); } }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        .spinner { width: 30px; height: 30px; border: 3px solid #f3f3f3; border-top: 3px solid #059669; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    </style>
-</head>
-<body>
-    <div class="loader">
-        <img src="/logo.png" alt="Entrepreneurs BD" class="logo" />
-        <div class="spinner"></div>
-        <div style="color: #064e3b; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Loading Growth Engine...</div>
-    </div>
-    <script>window.location.href = "{{REDIRECT_PATH}}";</script>
-    {{META_TAGS}}
-</body>
-</html>`;
-
-// --- HELPER: FIRESTORE REST API (Robust) ---
+// --- HELPER: FIRESTORE REST ---
 async function fetchFirestoreDoc(collection, slug) {
   try {
     const url = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents:runQuery`;
@@ -58,144 +26,122 @@ async function fetchFirestoreDoc(collection, slug) {
       }
     };
     
-    const res = await axios.post(`${url}?key=${API_KEY}`, query, { timeout: 8000 });
-    if (res.data && res.data[0] && res.data[0].document) {
-      const doc = res.data[0].document;
-      const fields = doc.fields;
-      const data = {};
-      
-      for (const key in fields) {
-        const val = fields[key];
-        if (val.stringValue !== undefined) data[key] = val.stringValue;
-        else if (val.integerValue !== undefined) data[key] = parseInt(val.integerValue);
-        else if (val.doubleValue !== undefined) data[key] = parseFloat(val.doubleValue);
-        else if (val.booleanValue !== undefined) data[key] = val.booleanValue;
-        else if (val.timestampValue !== undefined) data[key] = val.timestampValue;
-        else if (val.mapValue) data[key] = val.mapValue.fields; 
-        else if (val.arrayValue && val.arrayValue.values) {
-          data[key] = val.arrayValue.values.map(v => v.stringValue || v.integerValue || v.booleanValue || "");
+    const res = await fetch(`${url}?key=${API_KEY}`, {
+      method: 'POST',
+      body: JSON.stringify(query),
+      headers: { 'Content-Type': 'application/json' }
+    });
+    
+    if (!res.ok) return null;
+    const results = await res.json();
+    if (!results || !results[0] || !results[0].document) return null;
+    
+    const doc = results[0].document;
+    const fields = doc.fields;
+    const data = {};
+    
+    for (const key in fields) {
+      const val = fields[key];
+      if (val.stringValue !== undefined) data[key] = val.stringValue;
+      else if (val.integerValue !== undefined) data[key] = parseInt(val.integerValue);
+      else if (val.doubleValue !== undefined) data[key] = parseFloat(val.doubleValue);
+      else if (val.booleanValue !== undefined) data[key] = val.booleanValue;
+      else if (val.timestampValue !== undefined) data[key] = val.timestampValue;
+      else if (val.mapValue && val.mapValue.fields) {
+        const subData = {};
+        for (const k in val.mapValue.fields) {
+          subData[k] = val.mapValue.fields[k].stringValue || val.mapValue.fields[k].integerValue || "";
         }
+        data[key] = subData;
       }
-      return data;
+      else if (val.arrayValue && val.arrayValue.values) {
+        data[key] = val.arrayValue.values.map(v => v.stringValue || v.integerValue || v.booleanValue || "");
+      }
     }
-    return null;
-  } catch (e) {
-    console.error(`[Firestore REST] Error for ${collection}/${slug}:`, e.message);
-    return null;
-  }
+    return data;
+  } catch (e) { return null; }
 }
 
-// --- HELPER: OG IMAGE ENGINE ---
-async function generateOgImage(title, description, image, category) {
-  const sanitize = (str) => (str || '').replace(/[\u0000-\u001F\u007F-\u009F]/g, '').trim().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  const cleanTitle = sanitize(title);
-  const cleanCategory = sanitize(category || 'Startup').toUpperCase();
-  const cleanDesc = sanitize(description || '').replace(/<[^>]*>/g, '').substring(0, 160);
+const HTML_SHELL = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" href="/logo192.png" />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#064e3b" />
+    {{META_TAGS}}
+    <style>
+        body { margin: 0; font-family: 'Inter', sans-serif, system-ui; background: #fafaf9; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
+        .loader { display: flex; flex-direction: column; align-items: center; gap: 20px; animation: fadeIn 0.5s ease-out; text-align: center; }
+        .logo { width: 120px; height: auto; animation: pulse 2s infinite ease-in-out; }
+        @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.7; transform: scale(0.95); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .spinner { width: 30px; height: 30px; border: 3px solid #f3f3f3; border-top: 3px solid #059669; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="loader">
+        <img src="/logo.png" alt="Entrepreneurs BD" class="logo" />
+        <div class="spinner"></div>
+        <div style="color: #064e3b; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Loading Growth Engine...</div>
+    </div>
+    <script>window.location.href = "{{REDIRECT_PATH}}";</script>
+</body>
+</html>`;
+
+export default async function handler(req) {
+  const { searchParams } = new URL(req.url);
+  const host = req.headers.get('host') || 'entrepreneurs.bd';
   
-  let backgroundBuffer;
-  try {
-    if (image && image.startsWith('http')) {
-      const imgRes = await axios.get(image, { responseType: 'arraybuffer', timeout: 4000 });
-      backgroundBuffer = await sharp(imgRes.data)
-        .resize(1200, 630, { fit: 'cover' })
-        .blur(20)
-        .modulate({ brightness: 0.3 })
-        .toBuffer();
-    }
-  } catch (e) { console.warn('[OG Engine] BG Fail'); }
+  // --- 1. IMAGE RENDERING (THE "BRANDED CARD" LOOK) ---
+  if (searchParams.get('render') === 'image') {
+    const title = searchParams.get('title') || 'Entrepreneurs BD';
+    const description = searchParams.get('description') || '';
+    const category = (searchParams.get('category') || 'Startup').toUpperCase();
+    const image = searchParams.get('image');
 
-  let logoBase64 = '';
-  try {
-    const logoRes = await axios.get(LOGO_URL, { responseType: 'arraybuffer', timeout: 3000 });
-    logoBase64 = logoRes.data.toString('base64');
-  } catch (e) { console.warn('[OG Engine] Logo Fail'); }
+    return new ImageResponse(
+      (
+        <div style={{ height: '100%', width: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', backgroundColor: '#064e3b', backgroundImage: image ? `linear-gradient(rgba(6, 78, 59, 0.85), rgba(6, 78, 59, 0.92)), url(${image})` : 'linear-gradient(135deg, #064e3b 0%, #065f46 50%, #047857 100%)', backgroundSize: 'cover', backgroundPosition: 'center', padding: '60px', position: 'relative', overflow: 'hidden' }}>
+          
+          {/* Decorative circles (no filter — Satori doesn't support it) */}
+          <div style={{ position: 'absolute', top: '-80px', right: '-80px', width: '300px', height: '300px', borderRadius: '150px', background: 'rgba(255,255,255,0.04)' }} />
+          <div style={{ position: 'absolute', bottom: '-80px', left: '-80px', width: '300px', height: '300px', borderRadius: '150px', background: 'rgba(16,185,129,0.08)' }} />
 
-  const svg = `
-    <svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
-      ${logoBase64 ? `<image x="80" y="80" width="64" height="64" href="data:image/png;base64,${logoBase64}" />` : '<rect x="80" y="80" width="64" height="64" rx="12" fill="white" />'}
-      <text x="160" y="122" font-family="sans-serif" font-size="32" font-weight="900" fill="white">ENTREPRENEURS BD</text>
-      <rect x="940" y="80" width="180" height="50" rx="25" fill="#059669" />
-      <text x="1030" y="114" font-family="sans-serif" font-size="22" font-weight="bold" fill="white" text-anchor="middle">${cleanCategory}</text>
-      ${(() => {
-        const words = cleanTitle.split(' ');
-        let lines = [];
-        let cur = '';
-        words.forEach(w => {
-          if ((cur + w).length > 25) { lines.push(cur); cur = w + ' '; }
-          else cur += w + ' ';
-        });
-        lines.push(cur);
-        return lines.slice(0, 3).map((l, i) => 
-          `<text x="80" y="${280 + (i * 85)}" font-family="sans-serif" font-size="64" font-weight="900" fill="white">${l.trim()}</text>`
-        ).join('');
-      })()}
-      ${(() => {
-        const words = cleanDesc.split(' ');
-        let lines = [];
-        let cur = '';
-        words.forEach(w => {
-          if ((cur + w).length > 60) { lines.push(cur); cur = w + ' '; }
-          else cur += w + ' ';
-        });
-        lines.push(cur);
-        return lines.slice(0, 2).map((l, i) => 
-          `<text x="80" y="${510 + (i * 35)}" font-family="sans-serif" font-size="24" fill="white" opacity="0.8">${l.trim()}</text>`
-        ).join('');
-      })()}
-      <rect x="80" y="560" width="120" height="8" rx="4" fill="#10b981" />
-      <text x="1120" y="580" font-family="sans-serif" font-size="24" font-weight="bold" fill="#10b981" opacity="0.8" text-anchor="end">entrepreneurs.bd</text>
-    </svg>
-  `;
+          {/* Header — matches BrandedPlaceholder */}
+          <div style={{ display: 'flex', width: '100%', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+              <div style={{ display: 'flex', width: '45px', height: '45px', backgroundColor: '#ecfdf5', borderRadius: '10px', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ color: '#064e3b', fontSize: '26px', fontWeight: 900 }}>e</span>
+              </div>
+              <span style={{ fontSize: '22px', fontWeight: 700, color: '#ecfdf5', letterSpacing: '3px' }}>ENTREPRENEURS BD</span>
+            </div>
+            <div style={{ display: 'flex', backgroundColor: '#065f46', padding: '8px 24px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.15)', color: '#ecfdf5', fontSize: '18px', fontWeight: 700 }}>{category}</div>
+          </div>
 
-  return await sharp({
-    create: { width: 1200, height: 630, channels: 4, background: '#064e3b' }
-  }).composite([
-    ...(backgroundBuffer ? [{ input: backgroundBuffer, top: 0, left: 0 }] : []),
-    { input: Buffer.from(svg), top: 0, left: 0 }
-  ]).png().toBuffer();
-}
+          {/* Title — large, bold, white (like BrandedPlaceholder h3) */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginTop: 'auto' }}>
+            <div style={{ fontSize: title.length > 60 ? '48px' : title.length > 40 ? '56px' : '68px', fontWeight: 700, color: 'white', lineHeight: 1.15 }}>{title}</div>
+            <div style={{ width: '80px', height: '6px', backgroundColor: '#10b981', borderRadius: '3px', opacity: 0.5 }} />
+          </div>
 
-module.exports = async (req, res) => {
-  const userAgent = req.headers['user-agent'] || '';
-  const host = req.headers.host || 'entrepreneurs.bd';
-  const protocol = req.headers['x-forwarded-proto'] || 'https';
-  const SITE_URL = `${protocol}://${host}`;
-  const isBot = /bot|google|crawler|spider|facebook|whatsapp|linkedin|twitter|slack|discord|telegram|apple|bing|yandex|baiduspider|metainspector|structured-data|rich-results/i.test(userAgent);
-
-  // --- 1. IMAGE RENDERING BRANCH ---
-  if (req.query.render === 'image') {
-    const { title, description, image, category } = req.query;
-    try {
-      const buffer = await generateOgImage(title, description, image, category);
-      res.setHeader('Content-Type', 'image/png');
-      res.setHeader('Cache-Control', 'public, max-age=31536000, s-maxage=31536000, stale-while-revalidate=604800');
-      return res.status(200).send(buffer);
-    } catch (e) {
-      console.error('[OG Engine] Render Fail:', e.message);
-      try {
-        const fallback = await generateOgImage(title, description, null, category);
-        res.setHeader('Content-Type', 'image/png');
-        return res.status(200).send(fallback);
-      } catch (err) {
-        return res.status(500).send('Final Render Failure');
-      }
-    }
+          {/* Footer watermark — matches BrandedPlaceholder */}
+          <div style={{ position: 'absolute', bottom: '25px', right: '40px', fontSize: '16px', color: 'white', opacity: 0.2, fontStyle: 'italic' }}>entrepreneurs.bd</div>
+        </div>
+      ),
+      { width: 1200, height: 630 }
+    );
   }
 
-  // --- 2. SITEMAP BRANCH ---
-  if (req.query.action === 'sitemap-news') {
-    res.setHeader('Content-Type', 'application/xml');
-    return res.status(200).send('<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>');
-  }
-
-  // --- 3. PATH RESOLVER ---
-  const pathParam = req.query.path || '';
+  // --- 2. SEO HTML RENDERING ---
+  const pathParam = searchParams.get('path') || '';
   const finalPath = (pathParam === 'home' || !pathParam) ? '/' : (pathParam.startsWith('/') ? pathParam : `/${pathParam}`);
   const segments = finalPath.split('/').filter(Boolean);
   const type = (finalPath === '/' || segments.length === 0) ? 'home' : segments[0];
   const slug = segments.length > 1 ? segments[1] : null;
-
-  const escapedRedirectPath = `${finalPath}${finalPath.includes('?') ? '&' : '?'}no_bot=1`;
 
   try {
     let title = "Entrepreneurs BD | The National Engine of Growth";
@@ -222,6 +168,7 @@ module.exports = async (req, res) => {
     const currentAbsoluteUrl = `https://${host}${finalPath}`;
     const dynamicOgUrl = `${SITE_URL}/api/og-image?title=${encodeURIComponent(title.substring(0, 100))}&description=${encodeURIComponent(description.substring(0, 160))}&image=${encodeURIComponent(image)}&category=${encodeURIComponent(type)}`;
 
+    // --- RESTORED SCHEMAS ---
     const orgSchema = { 
       "@context": "https://schema.org", 
       "@type": "Organization", 
@@ -272,18 +219,15 @@ module.exports = async (req, res) => {
       <link rel="icon" type="image/x-icon" href="/favicon.ico">
       <link rel="shortcut icon" href="/favicon.ico">
       <link rel="apple-touch-icon" sizes="180x180" href="/logo192.png">
-      <!-- SEO Debug: Time=${new Date().toISOString()}, Type=${type}, Slug=${slug}, DataFound=${!!docData}, Engine=NUCLEAR-REST-v3 -->
+      <!-- SEO Debug: Time=${new Date().toISOString()}, Type=${type}, Slug=${slug}, DataFound=${!!docData}, Engine=EDGE-v1 -->
     `;
 
-    res.setHeader('Content-Type', 'text/html');
-    res.setHeader('Cache-Control', 'public, s-maxage=86400, stale-while-revalidate=43200');
-    res.setHeader('X-SEO-Engine', 'NUCLEAR-REST-v2');
-    return res.status(200).send(HTML_SHELL.replace('{{META_TAGS}}', metaTags).replace('{{REDIRECT_PATH}}', escapedRedirectPath));
+    const redirectPath = `${finalPath}${finalPath.includes('?') ? '&' : '?'}no_bot=1`;
+    const body = HTML_SHELL.replace('{{META_TAGS}}', metaTags).replace('{{REDIRECT_PATH}}', redirectPath);
 
-  } catch (error) {
-    console.error('[CRITICAL] SEO failure:', error.message);
-    const sep = finalPath.includes('?') ? '&' : '?';
-    const escapedRedirectPath = `${finalPath}${sep}no_bot=1`;
-    return res.status(200).send(HTML_SHELL.replace('{{META_TAGS}}', '').replace('{{REDIRECT_PATH}}', escapedRedirectPath));
+    return new Response(body, { headers: { 'Content-Type': 'text/html', 'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=43200' } });
+  } catch (e) {
+    const fallbackRedirect = `${finalPath}${finalPath.includes('?') ? '&' : '?'}no_bot=1`;
+    return new Response(HTML_SHELL.replace('{{META_TAGS}}', '').replace('{{REDIRECT_PATH}}', fallbackRedirect), { headers: { 'Content-Type': 'text/html' } });
   }
-};
+}
