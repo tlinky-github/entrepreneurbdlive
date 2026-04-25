@@ -1,10 +1,27 @@
 const sharp = require('sharp');
 const axios = require('axios');
+const fs = require('fs');
+const path = require('path');
 
 // --- CONFIG ---
 const PROJECT_ID = process.env.REACT_APP_FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID;
 const API_KEY = process.env.REACT_APP_FIREBASE_API_KEY || process.env.VITE_FIREBASE_API_KEY || process.env.FIREBASE_API_KEY;
 const SITE_URL = 'https://entrepreneurs.bd';
+const FONT_URL = 'https://github.com/google/fonts/raw/main/apache/robotocondensed/RobotoCondensed-Bold.ttf';
+const FONT_PATH = '/tmp/font.ttf';
+
+async function getFontFile() {
+  try {
+    if (fs.existsSync(FONT_PATH)) return FONT_PATH;
+    console.log('[OG Engine] Downloading font...');
+    const res = await axios.get(FONT_URL, { responseType: 'arraybuffer', timeout: 10000 });
+    fs.writeFileSync(FONT_PATH, res.data);
+    return FONT_PATH;
+  } catch (e) {
+    console.warn('[OG Engine] Font Download Fail:', e.message);
+    return '';
+  }
+}
 
 // --- IRONCLAD MASTER HTML SHELL ---
 const HTML_SHELL = `<!DOCTYPE html>
@@ -89,6 +106,8 @@ async function generateOgImage(title, description, image, category) {
   const cleanTitle = sanitize(title).length > 80 ? sanitize(title).substring(0, 77) + '...' : sanitize(title);
   const cleanCategory = sanitize(category || 'Startup').toUpperCase();
   const cleanDesc = sanitize(description || '').replace(/<[^>]*>/g, '');
+  
+  const fontFile = await getFontFile();
 
   // Layer 1: Base Emerald Background
   let pipeline = sharp({
@@ -122,8 +141,8 @@ async function generateOgImage(title, description, image, category) {
     const brandE = await sharp({
       text: {
         text: 'e',
-        font: 'sans-serif',
-        fontfile: '',
+        font: 'Roboto Condensed',
+        fontfile: fontFile,
         width: 40,
         height: 40,
         rgba: true
@@ -135,7 +154,8 @@ async function generateOgImage(title, description, image, category) {
     const brandText = await sharp({
       text: {
         text: 'ENTREPRENEURS BD',
-        font: 'sans-serif',
+        font: 'Roboto Condensed',
+        fontfile: fontFile,
         width: 400,
         rgba: true
       }
@@ -151,7 +171,8 @@ async function generateOgImage(title, description, image, category) {
     const categoryText = await sharp({
       text: {
         text: cleanCategory,
-        font: 'sans-serif',
+        font: 'Roboto Condensed',
+        fontfile: fontFile,
         width: 140,
         rgba: true
       }
@@ -162,20 +183,21 @@ async function generateOgImage(title, description, image, category) {
     const titleImg = await sharp({
       text: {
         text: cleanTitle,
-        font: 'sans-serif',
+        font: 'Roboto Condensed',
+        fontfile: fontFile,
         width: 1040,
         rgba: true
       }
     }).png().toBuffer();
     layers.push({ input: titleImg, top: 220, left: 80 });
 
-    // 3g. DESCRIPTION (New Layer)
-    if (description && description.length > 5) {
-      const cleanDesc = description.substring(0, 160).replace(/<[^>]*>/g, '');
+    // 3g. DESCRIPTION
+    if (cleanDesc && cleanDesc.length > 5) {
       const descImg = await sharp({
         text: {
           text: cleanDesc,
-          font: 'sans-serif',
+          font: 'Roboto Condensed',
+          fontfile: fontFile,
           width: 900,
           rgba: true
         }
@@ -192,7 +214,8 @@ async function generateOgImage(title, description, image, category) {
     const domainText = await sharp({
       text: {
         text: 'entrepreneurs.bd',
-        font: 'sans-serif',
+        font: 'Roboto Condensed',
+        fontfile: fontFile,
         width: 200,
         rgba: true
       }
