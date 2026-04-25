@@ -169,6 +169,55 @@ async function generateOgImage(title, description, image, category) {
   return await bg.toBuffer().then(base => sharp(base).composite(layers).png().toBuffer());
 }
 
+// --- STATIC PAGES CONFIG ---
+const STATIC_PAGES = {
+  'submit': {
+    title: 'Apply to be Listed | Entrepreneurs BD',
+    description: 'Share your journey or list your business in Bangladesh\'s premier entrepreneur directory and community ecosystem.',
+    category: 'COMMUNITY'
+  },
+  'about': {
+    title: 'About Us | Entrepreneurs BD',
+    description: 'Learn about our mission to develop 1 million entrepreneurs in Bangladesh by 2030.',
+    category: 'MISSION'
+  },
+  'contact': {
+    title: 'Contact Us | Entrepreneurs BD',
+    description: 'Get in touch with the Entrepreneurs BD team for support, partnerships, or inquiries.',
+    category: 'SUPPORT'
+  },
+  'blog': {
+    title: 'Insights & Stories | Entrepreneurs BD',
+    description: 'Explore the latest stories, guides, and insights from the Bangladeshi startup ecosystem.',
+    category: 'INSIGHTS'
+  },
+  'entrepreneurs': {
+    title: 'Founder Directory | Entrepreneurs BD',
+    description: 'Discover and connect with the visionaries building the future of Bangladesh.',
+    category: 'FOUNDERS'
+  },
+  'directory': {
+    title: 'Business Directory | Entrepreneurs BD',
+    description: 'Browse the most comprehensive directory of startups and companies in Bangladesh.',
+    category: 'DIRECTORY'
+  },
+  'knowledge': {
+    title: 'Knowledge Hub | Entrepreneurs BD',
+    description: 'Access a wealth of resources, guides, and FAQs to help you scale your business.',
+    category: 'KNOWLEDGE'
+  },
+  'resources': {
+    title: 'Resource Center | Entrepreneurs BD',
+    description: 'Tools and templates to accelerate your entrepreneurial journey.',
+    category: 'RESOURCES'
+  },
+  'editorial': {
+    title: 'Editorial | Entrepreneurs BD',
+    description: 'Curated content and deep dives into the trends shaping Bangladesh\'s economy.',
+    category: 'EDITORIAL'
+  }
+};
+
 // --- MAIN HANDLER ---
 module.exports = async (req, res) => {
   const userAgent = req.headers['user-agent'] || '';
@@ -217,16 +266,24 @@ module.exports = async (req, res) => {
     let image = `${SITE_URL}/og-default.png`;
     let docData = null;
 
-    if (type !== 'home' && slug) {
-      const colMap = { 'blog': 'posts', 'directory': 'listings', 'entrepreneurs': 'profiles', 'knowledge': 'resources' };
-      if (colMap[type]) {
-        docData = await fetchFirestoreDoc(colMap[type], slug);
-        if (docData) {
-          title = docData.seoTitle || docData.seo_title || docData.title || docData.business_name || docData.name || title;
-          const rawDesc = docData.metaDescription || docData.seo_description || docData.seoDescription || docData.excerpt || docData.short_description || docData.short_bio || docData.details || description;
-          description = rawDesc.replace(/<[^>]*>/g, '').substring(0, 160);
-          image = docData.featured_image || docData.logo || docData.photo || image;
+    if (type !== 'home') {
+      if (slug) {
+        const colMap = { 'blog': 'posts', 'directory': 'listings', 'entrepreneurs': 'profiles', 'knowledge': 'resources' };
+        if (colMap[type]) {
+          docData = await fetchFirestoreDoc(colMap[type], slug);
+          if (docData) {
+            title = docData.seoTitle || docData.seo_title || docData.title || docData.business_name || docData.name || title;
+            const rawDesc = docData.metaDescription || docData.seo_description || docData.seoDescription || docData.excerpt || docData.short_description || docData.short_bio || docData.details || description;
+            description = rawDesc.replace(/<[^>]*>/g, '').substring(0, 160);
+            image = docData.featured_image || docData.logo || docData.photo || image;
+          }
         }
+      } else if (STATIC_PAGES[type]) {
+        // Handle static pages (like /submit)
+        title = STATIC_PAGES[type].title;
+        description = STATIC_PAGES[type].description;
+        // Optionally allow a custom image for static pages if defined in config
+        if (STATIC_PAGES[type].image) image = STATIC_PAGES[type].image;
       }
     }
 
@@ -234,7 +291,8 @@ module.exports = async (req, res) => {
     const safeTitle = esc(title);
     const safeDescription = esc(description);
     const currentAbsoluteUrl = `https://${host}${finalPath}`;
-    const dynamicOgUrl = `${SITE_URL}/api/og-image?title=${encodeURIComponent(title.substring(0, 100))}&amp;description=${encodeURIComponent(description.substring(0, 160))}&amp;image=${encodeURIComponent(image)}&amp;category=${encodeURIComponent(type)}`;
+    const dynamicCategory = (STATIC_PAGES[type] && STATIC_PAGES[type].category) || type;
+    const dynamicOgUrl = `${SITE_URL}/api/og-image?title=${encodeURIComponent(title.substring(0, 100))}&amp;description=${encodeURIComponent(description.substring(0, 160))}&amp;image=${encodeURIComponent(image)}&amp;category=${encodeURIComponent(dynamicCategory)}`;
 
     const orgSchema = { 
       "@context": "https://schema.org", "@type": "Organization", "name": "Entrepreneurs BD", 

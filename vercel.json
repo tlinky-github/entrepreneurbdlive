@@ -70,6 +70,87 @@
       "destination": "/api/seo-handler?path=knowledge/:slug"
     },
     {
+      "source": "/submit",
+      "has": [{ "type": "query", "key": "no_bot", "value": "1" }],
+      "destination": "/index.html"
+    },
+    {
+      "source": "/submit",
+      "destination": "/api/seo-handler?path=submit"
+    },
+    {
+      "source": "/about",
+      "has": [{ "type": "query", "key": "no_bot", "value": "1" }],
+      "destination": "/index.html"
+    },
+    {
+      "source": "/about",
+      "destination": "/api/seo-handler?path=about"
+    },
+    {
+      "source": "/contact",
+      "has": [{ "type": "query", "key": "no_bot", "value": "1" }],
+      "destination": "/index.html"
+    },
+    {
+      "source": "/contact",
+      "destination": "/api/seo-handler?path=contact"
+    },
+    {
+      "source": "/blog",
+      "has": [{ "type": "query", "key": "no_bot", "value": "1" }],
+      "destination": "/index.html"
+    },
+    {
+      "source": "/blog",
+      "destination": "/api/seo-handler?path=blog"
+    },
+    {
+      "source": "/entrepreneurs",
+      "has": [{ "type": "query", "key": "no_bot", "value": "1" }],
+      "destination": "/index.html"
+    },
+    {
+      "source": "/entrepreneurs",
+      "destination": "/api/seo-handler?path=entrepreneurs"
+    },
+    {
+      "source": "/directory",
+      "has": [{ "type": "query", "key": "no_bot", "value": "1" }],
+      "destination": "/index.html"
+    },
+    {
+      "source": "/directory",
+      "destination": "/api/seo-handler?path=directory"
+    },
+    {
+      "source": "/knowledge",
+      "has": [{ "type": "query", "key": "no_bot", "value": "1" }],
+      "destination": "/index.html"
+    },
+    {
+      "source": "/knowledge",
+      "destination": "/api/seo-handler?path=knowledge"
+    },
+    {
+      "source": "/resources",
+      "has": [{ "type": "query", "key": "no_bot", "value": "1" }],
+      "destination": "/index.html"
+    },
+    {
+      "source": "/resources",
+      "destination": "/api/seo-handler?path=resources"
+    },
+    {
+      "source": "/editorial",
+      "has": [{ "type": "query", "key": "no_bot", "value": "1" }],
+      "destination": "/index.html"
+    },
+    {
+      "source": "/editorial",
+      "destination": "/api/seo-handler?path=editorial"
+    },
+    {
       "source": "/api/:path*",
       "destination": "/api/:path*"
     },
