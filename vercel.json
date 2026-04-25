@@ -70,6 +70,33 @@
       "destination": "/api/seo-handler?path=knowledge/:slug"
     },
     {
+      "source": "/author/:slug",
+      "has": [{ "type": "query", "key": "no_bot", "value": "1" }],
+      "destination": "/index.html"
+    },
+    {
+      "source": "/author/:slug",
+      "destination": "/api/seo-handler?path=author/:slug"
+    },
+    {
+      "source": "/resources/:slug",
+      "has": [{ "type": "query", "key": "no_bot", "value": "1" }],
+      "destination": "/index.html"
+    },
+    {
+      "source": "/resources/:slug",
+      "destination": "/api/seo-handler?path=resources/:slug"
+    },
+    {
+      "source": "/page/:slug",
+      "has": [{ "type": "query", "key": "no_bot", "value": "1" }],
+      "destination": "/index.html"
+    },
+    {
+      "source": "/page/:slug",
+      "destination": "/api/seo-handler?path=page/:slug"
+    },
+    {
       "source": "/submit",
       "has": [{ "type": "query", "key": "no_bot", "value": "1" }],
       "destination": "/index.html"
@@ -150,6 +177,16 @@
       "source": "/editorial",
       "destination": "/api/seo-handler?path=editorial"
     },
+    { "source": "/faqs", "has": [{ "type": "query", "key": "no_bot", "value": "1" }], "destination": "/index.html" },
+    { "source": "/faqs", "destination": "/api/seo-handler?path=faqs" },
+    { "source": "/guides", "has": [{ "type": "query", "key": "no_bot", "value": "1" }], "destination": "/index.html" },
+    { "source": "/guides", "destination": "/api/seo-handler?path=guides" },
+    { "source": "/glossary", "has": [{ "type": "query", "key": "no_bot", "value": "1" }], "destination": "/index.html" },
+    { "source": "/glossary", "destination": "/api/seo-handler?path=glossary" },
+    { "source": "/privacy", "has": [{ "type": "query", "key": "no_bot", "value": "1" }], "destination": "/index.html" },
+    { "source": "/privacy", "destination": "/api/seo-handler?path=privacy" },
+    { "source": "/disclaimer", "has": [{ "type": "query", "key": "no_bot", "value": "1" }], "destination": "/index.html" },
+    { "source": "/disclaimer", "destination": "/api/seo-handler?path=disclaimer" },
     {
       "source": "/api/:path*",
       "destination": "/api/:path*"

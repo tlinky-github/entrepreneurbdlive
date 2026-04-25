@@ -215,6 +215,36 @@ const STATIC_PAGES = {
     title: 'Editorial | Entrepreneurs BD',
     description: 'Curated content and deep dives into the trends shaping Bangladesh\'s economy.',
     category: 'EDITORIAL'
+  },
+  'author': {
+    title: 'Author Profiles | Entrepreneurs BD',
+    description: 'Connect with the contributors and thought leaders shaping the conversation at Entrepreneurs BD.',
+    category: 'AUTHOR'
+  },
+  'faqs': {
+    title: 'Frequently Asked Questions | Entrepreneurs BD',
+    description: 'Find answers to common questions about our platform, services, and the Bangladeshi startup ecosystem.',
+    category: 'SUPPORT'
+  },
+  'guides': {
+    title: 'Entrepreneurship Guides | Entrepreneurs BD',
+    description: 'Step-by-step guides to starting and scaling your business in Bangladesh.',
+    category: 'KNOWLEDGE'
+  },
+  'glossary': {
+    title: 'Startup Glossary | Entrepreneurs BD',
+    description: 'Master the terminology of the startup and investment world.',
+    category: 'KNOWLEDGE'
+  },
+  'privacy': {
+    title: 'Privacy Policy | Entrepreneurs BD',
+    description: 'Learn how we protect and manage your data at Entrepreneurs BD.',
+    category: 'LEGAL'
+  },
+  'disclaimer': {
+    title: 'Disclaimer | Entrepreneurs BD',
+    description: 'Important legal information and disclaimers regarding our content and services.',
+    category: 'LEGAL'
   }
 };
 
@@ -268,7 +298,15 @@ module.exports = async (req, res) => {
 
     if (type !== 'home') {
       if (slug) {
-        const colMap = { 'blog': 'posts', 'directory': 'listings', 'entrepreneurs': 'profiles', 'knowledge': 'resources' };
+      const colMap = { 
+        'blog': 'posts', 
+        'directory': 'listings', 
+        'entrepreneurs': 'profiles', 
+        'knowledge': 'resources',
+        'author': 'authors',
+        'resources': 'resources',
+        'page': 'pages'
+      };
         if (colMap[type]) {
           docData = await fetchFirestoreDoc(colMap[type], slug);
           if (docData) {
