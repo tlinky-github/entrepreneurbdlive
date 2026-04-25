@@ -1,24 +1,13 @@
-const sharp = require('sharp');
 const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
+const sharp = require('sharp');
 
 // --- CONFIG ---
 const PROJECT_ID = process.env.REACT_APP_FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID;
 const API_KEY = process.env.REACT_APP_FIREBASE_API_KEY || process.env.VITE_FIREBASE_API_KEY || process.env.FIREBASE_API_KEY;
 const SITE_URL = 'https://entrepreneurs.bd';
-const FONT_URL = 'https://github.com/google/fonts/raw/main/apache/robotocondensed/RobotoCondensed-Bold.ttf';
-
-async function getFontBase64() {
-  try {
-    console.log('[OG Engine] Fetching font...');
-    const res = await axios.get(FONT_URL, { responseType: 'arraybuffer', timeout: 8000 });
-    return res.data.toString('base64');
-  } catch (e) {
-    console.warn('[OG Engine] Font Fail');
-    return '';
-  }
-}
+const LOGO_URL = 'https://entrepreneurs.bd/logo.png';
 
 // --- IRONCLAD MASTER HTML SHELL ---
 const HTML_SHELL = `<!DOCTYPE html>
@@ -75,7 +64,6 @@ async function fetchFirestoreDoc(collection, slug) {
       const fields = doc.fields;
       const data = {};
       
-      // Advanced Transform for all Firestore Types
       for (const key in fields) {
         const val = fields[key];
         if (val.stringValue !== undefined) data[key] = val.stringValue;
@@ -83,7 +71,7 @@ async function fetchFirestoreDoc(collection, slug) {
         else if (val.doubleValue !== undefined) data[key] = parseFloat(val.doubleValue);
         else if (val.booleanValue !== undefined) data[key] = val.booleanValue;
         else if (val.timestampValue !== undefined) data[key] = val.timestampValue;
-        else if (val.mapValue) data[key] = val.mapValue.fields; // Deep mapping skipped for brevity
+        else if (val.mapValue) data[key] = val.mapValue.fields; 
         else if (val.arrayValue && val.arrayValue.values) {
           data[key] = val.arrayValue.values.map(v => v.stringValue || v.integerValue || v.booleanValue || "");
         }
@@ -104,7 +92,6 @@ async function generateOgImage(title, description, image, category) {
   const cleanCategory = sanitize(category || 'Startup').toUpperCase();
   const cleanDesc = sanitize(description || '').replace(/<[^>]*>/g, '').substring(0, 160);
   
-  // Layer 1: Base Background
   let backgroundBuffer;
   try {
     if (image && image.startsWith('http')) {
@@ -117,58 +104,46 @@ async function generateOgImage(title, description, image, category) {
     }
   } catch (e) { console.warn('[OG Engine] BG Fail'); }
 
-  // Layer 2: Logo Fetch (Direct Branding)
   let logoBase64 = '';
   try {
-    const logoRes = await axios.get('https://entrepreneurs.bd/logo.png', { responseType: 'arraybuffer', timeout: 3000 });
+    const logoRes = await axios.get(LOGO_URL, { responseType: 'arraybuffer', timeout: 3000 });
     logoBase64 = logoRes.data.toString('base64');
   } catch (e) { console.warn('[OG Engine] Logo Fail'); }
 
-  // Layer 3: Classic SVG (No foreignObject, No custom fonts)
   const svg = `
     <svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
-      <!-- Background Image (If exists) -->
-      ${logoBase64 ? `<image x="80" y="80" width="60" height="60" href="data:image/png;base64,${logoBase64}" />` : '<rect x="80" y="80" width="60" height="60" rx="12" fill="white" />'}
-      
-      <text x="160" y="122" font-family="Courier, monospace" font-size="28" font-weight="bold" fill="white">ENTREPRENEURS BD</text>
-      
-      <!-- Category Badge -->
+      ${logoBase64 ? `<image x="80" y="80" width="64" height="64" href="data:image/png;base64,${logoBase64}" />` : '<rect x="80" y="80" width="64" height="64" rx="12" fill="white" />'}
+      <text x="160" y="122" font-family="sans-serif" font-size="32" font-weight="900" fill="white">ENTREPRENEURS BD</text>
       <rect x="940" y="80" width="180" height="50" rx="25" fill="#059669" />
-      <text x="1030" y="114" font-family="Courier, monospace" font-size="22" font-weight="bold" fill="white" text-anchor="middle">${cleanCategory}</text>
-      
-      <!-- Manual Text Wrapping (Title) -->
+      <text x="1030" y="114" font-family="sans-serif" font-size="22" font-weight="bold" fill="white" text-anchor="middle">${cleanCategory}</text>
       ${(() => {
         const words = cleanTitle.split(' ');
         let lines = [];
         let cur = '';
         words.forEach(w => {
-          if ((cur + w).length > 20) { lines.push(cur); cur = w + ' '; }
+          if ((cur + w).length > 25) { lines.push(cur); cur = w + ' '; }
           else cur += w + ' ';
         });
         lines.push(cur);
         return lines.slice(0, 3).map((l, i) => 
-          `<text x="80" y="${280 + (i * 90)}" font-family="Courier, monospace" font-size="72" font-weight="bold" fill="white">${l.trim()}</text>`
+          `<text x="80" y="${280 + (i * 85)}" font-family="sans-serif" font-size="64" font-weight="900" fill="white">${l.trim()}</text>`
         ).join('');
       })()}
-
-      <!-- Manual Text Wrapping (Description) -->
       ${(() => {
         const words = cleanDesc.split(' ');
         let lines = [];
         let cur = '';
         words.forEach(w => {
-          if ((cur + w).length > 50) { lines.push(cur); cur = w + ' '; }
+          if ((cur + w).length > 60) { lines.push(cur); cur = w + ' '; }
           else cur += w + ' ';
         });
         lines.push(cur);
         return lines.slice(0, 2).map((l, i) => 
-          `<text x="80" y="${510 + (i * 35)}" font-family="Courier, monospace" font-size="24" fill="white" opacity="0.8">${l.trim()}</text>`
+          `<text x="80" y="${510 + (i * 35)}" font-family="sans-serif" font-size="24" fill="white" opacity="0.8">${l.trim()}</text>`
         ).join('');
       })()}
-      
-      <!-- Footer -->
       <rect x="80" y="560" width="120" height="8" rx="4" fill="#10b981" />
-      <text x="1120" y="580" font-family="Courier, monospace" font-size="24" fill="#10b981" opacity="0.7" text-anchor="end">entrepreneurs.bd</text>
+      <text x="1120" y="580" font-family="sans-serif" font-size="24" font-weight="bold" fill="#10b981" opacity="0.8" text-anchor="end">entrepreneurs.bd</text>
     </svg>
   `;
 
@@ -182,27 +157,23 @@ async function generateOgImage(title, description, image, category) {
 
 module.exports = async (req, res) => {
   const userAgent = req.headers['user-agent'] || '';
-  const isBot = /bot|google|crawler|spider|facebook|whatsapp|linkedin|twitter|slack|discord|telegram|apple|bing|yandex|baiduspider|metainspector|structured-data|rich-results/i.test(userAgent);
   const host = req.headers.host || 'entrepreneurs.bd';
   const protocol = req.headers['x-forwarded-proto'] || 'https';
   const SITE_URL = `${protocol}://${host}`;
-  
-  console.log(`[SEO Engine] Req: ${req.url} | Bot: ${isBot}`);
+  const isBot = /bot|google|crawler|spider|facebook|whatsapp|linkedin|twitter|slack|discord|telegram|apple|bing|yandex|baiduspider|metainspector|structured-data|rich-results/i.test(userAgent);
 
-  // --- 1. IMAGE RENDERING BRANCH (CRITICAL FIX) ---
+  // --- 1. IMAGE RENDERING BRANCH ---
   if (req.query.render === 'image') {
     const { title, description, image, category } = req.query;
     try {
       const buffer = await generateOgImage(title, description, image, category);
       res.setHeader('Content-Type', 'image/png');
-      // "Ironclad" Caching: Cache for 1 year, but allow revalidation
       res.setHeader('Cache-Control', 'public, max-age=31536000, s-maxage=31536000, stale-while-revalidate=604800');
       return res.status(200).send(buffer);
     } catch (e) {
       console.error('[OG Engine] Render Fail:', e.message);
-      // Bulletproof Fallback: If image fails, return a basic branded image instead of 500
       try {
-        const fallback = await generateOgImage(title, null, category);
+        const fallback = await generateOgImage(title, description, null, category);
         res.setHeader('Content-Type', 'image/png');
         return res.status(200).send(fallback);
       } catch (err) {
@@ -224,10 +195,6 @@ module.exports = async (req, res) => {
   const type = (finalPath === '/' || segments.length === 0) ? 'home' : segments[0];
   const slug = segments.length > 1 ? segments[1] : null;
 
-  // --- 4. HUMAN/BOT LOGIC ---
-  // Senior Engineer Fix: Remove 301 redirect. 
-  // We serve SEO tags to EVERYONE first to ensure 100% crawler hit rate.
-  // Real humans will be instantly transitioned by the JS redirect in the shell.
   const escapedRedirectPath = `${finalPath}${finalPath.includes('?') ? '&' : '?'}no_bot=1`;
 
   try {
@@ -236,37 +203,23 @@ module.exports = async (req, res) => {
     let image = `${SITE_URL}/og-default.png`;
     let docData = null;
 
-    // --- DATA FETCHING (REST) ---
     if (type !== 'home' && slug) {
       const colMap = { 'blog': 'posts', 'directory': 'listings', 'entrepreneurs': 'profiles', 'knowledge': 'resources' };
       if (colMap[type]) {
         docData = await fetchFirestoreDoc(colMap[type], slug);
         if (docData) {
-          // Priority Selection for Metadata
           title = docData.seoTitle || docData.seo_title || docData.title || docData.business_name || docData.name || title;
-          
-          const rawDesc = docData.metaDescription || docData.seo_description || docData.seoDescription || 
-                         docData.excerpt || docData.short_description || docData.short_bio || 
-                         docData.details || description;
-          
+          const rawDesc = docData.metaDescription || docData.seo_description || docData.seoDescription || docData.excerpt || docData.short_description || docData.short_bio || docData.details || description;
           description = rawDesc.replace(/<[^>]*>/g, '').substring(0, 160);
           image = docData.featured_image || docData.logo || docData.photo || image;
-        } else {
-          console.warn(`[SEO Engine] No data found for slug: ${slug} in ${colMap[type]}`);
         }
       }
     }
 
-    // --- CHARACTER ESCAPING (Prevent meta tag breakage) ---
     const esc = (str) => (str || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&apos;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, ' ');
-    const safeTitle = esc(title);
-    const safeDescription = esc(description);
-
     const currentAbsoluteUrl = `https://${host}${finalPath}`;
-    const version = docData?.updated_at?.seconds || docData?.updated_at?._seconds || Date.now();
-    const dynamicOgUrl = `${SITE_URL}/api/og-image?title=${encodeURIComponent(title.substring(0, 100))}&description=${encodeURIComponent(description.substring(0, 160))}&image=${encodeURIComponent(image)}&category=${encodeURIComponent(type)}&v=${version}`;
+    const dynamicOgUrl = `${SITE_URL}/api/og-image?title=${encodeURIComponent(title.substring(0, 100))}&description=${encodeURIComponent(description.substring(0, 160))}&image=${encodeURIComponent(image)}&category=${encodeURIComponent(type)}`;
 
-    // --- SCHEMAS ---
     const orgSchema = { 
       "@context": "https://schema.org", 
       "@type": "Organization", 
