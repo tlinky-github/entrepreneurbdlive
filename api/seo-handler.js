@@ -217,6 +217,8 @@ module.exports = async (req, res) => {
     }
 
     const esc = (str) => (str || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&apos;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, ' ');
+    const safeTitle = esc(title);
+    const safeDescription = esc(description);
     const currentAbsoluteUrl = `https://${host}${finalPath}`;
     const dynamicOgUrl = `${SITE_URL}/api/og-image?title=${encodeURIComponent(title.substring(0, 100))}&description=${encodeURIComponent(description.substring(0, 160))}&image=${encodeURIComponent(image)}&category=${encodeURIComponent(type)}`;
 
