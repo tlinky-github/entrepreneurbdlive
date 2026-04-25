@@ -84,88 +84,95 @@ async function fetchFirestoreDoc(collection, slug) {
 }
 
 // --- HELPER: OG IMAGE ENGINE ---
-async function generateOgImage(title, description, image, category) {
+async function generateOgImage(title, image, category) {
   const cleanTitle = (title || 'Entrepreneurs BD').length > 80 ? (title || 'Entrepreneurs BD').substring(0, 77) + '...' : (title || 'Entrepreneurs BD');
   const cleanCategory = (category || 'Startup').toUpperCase();
 
-  let backgroundBuffer;
+  // Layer 1: Base Emerald Background
+  let pipeline = sharp({
+    create: { width: 1200, height: 630, channels: 4, background: '#064e3b' }
+  });
+
+  const layers = [];
+
+  // Layer 2: Optional Blurry Background Image
   try {
     if (image && image.startsWith('http')) {
-      const imgRes = await axios.get(image, { responseType: 'arraybuffer', timeout: 5000 });
-      backgroundBuffer = await sharp(imgRes.data)
+      const imgRes = await axios.get(image, { responseType: 'arraybuffer', timeout: 4000 });
+      const bgImg = await sharp(imgRes.data)
         .resize(1200, 630, { fit: 'cover' })
-        .blur(10)
-        .modulate({ brightness: 0.35 })
+        .blur(15)
+        .modulate({ brightness: 0.3 })
         .toBuffer();
+      layers.push({ input: bgImg, top: 0, left: 0 });
     }
-  } catch (e) { console.warn('[OG Engine] BG Fail:', e.message); }
+  } catch (e) { console.warn('[OG Engine] BG Fail'); }
 
+  // Layer 3: Branded Overlay (SVG)
   const svg = `
-      <!-- Header Overlay -->
+    <svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
+      <!-- Header -->
       <rect x="80" y="80" width="60" height="60" rx="12" fill="#ffffff" />
       <text x="110" y="122" font-family="sans-serif" font-size="36" font-weight="900" fill="#064e3b" text-anchor="middle">e</text>
       <text x="160" y="120" font-family="sans-serif" font-size="28" font-weight="700" fill="#ffffff">ENTREPRENEURS BD</text>
       
-      <!-- Category Badge -->
-      <rect x="940" y="80" width="180" height="50" rx="25" fill="#059669" opacity="0.9" />
-      <text x="1030" y="114" font-family="sans-serif" font-size="22" font-weight="700" fill="#ffffff" text-anchor="middle">${cleanCategory}</text>
+      <!-- Category -->
+      <rect x="940" y="80" width="180" height="50" rx="25" fill="#059669" />
+      <text x="1030" y="114" font-family="sans-serif" font-size="22" font-weight="700" fill="#ffffff" text-anchor="middle">${cleanCategory.replace(/&/g, '&amp;')}</text>
       
-      <!-- Content Area (Manual Line Wrapping for Compatibility) -->
+      <!-- Title -->
       ${(() => {
-        const words = cleanTitle.split(' ');
+        const words = cleanTitle.replace(/&/g, '&amp;').split(' ');
         let lines = [];
-        let currentLine = '';
-        words.forEach(word => {
-          if ((currentLine + word).length > 25) {
-            lines.push(currentLine);
-            currentLine = word + ' ';
-          } else {
-            currentLine += word + ' ';
-          }
+        let cur = '';
+        words.forEach(w => {
+          if ((cur + w).length > 22) { lines.push(cur); cur = w + ' '; }
+          else cur += w + ' ';
         });
-        lines.push(currentLine);
-        return lines.slice(0, 3).map((line, i) => 
-          `<text x="80" y="${280 + (i * 85)}" font-family="sans-serif" font-size="72" font-weight="800" fill="#ffffff">${line.trim()}</text>`
+        lines.push(cur);
+        return lines.slice(0, 3).map((l, i) => 
+          `<text x="80" y="${280 + (i * 90)}" font-family="sans-serif" font-size="76" font-weight="800" fill="#ffffff">${l.trim()}</text>`
         ).join('');
       })()}
       
-      <!-- Accent Line -->
+      <!-- Footer -->
       <rect x="80" y="520" width="120" height="10" rx="5" fill="#10b981" />
-      
-      <!-- Footer Branding -->
       <text x="1120" y="570" font-family="sans-serif" font-size="24" font-weight="600" fill="#10b981" opacity="0.7" text-anchor="end">entrepreneurs.bd</text>
     </svg>
   `;
+  layers.push({ input: Buffer.from(svg), top: 0, left: 0 });
 
-  try {
-    return await sharp({
-      create: { width: 1200, height: 630, channels: 4, background: '#064e3b' }
-    }).composite([{ input: Buffer.from(svg) }]).png().toBuffer();
-  } catch (e) {
-    console.error('[OG Engine] Sharp Crash:', e.message);
-    throw e;
-  }
+  return await pipeline.composite(layers).png().toBuffer();
 }
 
 module.exports = async (req, res) => {
   const userAgent = req.headers['user-agent'] || '';
   const isBot = /bot|google|crawler|spider|facebook|whatsapp|linkedin|twitter|slack|discord|telegram|apple|bing|yandex|baiduspider|metainspector|structured-data|rich-results/i.test(userAgent);
   const host = req.headers.host || 'entrepreneurs.bd';
+  const protocol = req.headers['x-forwarded-proto'] || 'https';
+  const SITE_URL = `${protocol}://${host}`;
   
   console.log(`[SEO Engine] Req: ${req.url} | Bot: ${isBot}`);
 
   // --- 1. IMAGE RENDERING BRANCH (CRITICAL FIX) ---
   if (req.query.render === 'image') {
-    const { title, description, image, category } = req.query;
+    const { title, image, category } = req.query;
     try {
-      const buffer = await generateOgImage(title, description, image, category);
+      const buffer = await generateOgImage(title, image, category);
       res.setHeader('Content-Type', 'image/png');
       // "Ironclad" Caching: Cache for 1 year, but allow revalidation
       res.setHeader('Cache-Control', 'public, max-age=31536000, s-maxage=31536000, stale-while-revalidate=604800');
       return res.status(200).send(buffer);
     } catch (e) {
       console.error('[OG Engine] Render Fail:', e.message);
-      return res.status(500).send('Image Generation Failed');
+      // Bulletproof Fallback: If image fails, return a basic branded image instead of 500
+      try {
+        const fallback = await generateOgImage(title, null, category);
+        res.setHeader('Content-Type', 'image/png');
+        return res.status(200).send(fallback);
+      } catch (err) {
+        return res.status(500).send('Final Render Failure');
+      }
     }
   }
 

@@ -80,7 +80,7 @@
   ],
   "headers": [
     {
-      "source": "/api/:path*",
+      "source": "/api/((?!og-image).*)",
       "headers": [
         {
           "key": "Cache-Control",
