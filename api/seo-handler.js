@@ -12,24 +12,28 @@ const HTML_SHELL = `<!DOCTYPE html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#34d399">
-    <link rel="icon" href="${SITE_URL}/favicon.ico">
-    {{META_TAGS}}
+    <link rel="icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" href="/logo192.png" />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#064e3b" />
     <style>
-        body { background: #022c22; color: #34d399; font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; text-align: center; }
-        .emerald-loader { border: 4px solid #064e3b; border-top: 4px solid #34d399; border-radius: 50%; width: 50px; height: 50px; animation: spin 0.8s ease-in-out infinite; margin: 0 auto 20px; }
+        body { margin: 0; font-family: 'Inter', sans-serif, system-ui; background: #fafaf9; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
+        .loader { display: flex; flex-direction: column; align-items: center; gap: 20px; animation: fadeIn 0.5s ease-out; text-align: center; }
+        .logo { width: 120px; height: auto; animation: pulse 2s infinite ease-in-out; }
+        @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.7; transform: scale(0.95); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .spinner { width: 30px; height: 30px; border: 3px solid #f3f3f3; border-top: 3px solid #059669; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        h1 { font-size: 1.5rem; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; }
-        p { color: #d1d5db; font-size: 0.9rem; }
     </style>
 </head>
 <body>
-    <div>
-        <div class="emerald-loader"></div>
-        <h1>Entrepreneurs BD</h1>
-        <p>Connecting you to the National Growth Engine...</p>
+    <div class="loader">
+        <img src="/logo.png" alt="Entrepreneurs BD" class="logo" />
+        <div class="spinner"></div>
+        <div style="color: #064e3b; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Loading Growth Engine...</div>
     </div>
     <script>window.location.href = "{{REDIRECT_PATH}}";</script>
+    {{META_TAGS}}
 </body>
 </html>`;
 
@@ -81,9 +85,8 @@ async function fetchFirestoreDoc(collection, slug) {
 
 // --- HELPER: OG IMAGE ENGINE ---
 async function generateOgImage(title, description, image, category) {
-  const cleanTitle = (title || 'Entrepreneurs BD').length > 70 ? (title || 'Entrepreneurs BD').substring(0, 67) + '...' : (title || 'Entrepreneurs BD');
-  const cleanDesc = (description || '').replace(/<[^>]*>/g, '').substring(0, 100);
-  const cleanCategory = (category || 'Insights').toUpperCase();
+  const cleanTitle = (title || 'Entrepreneurs BD').length > 80 ? (title || 'Entrepreneurs BD').substring(0, 77) + '...' : (title || 'Entrepreneurs BD');
+  const cleanCategory = (category || 'Startup').toUpperCase();
 
   let backgroundBuffer;
   try {
@@ -91,8 +94,8 @@ async function generateOgImage(title, description, image, category) {
       const imgRes = await axios.get(image, { responseType: 'arraybuffer', timeout: 5000 });
       backgroundBuffer = await sharp(imgRes.data)
         .resize(1200, 630, { fit: 'cover' })
-        .blur(8)
-        .modulate({ brightness: 0.4 })
+        .blur(10)
+        .modulate({ brightness: 0.35 })
         .toBuffer();
     }
   } catch (e) { console.warn('[OG Engine] BG Fail:', e.message); }
@@ -100,29 +103,43 @@ async function generateOgImage(title, description, image, category) {
   const svg = `
     <svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
       <defs>
-        <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" style="stop-color:#064e3b;stop-opacity:1" />
-          <stop offset="100%" style="stop-color:#022c22;stop-opacity:1" />
-        </linearGradient>
+        <style>
+          .title { font-family: sans-serif; font-size: 64px; font-weight: 800; fill: #ffffff; line-height: 1.2; }
+          .brand { font-family: sans-serif; font-size: 24px; font-weight: 700; fill: #ffffff; letter-spacing: 1.5px; }
+          .domain { font-family: sans-serif; font-size: 22px; font-weight: 600; fill: #10b981; opacity: 0.6; }
+          .badge-text { font-family: sans-serif; font-size: 22px; font-weight: 700; fill: #ffffff; }
+        </style>
       </defs>
-      ${!backgroundBuffer ? `<rect width="1200" height="630" fill="url(#bgGrad)" />` : ''}
-      <text x="80" y="100" font-family="sans-serif" font-size="28" font-weight="900" fill="#34d399" letter-spacing="3">ENTREPRENEURS BD</text>
-      <rect x="80" y="140" width="${cleanCategory.length * 15 + 40}" height="40" rx="20" fill="#059669" />
-      <text x="${80 + (cleanCategory.length * 15 + 40) / 2}" y="166" font-family="sans-serif" font-size="20" font-weight="bold" fill="#ffffff" text-anchor="middle">${cleanCategory}</text>
-      <foreignObject x="80" y="210" width="1040" height="280">
-        <div xmlns="http://www.w3.org/1999/xhtml" style="color: white; font-family: sans-serif; font-size: 68px; font-weight: 800; line-height: 1.1; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;">
+      
+      <!-- Background -->
+      <rect width="1200" height="630" fill="#064e3b" />
+      ${backgroundBuffer ? `<image href="data:image/png;base64,${backgroundBuffer.toString('base64')}" width="1200" height="630" preserveAspectRatio="xMidYMid slice" />` : ''}
+      
+      <!-- Header Overlay -->
+      <rect x="80" y="80" width="60" height="60" rx="12" fill="#ffffff" />
+      <text x="110" y="118" font-family="sans-serif" font-size="32" font-weight="900" fill="#064e3b" text-anchor="middle">e</text>
+      <text x="160" y="118" class="brand">ENTREPRENEURS BD</text>
+      
+      <!-- Category Badge -->
+      <rect x="980" y="80" width="140" height="48" rx="24" fill="#059669" opacity="0.9" />
+      <text x="1050" y="112" class="badge-text" text-anchor="middle">${cleanCategory}</text>
+      
+      <!-- Content Area -->
+      <foreignObject x="80" y="240" width="1040" height="300">
+        <div xmlns="http://www.w3.org/1999/xhtml" style="color: white; font-family: sans-serif; font-size: 68px; font-weight: 800; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;">
           ${cleanTitle}
         </div>
       </foreignObject>
-      <text x="80" y="585" font-family="sans-serif" font-size="24" font-weight="bold" fill="#059669" opacity="0.8">entrepreneurs.bd</text>
+      
+      <!-- Accent Line -->
+      <rect x="80" y="520" width="120" height="8" rx="4" fill="#10b981" />
+      
+      <!-- Footer Branding -->
+      <text x="1120" y="560" class="domain" text-anchor="end">entrepreneurs.bd</text>
     </svg>
   `;
 
-  let finalImage = sharp(backgroundBuffer || {
-    create: { width: 1200, height: 630, channels: 4, background: { r: 6, g: 78, b: 59 } }
-  });
-
-  return await finalImage.composite([{ input: Buffer.from(svg), top: 0, left: 0 }]).png().toBuffer();
+  return await sharp(Buffer.from(svg)).png().toBuffer();
 }
 
 module.exports = async (req, res) => {
