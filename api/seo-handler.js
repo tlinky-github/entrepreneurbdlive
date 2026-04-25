@@ -100,12 +100,10 @@ async function fetchFirestoreDoc(collection, slug) {
 // --- HELPER: OG IMAGE ENGINE ---
 async function generateOgImage(title, description, image, category) {
   const sanitize = (str) => (str || '').replace(/[\u0000-\u001F\u007F-\u009F]/g, '').trim().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  const cleanTitle = sanitize(title).length > 80 ? sanitize(title).substring(0, 77) + '...' : sanitize(title);
+  const cleanTitle = sanitize(title);
   const cleanCategory = sanitize(category || 'Startup').toUpperCase();
   const cleanDesc = sanitize(description || '').replace(/<[^>]*>/g, '').substring(0, 160);
   
-  const fontBase64 = await getFontBase64();
-
   // Layer 1: Base Background
   let backgroundBuffer;
   try {
@@ -119,48 +117,58 @@ async function generateOgImage(title, description, image, category) {
     }
   } catch (e) { console.warn('[OG Engine] BG Fail'); }
 
-  // Layer 2: Master Branded SVG (Self-Contained)
+  // Layer 2: Logo Fetch (Direct Branding)
+  let logoBase64 = '';
+  try {
+    const logoRes = await axios.get('https://entrepreneurs.bd/logo.png', { responseType: 'arraybuffer', timeout: 3000 });
+    logoBase64 = logoRes.data.toString('base64');
+  } catch (e) { console.warn('[OG Engine] Logo Fail'); }
+
+  // Layer 3: Classic SVG (No foreignObject, No custom fonts)
   const svg = `
     <svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <style>
-          @font-face {
-            font-family: 'RobotoCustom';
-            src: url(data:font/ttf;base64,${fontBase64});
-          }
-          .txt { font-family: 'RobotoCustom', sans-serif; fill: white; }
-          .brand-name { font-size: 28px; font-weight: 700; }
-          .cat-badge { font-size: 22px; font-weight: 700; }
-          .main-title { font-size: 72px; font-weight: 800; line-height: 1.1; }
-          .description { font-size: 24px; font-weight: 400; opacity: 0.8; }
-          .footer { font-size: 24px; font-weight: 600; fill: #10b981; opacity: 0.7; }
-        </style>
-      </defs>
+      <!-- Background Image (If exists) -->
+      ${logoBase64 ? `<image x="80" y="80" width="60" height="60" href="data:image/png;base64,${logoBase64}" />` : '<rect x="80" y="80" width="60" height="60" rx="12" fill="white" />'}
       
-      <!-- Logo & Brand -->
-      <rect x="80" y="80" width="60" height="60" rx="12" fill="white" />
-      <text x="110" y="125" class="txt" font-size="42" font-weight="900" fill="#064e3b" text-anchor="middle">e</text>
-      <text x="160" y="122" class="txt brand-name">ENTREPRENEURS BD</text>
+      <text x="160" y="122" font-family="Courier, monospace" font-size="28" font-weight="bold" fill="white">ENTREPRENEURS BD</text>
       
       <!-- Category Badge -->
       <rect x="940" y="80" width="180" height="50" rx="25" fill="#059669" />
-      <text x="1030" y="114" class="txt cat-badge" text-anchor="middle">${cleanCategory}</text>
+      <text x="1030" y="114" font-family="Courier, monospace" font-size="22" font-weight="bold" fill="white" text-anchor="middle">${cleanCategory}</text>
       
-      <!-- Dynamic Content -->
-      <foreignObject x="80" y="240" width="1040" height="300">
-        <div xmlns="http://www.w3.org/1999/xhtml" style="color: white; font-family: 'RobotoCustom', sans-serif; display: flex; flex-direction: column; gap: 15px;">
-          <div style="font-size: 68px; font-weight: 800; line-height: 1.1; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
-            ${cleanTitle}
-          </div>
-          <div style="font-size: 26px; font-weight: 400; opacity: 0.8; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
-            ${cleanDesc}
-          </div>
-        </div>
-      </foreignObject>
+      <!-- Manual Text Wrapping (Title) -->
+      ${(() => {
+        const words = cleanTitle.split(' ');
+        let lines = [];
+        let cur = '';
+        words.forEach(w => {
+          if ((cur + w).length > 20) { lines.push(cur); cur = w + ' '; }
+          else cur += w + ' ';
+        });
+        lines.push(cur);
+        return lines.slice(0, 3).map((l, i) => 
+          `<text x="80" y="${280 + (i * 90)}" font-family="Courier, monospace" font-size="72" font-weight="bold" fill="white">${l.trim()}</text>`
+        ).join('');
+      })()}
+
+      <!-- Manual Text Wrapping (Description) -->
+      ${(() => {
+        const words = cleanDesc.split(' ');
+        let lines = [];
+        let cur = '';
+        words.forEach(w => {
+          if ((cur + w).length > 50) { lines.push(cur); cur = w + ' '; }
+          else cur += w + ' ';
+        });
+        lines.push(cur);
+        return lines.slice(0, 2).map((l, i) => 
+          `<text x="80" y="${510 + (i * 35)}" font-family="Courier, monospace" font-size="24" fill="white" opacity="0.8">${l.trim()}</text>`
+        ).join('');
+      })()}
       
       <!-- Footer -->
-      <rect x="80" y="540" width="120" height="10" rx="5" fill="#10b981" />
-      <text x="1120" y="570" class="txt footer" text-anchor="end">entrepreneurs.bd</text>
+      <rect x="80" y="560" width="120" height="8" rx="4" fill="#10b981" />
+      <text x="1120" y="580" font-family="Courier, monospace" font-size="24" fill="#10b981" opacity="0.7" text-anchor="end">entrepreneurs.bd</text>
     </svg>
   `;
 
