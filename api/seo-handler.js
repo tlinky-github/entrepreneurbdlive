@@ -8,17 +8,14 @@ const PROJECT_ID = process.env.REACT_APP_FIREBASE_PROJECT_ID || process.env.VITE
 const API_KEY = process.env.REACT_APP_FIREBASE_API_KEY || process.env.VITE_FIREBASE_API_KEY || process.env.FIREBASE_API_KEY;
 const SITE_URL = 'https://entrepreneurs.bd';
 const FONT_URL = 'https://github.com/google/fonts/raw/main/apache/robotocondensed/RobotoCondensed-Bold.ttf';
-const FONT_PATH = '/tmp/font.ttf';
 
-async function getFontFile() {
+async function getFontBase64() {
   try {
-    if (fs.existsSync(FONT_PATH)) return FONT_PATH;
-    console.log('[OG Engine] Downloading font...');
-    const res = await axios.get(FONT_URL, { responseType: 'arraybuffer', timeout: 10000 });
-    fs.writeFileSync(FONT_PATH, res.data);
-    return FONT_PATH;
+    console.log('[OG Engine] Fetching font...');
+    const res = await axios.get(FONT_URL, { responseType: 'arraybuffer', timeout: 8000 });
+    return res.data.toString('base64');
   } catch (e) {
-    console.warn('[OG Engine] Font Download Fail:', e.message);
+    console.warn('[OG Engine] Font Fail');
     return '';
   }
 }
@@ -102,129 +99,77 @@ async function fetchFirestoreDoc(collection, slug) {
 
 // --- HELPER: OG IMAGE ENGINE ---
 async function generateOgImage(title, description, image, category) {
-  const sanitize = (str) => (str || '').replace(/[\u0000-\u001F\u007F-\u009F]/g, '').trim();
+  const sanitize = (str) => (str || '').replace(/[\u0000-\u001F\u007F-\u009F]/g, '').trim().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   const cleanTitle = sanitize(title).length > 80 ? sanitize(title).substring(0, 77) + '...' : sanitize(title);
   const cleanCategory = sanitize(category || 'Startup').toUpperCase();
-  const cleanDesc = sanitize(description || '').replace(/<[^>]*>/g, '');
+  const cleanDesc = sanitize(description || '').replace(/<[^>]*>/g, '').substring(0, 160);
   
-  const fontFile = await getFontFile();
+  const fontBase64 = await getFontBase64();
 
-  // Layer 1: Base Emerald Background
-  let pipeline = sharp({
-    create: { width: 1200, height: 630, channels: 4, background: '#064e3b' }
-  });
-
-  const layers = [];
-
-  // Layer 2: Optional Blurry Background Image
+  // Layer 1: Base Background
+  let backgroundBuffer;
   try {
     if (image && image.startsWith('http')) {
       const imgRes = await axios.get(image, { responseType: 'arraybuffer', timeout: 4000 });
-      const bgImg = await sharp(imgRes.data)
+      backgroundBuffer = await sharp(imgRes.data)
         .resize(1200, 630, { fit: 'cover' })
-        .blur(15)
+        .blur(20)
         .modulate({ brightness: 0.3 })
         .toBuffer();
-      layers.push({ input: bgImg, top: 0, left: 0 });
     }
   } catch (e) { console.warn('[OG Engine] BG Fail'); }
 
-  // Layer 3: Text & Branding Layers
-  try {
-    // 3a. Brand Logo Box
-    const logoBox = await sharp({
-      create: { width: 60, height: 60, channels: 4, background: 'white' }
-    }).png().toBuffer();
-    layers.push({ input: logoBox, top: 80, left: 80 });
+  // Layer 2: Master Branded SVG (Self-Contained)
+  const svg = `
+    <svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <style>
+          @font-face {
+            font-family: 'RobotoCustom';
+            src: url(data:font/ttf;base64,${fontBase64});
+          }
+          .txt { font-family: 'RobotoCustom', sans-serif; fill: white; }
+          .brand-name { font-size: 28px; font-weight: 700; }
+          .cat-badge { font-size: 22px; font-weight: 700; }
+          .main-title { font-size: 72px; font-weight: 800; line-height: 1.1; }
+          .description { font-size: 24px; font-weight: 400; opacity: 0.8; }
+          .footer { font-size: 24px; font-weight: 600; fill: #10b981; opacity: 0.7; }
+        </style>
+      </defs>
+      
+      <!-- Logo & Brand -->
+      <rect x="80" y="80" width="60" height="60" rx="12" fill="white" />
+      <text x="110" y="125" class="txt" font-size="42" font-weight="900" fill="#064e3b" text-anchor="middle">e</text>
+      <text x="160" y="122" class="txt brand-name">ENTREPRENEURS BD</text>
+      
+      <!-- Category Badge -->
+      <rect x="940" y="80" width="180" height="50" rx="25" fill="#059669" />
+      <text x="1030" y="114" class="txt cat-badge" text-anchor="middle">${cleanCategory}</text>
+      
+      <!-- Dynamic Content -->
+      <foreignObject x="80" y="240" width="1040" height="300">
+        <div xmlns="http://www.w3.org/1999/xhtml" style="color: white; font-family: 'RobotoCustom', sans-serif; display: flex; flex-direction: column; gap: 15px;">
+          <div style="font-size: 68px; font-weight: 800; line-height: 1.1; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+            ${cleanTitle}
+          </div>
+          <div style="font-size: 26px; font-weight: 400; opacity: 0.8; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
+            ${cleanDesc}
+          </div>
+        </div>
+      </foreignObject>
+      
+      <!-- Footer -->
+      <rect x="80" y="540" width="120" height="10" rx="5" fill="#10b981" />
+      <text x="1120" y="570" class="txt footer" text-anchor="end">entrepreneurs.bd</text>
+    </svg>
+  `;
 
-    // 3b. Brand "e"
-    const brandE = await sharp({
-      text: {
-        text: 'e',
-        font: 'Roboto Condensed',
-        fontfile: fontFile,
-        width: 40,
-        height: 40,
-        rgba: true
-      }
-    }).modulate({ brightness: 0.1, saturation: 1 }).png().toBuffer();
-    layers.push({ input: brandE, top: 90, left: 90 });
-
-    // 3c. "ENTREPRENEURS BD" Text
-    const brandText = await sharp({
-      text: {
-        text: 'ENTREPRENEURS BD',
-        font: 'Roboto Condensed',
-        fontfile: fontFile,
-        width: 400,
-        rgba: true
-      }
-    }).png().toBuffer();
-    layers.push({ input: brandText, top: 95, left: 160 });
-
-    // 3d. Category Badge
-    const badge = await sharp({
-      create: { width: 180, height: 44, channels: 4, background: '#059669' }
-    }).png().toBuffer();
-    layers.push({ input: badge, top: 85, left: 940 });
-
-    const categoryText = await sharp({
-      text: {
-        text: cleanCategory,
-        font: 'Roboto Condensed',
-        fontfile: fontFile,
-        width: 140,
-        rgba: true
-      }
-    }).png().toBuffer();
-    layers.push({ input: categoryText, top: 95, left: 960 });
-
-    // 3e. MAIN TITLE
-    const titleImg = await sharp({
-      text: {
-        text: cleanTitle,
-        font: 'Roboto Condensed',
-        fontfile: fontFile,
-        width: 1040,
-        rgba: true
-      }
-    }).png().toBuffer();
-    layers.push({ input: titleImg, top: 220, left: 80 });
-
-    // 3g. DESCRIPTION
-    if (cleanDesc && cleanDesc.length > 5) {
-      const descImg = await sharp({
-        text: {
-          text: cleanDesc,
-          font: 'Roboto Condensed',
-          fontfile: fontFile,
-          width: 900,
-          rgba: true
-        }
-      }).modulate({ brightness: 0.7 }).png().toBuffer();
-      layers.push({ input: descImg, top: 380, left: 80 });
-    }
-
-    // 3f. Domain & Footer
-    const footerLine = await sharp({
-      create: { width: 120, height: 8, channels: 4, background: '#10b981' }
-    }).png().toBuffer();
-    layers.push({ input: footerLine, top: 540, left: 80 });
-
-    const domainText = await sharp({
-      text: {
-        text: 'entrepreneurs.bd',
-        font: 'Roboto Condensed',
-        fontfile: fontFile,
-        width: 200,
-        rgba: true
-      }
-    }).png().toBuffer();
-    layers.push({ input: domainText, top: 540, left: 920 });
-
-  } catch (e) { console.error('[OG Engine] Layer Fail:', e.message); }
-
-  return await pipeline.composite(layers).png().toBuffer();
+  return await sharp({
+    create: { width: 1200, height: 630, channels: 4, background: '#064e3b' }
+  }).composite([
+    ...(backgroundBuffer ? [{ input: backgroundBuffer, top: 0, left: 0 }] : []),
+    { input: Buffer.from(svg), top: 0, left: 0 }
+  ]).png().toBuffer();
 }
 
 module.exports = async (req, res) => {
