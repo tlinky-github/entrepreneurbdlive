@@ -128,21 +128,24 @@ async function generateOgImage(title, description, image, category) {
     layers.push({ input: brandBuf, top: 90, left: 155 });
   } catch (e) {}
 
-  // Category via Pango
-  const catOpts = { text: { text: `<span foreground="white" font_weight="bold" font_size="16pt">${cleanCat}</span>`, font: 'Noto Sans', rgba: true } };
-  if (fontFile) catOpts.text.fontfile = fontFile;
-  try {
-    const catBuf = await sharp(catOpts).png().toBuffer();
-    layers.push({ input: catBuf, top: 92, left: 960 });
-  } catch (e) {}
-
   // Logo box (white rounded rect with "e")
   const logoSvg = Buffer.from(`<svg width="50" height="50"><rect width="50" height="50" rx="10" fill="#ecfdf5"/><text x="25" y="36" text-anchor="middle" font-size="30" font-weight="900" fill="#064e3b">e</text></svg>`);
   layers.push({ input: logoSvg, top: 78, left: 80 });
 
-  // Category badge background
-  const badgeSvg = Buffer.from(`<svg width="160" height="40"><rect width="160" height="40" rx="8" fill="#065f46" stroke="rgba(255,255,255,0.15)" stroke-width="1"/></svg>`);
-  layers.push({ input: badgeSvg, top: 80, left: 940 });
+  // Category badge: render text first to measure, then badge background, then text on top
+  let catBuf = null;
+  const catOpts = { text: { text: `<span foreground="white" font_weight="bold" font_size="16pt">${cleanCat}</span>`, font: 'Noto Sans', rgba: true } };
+  if (fontFile) catOpts.text.fontfile = fontFile;
+  try { catBuf = await sharp(catOpts).png().toBuffer(); } catch (e) {}
+
+  const catMeta = catBuf ? await sharp(catBuf).metadata() : null;
+  const badgeW = catMeta ? catMeta.width + 40 : 160;
+  const badgeSvg = Buffer.from(`<svg width="${badgeW}" height="40"><rect width="${badgeW}" height="40" rx="8" fill="#065f46" stroke="rgba(255,255,255,0.15)" stroke-width="1"/></svg>`);
+  layers.push({ input: badgeSvg, top: 80, left: 1120 - badgeW });
+  if (catBuf && catMeta) {
+    const catX = 1120 - badgeW + Math.round((badgeW - catMeta.width) / 2);
+    layers.push({ input: catBuf, top: 92, left: catX });
+  }
 
   // Green accent bar
   const barSvg = Buffer.from(`<svg width="80" height="6"><rect width="80" height="6" rx="3" fill="#10b981" opacity="0.5"/></svg>`);
@@ -180,7 +183,7 @@ module.exports = async (req, res) => {
     try {
       const buffer = await generateOgImage(title, description, image, category);
       res.setHeader('Content-Type', 'image/png');
-      res.setHeader('Cache-Control', 'public, max-age=31536000, s-maxage=31536000, stale-while-revalidate=604800');
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
       return res.status(200).send(buffer);
     } catch (e) {
       console.error('[OG Engine] Render Fail:', e.message);
