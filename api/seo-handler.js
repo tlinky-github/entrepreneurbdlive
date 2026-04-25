@@ -33,7 +33,7 @@ const HTML_SHELL = `<!DOCTYPE html>
 </body>
 </html>`;
 
-// --- HELPER: FIRESTORE REST API ---
+// --- HELPER: FIRESTORE REST API (Robust) ---
 async function fetchFirestoreDoc(collection, slug) {
   try {
     const url = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents:runQuery`;
@@ -51,21 +51,30 @@ async function fetchFirestoreDoc(collection, slug) {
       }
     };
     
-    const res = await axios.post(`${url}?key=${API_KEY}`, query, { timeout: 5000 });
+    const res = await axios.post(`${url}?key=${API_KEY}`, query, { timeout: 8000 });
     if (res.data && res.data[0] && res.data[0].document) {
       const doc = res.data[0].document;
       const fields = doc.fields;
-      // Simple transform from Firestore REST format to JS Object
       const data = {};
+      
+      // Advanced Transform for all Firestore Types
       for (const key in fields) {
         const val = fields[key];
-        data[key] = val.stringValue || val.integerValue || val.booleanValue || val.timestampValue || (val.mapValue ? val.mapValue.fields : null);
+        if (val.stringValue !== undefined) data[key] = val.stringValue;
+        else if (val.integerValue !== undefined) data[key] = parseInt(val.integerValue);
+        else if (val.doubleValue !== undefined) data[key] = parseFloat(val.doubleValue);
+        else if (val.booleanValue !== undefined) data[key] = val.booleanValue;
+        else if (val.timestampValue !== undefined) data[key] = val.timestampValue;
+        else if (val.mapValue) data[key] = val.mapValue.fields; // Deep mapping skipped for brevity
+        else if (val.arrayValue && val.arrayValue.values) {
+          data[key] = val.arrayValue.values.map(v => v.stringValue || v.integerValue || v.booleanValue || "");
+        }
       }
       return data;
     }
     return null;
   } catch (e) {
-    console.warn(`[Firestore REST] Fail: ${e.message}`);
+    console.error(`[Firestore REST] Error for ${collection}/${slug}:`, e.message);
     return null;
   }
 }
@@ -117,18 +126,38 @@ async function generateOgImage(title, description, image, category) {
 }
 
 module.exports = async (req, res) => {
-  const host = req.headers.host || 'entrepreneurs.bd';
   const userAgent = req.headers['user-agent'] || '';
   const isBot = /bot|google|crawler|spider|facebook|whatsapp|linkedin|twitter|slack|discord|telegram|apple|bing|yandex|baiduspider|metainspector|structured-data|rich-results/i.test(userAgent);
+  const host = req.headers.host || 'entrepreneurs.bd';
 
-  // --- PATH RESOLVER ---
+  // --- 1. IMAGE RENDERING BRANCH (CRITICAL FIX) ---
+  if (req.query.render === 'image') {
+    const { title, description, image, category } = req.query;
+    try {
+      const buffer = await generateOgImage(title, description, image, category);
+      res.setHeader('Content-Type', 'image/png');
+      res.setHeader('Cache-Control', 'public, max-age=86400, stale-while-revalidate=43200');
+      return res.status(200).send(buffer);
+    } catch (e) {
+      console.error('[OG Engine] Render Fail:', e.message);
+      return res.status(500).send('Image Generation Failed');
+    }
+  }
+
+  // --- 2. SITEMAP BRANCH ---
+  if (req.query.action === 'sitemap-news') {
+    res.setHeader('Content-Type', 'application/xml');
+    return res.status(200).send('<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>');
+  }
+
+  // --- 3. PATH RESOLVER ---
   const pathParam = req.query.path || '';
   const finalPath = (pathParam === 'home' || !pathParam) ? '/' : (pathParam.startsWith('/') ? pathParam : `/${pathParam}`);
   const segments = finalPath.split('/').filter(Boolean);
   const type = (finalPath === '/' || segments.length === 0) ? 'home' : segments[0];
   const slug = segments.length > 1 ? segments[1] : null;
 
-  // --- HUMAN ESCAPE HATCH ---
+  // --- 4. HUMAN ESCAPE HATCH ---
   if (!isBot && !req.query.force_bot) {
     const sep = finalPath.includes('?') ? '&' : '?';
     res.setHeader('Location', `${finalPath}${sep}no_bot=1`);
@@ -141,7 +170,7 @@ module.exports = async (req, res) => {
     let image = `${SITE_URL}/og-default.png`;
     let docData = null;
 
-    // --- ESCAPE PATH (Force Human Mode) ---
+    // --- ESCAPE PATH (Force Human Mode for scripts) ---
     const sep = finalPath.includes('?') ? '&' : '?';
     const escapedRedirectPath = `${finalPath}${sep}no_bot=1`;
 
@@ -151,15 +180,28 @@ module.exports = async (req, res) => {
       if (colMap[type]) {
         docData = await fetchFirestoreDoc(colMap[type], slug);
         if (docData) {
-          title = docData.title || docData.business_name || docData.name || title;
-          description = (docData.excerpt || docData.seo_description || docData.short_description || docData.short_bio || description).replace(/<[^>]*>/g, '').substring(0, 160);
+          // Priority Selection for Metadata
+          title = docData.seoTitle || docData.seo_title || docData.title || docData.business_name || docData.name || title;
+          
+          const rawDesc = docData.metaDescription || docData.seo_description || docData.seoDescription || 
+                         docData.excerpt || docData.short_description || docData.short_bio || 
+                         docData.details || description;
+          
+          description = rawDesc.replace(/<[^>]*>/g, '').substring(0, 160);
           image = docData.featured_image || docData.logo || docData.photo || image;
+        } else {
+          console.warn(`[SEO Engine] No data found for slug: ${slug} in ${colMap[type]}`);
         }
       }
     }
 
+    // --- CHARACTER ESCAPING (Prevent meta tag breakage) ---
+    const esc = (str) => (str || '').replace(/"/g, '&quot;').replace(/'/g, '&apos;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const safeTitle = esc(title);
+    const safeDescription = esc(description);
+
     const currentAbsoluteUrl = `https://${host}${finalPath}`;
-    const dynamicOgUrl = `${SITE_URL}/api/og-image?title=${encodeURIComponent(title)}&description=${encodeURIComponent(description)}&image=${encodeURIComponent(image)}`;
+    const dynamicOgUrl = `${SITE_URL}/api/og-image?title=${encodeURIComponent(title)}&description=${encodeURIComponent(description)}&image=${encodeURIComponent(image)}&category=${encodeURIComponent(type)}`;
 
     // --- SCHEMAS ---
     const orgSchema = { "@context": "https://schema.org", "@type": "Organization", "name": "Entrepreneurs BD", "url": SITE_URL, "logo": `${SITE_URL}/logo.png`, "sameAs": ["https://www.facebook.com/entrepreneursbd.official/"] };
@@ -170,17 +212,17 @@ module.exports = async (req, res) => {
     }
 
     const metaTags = `
-      <title>${title}</title>
-      <meta name="description" content="${description}">
+      <title>${safeTitle}</title>
+      <meta name="description" content="${safeDescription}">
       <link rel="canonical" href="${currentAbsoluteUrl}">
       <meta property="og:type" content="${type === 'blog' ? 'article' : 'website'}">
-      <meta property="og:title" content="${title}">
-      <meta property="og:description" content="${description}">
+      <meta property="og:title" content="${safeTitle}">
+      <meta property="og:description" content="${safeDescription}">
       <meta property="og:image" content="${dynamicOgUrl}">
       <meta property="og:url" content="${currentAbsoluteUrl}">
       <meta name="twitter:card" content="summary_large_image">
-      <meta name="twitter:title" content="${title}">
-      <meta name="twitter:description" content="${description}">
+      <meta name="twitter:title" content="${safeTitle}">
+      <meta name="twitter:description" content="${safeDescription}">
       <meta name="twitter:image" content="${dynamicOgUrl}">
       <script type="application/ld+json">${JSON.stringify(orgSchema)}</script>
       <script type="application/ld+json">${JSON.stringify(mainSchema)}</script>
@@ -188,7 +230,7 @@ module.exports = async (req, res) => {
 
     res.setHeader('Content-Type', 'text/html');
     res.setHeader('Cache-Control', 'public, s-maxage=86400, stale-while-revalidate=43200');
-    res.setHeader('X-SEO-Engine', 'NUCLEAR-REST-v1');
+    res.setHeader('X-SEO-Engine', 'NUCLEAR-REST-v2');
     return res.status(200).send(HTML_SHELL.replace('{{META_TAGS}}', metaTags).replace('{{REDIRECT_PATH}}', escapedRedirectPath));
 
   } catch (error) {
