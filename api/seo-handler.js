@@ -12,7 +12,7 @@ let fontBuffer = null;
 async function getFont() {
   if (fontBuffer) return fontBuffer;
   try {
-    const res = await axios.get(FONT_URL, { responseType: 'arraybuffer', timeout: 8000 });
+    const res = await axios.get(FONT_URL, { responseType: 'arraybuffer', timeout: 3000 });
     fontBuffer = Buffer.from(res.data);
     return fontBuffer;
   } catch (e) { return null; }
@@ -103,10 +103,10 @@ async function generateOgImage(title, description, image, category) {
   let bg = sharp({ create: { width: 1200, height: 630, channels: 4, background: '#064e3b' } }).png();
   let layers = [];
 
-  // Blurred featured image overlay
+  // Blurred featured image overlay (skip default placeholder to save time)
   try {
-    if (image && image.startsWith('http')) {
-      const imgRes = await axios.get(image, { responseType: 'arraybuffer', timeout: 4000 });
+    if (image && image.startsWith('http') && !image.includes('og-default') && !image.includes('logo')) {
+      const imgRes = await axios.get(image, { responseType: 'arraybuffer', timeout: 2000 });
       const blurred = await sharp(imgRes.data).resize(1200, 630, { fit: 'cover' }).blur(25).modulate({ brightness: 0.3 }).png().toBuffer();
       layers.push({ input: blurred, top: 0, left: 0 });
     }
