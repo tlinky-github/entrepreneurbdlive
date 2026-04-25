@@ -84,9 +84,11 @@ async function fetchFirestoreDoc(collection, slug) {
 }
 
 // --- HELPER: OG IMAGE ENGINE ---
-async function generateOgImage(title, image, category) {
-  const cleanTitle = (title || 'Entrepreneurs BD').length > 80 ? (title || 'Entrepreneurs BD').substring(0, 77) + '...' : (title || 'Entrepreneurs BD');
-  const cleanCategory = (category || 'Startup').toUpperCase();
+async function generateOgImage(title, description, image, category) {
+  const sanitize = (str) => (str || '').replace(/[\u0000-\u001F\u007F-\u009F]/g, '').trim();
+  const cleanTitle = sanitize(title).length > 80 ? sanitize(title).substring(0, 77) + '...' : sanitize(title);
+  const cleanCategory = sanitize(category || 'Startup').toUpperCase();
+  const cleanDesc = sanitize(description || '').replace(/<[^>]*>/g, '');
 
   // Layer 1: Base Emerald Background
   let pipeline = sharp({
@@ -108,39 +110,96 @@ async function generateOgImage(title, image, category) {
     }
   } catch (e) { console.warn('[OG Engine] BG Fail'); }
 
-  // Layer 3: Branded Overlay (SVG)
-  const svg = `
-    <svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
-      <!-- Header -->
-      <rect x="80" y="80" width="60" height="60" rx="12" fill="white" />
-      <text x="110" y="125" font-family="Arimo, Liberation Sans, DejaVu Sans, Arial, sans-serif" font-size="42" font-weight="900" fill="#064e3b" text-anchor="middle">e</text>
-      <text x="160" y="122" font-family="Arimo, Liberation Sans, DejaVu Sans, Arial, sans-serif" font-size="28" font-weight="700" fill="white">ENTREPRENEURS BD</text>
-      
-      <!-- Category -->
-      <rect x="940" y="80" width="180" height="50" rx="25" fill="#059669" />
-      <text x="1030" y="114" font-family="Arimo, Liberation Sans, DejaVu Sans, Arial, sans-serif" font-size="22" font-weight="700" fill="white" text-anchor="middle">${cleanCategory.replace(/&/g, '&amp;')}</text>
-      
-      <!-- Title -->
-      ${(() => {
-        const words = cleanTitle.replace(/&/g, '&amp;').split(' ');
-        let lines = [];
-        let cur = '';
-        words.forEach(w => {
-          if ((cur + w).length > 20) { lines.push(cur); cur = w + ' '; }
-          else cur += w + ' ';
-        });
-        lines.push(cur);
-        return lines.slice(0, 3).map((l, i) => 
-          `<text x="80" y="${280 + (i * 95)}" font-family="Arimo, Liberation Sans, DejaVu Sans, Arial, sans-serif" font-size="80" font-weight="800" fill="white">${l.trim()}</text>`
-        ).join('');
-      })()}
-      
-      <!-- Footer -->
-      <rect x="80" y="520" width="120" height="10" rx="5" fill="#10b981" />
-      <text x="1120" y="570" font-family="Arimo, Liberation Sans, DejaVu Sans, Arial, sans-serif" font-size="24" font-weight="600" fill="#10b981" opacity="0.7" text-anchor="end">entrepreneurs.bd</text>
-    </svg>
-  `;
-  layers.push({ input: Buffer.from(svg), top: 0, left: 0 });
+  // Layer 3: Text & Branding Layers
+  try {
+    // 3a. Brand Logo Box
+    const logoBox = await sharp({
+      create: { width: 60, height: 60, channels: 4, background: 'white' }
+    }).png().toBuffer();
+    layers.push({ input: logoBox, top: 80, left: 80 });
+
+    // 3b. Brand "e"
+    const brandE = await sharp({
+      text: {
+        text: 'e',
+        font: 'sans-serif',
+        fontfile: '',
+        width: 40,
+        height: 40,
+        rgba: true
+      }
+    }).modulate({ brightness: 0.1, saturation: 1 }).png().toBuffer();
+    layers.push({ input: brandE, top: 90, left: 90 });
+
+    // 3c. "ENTREPRENEURS BD" Text
+    const brandText = await sharp({
+      text: {
+        text: 'ENTREPRENEURS BD',
+        font: 'sans-serif',
+        width: 400,
+        rgba: true
+      }
+    }).png().toBuffer();
+    layers.push({ input: brandText, top: 95, left: 160 });
+
+    // 3d. Category Badge
+    const badge = await sharp({
+      create: { width: 180, height: 44, channels: 4, background: '#059669' }
+    }).png().toBuffer();
+    layers.push({ input: badge, top: 85, left: 940 });
+
+    const categoryText = await sharp({
+      text: {
+        text: cleanCategory,
+        font: 'sans-serif',
+        width: 140,
+        rgba: true
+      }
+    }).png().toBuffer();
+    layers.push({ input: categoryText, top: 95, left: 960 });
+
+    // 3e. MAIN TITLE
+    const titleImg = await sharp({
+      text: {
+        text: cleanTitle,
+        font: 'sans-serif',
+        width: 1040,
+        rgba: true
+      }
+    }).png().toBuffer();
+    layers.push({ input: titleImg, top: 220, left: 80 });
+
+    // 3g. DESCRIPTION (New Layer)
+    if (description && description.length > 5) {
+      const cleanDesc = description.substring(0, 160).replace(/<[^>]*>/g, '');
+      const descImg = await sharp({
+        text: {
+          text: cleanDesc,
+          font: 'sans-serif',
+          width: 900,
+          rgba: true
+        }
+      }).modulate({ brightness: 0.7 }).png().toBuffer();
+      layers.push({ input: descImg, top: 380, left: 80 });
+    }
+
+    // 3f. Domain & Footer
+    const footerLine = await sharp({
+      create: { width: 120, height: 8, channels: 4, background: '#10b981' }
+    }).png().toBuffer();
+    layers.push({ input: footerLine, top: 540, left: 80 });
+
+    const domainText = await sharp({
+      text: {
+        text: 'entrepreneurs.bd',
+        font: 'sans-serif',
+        width: 200,
+        rgba: true
+      }
+    }).png().toBuffer();
+    layers.push({ input: domainText, top: 540, left: 920 });
+
+  } catch (e) { console.error('[OG Engine] Layer Fail:', e.message); }
 
   return await pipeline.composite(layers).png().toBuffer();
 }
@@ -156,9 +215,9 @@ module.exports = async (req, res) => {
 
   // --- 1. IMAGE RENDERING BRANCH (CRITICAL FIX) ---
   if (req.query.render === 'image') {
-    const { title, image, category } = req.query;
+    const { title, description, image, category } = req.query;
     try {
-      const buffer = await generateOgImage(title, image, category);
+      const buffer = await generateOgImage(title, description, image, category);
       res.setHeader('Content-Type', 'image/png');
       // "Ironclad" Caching: Cache for 1 year, but allow revalidation
       res.setHeader('Cache-Control', 'public, max-age=31536000, s-maxage=31536000, stale-while-revalidate=604800');
@@ -223,13 +282,13 @@ module.exports = async (req, res) => {
     }
 
     // --- CHARACTER ESCAPING (Prevent meta tag breakage) ---
-    const esc = (str) => (str || '').replace(/"/g, '&quot;').replace(/'/g, '&apos;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const esc = (str) => (str || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&apos;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, ' ');
     const safeTitle = esc(title);
     const safeDescription = esc(description);
 
     const currentAbsoluteUrl = `https://${host}${finalPath}`;
     const version = docData?.updated_at?.seconds || docData?.updated_at?._seconds || Date.now();
-    const dynamicOgUrl = `${SITE_URL}/api/og-image?title=${encodeURIComponent(title.substring(0, 100))}&image=${encodeURIComponent(image)}&category=${encodeURIComponent(type)}&v=${version}`;
+    const dynamicOgUrl = `${SITE_URL}/api/og-image?title=${encodeURIComponent(title.substring(0, 100))}&description=${encodeURIComponent(description.substring(0, 160))}&image=${encodeURIComponent(image)}&category=${encodeURIComponent(type)}&v=${version}`;
 
     // --- SCHEMAS ---
     const orgSchema = { 
