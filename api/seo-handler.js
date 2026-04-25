@@ -178,7 +178,7 @@ const STATIC_PAGES = {
   },
   'about': {
     title: 'About Us | Entrepreneurs BD',
-    description: 'Learn about our mission to develop 1 million entrepreneurs in Bangladesh by 2030.',
+    description: 'Learn about our mission to empower the next generation of business leaders and visionaries in Bangladesh.',
     category: 'MISSION'
   },
   'contact': {
@@ -292,7 +292,7 @@ module.exports = async (req, res) => {
 
   try {
     let title = "Entrepreneurs BD | The National Engine of Growth";
-    let description = "Developing 1 million entrepreneurs by 2030. Connect, discover, and scale your startup on Bangladesh's premier growth hub.";
+    let description = "Bangladesh's premier growth hub for startups and visionaries. Connect, discover, and scale your business within our national entrepreneurship ecosystem.";
     let image = `${SITE_URL}/og-default.png`;
     let docData = null;
 
@@ -311,7 +311,7 @@ module.exports = async (req, res) => {
           docData = await fetchFirestoreDoc(colMap[type], slug);
           if (docData) {
             title = docData.seoTitle || docData.seo_title || docData.title || docData.business_name || docData.name || title;
-            const rawDesc = docData.metaDescription || docData.seo_description || docData.seoDescription || docData.excerpt || docData.short_description || docData.short_bio || docData.details || description;
+            const rawDesc = docData.metaDescription || docData.seo_description || docData.seoDescription || docData.excerpt || docData.short_description || docData.bio || docData.short_bio || docData.about || docData.details || description;
             description = rawDesc.replace(/<[^>]*>/g, '').substring(0, 160);
             image = docData.featured_image || docData.logo || docData.photo || image;
           }
