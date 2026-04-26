@@ -1036,53 +1036,51 @@ const ContentEditorPanel = () => {
   }
 
   return (
-    <div className="content-editor-panel p-6">
+    <div className="content-editor-panel">
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+      <div className="editor-header">
         <div className="flex items-center gap-4">
-          <Button 
-            variant="ghost" 
+          <button 
             onClick={() => navigate('/admin/content-manager?type=' + type)}
-            className="text-stone-500 hover:text-stone-900"
+            className="back-btn"
           >
-            <ChevronLeft className="w-5 h-5 mr-1" />
-            Back
-          </Button>
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold text-stone-900 uppercase tracking-tight">Content Editor</h1>
-              {itemId && (
-                <Badge className={
-                  status === 'published' 
-                    ? 'bg-emerald-100 text-emerald-700 border-emerald-200' 
-                    : 'bg-amber-100 text-amber-700 border-amber-200'
-                }>
-                  {status === 'published' ? 'Live' : 'Draft'}
-                </Badge>
-              )}
-            </div>
-            <p className="text-stone-500 text-sm">Create and refine your platform content</p>
+            <ChevronLeft className="w-5 h-5" />
+            <span>Back</span>
+          </button>
+          <div className="flex items-center gap-3">
+            <h1 className="editor-title">Content Editor</h1>
+            {itemId && (
+              <Badge className={
+                status === 'published' 
+                  ? 'bg-emerald-100 text-emerald-700 border-emerald-200' 
+                  : 'bg-amber-100 text-amber-700 border-amber-200'
+              }>
+                {status === 'published' ? 'Live' : 'Draft'}
+              </Badge>
+            )}
           </div>
         </div>
         <div className="header-actions">
-          <button onClick={() => window.open(getPreviewUrl(), '_blank')} style={{ marginRight: '4px' }}>
-            <Eye size={18} /> Preview
+          <button className="preview-btn" onClick={() => window.open(getPreviewUrl(), '_blank')}>
+            <Eye size={16} /> <span className="hidden sm:inline">Preview</span>
           </button>
-          <button onClick={() => handleSave()} disabled={saving || publishing}>
-            <Save size={18} /> {saving ? 'Saving...' : 'Save Draft'}
+          <button className="save-btn" onClick={() => handleSave()} disabled={saving || publishing}>
+            <Save size={16} /> <span className="hidden sm:inline">{saving ? 'Saving...' : 'Save'}</span>
           </button>
           <button 
+            className="publish-btn"
             onClick={handlePublish} 
             disabled={saving || publishing}
-            style={{ backgroundColor: '#10b981', color: 'white' }}
           >
-            {publishing ? 'Publishing...' : 
+            {publishing ? '...' : 
              isScheduled ? 'Schedule' : 
              status === 'published' ? 'Update' : 
-             status === 'pending' ? 'Approve & Publish' : 'Publish'}
+             status === 'pending' ? 'Approve' : 'Publish'}
           </button>
         </div>
       </div>
+
+      <div className="p-6">
       
       {isDirty && (
         <div className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-2xl p-4 mb-8 flex items-center justify-between shadow-xl shadow-emerald-100 border border-emerald-500/20 animate-in fade-in slide-in-from-top-6 duration-500">
@@ -2544,6 +2542,7 @@ const ContentEditorPanel = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      </div>
     </div>
   );
 };

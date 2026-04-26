@@ -11,14 +11,15 @@
 .editor-header {
   background: white;
   border-bottom: 1px solid #e5e7eb;
-  padding: 16px 24px;
+  padding: 12px 24px;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 16px;
   position: sticky;
   top: 0;
-  z-index: 100;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .back-btn {
@@ -61,34 +62,49 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 14px;
-  background: #667eea;
-  color: white;
-  padding: 8px 14px;
-  border-radius: 6px;
-  border: none;
-  cursor: pointer;
-  font-weight: 500;
+  font-size: 13px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 600;
   transition: all 0.2s;
+  border: 1px solid transparent;
 }
 
-.header-actions button:hover:not(:disabled) {
-  background: #5568d3;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+.preview-btn {
+  background: white;
+  border: 1px solid #e5e7eb !important;
+  color: #4b5563;
 }
 
-.header-actions button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+.preview-btn:hover {
+  background: #f9fafb;
+  border-color: #d1d5db !important;
+}
+
+.save-btn {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.save-btn:hover {
+  background: #e5e7eb;
+}
+
+.publish-btn {
+  background: #064e3b;
+  color: white;
+}
+
+.publish-btn:hover {
+  background: #065f46;
+  box-shadow: 0 4px 12px rgba(6, 78, 59, 0.2);
 }
 
 /* Main Editor */
 .editor-main {
   display: grid;
-  grid-template-columns: 1fr 340px;
-  gap: 24px;
-  padding: 24px;
+  grid-template-columns: 1fr 360px;
+  gap: 32px;
   flex: 1;
 }
 
@@ -96,15 +112,33 @@
   display: flex;
   flex-direction: column;
   gap: 24px;
+  min-width: 0;
 }
 
 .editor-right {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
   height: fit-content;
   position: sticky;
-  top: 80px;
+  top: 84px; /* Docked below header */
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+/* Custom Scrollbar for Sidebar */
+.editor-right::-webkit-scrollbar {
+  width: 4px;
+}
+
+.editor-right::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.editor-right::-webkit-scrollbar-thumb {
+  background: #e5e7eb;
+  border-radius: 10px;
 }
 
 /* Form Styles */
