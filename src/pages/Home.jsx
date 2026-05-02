@@ -63,7 +63,7 @@ const Home = () => {
           postAPI.list({ status: 'published', limit: 6 }).catch(() => ({ data: [] })),
           profileAPI.list({ is_featured: true, status: 'published', limit: 4 }).catch(() => ({ data: [] })),
           listingAPI.list({ is_featured: true, status: 'published', limit: 4 }).catch(() => ({ data: [] })),
-          require('../lib/api').adminAPI.getStats().catch(() => ({ data: {} })),
+          require('../lib/api').publicAPI.getStats().catch(() => ({ data: {} })),
           require('../lib/api').resourceAPI.list({ limit: 6 }).catch(() => ({ data: [] }))
         ]);
 
@@ -81,7 +81,7 @@ const Home = () => {
             { label: 'Entrepreneurs', value: `${statsRes.data.total_entrepreneurs || 0}+`, icon: Users },
             { label: 'Businesses', value: `${statsRes.data.total_listings || 0}+`, icon: Building2 },
             { label: 'Articles', value: `${statsRes.data.total_blog_posts || 0}+`, icon: FileText },
-            { label: 'Resources', value: `${resourcesRes.data?.length || 0}+`, icon: BookOpen },
+            { label: 'Resources', value: `${statsRes.data.total_resources || 0}+`, icon: BookOpen },
           ]);
         }
       } catch (error) {

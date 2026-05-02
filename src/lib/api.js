@@ -12,7 +12,8 @@ import {
   limit, 
   orderBy,
   serverTimestamp,
-  increment
+  increment,
+  getCountFromServer
 } from 'firebase/firestore';
 import { db, auth } from './firebase';
 
@@ -771,6 +772,32 @@ export const adminAPI = {
   }
 };
 
+// --- Public API ---
+export const publicAPI = {
+  getStats: async () => {
+    try {
+      const [postsSnap, profilesSnap, listingsSnap, resourcesSnap] = await Promise.all([
+        getCountFromServer(query(collection(db, 'posts'), where('status', '==', 'published'))),
+        getCountFromServer(query(collection(db, 'profiles'), where('status', '==', 'published'))),
+        getCountFromServer(query(collection(db, 'listings'), where('status', '==', 'published'))),
+        getCountFromServer(query(collection(db, 'resources'), where('status', '==', 'published')))
+      ]);
+
+      return {
+        data: {
+          total_blog_posts: postsSnap.data().count,
+          total_entrepreneurs: profilesSnap.data().count,
+          total_listings: listingsSnap.data().count,
+          total_resources: resourcesSnap.data().count,
+        }
+      };
+    } catch (error) {
+      console.error('Public Stats Error:', error);
+      return { data: {} };
+    }
+  }
+};
+
 // Taxonomy API (Categories, Industries, Cities)
 export const taxonomyAPI = {
   list: async (type) => {
@@ -1138,7 +1165,7 @@ export const codeSnippetsAPI = {
 
 export default { 
   postAPI, profileAPI, listingAPI, contentAPI, interactionAPI, 
-  adminAPI, commentAPI, resourceAPI, authAPI, categoryAPI, 
+  adminAPI, publicAPI, commentAPI, resourceAPI, authAPI, categoryAPI, 
   blogCategoryAPI, industryAPI, cityAPI, taxonomyAPI, settingsAPI, authorAPI, mediaAPI,
   guidesAPI, faqCategoriesAPI, glossaryAPI, codeSnippetsAPI
 };
