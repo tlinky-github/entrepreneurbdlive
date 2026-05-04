@@ -27,7 +27,11 @@ const FaqAnswerEditor = ({ value, onChange }) => {
     content: value,
     editable: true,
     onUpdate: ({ editor }) => {
-      onChange(editor.getHTML());
+      // Sanitize: move leading/trailing whitespace out of <a> tags
+      let html = editor.getHTML();
+      html = html.replace(/<a\b([^>]*)>(\s+)/g, '$2<a$1>');      // leading space
+      html = html.replace(/(\s+)<\/a>/g, '</a>$1');                // trailing space
+      onChange(html);
     },
     editorProps: {
       attributes: {
@@ -48,11 +52,31 @@ const FaqAnswerEditor = ({ value, onChange }) => {
     if (!data.href) {
       editor.chain().focus().extendMarkRange('link').unsetLink().run();
     } else {
-      editor.chain().focus().extendMarkRange('link').setLink({ 
-        href: data.href,
-        target: data.target || '_blank',
-        rel: data.rel || 'nofollow noopener noreferrer'
-      }).run();
+      // Smart trim: strip leading/trailing whitespace from selection so spaces
+      // don't get wrapped inside the <a> tag (e.g. " word " → " <a>word</a> ")
+      const { from, to } = editor.state.selection;
+      const selectedText = editor.state.doc.textBetween(from, to, '\n');
+      const leadSpaces = selectedText.match(/^\s*/)[0].length;
+      const trailSpaces = selectedText.match(/\s*$/)[0].length;
+      const trimmedFrom = from + leadSpaces;
+      const trimmedTo = to - trailSpaces;
+
+      if (trimmedFrom < trimmedTo) {
+        editor.chain().focus()
+          .setTextSelection({ from: trimmedFrom, to: trimmedTo })
+          .setLink({ 
+            href: data.href,
+            target: data.target || '_blank',
+            rel: data.rel || 'nofollow noopener noreferrer'
+          }).run();
+      } else {
+        // Fallback: selection was all whitespace, apply normally
+        editor.chain().focus().extendMarkRange('link').setLink({ 
+          href: data.href,
+          target: data.target || '_blank',
+          rel: data.rel || 'nofollow noopener noreferrer'
+        }).run();
+      }
     }
     setLinkDialogOpen(false);
   };

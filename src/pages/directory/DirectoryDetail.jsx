@@ -9,7 +9,7 @@ import { Badge } from '../../components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Skeleton } from '../../components/ui/skeleton';
 import { toast } from 'sonner';
-import { ensureAbsoluteUrl } from '../../lib/utils';
+import { ensureAbsoluteUrl, sanitizeHtml } from '../../lib/utils';
 import {
   ArrowLeft,
   MapPin,
@@ -322,10 +322,12 @@ const DirectoryDetail = () => {
                                   </h2>
                                   <div className="faq-list">
                                     {faqsData.map((faq, fIndex) => {
-                                      const answerHtml = (faq.answer || faq.a || '')
-                                        .replace(/&lt;/g, '<').replace(/&gt;/g, '>')
-                                        .replace(/&quot;/g, '"').replace(/&amp;apos;/g, "'").replace(/&amp;/g, '&')
-                                        .replace(/style="[^"]*"/gi, ''); // Strip nasty inline styles
+                                      const answerHtml = sanitizeHtml(
+                                        (faq.answer || faq.a || '')
+                                          .replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+                                          .replace(/&quot;/g, '"').replace(/&amp;apos;/g, "'").replace(/&amp;/g, '&')
+                                          .replace(/style="[^"]*"/gi, '') // Strip nasty inline styles
+                                      );
                                         
                                       return (
                                         <div key={fIndex} className="mb-6 last:mb-0">
@@ -364,7 +366,7 @@ const DirectoryDetail = () => {
                 </h2>
                 <div 
                   className="tiptap-content relative z-10 prose prose-invert max-w-none text-white [&_*]:text-white"
-                  dangerouslySetInnerHTML={{ __html: listing.life_at_company }}
+                  dangerouslySetInnerHTML={{ __html: sanitizeHtml(listing.life_at_company) }}
                 />
               </div>
             )}

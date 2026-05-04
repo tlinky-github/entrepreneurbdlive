@@ -12,6 +12,7 @@ import {
 } from '../components/ui/accordion';
 import { pillarPages, pillarPagesPart2 } from '../data/mock';
 import { contentAPI } from '../lib/api';
+import { sanitizeHtml } from '../lib/utils';
 import CustomCodeInjector from '../components/common/CustomCodeInjector';
 
 const KnowledgeArticlePage = () => {
@@ -236,7 +237,7 @@ const KnowledgeArticlePage = () => {
                           const t = h.trim();
                           if (h !== t) {
                             const leadMatch = h.match(/^\s+/);
-                            const trailMatch = h.match(/^\s+$/);
+                            const trailMatch = h.match(/\s+$/);
                             
                             if (leadMatch) {
                               const leadNode = doc.createTextNode(leadMatch[0]);
@@ -308,10 +309,12 @@ const KnowledgeArticlePage = () => {
                             </AccordionTrigger>
                             <AccordionContent className="text-stone-600 pb-4 leading-relaxed">
                               {(() => {
-                                const answerHtml = (faq.a || '')
-                                  .replace(/&lt;/g, '<').replace(/&gt;/g, '>')
-                                  .replace(/&quot;/g, '"').replace(/&amp;apos;/g, "'").replace(/&amp;/g, '&')
-                                  .replace(/style="[^"]*"/gi, ''); // Strip nasty inline styles
+                                const answerHtml = sanitizeHtml(
+                                  (faq.a || '')
+                                    .replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+                                    .replace(/&quot;/g, '"').replace(/&amp;apos;/g, "'").replace(/&amp;/g, '&')
+                                    .replace(/style="[^"]*"/gi, '') // Strip nasty inline styles
+                                );
                                 return <div dangerouslySetInnerHTML={{ __html: answerHtml }} />;
                               })()}
                             </AccordionContent>

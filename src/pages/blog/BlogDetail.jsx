@@ -11,7 +11,7 @@ import { Avatar, AvatarFallback } from '../../components/ui/avatar';
 import { PageLoader } from '../../components/ui/page-loader';
 import { SEO } from '../../components/SEO';
 import { toast } from 'sonner';
-import { ensureAbsoluteUrl } from '../../lib/utils';
+import { ensureAbsoluteUrl, sanitizeHtml } from '../../lib/utils';
 import {
   Calendar,
   User,
@@ -591,10 +591,12 @@ const BlogDetail = () => {
                         </h2>
                         <div className="faq-list">
                           {faqs.map((faq, fIndex) => {
-                            const answerHtml = (faq.answer || faq.a || '')
-                              .replace(/&lt;/g, '<').replace(/&gt;/g, '>')
-                              .replace(/&quot;/g, '"').replace(/&amp;apos;/g, "'").replace(/&amp;/g, '&')
-                              .replace(/style="[^"]*"/gi, ''); // Strip nasty inline styles
+                            const answerHtml = sanitizeHtml(
+                              (faq.answer || faq.a || '')
+                                .replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+                                .replace(/&quot;/g, '"').replace(/&amp;apos;/g, "'").replace(/&amp;/g, '&')
+                                .replace(/style="[^"]*"/gi, '') // Strip nasty inline styles
+                            );
                               
                             return (
                               <div key={`faq-item-${fIndex}`} className="mb-6 last:mb-0">

@@ -10,7 +10,7 @@ import { Badge } from '../../components/ui/badge';
 import { Card, CardContent } from '../../components/ui/card';
 import { Skeleton } from '../../components/ui/skeleton';
 import { toast } from 'sonner';
-import { ensureAbsoluteUrl } from '../../lib/utils';
+import { ensureAbsoluteUrl, sanitizeHtml } from '../../lib/utils';
 import {
   ArrowLeft,
   MapPin,
@@ -342,7 +342,15 @@ const EntrepreneurDetail = () => {
                                       className="mb-6 last:mb-0"
                                     >
                                       <p className="font-bold text-stone-900 !m-0 text-lg">{faq.question || faq.q}</p>
-                                      <p className="text-stone-800 leading-[1.8] !mt-1 !mb-0">{faq.answer || faq.a}</p>
+                                      <div 
+                                        className="text-stone-800 leading-[1.8] !mt-1 !mb-0 prose-faq"
+                                        dangerouslySetInnerHTML={{ __html: sanitizeHtml(
+                                          (faq.answer || faq.a || '')
+                                            .replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+                                            .replace(/&quot;/g, '"').replace(/&amp;apos;/g, "'").replace(/&amp;/g, '&')
+                                            .replace(/style="[^"]*"/gi, '')
+                                        ) }}
+                                      />
                                     </div>
                                   ))}
                                 </div>
@@ -384,7 +392,15 @@ const EntrepreneurDetail = () => {
                       </button>
                       {openFaqIndex === index && (
                         <div className="px-4 pb-5 pt-0 text-stone-600 border-t border-stone-100 animate-in fade-in slide-in-from-top-1">
-                          <p className="mt-4 leading-relaxed whitespace-pre-wrap">{faq.answer || faq.a}</p>
+                          <div 
+                            className="mt-4 leading-relaxed prose-faq"
+                            dangerouslySetInnerHTML={{ __html: sanitizeHtml(
+                              (faq.answer || faq.a || '')
+                                .replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+                                .replace(/&quot;/g, '"').replace(/&amp;apos;/g, "'").replace(/&amp;/g, '&')
+                                .replace(/style="[^"]*"/gi, '')
+                            ) }}
+                          />
                         </div>
                       )}
                     </div>
