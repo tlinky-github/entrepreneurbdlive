@@ -8,6 +8,7 @@ import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 import LinkDialog from '../admin/LinkDialog';
+import { sanitizeHtml } from '../../lib/utils';
 
 const FaqAnswerEditor = ({ value, onChange }) => {
   const [linkDialogOpen, setLinkDialogOpen] = React.useState(false);
@@ -27,11 +28,8 @@ const FaqAnswerEditor = ({ value, onChange }) => {
     content: value,
     editable: true,
     onUpdate: ({ editor }) => {
-      // Sanitize: move leading/trailing whitespace out of <a> tags
-      let html = editor.getHTML();
-      html = html.replace(/<a\b([^>]*)>(\s+)/g, '$2<a$1>');      // leading space
-      html = html.replace(/(\s+)<\/a>/g, '</a>$1');                // trailing space
-      onChange(html);
+      // Sanitize: move leading/trailing whitespace (incl. &nbsp;) out of <a> tags
+      onChange(sanitizeHtml(editor.getHTML()));
     },
     editorProps: {
       attributes: {
