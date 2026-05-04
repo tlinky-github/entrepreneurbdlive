@@ -16,7 +16,8 @@ export function ensureAbsoluteUrl(url) {
 /**
  * Sanitize HTML content for clean rendering.
  * Moves leading/trailing whitespace (including &nbsp;) outside of <a> tags
- * so links don't visually include spaces.
+ * so links don't visually include spaces — even when the space is inside
+ * nested elements like <u>, <em>, <strong>, etc.
  */
 export function sanitizeHtml(html) {
   if (!html || typeof document === 'undefined') return html || '';
@@ -25,38 +26,56 @@ export function sanitizeHtml(html) {
     const doc = parser.parseFromString(html, 'text/html');
 
     doc.querySelectorAll('a').forEach(link => {
-      // Get raw innerHTML and check for leading/trailing whitespace or &nbsp;
-      const inner = link.innerHTML;
-      const trimmed = inner.replace(/^[\s\u00a0]+|[\s\u00a0]+$/g, '');
-      if (inner === trimmed) return; // nothing to fix
-
-      const leadMatch = inner.match(/^[\s\u00a0]+/);
-      const trailMatch = inner.match(/[\s\u00a0]+$/);
-
-      if (leadMatch) {
-        // Move leading whitespace before the <a> tag
-        const space = doc.createTextNode(leadMatch[0].replace(/\u00a0/g, ' '));
-        link.parentNode.insertBefore(space, link);
+      // Walk into the FIRST text node (could be nested in <u>, <em>, etc.)
+      const firstText = getFirstTextNode(link);
+      if (firstText && /^[\s\u00a0]/.test(firstText.textContent)) {
+        const match = firstText.textContent.match(/^[\s\u00a0]+/);
+        if (match) {
+          firstText.textContent = firstText.textContent.replace(/^[\s\u00a0]+/, '');
+          const space = doc.createTextNode(match[0].replace(/\u00a0/g, ' '));
+          link.parentNode.insertBefore(space, link);
+        }
       }
 
-      link.innerHTML = trimmed;
-
-      if (trailMatch) {
-        // Move trailing whitespace after the <a> tag
-        const space = doc.createTextNode(trailMatch[0].replace(/\u00a0/g, ' '));
-        if (link.nextSibling) {
-          link.parentNode.insertBefore(space, link.nextSibling);
-        } else {
-          link.parentNode.appendChild(space);
+      // Walk into the LAST text node
+      const lastText = getLastTextNode(link);
+      if (lastText && /[\s\u00a0]$/.test(lastText.textContent)) {
+        const match = lastText.textContent.match(/[\s\u00a0]+$/);
+        if (match) {
+          lastText.textContent = lastText.textContent.replace(/[\s\u00a0]+$/, '');
+          const space = doc.createTextNode(match[0].replace(/\u00a0/g, ' '));
+          if (link.nextSibling) {
+            link.parentNode.insertBefore(space, link.nextSibling);
+          } else {
+            link.parentNode.appendChild(space);
+          }
         }
       }
     });
 
     return doc.body.innerHTML;
   } catch (e) {
-    // Fallback: regex approach for SSR or parse errors
-    return html
-      .replace(/<a\b([^>]*)>(&nbsp;|\s)+/g, ' <a$1>')
-      .replace(/(&nbsp;|\s)+<\/a>/g, '</a> ');
+    return html;
   }
 }
+
+// Helper: get the deepest first text node inside an element
+function getFirstTextNode(el) {
+  if (el.nodeType === 3) return el; // text node
+  for (let i = 0; i < el.childNodes.length; i++) {
+    const found = getFirstTextNode(el.childNodes[i]);
+    if (found) return found;
+  }
+  return null;
+}
+
+// Helper: get the deepest last text node inside an element
+function getLastTextNode(el) {
+  if (el.nodeType === 3) return el; // text node
+  for (let i = el.childNodes.length - 1; i >= 0; i--) {
+    const found = getLastTextNode(el.childNodes[i]);
+    if (found) return found;
+  }
+  return null;
+}
+
