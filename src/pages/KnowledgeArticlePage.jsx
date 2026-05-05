@@ -273,7 +273,7 @@ const KnowledgeArticlePage = () => {
                     return (
                       <div 
                         className="prose prose-stone max-w-none"
-                        dangerouslySetInnerHTML={{ __html: applySmartDesign(content) }}
+                        dangerouslySetInnerHTML={{ __html: sanitizeHtml(applySmartDesign(content)) }}
                       />
                     );
                   })()

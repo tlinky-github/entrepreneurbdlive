@@ -297,7 +297,7 @@ const DirectoryDetail = () => {
                         return doc.body.innerHTML;
                       };
 
-                      contentHtml = applySmartDesign(contentHtml);
+                      contentHtml = sanitizeHtml(applySmartDesign(contentHtml));
                       
                       // Clean up redundant AI strings
                       contentHtml = contentHtml

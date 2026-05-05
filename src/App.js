@@ -60,6 +60,7 @@ import { AuthProvider, useAuth } from './lib/auth';
 import Layout from './components/layout/Layout';
 import { Toaster } from './components/ui/sonner';
 import './index.css';
+import { sanitizeHtml } from './lib/utils';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -346,7 +347,7 @@ const DynamicPage = () => {
       <h1 className="text-4xl font-bold text-stone-900 mb-6">{page.title}</h1>
       <div
         className="prose prose-lg max-w-none"
-        dangerouslySetInnerHTML={{ __html: page.content_html }}
+        dangerouslySetInnerHTML={{ __html: sanitizeHtml(page.content_html) }}
       />
     </div>
   );

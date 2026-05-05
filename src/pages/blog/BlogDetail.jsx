@@ -528,7 +528,7 @@ const BlogDetail = () => {
               return doc.body.innerHTML;
             };
 
-            content = applySmartDesign(content);
+            content = sanitizeHtml(applySmartDesign(content));
 
             // Clean up redundant AI strings
             content = content

@@ -310,14 +310,15 @@ const EntrepreneurDetail = () => {
                     if (!content) return null;
 
                     // Senior Engineer Fix: Sanitize content before saving (Google Docs compatible)
-                    content = content
+                    content = sanitizeHtml(content
                       .replace(/^(<p>\s*<br\s*\/?>\s*<\/p>|<p>\s*<\/p>|<br\s*\/?>|\s)+/gi, '')
                       .replace(/(<p>\s*<br\s*\/?>\s*<\/p>|<p>\s*<\/p>|<br\s*\/?>|\s)+$/gi, '')
                       .replace(/<p[^>]*>(?:<[^>]+>)*\s*SEO Title:[\s\S]*?<\/p>/gi, '')
                       .replace(/<p[^>]*>(?:<[^>]+>)*\s*Meta Description:[\s\S]*?<\/p>/gi, '')
                       .replace(/(<p>\s*<br\s*\/?>\s*<\/p>){2,}/gi, '<p><br></p>')
                       .replace(/ style="[^"]*"/gi, '') // Strip all hardcoded styles
-                      .replace(/<span[^>]*>([\s\S]*?)<\/span>/gi, '$1'); // Unwrap all spans
+                      .replace(/<span[^>]*>([\s\S]*?)<\/span>/gi, '$1') // Unwrap all spans
+                    );
 
                     const parts = content.split(/(<faq-section[^>]*>.*?<\/faq-section>|<faq-section[^>]*\/>)/gi);
                     

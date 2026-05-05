@@ -25,6 +25,7 @@ import {
   Globe
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { sanitizeHtml } from '../../lib/utils';
 
 const ResourceDetail = () => {
   const { slug } = useParams();
@@ -173,7 +174,15 @@ const ResourceDetail = () => {
                                       </button>
                                       {openFaqIndex === `inline-${index}-${fIndex}` && (
                                         <div className="px-4 pb-4 pt-0 text-stone-600 border-t border-stone-100 animate-in fade-in slide-in-from-top-1 duration-200">
-                                          <p className="mt-4 leading-relaxed whitespace-pre-wrap">{faq.answer || faq.a}</p>
+                                          <div 
+                                            className="mt-4 leading-relaxed prose-faq"
+                                            dangerouslySetInnerHTML={{ __html: sanitizeHtml(
+                                              (faq.answer || faq.a || '')
+                                                .replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+                                                .replace(/&quot;/g, '"').replace(/&amp;apos;/g, "'").replace(/&amp;/g, '&')
+                                                .replace(/style="[^"]*"/gi, '')
+                                            ) }}
+                                          />
                                         </div>
                                       )}
                                     </div>
@@ -188,7 +197,7 @@ const ResourceDetail = () => {
                         return null;
                       }
                       
-                      return <div key={index} dangerouslySetInnerHTML={{ __html: part }} />;
+                      return <div key={index} dangerouslySetInnerHTML={{ __html: sanitizeHtml(part) }} />;
                     })
                   })()}
                 </div>
