@@ -63,6 +63,7 @@ const ImageUploader = ({
   const [selectedDeleteItem, setSelectedDeleteItem] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [showImageEditor, setShowImageEditor] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
   const editorContainerRef = useRef(null);
   const editorInstanceRef = useRef(null);
@@ -103,7 +104,7 @@ const ImageUploader = ({
     const token = await auth.currentUser?.getIdToken();
     if (!token) throw new Error('You must be logged in to upload images');
 
-    const response = await fetch('/api/upload-url', {
+    const response = await fetch('/api/media-handler?action=upload', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -826,7 +827,32 @@ const ImageUploader = ({
 
         <TabsContent value="upload" className="mt-4">
           {!previewUrl && !uploading ? (
-            <div className="border-2 border-dashed border-stone-200 rounded-xl p-8 text-center hover:border-emerald-600/50 hover:bg-emerald-50/10 transition-all group">
+            <div 
+              className={`border-2 border-dashed rounded-xl p-8 text-center transition-all group cursor-pointer ${
+                isDragging 
+                  ? 'border-emerald-500 bg-emerald-50/30 scale-[1.02]' 
+                  : 'border-stone-200 hover:border-emerald-600/50 hover:bg-emerald-50/10'
+              }`}
+              onClick={() => fileInputRef.current?.click()}
+              onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(true); }}
+              onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(true); }}
+              onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(false); }}
+              onDrop={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsDragging(false);
+                const file = e.dataTransfer.files?.[0];
+                if (file && file.type.startsWith('image/')) {
+                  // Trigger the same upload flow as file select
+                  const dataTransfer = new DataTransfer();
+                  dataTransfer.items.add(file);
+                  fileInputRef.current.files = dataTransfer.files;
+                  handleFileSelect({ target: { files: dataTransfer.files } });
+                } else {
+                  toast.error('Please drop a valid image file');
+                }
+              }}
+            >
               <input
                 ref={fileInputRef}
                 type="file"
@@ -835,20 +861,15 @@ const ImageUploader = ({
                 className="hidden"
               />
               <div className="flex flex-col items-center">
-                <div className="w-12 h-12 bg-stone-50 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                  <Upload className="w-6 h-6 text-stone-400 group-hover:text-emerald-600" />
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-3 transition-transform ${
+                  isDragging ? 'bg-emerald-100 scale-110' : 'bg-stone-50 group-hover:scale-110'
+                }`}>
+                  <Upload className={`w-6 h-6 ${isDragging ? 'text-emerald-600' : 'text-stone-400 group-hover:text-emerald-600'}`} />
                 </div>
-                <p className="text-sm font-medium text-stone-600">Drop image or click to browse</p>
+                <p className="text-sm font-medium text-stone-600">
+                  {isDragging ? 'Drop your image here!' : 'Drop image or click to browse'}
+                </p>
                 <p className="text-xs text-stone-400 mt-1">PNG, JPG, WebP up to 10MB</p>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  className="mt-4"
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  Select File
-                </Button>
               </div>
             </div>
           ) : (
