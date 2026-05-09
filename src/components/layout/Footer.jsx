@@ -122,6 +122,11 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
+                <Link to="/terms" className="text-stone-400 hover:text-emerald-500 transition-colors">
+                  Terms of Service
+                </Link>
+              </li>
+              <li>
                 <Link to="/disclaimer" className="text-stone-400 hover:text-emerald-500 transition-colors">
                   Disclaimer
                 </Link>

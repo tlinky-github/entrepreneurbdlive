@@ -46,6 +46,7 @@ const AboutPage = lazy(() => import('./pages/AboutPage'));
 const ContactPage = lazy(() => import('./pages/ContactPage'));
 const PrivacyPage = lazy(() => import('./pages/PrivacyPage'));
 const DisclaimerPage = lazy(() => import('./pages/DisclaimerPage'));
+const TermsPage = lazy(() => import('./pages/TermsPage'));
 const EditorialPage = lazy(() => import('./pages/EditorialPage'));
 const KnowledgeHubPage = lazy(() => import('./pages/KnowledgeHubPage'));
 const KnowledgeArticlePage = lazy(() => import('./pages/KnowledgeArticlePage'));
@@ -354,18 +355,6 @@ const DynamicPage = () => {
 };
 
 
-
-
-
-const TermsPage = () => (
-  <div className="max-w-4xl mx-auto px-4 py-16">
-    <h1 className="text-4xl font-bold text-stone-900 mb-6">Terms of Service</h1>
-    <div className="prose prose-lg max-w-none">
-      <p>By using entrepreneurs.bd, you agree to these terms and conditions.</p>
-      <p>Last updated: December 2024</p>
-    </div>
-  </div>
-);
 
 import NotFound from './components/common/NotFound';
 import ScrollToTop from './components/common/ScrollToTop';

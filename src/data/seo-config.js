@@ -88,5 +88,10 @@ export const SEO_CONFIG = {
         title: "Practical Business Guides | Entrepreneur BD",
         description: "Step-by-step guides and frameworks for every stage of your business journey.",
         keywords: ["business guides", "how-to", "tutorials"],
+    },
+    terms: {
+        title: "Terms of Service | Entrepreneur BD",
+        description: "Read the terms and conditions governing your use of the entrepreneurs.bd platform.",
+        keywords: ["terms of service", "terms and conditions", "user agreement", "legal"],
     }
 };

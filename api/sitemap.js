@@ -58,7 +58,7 @@ async function fetchAllFirestoreDocs(collection) {
            const fields = item.document.fields;
            if (fields && fields.slug && fields.slug.stringValue) {
               const status = fields.status && fields.status.stringValue;
-              if (status !== 'draft') {
+              if (status === 'published') {
                  let modDate = null;
                  if (fields.updated_at && fields.updated_at.timestampValue) modDate = fields.updated_at.timestampValue;
                  else if (fields.created_at && fields.created_at.timestampValue) modDate = fields.created_at.timestampValue;
@@ -82,10 +82,17 @@ async function fetchAllFirestoreDocs(collection) {
 module.exports = async (req, res) => {
   try {
     let urlEntries = [];
+    const seenUrls = new Set();
+
+    const addEntry = (fullUrl, changefreq, priority, lastmod) => {
+      if (seenUrls.has(fullUrl)) return;
+      seenUrls.add(fullUrl);
+      urlEntries.push(createUrlEntry(fullUrl, changefreq, priority, lastmod));
+    };
 
     // Add static routes
     for (const route of staticRoutes) {
-       urlEntries.push(createUrlEntry(`${SITE_URL}${route.url}`, route.changefreq, route.priority));
+       addEntry(`${SITE_URL}${route.url}`, route.changefreq, route.priority);
     }
 
     // Attempt to fetch dynamic routes if API key is present
@@ -100,7 +107,7 @@ module.exports = async (req, res) => {
       for (const col of collections) {
          const items = await fetchAllFirestoreDocs(col.name);
          for (const item of items) {
-            urlEntries.push(createUrlEntry(`${SITE_URL}${col.prefix}/${item.slug}`, col.changefreq, col.priority, item.lastmod));
+            addEntry(`${SITE_URL}${col.prefix}/${item.slug}`, col.changefreq, col.priority, item.lastmod);
          }
       }
     }
