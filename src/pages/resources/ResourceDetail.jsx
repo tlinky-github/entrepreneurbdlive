@@ -79,7 +79,7 @@ const ResourceDetail = () => {
   if (!resource) return <NotFound />;
 
   return (
-    <div className="bg-stone-50 min-h-screen pb-20">
+    <div className="bg-stone-50 min-h-screen pb-20" data-content-id={resource.id} data-content-type="resource">
       <SEO 
         title={resource.seo_title || resource.title}
         description={resource.seo_description || resource.excerpt}

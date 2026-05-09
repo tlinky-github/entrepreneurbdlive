@@ -321,7 +321,7 @@ const BlogDetail = () => {
   }
 
   return (
-    <div className="bg-stone-50 min-h-screen" data-testid="blog-detail-page">
+    <div className="bg-stone-50 min-h-screen" data-testid="blog-detail-page" data-content-id={post.id} data-content-type="post">
       {post && (
         <CustomCodeInjector
           pageCss={post.custom_css}

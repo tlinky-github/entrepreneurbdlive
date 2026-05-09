@@ -336,7 +336,7 @@ const DynamicPage = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-16">
+    <div className="max-w-4xl mx-auto px-4 py-16" data-content-id={page.id} data-content-type="page">
       <SEO 
         title={page.seoTitle || page.title}
         description={page.metaDescription || page.content_html?.replace(/<[^>]+>/g, '').substring(0, 160)}

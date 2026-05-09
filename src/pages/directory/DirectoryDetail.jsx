@@ -90,7 +90,7 @@ const DirectoryDetail = () => {
   }
 
   return (
-    <div className="bg-stone-50 min-h-screen pb-12" data-testid="directory-detail-page">
+    <div className="bg-stone-50 min-h-screen pb-12" data-testid="directory-detail-page" data-content-id={listing.id} data-content-type="directory">
       {listing && (
         <CustomCodeInjector
           pageCss={listing.custom_css}

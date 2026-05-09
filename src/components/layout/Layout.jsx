@@ -1,11 +1,13 @@
 import Header from './Header';
 import Footer from './Footer';
+import AdminToolbar from './AdminToolbar';
 import { Toaster } from '../ui/sonner';
 import CustomCodeInjector from '../common/CustomCodeInjector';
 
 const Layout = ({ children, hideFooter = false }) => {
   return (
     <div className="min-h-screen flex flex-col bg-stone-50">
+      <AdminToolbar />
       <CustomCodeInjector />
       <Header />
       <main className="flex-1">

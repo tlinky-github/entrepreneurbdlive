@@ -111,7 +111,7 @@ const EntrepreneurDetail = () => {
   }
 
   return (
-    <div className="bg-stone-50 min-h-screen" data-testid="entrepreneur-detail-page">
+    <div className="bg-stone-50 min-h-screen" data-testid="entrepreneur-detail-page" data-content-id={profile.id} data-content-type="entrepreneur">
       {profile && (
         <CustomCodeInjector
           pageCss={profile.custom_css}

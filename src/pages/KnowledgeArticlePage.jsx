@@ -109,7 +109,7 @@ const KnowledgeArticlePage = () => {
       </div>
 
       {/* Article Header */}
-      <section className="py-12 lg:py-16 bg-stone-50">
+      <section className="py-12 lg:py-16 bg-stone-50" data-content-id={article.id} data-content-type="knowledge">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl mx-auto text-center">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-stone-200 mb-6 shadow-sm">
