@@ -1,0 +1,103 @@
+---
+// Blog List — fetches published posts from Firestore at request time (SSR)
+// This replaces: BlogList.jsx with server-side rendering
+import PublicLayout from '../../layouts/PublicLayout.astro';
+import { getRecentPosts } from '../../lib/api';
+
+let posts = [];
+let error = null;
+
+try {
+  posts = await getRecentPosts(20);
+} catch (e) {
+  console.error('[Blog List] Firestore fetch failed:', e.message);
+  error = e.message;
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return '';
+  try {
+    return new Date(dateStr).toLocaleDateString('en-US', {
+      year: 'numeric', month: 'long', day: 'numeric'
+    });
+  } catch { return ''; }
+}
+
+function getExcerpt(post) {
+  if (post.excerpt) return post.excerpt;
+  if (post.content_html) return post.content_html.replace(/<[^>]*>/g, '').substring(0, 160) + '...';
+  return '';
+}
+---
+
+<PublicLayout
+  title="Insights & Stories | Entrepreneur BD Blog"
+  description="Read the latest business trends, startup stories, and expert guides from Bangladesh's entrepreneurial community."
+>
+  <!-- Hero Section -->
+  <section class="py-20 lg:py-24 bg-stone-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="max-w-3xl mx-auto text-center">
+        <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-stone-200 mb-6 shadow-sm">
+          <svg class="w-4 h-4 text-emerald-900" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9.5a2 2 0 00-2-2h-2"/></svg>
+          <span class="text-sm font-medium text-emerald-900">Insights & Stories</span>
+        </div>
+        <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold text-stone-900 mb-6">
+          Blog
+        </h1>
+        <p class="text-lg text-stone-600 max-w-2xl mx-auto">
+          The latest business trends, startup stories, and expert guides from Bangladesh's entrepreneurial community.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Posts Grid -->
+  <section class="py-16 lg:py-20 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {error ? (
+        <div class="text-center py-12">
+          <p class="text-stone-500">Unable to load posts at this time. Please try again later.</p>
+        </div>
+      ) : posts.length === 0 ? (
+        <div class="text-center py-12">
+          <p class="text-stone-500">No published posts yet. Check back soon!</p>
+        </div>
+      ) : (
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {posts.map((post) => (
+            <a href={`/blog/${post.slug}`} class="group block bg-white rounded-xl border border-stone-200 overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+              {post.featured_image && (
+                <div class="aspect-video overflow-hidden">
+                  <img
+                    src={post.featured_image}
+                    alt={post.title || 'Blog post'}
+                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    loading="lazy"
+                  />
+                </div>
+              )}
+              <div class="p-6">
+                {post.category && (
+                  <span class="inline-block px-3 py-1 text-xs font-semibold text-emerald-900 bg-emerald-50 rounded-full mb-3">
+                    {post.category}
+                  </span>
+                )}
+                <h2 class="text-lg font-bold text-stone-900 mb-2 group-hover:text-emerald-900 transition-colors line-clamp-2">
+                  {post.title}
+                </h2>
+                <p class="text-sm text-stone-600 line-clamp-3 mb-4">
+                  {getExcerpt(post)}
+                </p>
+                <div class="flex items-center justify-between text-xs text-stone-500">
+                  {post.author_name && <span>{post.author_name}</span>}
+                  {post.created_at && <time>{formatDate(post.created_at)}</time>}
+                </div>
+              </div>
+            </a>
+          ))}
+        </div>
+      )}
+    </div>
+  </section>
+</PublicLayout>
