@@ -51,10 +51,36 @@ import {
   CommandGroup,
   CommandItem,
 } from '../../components/ui/command';
-import { Pencil, Globe, Smartphone, Monitor, Plus, X, Check, ChevronsUpDown } from 'lucide-react';
+import { Pencil, Globe, Smartphone, Monitor, Plus, X, Check, ChevronsUpDown, ExternalLink, Edit3, Link2Off } from 'lucide-react';
 import FaqExtension from '../../components/editor/FaqExtension';
 import { OverviewBlock, QuickAnswer } from '../../components/editor/OverviewExtension';
+import { mergeAttributes } from '@tiptap/core';
 import './ContentEditorPanel.css';
+
+const SafeLink = Link.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      href: { 
+        default: null,
+        parseHTML: element => element.getAttribute('data-actual-href') || element.getAttribute('href'),
+      },
+    }
+  },
+  parseHTML() {
+    return [
+      { tag: 'a[data-actual-href]' },
+      { tag: 'a[href]:not([href^="javascript:"])' },
+    ]
+  },
+  addProseMirrorPlugins() {
+    return []; // Nuclear option: Kill Tiptap's internal click handler
+  },
+  renderHTML({ HTMLAttributes }) {
+    const { href, ...rest } = HTMLAttributes;
+    return ['a', mergeAttributes(this.options.HTMLAttributes, rest, { 'data-actual-href': href, 'class': 'cursor-pointer' }), 0];
+  }
+});
 
 // Senior Engineer Fix: Advanced Multi-Structural Smart Scanner
 // Detects FAQs, Quick Answers, and Key Takeaways for premium styling
@@ -356,7 +382,7 @@ const ContentEditorPanel = () => {
     StarterKit.configure({
       history: true,
     }),
-    Link.configure({
+    SafeLink.configure({
       openOnClick: false,
       HTMLAttributes: {
         class: 'text-emerald-600 underline hover:text-emerald-700 transition-colors',
@@ -430,6 +456,22 @@ const ContentEditorPanel = () => {
       attributes: {
         class: 'tiptap-content focus:outline-none min-height: 400px;',
       },
+      handleClick: (view, pos, event) => {
+        if (event.target.closest('a')) {
+          event.preventDefault();
+          const attrs = editor.getAttributes('link');
+          if (attrs && (attrs.href || attrs['data-actual-href'])) {
+            setLinkSource('editor');
+            setActiveLinkData({
+              href: attrs.href || attrs['data-actual-href'] || '',
+              target: attrs.target || '',
+              rel: attrs.rel || ''
+            });
+            setLinkDialogOpen(true);
+          }
+        }
+        return false;
+      },
       transformPastedHTML: (html) => {
         return upgradeLegacyFaqs(html);
       },
@@ -450,6 +492,22 @@ const ContentEditorPanel = () => {
     editorProps: {
       attributes: {
         class: 'tiptap-content focus:outline-none min-height: 200px;',
+      },
+      handleClick: (view, pos, event) => {
+        if (event.target.closest('a')) {
+          event.preventDefault();
+          const attrs = lifeAtCompanyEditor.getAttributes('link');
+          if (attrs && (attrs.href || attrs['data-actual-href'])) {
+            setLinkSource('editor'); // You can differentiate if needed, but 'editor' works for unsetLink
+            setActiveLinkData({
+              href: attrs.href || attrs['data-actual-href'] || '',
+              target: attrs.target || '',
+              rel: attrs.rel || ''
+            });
+            setLinkDialogOpen(true);
+          }
+        }
+        return false;
       },
       transformPastedHTML: (html) => {
         // Senior Engineer Fix: Bulletproof DOM-based cleaning for Google Docs/External junk
@@ -871,6 +929,9 @@ const ContentEditorPanel = () => {
     setSaving(true);
     try {
       let contentHtml = editor?.getHTML() || '';
+      
+      // Senior Engineer Fix: Restore sterilized SafeLinks back to normal hrefs for the database
+      contentHtml = contentHtml.replace(/data-actual-href="/g, 'href="');
 
       if (!contentHtml || contentHtml === '<p></p>') {
         toast.warning('Please add some content before saving');
@@ -2444,6 +2505,12 @@ const ContentEditorPanel = () => {
           if (!open) setLinkSource('editor');
         }}
         initialData={activeLinkData}
+        onUnlink={() => {
+          if (editor) {
+            editor.chain().focus().unsetLink().run();
+            toast.success('Link removed');
+          }
+        }}
         onApply={(data) => {
           if (linkSource === 'website' || linkSource === 'companyPageUrl') {
             if (linkSource === 'website') setWebsite(data.href || '');

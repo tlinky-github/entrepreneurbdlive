@@ -1,22 +1,49 @@
-import { Node, mergeAttributes } from '@tiptap/core';
+import { Node, mergeAttributes, Extension } from '@tiptap/core';
 import { ReactNodeViewRenderer, NodeViewWrapper } from '@tiptap/react';
 import React, { useEffect } from 'react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
-import { Plus, X, HelpCircle, ChevronDown, ChevronUp, Link as LinkIcon, Bold, Italic } from 'lucide-react';
-import { useEditor, EditorContent } from '@tiptap/react';
+import { Plus, X, HelpCircle, ChevronDown, ChevronUp, Link as LinkIcon, Link2Off, ExternalLink, Edit3, Bold, Italic } from 'lucide-react';
+import { useEditor, EditorContent, TiptapBubbleMenu } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 import LinkDialog from '../admin/LinkDialog';
 import { sanitizeHtml } from '../../lib/utils';
 
+const SafeLink = Link.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      href: { 
+        default: null,
+        parseHTML: element => element.getAttribute('data-actual-href') || element.getAttribute('href'),
+      },
+    }
+  },
+  parseHTML() {
+    return [
+      { tag: 'a[data-actual-href]' },
+      { tag: 'a[href]:not([href^="javascript:"])' },
+    ]
+  },
+  addProseMirrorPlugins() {
+    return [];
+  },
+  renderHTML({ HTMLAttributes }) {
+    const { href, ...rest } = HTMLAttributes;
+    return ['a', mergeAttributes(this.options.HTMLAttributes, rest, { 'data-actual-href': href, 'class': 'cursor-pointer' }), 0];
+  }
+});
+
 const FaqAnswerEditor = ({ value, onChange }) => {
   const [linkDialogOpen, setLinkDialogOpen] = React.useState(false);
+  const menuKey = React.useMemo(() => `faq-link-menu-${Math.random().toString(36).substr(2, 9)}`, []);
+  const wrapperRef = React.useRef(null);
   
   const editor = useEditor({
     extensions: [
       StarterKit.configure({ heading: false }), 
-      Link.configure({ 
+      SafeLink.configure({ 
         openOnClick: false, 
         HTMLAttributes: { 
           class: 'text-emerald-600 underline hover:text-emerald-700 transition-colors',
@@ -29,11 +56,19 @@ const FaqAnswerEditor = ({ value, onChange }) => {
     editable: true,
     onUpdate: ({ editor }) => {
       // Sanitize: move leading/trailing whitespace (incl. &nbsp;) out of <a> tags
-      onChange(sanitizeHtml(editor.getHTML()));
+      let html = editor.getHTML();
+      html = html.replace(/data-actual-href="/g, 'href="');
+      onChange(sanitizeHtml(html));
     },
     editorProps: {
       attributes: {
         class: 'w-full min-h-[40px] px-3 py-2 text-sm focus:outline-none bg-stone-50/10 faq-answer-editor'
+      },
+      handleClick: (view, pos, event) => {
+        if (event.target.closest('a')) {
+          event.preventDefault();
+        }
+        return false;
       }
     }
   });
@@ -80,13 +115,29 @@ const FaqAnswerEditor = ({ value, onChange }) => {
   };
 
   return (
-    <div className="flex flex-col border border-stone-200 rounded-md bg-white overflow-hidden focus-within:ring-1 focus-within:ring-emerald-500">
+    <div 
+      className="flex flex-col border border-stone-200 rounded-md bg-white overflow-hidden focus-within:ring-1 focus-within:ring-emerald-500"
+    >
       <div className="flex px-2 py-1 bg-stone-50 border-b border-stone-200 gap-1 items-center">
         <button type="button" onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().toggleBold().run(); }} className={`p-1.5 text-stone-500 rounded hover:bg-stone-200 ${editor.isActive('bold') ? 'bg-stone-200 text-stone-900' : ''}`}><Bold size={14}/></button>
         <button type="button" onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().toggleItalic().run(); }} className={`p-1.5 text-stone-500 rounded hover:bg-stone-200 ${editor.isActive('italic') ? 'bg-stone-200 text-stone-900' : ''}`}><Italic size={14}/></button>
         <div className="w-px h-4 bg-stone-300 mx-1"></div>
         <button type="button" onMouseDown={(e) => { e.preventDefault(); setLinkDialogOpen(true); }} className={`p-1.5 text-stone-500 rounded hover:bg-stone-200 flex items-center gap-1 ${editor.isActive('link') ? 'bg-emerald-100 text-emerald-700' : ''}`}><LinkIcon size={14}/><span className="text-[10px] font-medium leading-none">Link</span></button>
+        {editor.isActive('link') && (
+          <button type="button" onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().unsetLink().run(); }} className="p-1.5 text-red-400 rounded hover:bg-red-50 hover:text-red-600 flex items-center gap-1" title="Unlink"><Link2Off size={14}/></button>
+        )}
       </div>
+      
+      {/* Link Dialog */}
+      <LinkDialog 
+        open={linkDialogOpen}
+        onOpenChange={setLinkDialogOpen}
+        initialData={editor.getAttributes('link')}
+        onUnlink={() => {
+          editor.chain().focus().extendMarkRange('link').unsetLink().run();
+        }}
+        onApply={handleApplyLink}
+      />
       <div 
         contentEditable={true} 
         onMouseDownCapture={e => e.stopPropagation()} 

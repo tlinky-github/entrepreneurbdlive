@@ -3,7 +3,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import * as Checkbox from '@radix-ui/react-checkbox';
 import { X, ExternalLink, Shield, DollarSign, Check } from 'lucide-react';
 
-const LinkDialog = ({ open, onOpenChange, initialData, onApply }) => {
+const LinkDialog = ({ open, onOpenChange, initialData, onApply, onUnlink }) => {
   const [url, setUrl] = useState('');
   const [targetBlank, setTargetBlank] = useState(false);
   const [noFollow, setNoFollow] = useState(false);
@@ -121,6 +121,17 @@ const LinkDialog = ({ open, onOpenChange, initialData, onApply }) => {
           </div>
 
           <div className="mt-8 flex justify-end space-x-3">
+            {initialData?.href && onUnlink && (
+              <button
+                onClick={() => {
+                  onUnlink();
+                  onOpenChange(false);
+                }}
+                className="px-4 py-2 mr-auto flex items-center gap-1 text-sm font-semibold text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
+              >
+                Unlink
+              </button>
+            )}
             <Dialog.Close asChild>
               <button className="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-800 transition-colors">
                 Cancel

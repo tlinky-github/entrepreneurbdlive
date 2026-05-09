@@ -1,4 +1,6 @@
-import { useEditor, EditorContent } from '@tiptap/react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useEditor, EditorContent, TiptapBubbleMenu } from '@tiptap/react';
+import { mergeAttributes } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
@@ -13,6 +15,7 @@ import TextAlign from '@tiptap/extension-text-align';
 import Highlight from '@tiptap/extension-highlight';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
+import LinkDialog from '../admin/LinkDialog';
 import {
   Bold,
   Italic,
@@ -27,6 +30,9 @@ import {
   Code,
   ImageIcon,
   Link as LinkIcon,
+  Link2Off,
+  ExternalLink,
+  Edit3,
   Youtube as YoutubeIcon,
   Table as TableIcon,
   AlignLeft,
@@ -42,7 +48,6 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import aiAPI from '../../lib/aiApi';
-import { useState, useCallback, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -65,11 +70,37 @@ const MenuButton = ({ onClick, isActive, disabled, children, title }) => (
   </Button>
 );
 
+const SafeLink = Link.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      href: { 
+        default: null,
+        parseHTML: element => element.getAttribute('data-actual-href') || element.getAttribute('href'),
+      },
+    }
+  },
+  parseHTML() {
+    return [
+      { tag: 'a[data-actual-href]' },
+      { tag: 'a[href]:not([href^="javascript:"])' },
+    ]
+  },
+  addProseMirrorPlugins() {
+    // NUCLEAR OPTION: Delete all of Tiptap's internal Link plugins.
+    // This absolutely guarantees Tiptap cannot call window.open on click.
+    return [];
+  },
+  renderHTML({ HTMLAttributes }) {
+    const { href, ...rest } = HTMLAttributes;
+    return ['a', mergeAttributes(this.options.HTMLAttributes, rest, { 'data-actual-href': href, 'class': 'cursor-pointer' }), 0];
+  }
+});
+
 const TipTapEditor = ({ content, onChange, placeholder = 'Start writing your content...' }) => {
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
   const [youtubeDialogOpen, setYoutubeDialogOpen] = useState(false);
-  const [linkUrl, setLinkUrl] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [youtubeUrl, setYoutubeUrl] = useState('');
   
@@ -116,7 +147,7 @@ const TipTapEditor = ({ content, onChange, placeholder = 'Start writing your con
         },
       }),
       Underline,
-      Link.configure({
+      SafeLink.configure({
         openOnClick: false,
         HTMLAttributes: {
           class: 'text-emerald-900 underline',
@@ -150,28 +181,54 @@ const TipTapEditor = ({ content, onChange, placeholder = 'Start writing your con
     content: content || '',
     onUpdate: ({ editor }) => {
       if (onChange) {
+        let html = editor.getHTML();
+        // Restore real hrefs for the saved output
+        html = html.replace(/data-actual-href="/g, 'href="');
         onChange({
           json: editor.getJSON(),
-          html: editor.getHTML(),
+          html: html,
         });
       }
     },
-    immediatelyRender: false,
+    editorProps: {
+      handleClick: (view, pos, event) => {
+        if (event.target.closest('a')) {
+          event.preventDefault();
+          const attrs = editor.getAttributes('link');
+          if (attrs && (attrs.href || attrs['data-actual-href'])) {
+            setLinkDialogOpen(true);
+          }
+        }
+        return false; 
+      }
+    },
+    immediatelyRender: false
   });
 
   useEffect(() => {
-    if (editor && content && typeof content === 'object' && content.type === 'doc') {
-      editor.commands.setContent(content);
+    if (editor && content) {
+      const contentToSet = typeof content === 'object' ? content.html || '' : content;
+      if (contentToSet && typeof contentToSet === 'string') {
+        const safeContent = contentToSet.replace(/href="/g, 'data-actual-href="');
+        editor.commands.setContent(safeContent);
+      } else if (content && typeof content === 'object' && content.type === 'doc') {
+        editor.commands.setContent(content);
+      }
     }
-  }, [editor, content]);
+  }, [content, editor]);
 
-  const addLink = useCallback(() => {
-    if (linkUrl) {
-      editor.chain().focus().extendMarkRange('link').setLink({ href: linkUrl }).run();
+  const handleApplyLink = useCallback((data) => {
+    if (data.href) {
+      editor.chain().focus().extendMarkRange('link').setLink({ 
+        href: data.href,
+        target: data.target,
+        rel: data.rel
+      }).run();
+    } else {
+      editor.chain().focus().extendMarkRange('link').unsetLink().run();
     }
-    setLinkUrl('');
     setLinkDialogOpen(false);
-  }, [editor, linkUrl]);
+  }, [editor]);
 
   const addImage = useCallback(() => {
     if (imageUrl) {
@@ -198,7 +255,10 @@ const TipTapEditor = ({ content, onChange, placeholder = 'Start writing your con
   }
 
   return (
-    <div className="tiptap-editor border border-stone-200 rounded-lg overflow-hidden bg-white" data-testid="tiptap-editor">
+    <div 
+      className="tiptap-editor border border-stone-200 rounded-lg overflow-hidden bg-white" 
+      data-testid="tiptap-editor"
+    >
       {/* Toolbar */}
       <div className="border-b border-stone-200 bg-stone-50 p-2 flex flex-wrap gap-1">
         {/* History */}
@@ -344,7 +404,13 @@ const TipTapEditor = ({ content, onChange, placeholder = 'Start writing your con
 
         {/* Insert elements */}
         <div className="flex items-center">
-          <MenuButton onClick={() => setLinkDialogOpen(true)} isActive={editor.isActive('link')} title="Add Link">
+          <MenuButton 
+            onClick={() => {
+              setLinkDialogOpen(true);
+            }} 
+            isActive={editor.isActive('link')} 
+            title="Add/Edit Link"
+          >
             <LinkIcon className="w-4 h-4" />
           </MenuButton>
           <MenuButton onClick={() => setImageDialogOpen(true)} title="Add Image">
@@ -386,27 +452,67 @@ const TipTapEditor = ({ content, onChange, placeholder = 'Start writing your con
         </div>
       </div>
 
+      {/* Link Bubble Menu (WordPress style) */}
+      {editor && (
+        <TiptapBubbleMenu 
+          editor={editor} 
+          pluginKey="main-editor-link-menu"
+          shouldShow={({ editor }) => editor.isActive('link')}
+          tippyOptions={{ duration: 100 }}
+        >
+          <div className="bg-white border border-stone-200 rounded-lg shadow-xl p-1 flex items-center gap-1">
+            <span className="text-stone-500 text-[10px] uppercase font-bold px-2 border-r border-stone-100">Link</span>
+            <a 
+              href={editor.getAttributes('link').href || editor.getAttributes('link')['data-actual-href']} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-emerald-700 hover:underline px-2 text-xs font-medium max-w-[150px] truncate"
+              title={editor.getAttributes('link').href || editor.getAttributes('link')['data-actual-href']}
+            >
+              {editor.getAttributes('link').href || editor.getAttributes('link')['data-actual-href']}
+            </a>
+            
+            <div className="h-4 w-px bg-stone-100 mx-1" />
+            
+            <MenuButton 
+              onClick={() => window.open(editor.getAttributes('link').href || editor.getAttributes('link')['data-actual-href'], '_blank')} 
+              title="Open in new tab"
+            >
+              <ExternalLink size={14} className="text-emerald-600" />
+            </MenuButton>
+
+            <MenuButton 
+              onClick={() => {
+                setLinkDialogOpen(true);
+              }} 
+              title="Edit Link"
+            >
+              <Edit3 size={14} className="text-emerald-600" />
+            </MenuButton>
+
+            <MenuButton 
+              onClick={() => editor.chain().focus().unsetLink().run()} 
+              title="Remove Link"
+            >
+              <Link2Off size={14} className="text-red-500" />
+            </MenuButton>
+          </div>
+        </TiptapBubbleMenu>
+      )}
+
       {/* Editor Content */}
       <EditorContent editor={editor} className="min-h-96" />
 
       {/* Link Dialog */}
-      <Dialog open={linkDialogOpen} onOpenChange={setLinkDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add Link</DialogTitle>
-          </DialogHeader>
-          <Input
-            placeholder="Enter URL"
-            value={linkUrl}
-            onChange={(e) => setLinkUrl(e.target.value)}
-            data-testid="link-url-input"
-          />
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setLinkDialogOpen(false)}>Cancel</Button>
-            <Button onClick={addLink} className="bg-emerald-900 hover:bg-emerald-800">Add Link</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <LinkDialog 
+        open={linkDialogOpen}
+        onOpenChange={setLinkDialogOpen}
+        initialData={editor.getAttributes('link')}
+        onUnlink={() => {
+          editor.chain().focus().extendMarkRange('link').unsetLink().run();
+        }}
+        onApply={handleApplyLink}
+      />
 
       {/* Image Dialog */}
       <Dialog open={imageDialogOpen} onOpenChange={setImageDialogOpen}>
