@@ -291,7 +291,7 @@ module.exports = async (req, res) => {
   const host = req.headers.host || 'entrepreneurs.bd';
   const protocol = req.headers['x-forwarded-proto'] || 'https';
   const SITE_URL_DYN = `${protocol}://${host}`;
-  const isBot = /bot|google|crawler|spider|facebook|whatsapp|linkedin|twitter|slack|discord|telegram|apple|bing|yandex|baiduspider|metainspector|structured-data|rich-results/i.test(userAgent);
+  const isBot = /googlebot|bingbot|yandex|baiduspider|facebookexternalhit|facebot|whatsapp|linkedinbot|twitterbot|slackbot|discordbot|telegrambot|applebot|crawl|spider|metainspector|structured-data|rich-results|semrush|ahrefs|mj12bot|dotbot|petalbot/i.test(userAgent);
 
   // --- 1. IMAGE RENDERING ---
   if (req.query.render === 'image') {
