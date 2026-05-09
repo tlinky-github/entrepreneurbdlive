@@ -87,7 +87,14 @@ const FaqAnswerEditor = ({ value, onChange }) => {
         <div className="w-px h-4 bg-stone-300 mx-1"></div>
         <button type="button" onMouseDown={(e) => { e.preventDefault(); setLinkDialogOpen(true); }} className={`p-1.5 text-stone-500 rounded hover:bg-stone-200 flex items-center gap-1 ${editor.isActive('link') ? 'bg-emerald-100 text-emerald-700' : ''}`}><LinkIcon size={14}/><span className="text-[10px] font-medium leading-none">Link</span></button>
       </div>
-      <EditorContent editor={editor} onKeyDownCapture={e => e.stopPropagation()} onMouseDownCapture={e => e.stopPropagation()} />
+      <div 
+        contentEditable={true} 
+        onMouseDownCapture={e => e.stopPropagation()} 
+        onDragStart={e => e.stopPropagation()}
+        onClick={e => e.stopPropagation()}
+      >
+        <EditorContent editor={editor} onKeyDownCapture={e => e.stopPropagation()} />
+      </div>
       
       <LinkDialog 
         open={linkDialogOpen} 
@@ -129,6 +136,9 @@ const QuestionInput = ({ value, onChange }) => {
       onKeyDownCapture={(e) => e.stopPropagation()}
       onMouseDownCapture={(e) => e.stopPropagation()}
       onFocusCapture={(e) => e.stopPropagation()}
+      onDragStart={(e) => e.stopPropagation()}
+      onClick={(e) => e.stopPropagation()}
+      contentEditable={true}
       autoComplete="off"
       placeholder="Enter question..."
       className="border-stone-100 focus:border-emerald-500 h-9 text-sm"
@@ -291,7 +301,7 @@ export default Node.create({
   name: 'faqSection',
   group: 'block',
   atom: true,
-  draggable: true,
+  draggable: false,
 
   addAttributes() {
     return {
