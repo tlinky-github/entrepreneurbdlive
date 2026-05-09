@@ -99,6 +99,43 @@ const FaqAnswerEditor = ({ value, onChange }) => {
   );
 };
 
+const QuestionInput = ({ value, onChange }) => {
+  const [localValue, setLocalValue] = React.useState(value);
+
+  useEffect(() => {
+    setLocalValue(value);
+  }, [value]);
+
+  const handleBlur = () => {
+    if (localValue !== value) {
+      onChange(localValue);
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      e.target.blur();
+    }
+    e.stopPropagation();
+  };
+
+  return (
+    <Input 
+      value={localValue}
+      onChange={(e) => setLocalValue(e.target.value)}
+      onBlur={handleBlur}
+      onKeyDown={handleKeyDown}
+      onKeyDownCapture={(e) => e.stopPropagation()}
+      onMouseDownCapture={(e) => e.stopPropagation()}
+      onFocusCapture={(e) => e.stopPropagation()}
+      autoComplete="off"
+      placeholder="Enter question..."
+      className="border-stone-100 focus:border-emerald-500 h-9 text-sm"
+    />
+  );
+};
+
 const FaqComponent = ({ node, updateAttributes, deleteNode, editor }) => {
   const faqs = node.attrs.faqs || [];
 
@@ -220,13 +257,9 @@ const FaqComponent = ({ node, updateAttributes, deleteNode, editor }) => {
               <div className="space-y-3">
                 <div className="space-y-1">
                   <label className="text-[9px] font-bold text-emerald-600 uppercase">Question {index + 1}</label>
-                  <Input 
+                  <QuestionInput 
                     value={faq.q}
-                    onChange={(e) => updateFaq(index, 'q', e.target.value)}
-                    onKeyDownCapture={(e) => e.stopPropagation()}
-                    onMouseDownCapture={(e) => e.stopPropagation()}
-                    placeholder="Enter question..."
-                    className="border-stone-100 focus:border-emerald-500 h-9 text-sm"
+                    onChange={(val) => updateFaq(index, 'q', val)}
                   />
                 </div>
                 <div className="space-y-1">
