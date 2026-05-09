@@ -18,7 +18,7 @@ async function getFont() {
   } catch (e) { return null; }
 }
 
-// --- HTML SHELL ---
+// --- HTML SHELL (for human visitors — includes JS redirect) ---
 const HTML_SHELL = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -46,6 +46,38 @@ const HTML_SHELL = `<!DOCTYPE html>
         <div style="color: #064e3b; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Loading Growth Engine...</div>
     </div>
     <script>window.location.href = "{{REDIRECT_PATH}}";</script>
+</body>
+</html>`;
+
+// --- HTML SHELL FOR BOTS (NO redirect — Googlebot stays here and indexes these meta tags) ---
+const BOT_HTML_SHELL = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" href="/logo192.png" />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#064e3b" />
+    <meta name="robots" content="index, follow" />
+    {{META_TAGS}}
+</head>
+<body>
+    <header style="padding:20px;text-align:center;">
+        <a href="/">
+            <img src="/logo.png" alt="Entrepreneurs BD" width="120" height="auto" />
+        </a>
+    </header>
+    <main style="max-width:800px;margin:0 auto;padding:20px;font-family:system-ui,sans-serif;">
+        <h1>{{PAGE_TITLE}}</h1>
+        <p>{{PAGE_DESCRIPTION}}</p>
+    </main>
+    <footer style="text-align:center;padding:20px;font-size:12px;color:#78716c;">
+        <p>&copy; ${new Date().getFullYear()} entrepreneurs.bd. All rights reserved.</p>
+        <nav>
+            <a href="/blog">Blog</a> | <a href="/entrepreneurs">Entrepreneurs</a> | <a href="/directory">Directory</a> | <a href="/about">About</a> | <a href="/contact">Contact</a>
+        </nav>
+    </footer>
 </body>
 </html>`;
 
@@ -245,6 +277,11 @@ const STATIC_PAGES = {
     title: 'Disclaimer | Entrepreneurs BD',
     description: 'Important legal information and disclaimers regarding our content and services.',
     category: 'LEGAL'
+  },
+  'terms': {
+    title: 'Terms of Service | Entrepreneurs BD',
+    description: 'Read the terms and conditions governing your use of the entrepreneurs.bd platform.',
+    category: 'LEGAL'
   }
 };
 
@@ -377,7 +414,20 @@ module.exports = async (req, res) => {
     res.setHeader('Content-Type', 'text/html');
     res.setHeader('Cache-Control', 'public, s-maxage=86400, stale-while-revalidate=43200');
     res.setHeader('X-SEO-Engine', 'PANGO-v1');
-    return res.status(200).send(HTML_SHELL.replace('{{META_TAGS}}', metaTags).replace('{{REDIRECT_PATH}}', escapedRedirectPath));
+
+    if (isBot) {
+      // Bots get a clean static HTML with correct meta tags — NO JavaScript redirect
+      res.setHeader('X-SEO-Mode', 'bot-static');
+      const botHtml = BOT_HTML_SHELL
+        .replace('{{META_TAGS}}', metaTags)
+        .replace('{{PAGE_TITLE}}', safeTitle)
+        .replace('{{PAGE_DESCRIPTION}}', safeDescription);
+      return res.status(200).send(botHtml);
+    } else {
+      // Human visitors get the redirect shell to load the SPA
+      res.setHeader('X-SEO-Mode', 'human-redirect');
+      return res.status(200).send(HTML_SHELL.replace('{{META_TAGS}}', metaTags).replace('{{REDIRECT_PATH}}', escapedRedirectPath));
+    }
 
   } catch (error) {
     console.error('[CRITICAL] SEO failure:', error.message);

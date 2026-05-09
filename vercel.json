@@ -187,6 +187,8 @@
     { "source": "/privacy", "destination": "/api/seo-handler?path=privacy" },
     { "source": "/disclaimer", "has": [{ "type": "query", "key": "no_bot", "value": "1" }], "destination": "/index.html" },
     { "source": "/disclaimer", "destination": "/api/seo-handler?path=disclaimer" },
+    { "source": "/terms", "has": [{ "type": "query", "key": "no_bot", "value": "1" }], "destination": "/index.html" },
+    { "source": "/terms", "destination": "/api/seo-handler?path=terms" },
     {
       "source": "/api/:path*",
       "destination": "/api/:path*"
