@@ -75,7 +75,19 @@ const ResourceDetail = () => {
     }
   };
 
-  if (loading) return <PageLoader message="Loading resource..." />;
+  if (loading) {
+    return (
+      <div className="bg-stone-50 min-h-screen py-8">
+        <SEO 
+          title="Loading Resource... | Entrepreneurs BD" 
+          description="Please wait while we load this resource."
+        />
+        <div className="max-w-4xl mx-auto px-4">
+          <PageLoader message="Loading resource..." />
+        </div>
+      </div>
+    );
+  }
   if (!resource) return <NotFound />;
 
   return (

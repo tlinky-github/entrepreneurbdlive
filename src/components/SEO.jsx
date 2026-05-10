@@ -36,7 +36,8 @@ export const SEO = ({
 
     const siteUrl = typeof window !== 'undefined' ? window.location.origin : 'https://entrepreneurs.bd';
     const fullImageUrl = metaTags.image?.startsWith('http') ? metaTags.image : `${siteUrl}${metaTags.image}`;
-    const currentUrl = typeof window !== 'undefined' ? window.location.href : '';
+    // Senior Engineer Fix: Never include query params (like UTM tags) in canonical URLs to prevent SEO duplication penalties
+    const currentUrl = typeof window !== 'undefined' ? `${window.location.origin}${window.location.pathname}` : '';
 
     // --- ELITE SCHEMA 1: Organization (E-E-A-T) ---
     const orgSchema = {

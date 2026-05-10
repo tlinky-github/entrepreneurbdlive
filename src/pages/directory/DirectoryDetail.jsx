@@ -68,6 +68,10 @@ const DirectoryDetail = () => {
   if (loading) {
     return (
       <div className="bg-stone-50 min-h-screen py-8">
+        <SEO 
+          title="Loading Directory... | Entrepreneurs BD" 
+          description="Please wait while we load this business listing."
+        />
         <div className="max-w-4xl mx-auto px-4">
           <Skeleton className="h-8 w-32 mb-8" />
           <div className="bg-white rounded-2xl p-8">
