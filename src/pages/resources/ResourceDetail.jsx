@@ -179,7 +179,7 @@ const ResourceDetail = () => {
                                         onClick={() => setOpenFaqIndex(openFaqIndex === `inline-${index}-${fIndex}` ? null : `inline-${index}-${fIndex}`)}
                                         className="w-full flex items-center justify-between p-4 text-left hover:bg-stone-50"
                                       >
-                                        <strong className="font-bold text-stone-900 pr-4">{faq.question || faq.q}</strong>
+                                        <h3 className="font-bold text-stone-900 pr-4 text-base">{faq.question || faq.q}</h3>
                                         <div className="text-emerald-700">
                                           {openFaqIndex === `inline-${index}-${fIndex}` ? <Minus className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
                                         </div>

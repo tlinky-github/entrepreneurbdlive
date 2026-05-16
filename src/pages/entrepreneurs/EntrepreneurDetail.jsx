@@ -346,7 +346,7 @@ const EntrepreneurDetail = () => {
                                       key={fIndex}
                                       className="mb-6 last:mb-0"
                                     >
-                                      <p className="font-bold text-stone-900 !m-0 text-lg">{faq.question || faq.q}</p>
+                                      <h3 className="font-bold text-stone-900 !m-0 text-lg">{faq.question || faq.q}</h3>
                                       <div 
                                         className="text-stone-800 leading-[1.8] !mt-1 !mb-0 prose-faq"
                                         dangerouslySetInnerHTML={{ __html: sanitizeHtml(
@@ -388,7 +388,7 @@ const EntrepreneurDetail = () => {
                         onClick={() => setOpenFaqIndex(openFaqIndex === index ? null : index)}
                         className="w-full flex items-center justify-between p-4 text-left hover:bg-stone-100 transition-colors"
                       >
-                        <span className="font-bold text-stone-900 pr-4">{faq.question || faq.q}</span>
+                        <h3 className="font-bold text-stone-900 pr-4 text-base">{faq.question || faq.q}</h3>
                         {openFaqIndex === index ? (
                           <Minus className="w-5 h-5 text-emerald-700 flex-shrink-0" />
                         ) : (

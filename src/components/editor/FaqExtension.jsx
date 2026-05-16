@@ -3,9 +3,10 @@ import { ReactNodeViewRenderer, NodeViewWrapper } from '@tiptap/react';
 import React, { useEffect } from 'react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
-import { Plus, X, HelpCircle, ChevronDown, ChevronUp, Link as LinkIcon, Link2Off, ExternalLink, Edit3, Bold, Italic } from 'lucide-react';
+import { Plus, X, HelpCircle, ChevronDown, ChevronUp, Link as LinkIcon, Link2Off, ExternalLink, Edit3, Bold, Italic, Underline as UnderlineIcon } from 'lucide-react';
 import { useEditor, EditorContent, TiptapBubbleMenu } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
+import Underline from '@tiptap/extension-underline';
 import Link from '@tiptap/extension-link';
 import LinkDialog from '../admin/LinkDialog';
 import { sanitizeHtml } from '../../lib/utils';
@@ -39,10 +40,12 @@ const FaqAnswerEditor = ({ value, onChange }) => {
   const [linkDialogOpen, setLinkDialogOpen] = React.useState(false);
   const menuKey = React.useMemo(() => `faq-link-menu-${Math.random().toString(36).substr(2, 9)}`, []);
   const wrapperRef = React.useRef(null);
+  const lastEmittedHtml = React.useRef(value);
   
   const editor = useEditor({
     extensions: [
       StarterKit.configure({ heading: false }), 
+      Underline,
       SafeLink.configure({ 
         openOnClick: false, 
         HTMLAttributes: { 
@@ -58,15 +61,30 @@ const FaqAnswerEditor = ({ value, onChange }) => {
       // Sanitize: move leading/trailing whitespace (incl. &nbsp;) out of <a> tags
       let html = editor.getHTML();
       html = html.replace(/data-actual-href="/g, 'href="');
-      onChange(sanitizeHtml(html));
+      const sanitized = sanitizeHtml(html);
+      lastEmittedHtml.current = sanitized;
+      onChange(sanitized);
     },
     editorProps: {
       attributes: {
         class: 'w-full min-h-[40px] px-3 py-2 text-sm focus:outline-none bg-stone-50/10 faq-answer-editor'
       },
       handleClick: (view, pos, event) => {
-        if (event.target.closest('a')) {
+        let target = event.target;
+        if (target.nodeType === 3) target = target.parentNode; // Handle text nodes safely
+        const aTag = target ? target.closest('a') : null;
+        
+        if (aTag) {
           event.preventDefault();
+          event.stopPropagation();
+          
+          const href = aTag.getAttribute('data-actual-href') || aTag.getAttribute('href');
+          if (href) {
+            // Force selection to the clicked position since native focus might be delayed in NodeViews
+            editor.commands.setTextSelection(pos);
+            setLinkDialogOpen(true);
+          }
+          return true;
         }
         return false;
       }
@@ -74,8 +92,10 @@ const FaqAnswerEditor = ({ value, onChange }) => {
   });
 
   useEffect(() => {
-    if (editor && value && editor.getHTML() !== value) {
-      editor.commands.setContent(value);
+    if (editor && value && value !== lastEmittedHtml.current) {
+      const safeValue = value.replace(/href="/g, 'data-actual-href="');
+      editor.commands.setContent(safeValue);
+      lastEmittedHtml.current = value;
     }
   }, [value, editor]);
 
@@ -117,14 +137,17 @@ const FaqAnswerEditor = ({ value, onChange }) => {
   return (
     <div 
       className="flex flex-col border border-stone-200 rounded-md bg-white overflow-hidden focus-within:ring-1 focus-within:ring-emerald-500"
+      onClick={e => e.stopPropagation()}
+      onMouseDown={e => e.stopPropagation()}
     >
       <div className="flex px-2 py-1 bg-stone-50 border-b border-stone-200 gap-1 items-center">
-        <button type="button" onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().toggleBold().run(); }} className={`p-1.5 text-stone-500 rounded hover:bg-stone-200 ${editor.isActive('bold') ? 'bg-stone-200 text-stone-900' : ''}`}><Bold size={14}/></button>
-        <button type="button" onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().toggleItalic().run(); }} className={`p-1.5 text-stone-500 rounded hover:bg-stone-200 ${editor.isActive('italic') ? 'bg-stone-200 text-stone-900' : ''}`}><Italic size={14}/></button>
+        <button type="button" onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); editor.chain().focus().toggleBold().run(); }} className={`p-1.5 text-stone-500 rounded hover:bg-stone-200 ${editor.isActive('bold') ? 'bg-stone-200 text-stone-900' : ''}`} title="Bold"><Bold size={14}/></button>
+        <button type="button" onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); editor.chain().focus().toggleItalic().run(); }} className={`p-1.5 text-stone-500 rounded hover:bg-stone-200 ${editor.isActive('italic') ? 'bg-stone-200 text-stone-900' : ''}`} title="Italic"><Italic size={14}/></button>
+        <button type="button" onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); editor.chain().focus().toggleUnderline().run(); }} className={`p-1.5 text-stone-500 rounded hover:bg-stone-200 ${editor.isActive('underline') ? 'bg-stone-200 text-stone-900' : ''}`} title="Underline"><UnderlineIcon size={14}/></button>
         <div className="w-px h-4 bg-stone-300 mx-1"></div>
-        <button type="button" onMouseDown={(e) => { e.preventDefault(); setLinkDialogOpen(true); }} className={`p-1.5 text-stone-500 rounded hover:bg-stone-200 flex items-center gap-1 ${editor.isActive('link') ? 'bg-emerald-100 text-emerald-700' : ''}`}><LinkIcon size={14}/><span className="text-[10px] font-medium leading-none">Link</span></button>
+        <button type="button" onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); setLinkDialogOpen(true); }} className={`p-1.5 text-stone-500 rounded hover:bg-stone-200 flex items-center gap-1 ${editor.isActive('link') ? 'bg-emerald-100 text-emerald-700' : ''}`} title="Add/Edit Link"><LinkIcon size={14}/><span className="text-[10px] font-medium leading-none">Link</span></button>
         {editor.isActive('link') && (
-          <button type="button" onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().unsetLink().run(); }} className="p-1.5 text-red-400 rounded hover:bg-red-50 hover:text-red-600 flex items-center gap-1" title="Unlink"><Link2Off size={14}/></button>
+          <button type="button" onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); editor.chain().focus().extendMarkRange('link').unsetLink().run(); }} className="p-1.5 text-red-400 rounded hover:bg-red-50 hover:text-red-600 flex items-center gap-1" title="Remove Link"><Link2Off size={14}/></button>
         )}
       </div>
       
@@ -138,21 +161,16 @@ const FaqAnswerEditor = ({ value, onChange }) => {
         }}
         onApply={handleApplyLink}
       />
+
+
+
       <div 
-        contentEditable={true} 
-        onMouseDownCapture={e => e.stopPropagation()} 
-        onDragStart={e => e.stopPropagation()}
         onClick={e => e.stopPropagation()}
+        onMouseDown={e => e.stopPropagation()}
+        onKeyDown={e => e.stopPropagation()}
       >
-        <EditorContent editor={editor} onKeyDownCapture={e => e.stopPropagation()} />
+        <EditorContent editor={editor} />
       </div>
-      
-      <LinkDialog 
-        open={linkDialogOpen} 
-        onOpenChange={setLinkDialogOpen}
-        onApply={handleApplyLink}
-        initialData={editor.getAttributes('link')}
-      />
     </div>
   );
 };
@@ -184,11 +202,6 @@ const QuestionInput = ({ value, onChange }) => {
       onChange={(e) => setLocalValue(e.target.value)}
       onBlur={handleBlur}
       onKeyDown={handleKeyDown}
-      onKeyDownCapture={(e) => e.stopPropagation()}
-      onMouseDownCapture={(e) => e.stopPropagation()}
-      onFocusCapture={(e) => e.stopPropagation()}
-      onDragStart={(e) => e.stopPropagation()}
-      onClick={(e) => e.stopPropagation()}
       contentEditable={true}
       autoComplete="off"
       placeholder="Enter question..."

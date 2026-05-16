@@ -379,6 +379,12 @@
   min-height: 40px !important;
 }
 
+.faq-answer-editor.ProseMirror a {
+  color: #059669 !important; /* emerald-600 */
+  text-decoration: underline !important;
+  cursor: pointer;
+}
+
 .editor-content .ProseMirror p {
   margin: 12px 0;
   line-height: 1.6;
