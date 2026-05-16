@@ -78,6 +78,14 @@ const SafeLink = Link.extend({
         default: null,
         parseHTML: element => element.getAttribute('data-actual-href') || element.getAttribute('href'),
       },
+      target: {
+        default: null,
+        parseHTML: element => element.getAttribute('target'),
+      },
+      rel: {
+        default: null,
+        parseHTML: element => element.getAttribute('rel'),
+      },
     }
   },
   parseHTML() {
@@ -196,6 +204,8 @@ const TipTapEditor = ({ content, onChange, placeholder = 'Start writing your con
           event.preventDefault();
           const attrs = editor.getAttributes('link');
           if (attrs && (attrs.href || attrs['data-actual-href'])) {
+            // Force selection to the link so attributes are correctly picked up
+            editor.commands.setTextSelection(pos);
             setLinkDialogOpen(true);
           }
         }

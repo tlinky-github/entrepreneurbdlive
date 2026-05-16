@@ -65,6 +65,14 @@ const SafeLink = Link.extend({
         default: null,
         parseHTML: element => element.getAttribute('data-actual-href') || element.getAttribute('href'),
       },
+      target: {
+        default: null,
+        parseHTML: element => element.getAttribute('target'),
+      },
+      rel: {
+        default: null,
+        parseHTML: element => element.getAttribute('rel'),
+      },
     }
   },
   parseHTML() {
@@ -461,6 +469,8 @@ const ContentEditorPanel = () => {
           event.preventDefault();
           const attrs = editor.getAttributes('link');
           if (attrs && (attrs.href || attrs['data-actual-href'])) {
+            // Force selection to the link so attributes are correctly picked up
+            editor.commands.setTextSelection(pos);
             setLinkSource('editor');
             setActiveLinkData({
               href: attrs.href || attrs['data-actual-href'] || '',
@@ -1642,7 +1652,7 @@ const ContentEditorPanel = () => {
                         setLinkSource('companyPageUrl');
                         setActiveLinkData({ 
                           href: companyPageUrl, 
-                          target: websiteLinkSettings.target === '_blank', 
+                          target: websiteLinkSettings.target, 
                           rel: websiteLinkSettings.rel 
                         });
                         setLinkDialogOpen(true);
@@ -1680,7 +1690,7 @@ const ContentEditorPanel = () => {
                             setLinkSource('website');
                             setActiveLinkData({ 
                               href: website, 
-                              target: websiteLinkSettings.target === '_blank', 
+                              target: websiteLinkSettings.target, 
                               rel: websiteLinkSettings.rel 
                             });
                             setLinkDialogOpen(true);
@@ -2517,7 +2527,7 @@ const ContentEditorPanel = () => {
             if (linkSource === 'companyPageUrl') setCompanyPageUrl(data.href || '');
             
             setWebsiteLinkSettings({
-              target: data.target || '_blank',
+              target: data.target || '',
               rel: data.rel || ''
             });
             toast.success('Link settings applied');
@@ -2535,15 +2545,16 @@ const ContentEditorPanel = () => {
                   editor.chain()
                     .focus()
                     .setTextSelection({ from: from + leadSpaces, to: to - trailSpaces })
+                    .extendMarkRange('link')
                     .setLink(data)
                     .run();
                   return;
                 }
               }
               
-              editor.chain().focus().setLink(data).run();
+              editor.chain().focus().extendMarkRange('link').setLink(data).run();
             } else {
-              editor.chain().focus().unsetLink().run();
+              editor.chain().focus().extendMarkRange('link').unsetLink().run();
             }
           }
         }}

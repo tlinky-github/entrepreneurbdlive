@@ -35,7 +35,6 @@ const PublicRichEditor = ({ value, onChange, placeholder = 'Write your story her
         openOnClick: false,
         HTMLAttributes: {
           class: 'text-emerald-600 underline',
-          rel: 'nofollow noopener noreferrer', // Force nofollow by default
         },
       }),
     ],
@@ -56,8 +55,8 @@ const PublicRichEditor = ({ value, onChange, placeholder = 'Write your story her
     const { href, target, rel } = editor.getAttributes('link');
     setActiveLinkData({ 
       href: href || '', 
-      target: target || '_blank', 
-      rel: rel || 'nofollow noopener noreferrer' // Default to nofollow for new links
+      target: target || '', 
+      rel: rel || '' 
     });
     setLinkDialogOpen(true);
   };

@@ -19,6 +19,14 @@ const SafeLink = Link.extend({
         default: null,
         parseHTML: element => element.getAttribute('data-actual-href') || element.getAttribute('href'),
       },
+      target: {
+        default: null,
+        parseHTML: element => element.getAttribute('target'),
+      },
+      rel: {
+        default: null,
+        parseHTML: element => element.getAttribute('rel'),
+      },
     }
   },
   parseHTML() {
@@ -50,8 +58,6 @@ const FaqAnswerEditor = ({ value, onChange }) => {
         openOnClick: false, 
         HTMLAttributes: { 
           class: 'text-emerald-600 underline hover:text-emerald-700 transition-colors',
-          target: '_blank',
-          rel: 'nofollow noopener noreferrer'
         }
       })
     ],
@@ -119,15 +125,15 @@ const FaqAnswerEditor = ({ value, onChange }) => {
           .setTextSelection({ from: trimmedFrom, to: trimmedTo })
           .setLink({ 
             href: data.href,
-            target: data.target || '_blank',
-            rel: data.rel || 'nofollow noopener noreferrer'
+            target: data.target,
+            rel: data.rel
           }).run();
       } else {
         // Fallback: selection was all whitespace, apply normally
         editor.chain().focus().extendMarkRange('link').setLink({ 
           href: data.href,
-          target: data.target || '_blank',
-          rel: data.rel || 'nofollow noopener noreferrer'
+          target: data.target,
+          rel: data.rel
         }).run();
       }
     }

@@ -207,19 +207,19 @@ const EntrepreneurDetail = () => {
                     
                     <div className="flex flex-wrap items-center gap-6 mt-3">
                       {(profile.linkedin || profile.social_linkedin) && (
-                        <a href={ensureAbsoluteUrl(profile.linkedin || profile.social_linkedin)} target="_blank" rel="noopener noreferrer nofollow" className="text-stone-400 hover:text-blue-600 transition-all hover:scale-110 flex items-center gap-2 font-medium text-sm">
+                        <a href={ensureAbsoluteUrl(profile.linkedin || profile.social_linkedin)} target={profile.website_link_settings ? profile.website_link_settings.target : "_blank"} rel={profile.website_link_settings?.rel || "noopener noreferrer nofollow"} className="text-stone-400 hover:text-blue-600 transition-all hover:scale-110 flex items-center gap-2 font-medium text-sm">
                           <Linkedin className="w-5 h-5 opacity-70" />
                           <span className="hidden sm:inline">LinkedIn</span>
                         </a>
                       )}
                       {(profile.twitter || profile.social_twitter) && (
-                        <a href={ensureAbsoluteUrl(profile.twitter || profile.social_twitter)} target="_blank" rel="noopener noreferrer nofollow" className="text-stone-400 hover:text-sky-500 transition-all hover:scale-110 flex items-center gap-2 font-medium text-sm">
+                        <a href={ensureAbsoluteUrl(profile.twitter || profile.social_twitter)} target={profile.website_link_settings ? profile.website_link_settings.target : "_blank"} rel={profile.website_link_settings?.rel || "noopener noreferrer nofollow"} className="text-stone-400 hover:text-sky-500 transition-all hover:scale-110 flex items-center gap-2 font-medium text-sm">
                           <Twitter className="w-5 h-5 opacity-70" />
                           <span className="hidden sm:inline">Twitter</span>
                         </a>
                       )}
                       {(profile.facebook || profile.social_facebook) && (
-                        <a href={ensureAbsoluteUrl(profile.facebook || profile.social_facebook)} target="_blank" rel="noopener noreferrer nofollow" className="text-stone-400 hover:text-blue-700 transition-all hover:scale-110 flex items-center gap-2 font-medium text-sm">
+                        <a href={ensureAbsoluteUrl(profile.facebook || profile.social_facebook)} target={profile.website_link_settings ? profile.website_link_settings.target : "_blank"} rel={profile.website_link_settings?.rel || "noopener noreferrer nofollow"} className="text-stone-400 hover:text-blue-700 transition-all hover:scale-110 flex items-center gap-2 font-medium text-sm">
                           <Facebook className="w-5 h-5 opacity-70" />
                           <span className="hidden sm:inline">Facebook</span>
                         </a>
@@ -227,7 +227,7 @@ const EntrepreneurDetail = () => {
                       {(profile.website || profile.company_page_url) && (
                         <a 
                           href={ensureAbsoluteUrl(profile.website || profile.company_page_url)} 
-                          target={profile.website_link_settings?.target || "_blank"} 
+                          target={profile.website_link_settings ? profile.website_link_settings.target : "_blank"} 
                           rel={profile.website_link_settings?.rel || "noopener noreferrer"} 
                           className="text-stone-400 hover:text-emerald-700 transition-all hover:scale-110 flex items-center gap-2 font-medium text-sm"
                         >

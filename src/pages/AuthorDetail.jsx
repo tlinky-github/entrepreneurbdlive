@@ -174,7 +174,7 @@ const AuthorDetail = () => {
                     {author.website && (
                       <a 
                         href={ensureAbsoluteUrl(author.website)} 
-                        target={author.website_link_settings?.target || "_blank"} 
+                        target={author.website_link_settings ? author.website_link_settings.target : "_blank"} 
                         rel={author.website_link_settings?.rel || "noopener noreferrer"} 
                         className="text-stone-600 hover:text-emerald-900 text-sm flex items-center gap-2 transition-colors"
                       >
@@ -182,17 +182,17 @@ const AuthorDetail = () => {
                       </a>
                     )}
                     {author.linkedin && (
-                      <a href={ensureAbsoluteUrl(author.linkedin)} target="_blank" rel="noopener noreferrer nofollow" className="text-stone-600 hover:text-blue-700 text-sm flex items-center gap-2 transition-colors">
+                      <a href={ensureAbsoluteUrl(author.linkedin)} target={author.website_link_settings ? author.website_link_settings.target : "_blank"} rel={author.website_link_settings?.rel || "noopener noreferrer nofollow"} className="text-stone-600 hover:text-blue-700 text-sm flex items-center gap-2 transition-colors">
                         <Linkedin className="w-4 h-4" /> LinkedIn
                       </a>
                     )}
                     {author.twitter && (
-                      <a href={ensureAbsoluteUrl(author.twitter)} target="_blank" rel="noopener noreferrer nofollow" className="text-stone-600 hover:text-sky-500 text-sm flex items-center gap-2 transition-colors">
+                      <a href={ensureAbsoluteUrl(author.twitter)} target={author.website_link_settings ? author.website_link_settings.target : "_blank"} rel={author.website_link_settings?.rel || "noopener noreferrer nofollow"} className="text-stone-600 hover:text-sky-500 text-sm flex items-center gap-2 transition-colors">
                         <Twitter className="w-4 h-4" /> Twitter
                       </a>
                     )}
                     {author.facebook && (
-                      <a href={ensureAbsoluteUrl(author.facebook)} target="_blank" rel="noopener noreferrer nofollow" className="text-stone-600 hover:text-blue-600 text-sm flex items-center gap-2 transition-colors">
+                      <a href={ensureAbsoluteUrl(author.facebook)} target={author.website_link_settings ? author.website_link_settings.target : "_blank"} rel={author.website_link_settings?.rel || "noopener noreferrer nofollow"} className="text-stone-600 hover:text-blue-600 text-sm flex items-center gap-2 transition-colors">
                         <Facebook className="w-4 h-4" /> Facebook
                       </a>
                     )}

@@ -651,22 +651,22 @@ const BlogDetail = () => {
                     </div>
                     <div className="flex items-center gap-3">
                        {authorData.website && (
-                         <a href={authorData.website} target="_blank" rel="noopener noreferrer" className="text-stone-400 hover:text-emerald-900 transition-colors">
+                         <a href={authorData.website} target={authorData.website_link_settings ? authorData.website_link_settings.target : "_blank"} rel={authorData.website_link_settings?.rel || "noopener noreferrer"} className="text-stone-400 hover:text-emerald-900 transition-colors">
                             <Globe className="w-5 h-5" />
                          </a>
                        )}
                        {authorData.linkedin && (
-                         <a href={authorData.linkedin} target="_blank" rel="noopener noreferrer" className="text-stone-400 hover:text-blue-700 transition-colors">
+                         <a href={authorData.linkedin} target={authorData.website_link_settings ? authorData.website_link_settings.target : "_blank"} rel={authorData.website_link_settings?.rel || "noopener noreferrer"} className="text-stone-400 hover:text-blue-700 transition-colors">
                             <Linkedin className="w-5 h-5" />
                          </a>
                        )}
                        {authorData.twitter && (
-                         <a href={authorData.twitter} target="_blank" rel="noopener noreferrer" className="text-stone-400 hover:text-sky-500 transition-colors">
+                         <a href={authorData.twitter} target={authorData.website_link_settings ? authorData.website_link_settings.target : "_blank"} rel={authorData.website_link_settings?.rel || "noopener noreferrer"} className="text-stone-400 hover:text-sky-500 transition-colors">
                             <Twitter className="w-5 h-5" />
                          </a>
                        )}
                        {authorData.facebook && (
-                         <a href={authorData.facebook} target="_blank" rel="noopener noreferrer" className="text-stone-400 hover:text-blue-600 transition-colors">
+                         <a href={authorData.facebook} target={authorData.website_link_settings ? authorData.website_link_settings.target : "_blank"} rel={authorData.website_link_settings?.rel || "noopener noreferrer"} className="text-stone-400 hover:text-blue-600 transition-colors">
                             <Facebook className="w-5 h-5" />
                          </a>
                        )}

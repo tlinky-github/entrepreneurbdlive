@@ -234,12 +234,12 @@ const ResourceDetail = () => {
                           <h4 className="font-bold text-stone-900">Contributor: {authorData.name}</h4>
                           <div className="flex items-center gap-3">
                             {authorData.linkedin && (
-                              <a href={authorData.linkedin} target="_blank" rel="noopener noreferrer" className="text-stone-400 hover:text-blue-700 transition-colors">
+                              <a href={authorData.linkedin} target={authorData.website_link_settings ? authorData.website_link_settings.target : "_blank"} rel={authorData.website_link_settings?.rel || "noopener noreferrer"} className="text-stone-400 hover:text-blue-700 transition-colors">
                                 <Linkedin className="w-4 h-4" />
                               </a>
                             )}
                             {authorData.twitter && (
-                              <a href={authorData.twitter} target="_blank" rel="noopener noreferrer" className="text-stone-400 hover:text-sky-500 transition-colors">
+                              <a href={authorData.twitter} target={authorData.website_link_settings ? authorData.website_link_settings.target : "_blank"} rel={authorData.website_link_settings?.rel || "noopener noreferrer"} className="text-stone-400 hover:text-sky-500 transition-colors">
                                 <Twitter className="w-4 h-4" />
                               </a>
                             )}

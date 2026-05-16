@@ -221,7 +221,7 @@ const DirectoryDetail = () => {
                       <Share2 className="w-4 h-4 mr-2" /> Share
                     </Button>
                     {listing.website && (
-                      <a href={ensureAbsoluteUrl(listing.website)} target={listing.website_link_settings?.target || "_blank"} rel={listing.website_link_settings?.rel || "noopener noreferrer"} className="flex-1 md:flex-initial">
+                      <a href={ensureAbsoluteUrl(listing.website)} target={listing.website_link_settings ? listing.website_link_settings.target : "_blank"} rel={listing.website_link_settings?.rel || "noopener noreferrer"} className="flex-1 md:flex-initial">
                         <Button className="bg-emerald-900 hover:bg-emerald-800 w-full h-11 px-8">
                           <Globe className="w-4 h-4 mr-2" /> Visit Website
                         </Button>
@@ -496,7 +496,7 @@ const DirectoryDetail = () => {
                     {listing.website && (
                       <a 
                         href={ensureAbsoluteUrl(listing.website)} 
-                        target={listing.website_link_settings?.target || "_blank"} 
+                        target={listing.website_link_settings ? listing.website_link_settings.target : "_blank"} 
                         rel={listing.website_link_settings?.rel || "noopener noreferrer"} 
                         className="flex items-center gap-4 group"
                       >
@@ -513,17 +513,17 @@ const DirectoryDetail = () => {
                         <p className="text-xs font-bold text-stone-400 mb-3">Follow Us</p>
                         <div className="flex items-center gap-3">
                           {listing.social_linkedin && (
-                            <a href={ensureAbsoluteUrl(listing.social_linkedin)} target="_blank" rel="noopener noreferrer nofollow" className="p-2 bg-white/10 rounded-lg hover:bg-emerald-600 transition-colors group">
+                            <a href={ensureAbsoluteUrl(listing.social_linkedin)} target={listing.website_link_settings ? listing.website_link_settings.target : "_blank"} rel={listing.website_link_settings?.rel || "noopener noreferrer nofollow"} className="p-2 bg-white/10 rounded-lg hover:bg-emerald-600 transition-colors group">
                               <LinkedinIcon className="w-4 h-4 text-stone-300 group-hover:text-white" />
                             </a>
                           )}
                           {listing.social_twitter && (
-                            <a href={ensureAbsoluteUrl(listing.social_twitter)} target="_blank" rel="noopener noreferrer nofollow" className="p-2 bg-white/10 rounded-lg hover:bg-emerald-600 transition-colors group">
+                            <a href={ensureAbsoluteUrl(listing.social_twitter)} target={listing.website_link_settings ? listing.website_link_settings.target : "_blank"} rel={listing.website_link_settings?.rel || "noopener noreferrer nofollow"} className="p-2 bg-white/10 rounded-lg hover:bg-emerald-600 transition-colors group">
                               <TwitterIcon className="w-4 h-4 text-stone-300 group-hover:text-white" />
                             </a>
                           )}
                           {listing.social_facebook && (
-                            <a href={ensureAbsoluteUrl(listing.social_facebook)} target="_blank" rel="noopener noreferrer nofollow" className="p-2 bg-white/10 rounded-lg hover:bg-emerald-600 transition-colors group">
+                            <a href={ensureAbsoluteUrl(listing.social_facebook)} target={listing.website_link_settings ? listing.website_link_settings.target : "_blank"} rel={listing.website_link_settings?.rel || "noopener noreferrer nofollow"} className="p-2 bg-white/10 rounded-lg hover:bg-emerald-600 transition-colors group">
                               <FacebookIcon className="w-4 h-4 text-stone-300 group-hover:text-white" />
                             </a>
                           )}
