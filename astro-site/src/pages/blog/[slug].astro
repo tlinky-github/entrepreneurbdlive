@@ -1,128 +1,103 @@
 ---
-// Blog Detail — SSR page that fetches a single post by slug from Firestore
-// THIS is the key page that was broken with the CRA approach (Google saw homepage meta)
-// With Astro SSR, the correct <title> and <meta> are in the initial HTML response
 import PublicLayout from '../../layouts/PublicLayout.astro';
 import { getDocBySlug, stripHtml } from '../../lib/api';
+import { processHtmlContent } from '../../lib/smartDesign';
+import { Badge } from '../../components/ui/badge.jsx';
+import { Calendar, Clock, ArrowLeft } from 'lucide-react';
 
 const { slug } = Astro.params;
 
-const post = await getDocBySlug('posts', slug);
+// Fetch post from Firestore on the server
+const post = await getDocBySlug('posts', slug as string);
 
-// 404 if post not found
+// If no post is found, return 404
 if (!post) {
-  return Astro.redirect('/404');
+  return new Response('Post not found', { status: 404 });
 }
 
-const title = post.seoTitle || post.seo_title || post.title || 'Blog Post';
-const description = (post.metaDescription || post.seo_description || post.excerpt || stripHtml(post.content_html || '')).substring(0, 160);
+// Generate SEO metadata
+const title = post.seoTitle || post.title || 'Blog Post';
+const description = post.metaDescription || stripHtml(post.excerpt || post.content_html).substring(0, 160);
 const image = post.featured_image || '/og-default.png';
 
-function formatDate(dateVal) {
-  if (!dateVal) return '';
-  try {
-    // Firestore Timestamp objects have seconds/nanoseconds
-    let date;
-    if (dateVal?.seconds) {
-      date = new Date(dateVal.seconds * 1000);
-    } else if (dateVal?.toDate) {
-      date = dateVal.toDate();
-    } else {
-      date = new Date(dateVal);
-    }
-    if (isNaN(date.getTime())) return '';
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric', month: 'long', day: 'numeric'
-    });
-  } catch { return ''; }
+// Format Date exactly as in React
+const publishedDate = post.created_at ? new Date(post.created_at).toLocaleDateString('en-US', {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric'
+}) : '';
+
+function getReadingTime(post) {
+  const content = post.content || post.content_html || '';
+  return Math.ceil(stripHtml(content).split(/\s+/).length / 200) || 1;
 }
 
-// Content may be stored in different fields
-const contentHtml = post.content_html || post.content || '';
+// Process the raw HTML with the exact Smart Design pipeline from the React app
+const finalContentHtml = processHtmlContent(post.content_html || post.content || '', post.featured_image, post.title);
+
 ---
 
-<PublicLayout
-  title={`${title} | Entrepreneur BD`}
+<PublicLayout 
+  title={`${title} | Entrepreneurs BD`}
   description={description}
   image={image}
   type="article"
 >
-  <!-- Article Schema -->
-  <script slot="head" type="application/ld+json" set:html={JSON.stringify({
-    "@context": "https://schema.org",
-    "@type": "BlogPosting",
-    "headline": title,
-    "description": description,
-    "image": image,
-    "datePublished": post.created_at || new Date().toISOString(),
-    "dateModified": post.updated_at || post.created_at || new Date().toISOString(),
-    "author": {
-      "@type": "Person",
-      "name": post.author_name || "Entrepreneurs BD"
-    },
-    "publisher": {
-      "@type": "Organization",
-      "name": "Entrepreneurs BD",
-      "logo": { "@type": "ImageObject", "url": "https://entrepreneurs.bd/logo.png" }
-    }
-  })} />
+  <div class="bg-stone-50 min-h-screen" data-testid="blog-detail-page">
+    
+    <!-- Back Button -->
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+      <a href="/blog" class="inline-flex items-center gap-2 text-stone-600 hover:text-emerald-900 transition-colors">
+        <ArrowLeft className="w-4 h-4" />
+        Back to Blog
+      </a>
+    </div>
 
-  <article>
-    <!-- Hero -->
-    <section class="py-16 lg:py-20 bg-stone-50">
-      <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        {post.category && (
-          <span class="inline-block px-3 py-1 text-xs font-semibold text-emerald-900 bg-emerald-50 rounded-full mb-4">
-            {post.category}
-          </span>
+    <!-- Article Header -->
+    <article class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <header class="mb-8">
+        {post.category_name && (
+          <Badge className="bg-emerald-100 text-emerald-900 hover:bg-emerald-100 mb-4">{post.category_name}</Badge>
         )}
         <h1 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-stone-900 mb-6 leading-tight">
           {post.title}
         </h1>
-        <div class="flex flex-wrap items-center gap-4 text-sm text-stone-500">
-          {post.author_name && (
+        {post.excerpt && (
+          <p class="text-xl text-stone-600 mb-6">{post.excerpt}</p>
+        )}
+
+        <div class="flex flex-wrap items-center gap-6 text-sm text-stone-500 pb-6 border-b border-stone-200">
+          <div class="flex items-center gap-2">
             <div class="flex items-center gap-2">
-              <div class="w-8 h-8 bg-emerald-900 rounded-full flex items-center justify-center">
-                <span class="text-white text-xs font-medium">{post.author_name.charAt(0)}</span>
+              <div class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-900 flex items-center justify-center font-bold text-sm">
+                {(post.author_name || 'E').charAt(0).toUpperCase()}
               </div>
-              <span class="font-medium text-stone-700">{post.author_name}</span>
+              <div>
+                <p class="font-medium text-stone-900">{post.author_name || 'Entrepreneurs BD'}</p>
+                <p class="text-xs">Author</p>
+              </div>
+            </div>
+          </div>
+          
+          {publishedDate && (
+            <div class="flex items-center gap-2">
+              <Calendar className="w-4 h-4" />
+              {publishedDate}
             </div>
           )}
-          {post.created_at && (
-            <time class="text-stone-500">{formatDate(post.created_at)}</time>
-          )}
+          
+          <div class="flex items-center gap-2">
+            <Clock className="w-4 h-4" />
+            {getReadingTime(post)} min read
+          </div>
         </div>
+      </header>
+
+      <!-- Processed Article Content (Includes injected featured image and FAQs) -->
+      <div class="tiptap-content">
+        <div class="prose prose-stone max-w-none prose-h2:text-2xl prose-h2:font-black prose-p:text-stone-800 prose-p:leading-relaxed prose-p:text-lg" set:html={finalContentHtml}></div>
       </div>
-    </section>
-
-    <!-- Featured Image -->
-    {post.featured_image && (
-      <section class="bg-white">
-        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 -mt-4">
-          <img
-            src={post.featured_image}
-            alt={post.title}
-            class="w-full rounded-xl shadow-lg object-cover max-h-[500px]"
-          />
-        </div>
-      </section>
-    )}
-
-    <!-- Content -->
-    <section class="py-16 lg:py-20 bg-white">
-      <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="prose prose-lg prose-stone max-w-none prose-headings:text-stone-900 prose-a:text-emerald-900 prose-a:no-underline hover:prose-a:underline prose-img:rounded-lg" set:html={contentHtml || '<p>Content not available.</p>'} />
-      </div>
-    </section>
-  </article>
-
-  <!-- Back to Blog -->
-  <section class="py-10 bg-stone-50 border-t border-stone-200">
-    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-      <a href="/blog" class="inline-flex items-center gap-2 px-4 py-2 border border-emerald-900 text-emerald-900 rounded-md text-sm font-medium hover:bg-emerald-50 transition-colors">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-        All Blog Posts
-      </a>
-    </div>
-  </section>
+      
+    </article>
+  </div>
 </PublicLayout>

@@ -1,0 +1,18 @@
+---
+import PublicLayout from '../../layouts/PublicLayout.astro';
+import DirectoryDetail from '../../components/directory/DirectoryDetail.jsx';
+import { listingAPI } from '../../lib/api';
+
+const { slug } = Astro.params;
+
+// For SSR, we fetch the data here to pass as initial state or just let the component handle it.
+// However, since we want 100% parity and DirectoryDetail already has a useEffect to fetch by slug,
+// we can just pass the slug.
+---
+
+<PublicLayout
+  title="Business Detail | Entrepreneur BD"
+  description="View detailed information about this business on Entrepreneur BD."
+>
+  <DirectoryDetail client:load slug={slug} />
+</PublicLayout>

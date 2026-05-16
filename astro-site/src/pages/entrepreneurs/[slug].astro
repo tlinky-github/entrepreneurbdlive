@@ -1,0 +1,13 @@
+---
+import PublicLayout from '../../layouts/PublicLayout.astro';
+import EntrepreneurDetail from '../../components/entrepreneurs/EntrepreneurDetail.jsx';
+
+const { slug } = Astro.params;
+---
+
+<PublicLayout
+  title="Entrepreneur Profile | Entrepreneur BD"
+  description="View the profile and journey of this entrepreneur on Entrepreneur BD."
+>
+  <EntrepreneurDetail client:load slug={slug} />
+</PublicLayout>
