@@ -554,11 +554,11 @@ const BlogDetail = () => {
                 const injectionPoint = secondH2Match ? secondH2Match.index : firstH2Match.index;
 
                 const imageHtml = `
-                  <div class="featured-image-inline mt-8 mb-12 rounded-2xl overflow-hidden shadow-2xl border border-stone-100 ring-1 ring-stone-900/5 group">
+                  <div class="featured-image-inline mt-8 mb-12 flex justify-center w-fit mx-auto overflow-hidden rounded-2xl group">
                     <img 
                       src="${post.featured_image}" 
                       alt="${post.title}" 
-                      class="w-full h-auto object-cover transform transition-transform duration-700 group-hover:scale-105" 
+                      class="max-w-full h-auto object-contain !m-0 transform transition-transform duration-700 group-hover:scale-105" 
                     />
                   </div>
                 `;
@@ -566,8 +566,8 @@ const BlogDetail = () => {
               } else if (post.featured_image) {
                 // Fallback: if no H2s, put it at the very top (legacy/short posts)
                 const imageHtml = `
-                  <div class="featured-image-inline mb-10 rounded-2xl overflow-hidden shadow-xl border border-stone-200">
-                    <img src="${post.featured_image}" alt="${post.title}" class="w-full h-auto" />
+                  <div class="featured-image-inline mb-10 flex justify-center w-fit mx-auto overflow-hidden rounded-2xl group">
+                    <img src="${post.featured_image}" alt="${post.title}" class="max-w-full h-auto object-contain !m-0 transform transition-transform duration-700 group-hover:scale-105" />
                   </div>
                 `;
                 content = imageHtml + content;
