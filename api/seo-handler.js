@@ -291,7 +291,7 @@ module.exports = async (req, res) => {
   const host = req.headers.host || 'entrepreneurs.bd';
   const protocol = req.headers['x-forwarded-proto'] || 'https';
   const SITE_URL_DYN = `${protocol}://${host}`;
-  const isBot = /googlebot|bingbot|yandex|baiduspider|facebookexternalhit|facebot|whatsapp|linkedinbot|twitterbot|slackbot|discordbot|telegrambot|applebot|crawl|spider|metainspector|structured-data|rich-results|semrush|ahrefs|mj12bot|dotbot|petalbot/i.test(userAgent);
+  const isBot = /bot|google|baidu|bing|yandex|duckduck|crawl|spider|slurp|facebookexternalhit|facebot|whatsapp|linkedinbot|twitterbot|slackbot|discordbot|telegrambot|applebot|metainspector|structured-data|rich-results|semrush|ahrefs|mj12bot|dotbot|petalbot/i.test(userAgent);
 
   // --- 1. IMAGE RENDERING ---
   if (req.query.render === 'image') {
@@ -327,23 +327,24 @@ module.exports = async (req, res) => {
   const slug = segments.length > 1 ? segments[1] : null;
   const escapedRedirectPath = `${finalPath}${finalPath.includes('?') ? '&' : '?'}no_bot=1`;
 
-  try {
-    let title = "Entrepreneurs BD | The National Engine of Growth";
-    let description = "Bangladesh's premier growth hub for startups and visionaries. Connect, discover, and scale your business within our national entrepreneurship ecosystem.";
-    let image = `${SITE_URL}/og-default.png`;
-    let docData = null;
+  const currentAbsoluteUrl = `https://${host}${finalPath}`;
+  let title = "Entrepreneurs BD | The National Engine of Growth";
+  let description = "Bangladesh's premier growth hub for startups and visionaries. Connect, discover, and scale your business within our national entrepreneurship ecosystem.";
+  let image = `${SITE_URL}/og-default.png`;
+  let docData = null;
 
+  try {
     if (type !== 'home') {
       if (slug) {
-      const colMap = { 
-        'blog': 'posts', 
-        'directory': 'listings', 
-        'entrepreneurs': 'profiles', 
-        'knowledge': 'resources',
-        'author': 'authors',
-        'resources': 'resources',
-        'page': 'pages'
-      };
+        const colMap = { 
+          'blog': 'posts', 
+          'directory': 'listings', 
+          'entrepreneurs': 'profiles', 
+          'knowledge': 'resources',
+          'author': 'authors',
+          'resources': 'resources',
+          'page': 'pages'
+        };
         if (colMap[type]) {
           docData = await fetchFirestoreDoc(colMap[type], slug);
           if (docData) {
@@ -365,7 +366,6 @@ module.exports = async (req, res) => {
     const esc = (str) => (str || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&apos;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, ' ');
     const safeTitle = esc(title);
     const safeDescription = esc(description);
-    const currentAbsoluteUrl = `https://${host}${finalPath}`;
     const dynamicCategory = (STATIC_PAGES[type] && STATIC_PAGES[type].category) || type;
     const dynamicOgUrl = `${SITE_URL}/api/og-image?title=${encodeURIComponent(title.substring(0, 100))}&amp;description=${encodeURIComponent(description.substring(0, 160))}&amp;image=${encodeURIComponent(image)}&amp;category=${encodeURIComponent(dynamicCategory)}`;
 
@@ -431,8 +431,30 @@ module.exports = async (req, res) => {
 
   } catch (error) {
     console.error('[CRITICAL] SEO failure:', error.message);
-    const sep = finalPath.includes('?') ? '&' : '?';
-    const fallbackPath = `${finalPath}${sep}no_bot=1`;
-    return res.status(200).send(HTML_SHELL.replace('{{META_TAGS}}', '').replace('{{REDIRECT_PATH}}', fallbackPath));
+    const esc = (str) => (str || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&apos;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, ' ');
+    const safeTitle = esc(title);
+    const safeDescription = esc(description);
+    
+    const fallbackMetaTags = `
+      <title>${safeTitle}</title>
+      <meta name="description" content="${safeDescription}">
+      <link rel="canonical" href="${currentAbsoluteUrl}">
+      <meta name="robots" content="index, follow" />
+    `;
+    
+    res.setHeader('Content-Type', 'text/html');
+    if (isBot) {
+      res.setHeader('X-SEO-Mode', 'bot-fallback');
+      const botHtml = BOT_HTML_SHELL
+        .replace('{{META_TAGS}}', fallbackMetaTags)
+        .replace('{{PAGE_TITLE}}', safeTitle)
+        .replace('{{PAGE_DESCRIPTION}}', safeDescription);
+      return res.status(200).send(botHtml);
+    } else {
+      res.setHeader('X-SEO-Mode', 'human-fallback-redirect');
+      const sep = finalPath.includes('?') ? '&' : '?';
+      const fallbackPath = `${finalPath}${sep}no_bot=1`;
+      return res.status(200).send(HTML_SHELL.replace('{{META_TAGS}}', fallbackMetaTags).replace('{{REDIRECT_PATH}}', fallbackPath));
+    }
   }
 };
