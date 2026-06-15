@@ -1,0 +1,10 @@
+---
+import PublicLayout from '../layouts/PublicLayout.astro';
+import Login from '../components/auth/Login.jsx';
+import { Toaster } from 'sonner';
+---
+
+<PublicLayout title="Login | Entrepreneur BD">
+  <Login client:only="react" />
+  <Toaster client:only="react" position="top-right" richColors />
+</PublicLayout>

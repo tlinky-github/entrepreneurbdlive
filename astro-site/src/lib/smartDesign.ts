@@ -152,20 +152,20 @@ export function processHtmlContent(html: string | null | undefined, featuredImag
           let faqHtml = `<div class="mt-10 mb-6"><h2 class="text-[1.875rem] font-bold text-stone-900 mb-5">Frequently Asked Questions</h2><div class="faq-list">`;
           
           faqs.forEach((faq: any, fIndex: number) => {
-            const answer = (faq.answer || faq.a || '').replace(/style="[^"]*"/gi, '');
+            const rawQuestion = faq.question || faq.q || '';
+            const rawAnswer = faq.answer || faq.a || '';
+            
+            const question = rawQuestion.replace(/&amp;apos;/g, "'").replace(/&apos;/g, "'").replace(/&amp;quot;/g, '"').replace(/&quot;/g, '"').replace(/&amp;/g, '&');
+            const answer = rawAnswer.replace(/style="[^"]*"/gi, '').replace(/&amp;apos;/g, "'").replace(/&apos;/g, "'").replace(/&amp;quot;/g, '"').replace(/&quot;/g, '"').replace(/&amp;/g, '&');
+            
             faqHtml += `
-              <div class="faq-item border-b border-stone-200 py-4">
-                <details class="group">
-                  <summary class="flex justify-between items-center font-medium cursor-pointer list-none text-stone-900">
-                    <span>${faq.question || faq.q}</span>
-                    <span class="transition group-open:rotate-180">
-                      <svg fill="none" height="24" shape-rendering="geometricPrecision" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24" width="24"><path d="M6 9l6 6 6-6"></path></svg>
-                    </span>
-                  </summary>
-                  <div class="text-stone-600 mt-3 prose prose-stone group-open:animate-fadeIn">
-                    ${answer}
-                  </div>
-                </details>
+              <div class="faq-item mb-8 last:mb-0">
+                <h3 class="text-[1.25rem] font-bold text-stone-900 mb-3 leading-tight">
+                  ${question}
+                </h3>
+                <div class="text-stone-700 leading-relaxed prose prose-stone max-w-none prose-p:my-2 prose-a:text-emerald-600 prose-a:font-semibold hover:prose-a:text-emerald-700">
+                  ${answer}
+                </div>
               </div>
             `;
           });
@@ -179,5 +179,51 @@ export function processHtmlContent(html: string | null | undefined, featuredImag
     return part;
   });
 
-  return finalParts.join('');
+  const result = finalParts.join('');
+  return result
+    .replace(/&amp;apos;/g, "'")
+    .replace(/&amp;quot;/g, '"')
+    .replace(/&amp;amp;/g, '&')
+    .replace(/&amp;#38;/g, '&')
+    .replace(/&amp;#39;/g, "'")
+    .replace(/&amp;#039;/g, "'")
+    .replace(/&amp;ndash;/g, '–')
+    .replace(/&amp;mdash;/g, '—')
+    .replace(/&amp;rsquo;/g, '’')
+    .replace(/&amp;lsquo;/g, '‘')
+    .replace(/&amp;ldquo;/g, '“')
+    .replace(/&amp;rdquo;/g, '”')
+    .replace(/&apos;/g, "'");
+}
+
+export function decodeHtmlEntities(text: string | null | undefined): string {
+  if (!text) return '';
+  let decoded = text;
+  // Run up to 3 times to resolve double-escaped entities
+  for (let i = 0; i < 3; i++) {
+    const previous = decoded;
+    decoded = decoded
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&apos;/g, "'")
+      .replace(/&#39;/g, "'")
+      .replace(/&#039;/g, "'")
+      .replace(/&#38;/g, '&')
+      .replace(/&ndash;/g, '–')
+      .replace(/&mdash;/g, '—')
+      .replace(/&lsquo;/g, '‘')
+      .replace(/&rsquo;/g, '’')
+      .replace(/&ldquo;/g, '“')
+      .replace(/&rdquo;/g, '”')
+      .replace(/&#8211;/g, '–')
+      .replace(/&#8212;/g, '—')
+      .replace(/&#8216;/g, '‘')
+      .replace(/&#8217;/g, '’')
+      .replace(/&#8220;/g, '“')
+      .replace(/&#8221;/g, '”');
+    if (decoded === previous) break;
+  }
+  return decoded;
 }

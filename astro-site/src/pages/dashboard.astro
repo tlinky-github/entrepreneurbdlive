@@ -1,0 +1,11 @@
+---
+import PublicLayout from '../layouts/PublicLayout.astro';
+import UserDashboard from '../components/auth/UserDashboard.jsx';
+import { AuthProvider } from '../lib/auth.jsx';
+---
+
+<PublicLayout title="Dashboard | Entrepreneur BD">
+  <AuthProvider client:only="react">
+    <UserDashboard client:only="react" />
+  </AuthProvider>
+</PublicLayout>

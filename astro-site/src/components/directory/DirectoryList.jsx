@@ -5,6 +5,7 @@ import { Badge } from '../../components/ui/badge';
 import { Input } from '../../components/ui/input';
 import { Button } from '../../components/ui/button';
 import { Skeleton } from '../../components/ui/skeleton';
+import { SitePagination } from '../../components/common/SitePagination';
 import {
   Search,
   MapPin,
@@ -57,6 +58,8 @@ const DirectoryList = () => {
   const search = searchParams.get('search') || '';
   const listingType = searchParams.get('type') || '';
   const category = searchParams.get('category') || '';
+  const currentPage = parseInt(searchParams.get('page')) || 1;
+  const ITEMS_PER_PAGE = 12;
 
   // Load dynamic filters
   useEffect(() => {
@@ -83,8 +86,7 @@ const DirectoryList = () => {
           search: search || undefined,
           listing_type: listingType || undefined,
           category: category || undefined,
-          status: 'published',
-          limit: 24
+          status: 'published'
         });
         setListings(res.data || []);
       } catch (error) {
@@ -108,7 +110,18 @@ const DirectoryList = () => {
   };
 
   const featuredListings = listings.filter(l => l.is_featured);
-  const regularListings = listings.filter(l => !l.is_featured);
+  
+  // Calculate Pagination
+  let regularListings = listings.filter(l => !l.is_featured);
+  // If searching or filtering, we don't separate featured (we just show all matches properly)
+  if (search || category || listingType) {
+    regularListings = listings;
+  }
+  
+  const totalPages = Math.ceil(regularListings.length / ITEMS_PER_PAGE);
+  const safeCurrentPage = Math.max(1, Math.min(currentPage, totalPages || 1));
+  const startIndex = (safeCurrentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedListings = regularListings.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
   return (
     <div className="bg-stone-50 min-h-screen" data-testid="directory-page">
@@ -245,10 +258,21 @@ const DirectoryList = () => {
 
             {/* All Listings */}
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {regularListings.map((listing) => (
+              {paginatedListings.map((listing) => (
                 <ListingCard key={listing.id} listing={listing} />
               ))}
             </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="mt-16 border-t border-stone-200 pt-8">
+                <SitePagination 
+                  currentPage={safeCurrentPage} 
+                  totalPages={totalPages} 
+                  onPageChange={(p) => updateFilters('page', p)}
+                />
+              </div>
+            )}
           </>
         )}
       </div>

@@ -27,14 +27,15 @@ import {
   Share2
 } from 'lucide-react';
 
-const EntrepreneurDetail = ({ slug }) => {
-  const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(true);
+const EntrepreneurDetail = ({ slug, initialProfile, initialAuthorData }) => {
+  const [profile, setProfile] = useState(initialProfile);
+  const [loading, setLoading] = useState(!initialProfile);
   const [isExpanded, setIsExpanded] = useState(false);
-  const [authorData, setAuthorData] = useState(null);
+  const [authorData, setAuthorData] = useState(initialAuthorData);
   const [openFaqIndex, setOpenFaqIndex] = useState(null);
 
   useEffect(() => {
+    if (initialProfile) return;
     const loadProfile = async () => {
       setLoading(true);
       try {
@@ -65,7 +66,7 @@ const EntrepreneurDetail = ({ slug }) => {
     };
 
     loadProfile();
-  }, [slug]);
+  }, [slug, initialProfile]);
 
   const handleShare = async () => {
     try {
@@ -106,7 +107,7 @@ const EntrepreneurDetail = ({ slug }) => {
   }
 
   return (
-    <div className="bg-stone-50 min-h-screen" data-testid="entrepreneur-detail-page">
+    <div className="bg-stone-50 min-h-screen" data-testid="entrepreneur-detail-page" data-content-id={profile.id} data-content-type="entrepreneur">
       {profile && (
         <CustomCodeInjector
           pageCss={profile.custom_css}

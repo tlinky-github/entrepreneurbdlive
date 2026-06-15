@@ -5,14 +5,22 @@ import { listingAPI } from '../../lib/api';
 
 const { slug } = Astro.params;
 
-// For SSR, we fetch the data here to pass as initial state or just let the component handle it.
-// However, since we want 100% parity and DirectoryDetail already has a useEffect to fetch by slug,
-// we can just pass the slug.
+let listing = null;
+try {
+  const res = await listingAPI.get(slug as string);
+  listing = res.data;
+} catch (e: any) {
+  console.error('[Directory Detail] Fetch failed:', e.message);
+}
+
+// SEO metadata
+const title = listing?.business_name ? `${listing.business_name} | Entrepreneur BD Directory` : 'Business Detail | Entrepreneur BD';
+const description = listing?.short_description || 'View detailed information about this business on Entrepreneur BD.';
 ---
 
 <PublicLayout
-  title="Business Detail | Entrepreneur BD"
-  description="View detailed information about this business on Entrepreneur BD."
+  title={title}
+  description={description}
 >
-  <DirectoryDetail client:load slug={slug} />
+  <DirectoryDetail client:load slug={slug} initialListing={listing} />
 </PublicLayout>

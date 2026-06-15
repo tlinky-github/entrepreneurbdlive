@@ -3,19 +3,24 @@
 // This strictly matches BlogList.jsx with 100% UI parity
 import PublicLayout from '../../layouts/PublicLayout.astro';
 import { getRecentPosts, getCategories, stripHtml } from '../../lib/api';
+import { decodeHtmlEntities } from '../../lib/smartDesign';
 import BlogFilters from '../../components/blog/BlogFilters.jsx';
 import BrandedPlaceholder from '../../components/blog/BrandedPlaceholder.jsx';
 import { Card, CardContent } from '../../components/ui/card.jsx';
 import { Badge } from '../../components/ui/badge.jsx';
 import { User, Clock } from 'lucide-react';
+import SitePagination from '../../components/common/SitePagination.jsx';
 
 // Get URL params for SSR filtering
 const search = Astro.url.searchParams.get('search') || '';
-const categoryId = Astro.url.searchParams.get('category') || '';
+const categoryParam = Astro.url.searchParams.get('category') || '';
+const pageParam = parseInt(Astro.url.searchParams.get('page')) || 1;
+const ITEMS_PER_PAGE = 12;
 
 let posts = [];
 let categories = [];
 let error = null;
+let initialCategoryValue = '';
 
 try {
   // Fetch data
@@ -26,18 +31,40 @@ try {
   
   categories = allCats;
 
-  // Perform SSR Filtering
+  // Find the selected category by slug or ID
+  const selectedCategory = categories.find(cat => 
+    String(cat.slug) === String(categoryParam) || String(cat.id) === String(categoryParam)
+  );
+
+  if (selectedCategory) {
+    initialCategoryValue = selectedCategory.slug || selectedCategory.id;
+  } else if (categoryParam && categoryParam !== 'all') {
+    initialCategoryValue = categoryParam;
+  }
+
+  // Perform SSR Filtering & Pre-Decode Entities
   posts = allPosts.filter(post => {
     let match = true;
     if (search) {
       const s = search.toLowerCase();
       match = match && ((post.title || '').toLowerCase().includes(s) || (post.excerpt || '').toLowerCase().includes(s));
     }
-    if (categoryId && categoryId !== 'all') {
-      match = match && String(post.category_id) === String(categoryId);
+    if (categoryParam && categoryParam !== 'all') {
+      if (selectedCategory) {
+        match = match && String(post.category_id) === String(selectedCategory.id);
+      } else {
+        // Fallback: direct ID matching
+        match = match && String(post.category_id) === String(categoryParam);
+      }
     }
     return match;
-  });
+  }).map(post => ({
+    ...post,
+    title: decodeHtmlEntities(post.title || ''),
+    excerpt: decodeHtmlEntities(post.excerpt || ''),
+    category_name: decodeHtmlEntities(post.category_name || post.category || ''),
+    author_name: decodeHtmlEntities(post.author_name || '')
+  }));
 
 } catch (e) {
   console.error('[Blog List] Firestore fetch failed:', e.message);
@@ -45,7 +72,16 @@ try {
 }
 
 const featuredPost = posts.find(p => p.is_featured);
-const regularPosts = posts.filter(p => !p.is_featured || posts.indexOf(p) > 0);
+// Remove featured post from the list if it's the first page and no filters are applied
+let listPosts = posts;
+if (featuredPost && !search && !categoryParam && pageParam === 1) {
+  listPosts = posts.filter(p => p.id !== featuredPost.id);
+}
+
+const totalPages = Math.ceil(listPosts.length / ITEMS_PER_PAGE);
+const currentPage = Math.max(1, Math.min(pageParam, totalPages || 1));
+const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+const paginatedPosts = listPosts.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
 function getExcerpt(post) {
   if (post.excerpt) return post.excerpt;
@@ -81,7 +117,7 @@ function getReadingTime(post) {
     <BlogFilters 
       client:load 
       initialSearch={search} 
-      initialCategory={categoryId} 
+      initialCategory={initialCategoryValue} 
       categories={categories} 
     />
   </div>
@@ -95,7 +131,7 @@ function getReadingTime(post) {
     ) : posts.length === 0 ? (
       <div class="text-center py-16">
         <p class="text-lg text-stone-500">No articles found</p>
-        {(search || categoryId) && (
+        {(search || categoryParam) && (
           <a href="/blog" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 mt-4">
             Clear Filters
           </a>
@@ -103,8 +139,8 @@ function getReadingTime(post) {
       </div>
     ) : (
       <>
-        {/* Featured Post */}
-        {featuredPost && !search && !categoryId && (
+        {/* Featured Post (Only show on page 1 with no filters) */}
+        {featuredPost && !search && !categoryParam && currentPage === 1 && (
           <a href={`/blog/${featuredPost.slug}`} class="block mb-12">
             <Card className="overflow-hidden border-stone-200 hover:border-emerald-900/20 hover:shadow-xl transition-all duration-300">
               <div class="grid lg:grid-cols-2">
@@ -147,7 +183,7 @@ function getReadingTime(post) {
 
         {/* Posts Grid */}
         <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {regularPosts.map((post) => (
+          {paginatedPosts.map((post) => (
             <a href={`/blog/${post.slug}`}>
               <Card className="h-full overflow-hidden border-stone-200 hover:border-emerald-900/20 hover:shadow-lg transition-all duration-200">
                 <div class="aspect-[3/2] bg-stone-100 overflow-hidden">
@@ -190,6 +226,16 @@ function getReadingTime(post) {
             </a>
           ))}
         </div>
+        
+        {totalPages > 1 && (
+          <div class="mt-16 border-t border-stone-200 pt-8">
+            <SitePagination 
+              client:load 
+              currentPage={currentPage} 
+              totalPages={totalPages} 
+            />
+          </div>
+        )}
       </>
     )}
   </div>

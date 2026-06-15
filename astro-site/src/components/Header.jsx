@@ -3,8 +3,17 @@
 import { useState } from 'react';
 import {
   Menu, X, FileText, Building2, Users, BookOpen,
-  ChevronDown, MessageCircle, Library, Plus
+  ChevronDown, MessageCircle, Library, Plus, LayoutDashboard, User, LogOut
 } from 'lucide-react';
+import { useAuth, AuthProvider } from '../lib/auth';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from './ui/dropdown-menu';
+import { Button } from './ui/button';
 
 const navLinks = [
   { href: '/blog', label: 'Blog', icon: FileText },
@@ -22,15 +31,25 @@ const navLinks = [
   },
 ];
 
-export default function Header({ currentPath = '/' }) {
+function HeaderContent({ currentPath = '/' }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [expandedMenu, setExpandedMenu] = useState(null);
   const [openDropdown, setOpenDropdown] = useState(null);
+  const { user, isAuthenticated, isAdmin, logout } = useAuth();
 
   const isActive = (path) => currentPath.startsWith(path);
 
+  const handleLogout = async () => {
+    try {
+      await logout();
+      window.location.href = '/';
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
+
   return (
-    <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-stone-200/50">
+    <header className={`sticky ${isAdmin ? 'top-8' : 'top-0'} z-50 bg-white/80 backdrop-blur-md border-b border-stone-200/50 transition-all`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
@@ -102,19 +121,80 @@ export default function Header({ currentPath = '/' }) {
           {/* Right side */}
           <div className="flex items-center gap-3">
             <a href="/submit" className="hidden lg:block">
-              <button className="inline-flex items-center gap-2 px-4 py-2 border border-emerald-900/20 text-emerald-900 rounded-md text-sm font-medium hover:bg-emerald-50 transition-colors">
+              <Button variant="outline" className="border-emerald-900/20 text-emerald-900 hover:bg-emerald-50 gap-2">
                 <Plus className="w-4 h-4" />
                 Get Listed
-              </button>
+              </Button>
             </a>
 
+            {isAuthenticated ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="flex items-center gap-2" data-testid="user-menu-trigger">
+                    <div className="w-8 h-8 bg-emerald-900 rounded-full flex items-center justify-center">
+                      <span className="text-white text-sm font-medium">
+                        {user?.name?.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                    <span className="hidden sm:block text-sm font-medium text-stone-700">
+                      {user?.name}
+                    </span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56 bg-white border border-stone-200 shadow-md">
+                  <div className="px-2 py-1.5">
+                    <p className="text-sm font-medium text-stone-900">{user?.name}</p>
+                    <p className="text-xs text-stone-500">{user?.email}</p>
+                  </div>
+                  <DropdownMenuSeparator className="bg-stone-200" />
+                  {isAdmin && (
+                    <>
+                      <DropdownMenuItem asChild>
+                        <a href="/admin" className="flex items-center gap-2 text-stone-700 hover:bg-stone-50 hover:text-stone-900 cursor-pointer" data-testid="admin-dashboard-link">
+                          <LayoutDashboard className="w-4 h-4" />
+                          Admin Dashboard
+                        </a>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator className="bg-stone-200" />
+                    </>
+                  )}
+                  <DropdownMenuItem asChild>
+                    <a href="/dashboard" className="flex items-center gap-2 text-stone-700 hover:bg-stone-50 hover:text-stone-900 cursor-pointer" data-testid="my-dashboard-link">
+                      <User className="w-4 h-4" />
+                      My Dashboard
+                    </a>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator className="bg-stone-200" />
+                  <DropdownMenuItem onClick={handleLogout} className="text-red-600 hover:bg-red-50 hover:text-red-700 cursor-pointer" data-testid="logout-btn">
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <div className="flex items-center gap-2">
+                <a href="/login">
+                  <Button variant="ghost" className="text-stone-600 hover:text-emerald-900 hover:bg-emerald-50">
+                    Login
+                  </Button>
+                </a>
+                <a href="/register">
+                  <Button className="bg-emerald-900 text-white hover:bg-emerald-800">
+                    Get Started
+                  </Button>
+                </a>
+              </div>
+            )}
+
             {/* Mobile menu button */}
-            <button
+            <Button
+              variant="ghost"
               className="xl:hidden p-2 rounded-md text-stone-600 hover:bg-stone-100 transition-colors"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              data-testid="mobile-menu-toggle"
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -186,5 +266,13 @@ export default function Header({ currentPath = '/' }) {
         </div>
       )}
     </header>
+  );
+}
+
+export default function Header(props) {
+  return (
+    <AuthProvider>
+      <HeaderContent {...props} />
+    </AuthProvider>
   );
 }

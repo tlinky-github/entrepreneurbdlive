@@ -111,7 +111,7 @@ const AdminPosts = () => {
             <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
-          <Button asChild className="bg-emerald-900 group">
+          <Button asChild className="bg-emerald-900 text-white group hover:bg-emerald-800">
             <Link to="/admin/content-editor?type=blog">
               <Plus className="w-4 h-4 mr-2 group-hover:rotate-90 transition-transform" />
               Add New Post
@@ -168,7 +168,15 @@ const AdminPosts = () => {
               </TableHeader>
               <TableBody>
                 {posts.map((post) => (
-                  <TableRow key={post.id}>
+                  <TableRow 
+                    key={post.id}
+                    className="cursor-pointer hover:bg-stone-50 transition-colors"
+                    onClick={(e) => {
+                      if (!e.target.closest('button') && !e.target.closest('a')) {
+                        navigate(`/admin/content-editor?type=blog&id=${post.id}`);
+                      }
+                    }}
+                  >
                     <TableCell>
                       <div className="flex items-center gap-3">
                         {post.featured_image && (

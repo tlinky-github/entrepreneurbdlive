@@ -4,6 +4,7 @@ import { getRecentPosts, getFeaturedDocs, getPublicStats } from '../lib/api';
 import { Badge } from '../components/ui/badge.jsx';
 import { Button } from '../components/ui/button.jsx';
 import { Card, CardContent } from '../components/ui/card.jsx';
+import BrandedPlaceholder from '../components/blog/BrandedPlaceholder.jsx';
 import {
   Users, Building2, FileText, BookOpen, Rocket, Target, TrendingUp,
   Star, MapPin, ChevronRight, Lightbulb, User, Clock, ArrowRight
@@ -400,12 +401,10 @@ const iconMap = {
                         loading="lazy"
                       />
                     ) : (
-                      <div class="w-full h-full flex flex-col items-center justify-center bg-stone-100 border-b border-stone-200">
-                        <div class="w-12 h-12 bg-emerald-100 rounded-xl mb-3 flex items-center justify-center">
-                          <span class="text-emerald-800 font-bold text-xl">e</span>
-                        </div>
-                        <p class="font-medium text-stone-400">entrepreneurs.bd</p>
-                      </div>
+                      <BrandedPlaceholder 
+                        title={post.title} 
+                        category={post.category_name || post.category} 
+                      />
                     )}
                   </div>
                   <CardContent className="p-6">

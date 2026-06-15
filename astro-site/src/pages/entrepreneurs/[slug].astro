@@ -1,13 +1,37 @@
 ---
 import PublicLayout from '../../layouts/PublicLayout.astro';
 import EntrepreneurDetail from '../../components/entrepreneurs/EntrepreneurDetail.jsx';
+import { profileAPI, authorAPI } from '../../lib/api';
 
 const { slug } = Astro.params;
+
+let profile = null;
+let authorData = null;
+
+try {
+  const res = await profileAPI.get(slug as string);
+  profile = res.data;
+  
+  if (profile?.authorId) {
+    try {
+      const authorRes = await authorAPI.get(profile.authorId);
+      authorData = authorRes.data;
+    } catch (err: any) {
+      console.error('[Entrepreneur Detail] Author fetch failed:', err.message);
+    }
+  }
+} catch (e: any) {
+  console.error('[Entrepreneur Detail] Profile fetch failed:', e.message);
+}
+
+// SEO metadata
+const title = profile?.name ? `${profile.name} | Entrepreneur BD Profile` : 'Entrepreneur Profile | Entrepreneur BD';
+const description = profile?.short_bio || 'View the profile and journey of this entrepreneur on Entrepreneur BD.';
 ---
 
 <PublicLayout
-  title="Entrepreneur Profile | Entrepreneur BD"
-  description="View the profile and journey of this entrepreneur on Entrepreneur BD."
+  title={title}
+  description={description}
 >
-  <EntrepreneurDetail client:load slug={slug} />
+  <EntrepreneurDetail client:load slug={slug} initialProfile={profile} initialAuthorData={authorData} />
 </PublicLayout>

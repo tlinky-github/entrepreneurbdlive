@@ -34,7 +34,7 @@ import PublicRichEditor from '../../components/submit/PublicRichEditor';
 import Turnstile from '../../components/submit/Turnstile';
 import publicAPI from '../../lib/publicApi';
 
-const TURNSTILE_SITE_KEY = process.env.REACT_APP_TURNSTILE_SITE_KEY || '1x00000000000000000000AA';
+const TURNSTILE_SITE_KEY = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY || import.meta.env.REACT_APP_TURNSTILE_SITE_KEY || '1x00000000000000000000AA';
 
 const SubmissionPage = () => {
 

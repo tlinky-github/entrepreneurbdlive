@@ -89,7 +89,10 @@
     "zod": "^3.24.4"
   },
   "scripts": {
-    "start": "craco start",
+    "start": "npm run dev:astro",
+    "start:react": "craco start",
+    "dev:astro": "npm --prefix astro-site run dev",
+    "build:astro": "npm --prefix astro-site run build",
     "bridge": "node scripts/local-bridge.js",
     "build": "craco build",
     "test": "craco test",

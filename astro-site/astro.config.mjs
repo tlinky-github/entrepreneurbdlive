@@ -8,6 +8,13 @@ export default defineConfig({
   site: 'https://entrepreneurs.bd',
   output: 'server',
   adapter: vercel(),
+  compressHTML: true,
+  server: {
+    host: true,
+  },
+  build: {
+    inlineStylesheets: 'never'
+  },
   integrations: [
     react(),
     tailwind(),
@@ -16,8 +23,13 @@ export default defineConfig({
     }),
   ],
   vite: {
+    envPrefix: ['PUBLIC_', 'REACT_APP_'],
     ssr: {
-      noExternal: ['lucide-react'],
+      noExternal: ['lucide-react', 'react-router-dom', 'react-router'],
+      external: ['sharp', 'firebase-admin', '@aws-sdk/client-s3'],
+    },
+    optimizeDeps: {
+      exclude: ['sharp', 'firebase-admin', '@aws-sdk/client-s3'],
     },
   },
 });

@@ -1,0 +1,21 @@
+---
+import VisualEditorWrapper from '../components/VisualEditor/VisualEditorWrapper.jsx';
+import { AuthProvider } from '../lib/auth.jsx';
+import { Toaster } from 'sonner';
+---
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Visual Editor | Entrepreneur BD</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  </head>
+  <body class="bg-stone-50">
+    <AuthProvider client:only="react">
+      <VisualEditorWrapper client:only="react" />
+      <Toaster client:only="react" position="top-right" richColors />
+    </AuthProvider>
+  </body>
+</html>

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { toast } from 'sonner';
-import api, { mediaAPI } from '../../lib/api';
+import { mediaAPI } from '../../lib/api';
 import { auth } from '../../lib/firebase';
 import { Upload, X, Image as ImageIcon, Loader2, Link as LinkIcon, Grid, RefreshCw, Search, Trash2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
@@ -902,7 +902,7 @@ const ImageUploader = ({
                 </div>
               </div>
               <div className="rounded-lg overflow-hidden border border-stone-200 relative bg-stone-100">
-                <img src={previewUrl} alt="Preview" className="w-full max-h-[300px] object-contain" />
+                {previewUrl && <img src={previewUrl} alt="Preview" className="w-full max-h-[300px] object-contain" />}
               </div>
               <div className="space-y-3">
                 <label className="inline-flex items-center gap-2 text-sm text-stone-600">

@@ -3,7 +3,7 @@ import { Book, Search, ChevronRight, ArrowRight } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent } from '../../components/ui/card';
 import { Input } from '../../components/ui/input';
-import { glossary as mockGlossary } from '../../data/mock';
+import { glossaryTerms as mockGlossary } from '../../data/mock';
 import { glossaryAPI } from '../../lib/api';
 
 const GlossaryPage = () => {

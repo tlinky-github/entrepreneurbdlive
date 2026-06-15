@@ -28,12 +28,13 @@ import {
   Facebook as FacebookIcon
 } from 'lucide-react';
 
-const DirectoryDetail = ({ slug }) => {
-  const [listing, setListing] = useState(null);
-  const [loading, setLoading] = useState(true);
+const DirectoryDetail = ({ slug, initialListing }) => {
+  const [listing, setListing] = useState(initialListing);
+  const [loading, setLoading] = useState(!initialListing);
   const [openFaqIndex, setOpenFaqIndex] = useState(null);
 
   useEffect(() => {
+    if (initialListing) return;
     const loadListing = async () => {
       setLoading(true);
       try {
@@ -47,7 +48,7 @@ const DirectoryDetail = ({ slug }) => {
     };
 
     loadListing();
-  }, [slug]);
+  }, [slug, initialListing]);
 
   const handleShare = async () => {
     try {
@@ -87,7 +88,7 @@ const DirectoryDetail = ({ slug }) => {
   }
 
   return (
-    <div className="bg-stone-50 min-h-screen pb-12" data-testid="directory-detail-page">
+    <div className="bg-stone-50 min-h-screen pb-12" data-testid="directory-detail-page" data-content-id={listing.id} data-content-type="directory">
       {listing && (
         <CustomCodeInjector
           pageCss={listing.custom_css}

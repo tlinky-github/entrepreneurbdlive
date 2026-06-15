@@ -71,12 +71,13 @@ const KnowledgeArticlesTab = ({ navigate }) => {
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Knowledge Articles</CardTitle>
-        <Button className="bg-emerald-900 hover:bg-emerald-800" onClick={() => navigate('/admin/content-editor?type=knowledge')}>
-          <Plus className="w-4 h-4 mr-2" /> New Article
+      <div className="flex justify-between items-center p-6 pb-2">
+        <h2 className="text-lg font-bold text-stone-900">Knowledge Articles</h2>
+        <Button className="bg-emerald-900 text-white hover:bg-emerald-800" onClick={() => navigate('/admin/content-editor?type=knowledge')}>
+          <Plus className="w-4 h-4 mr-2" />
+          New Article
         </Button>
-      </CardHeader>
+      </div>
       <CardContent>
         {loading ? (
           <div className="space-y-3">{[...Array(3)].map((_, i) => <Skeleton key={i} className="h-12" />)}</div>

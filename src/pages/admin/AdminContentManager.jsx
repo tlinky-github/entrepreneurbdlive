@@ -204,7 +204,7 @@ const AdminContentManager = () => {
             ⚡ AI-Generate
           </Button>
           <Button 
-            className="bg-emerald-900 hover:bg-emerald-800"
+            className="bg-emerald-900 text-white hover:bg-emerald-800"
             onClick={() => navigate(`/admin/content-editor?type=${contentType}`)}
           >
             <Plus size={18} className="mr-2" />
@@ -296,7 +296,15 @@ const AdminContentManager = () => {
                     const title = item.title || item.slug || item.company_name || `${item.first_name} ${item.last_name}`;
 
                     return (
-                      <TableRow key={item.id}>
+                      <TableRow 
+                        key={item.id}
+                        className="cursor-pointer hover:bg-stone-50 transition-colors"
+                        onClick={(e) => {
+                          if (!e.target.closest('button') && !e.target.closest('a') && !e.target.closest('[role="menuitem"]')) {
+                            navigate(`/admin/content-editor?type=${contentType}&id=${item.id}`);
+                          }
+                        }}
+                      >
                         <TableCell className="font-medium">{title}</TableCell>
                         <TableCell>
                           <Badge variant="outline">{catName}</Badge>

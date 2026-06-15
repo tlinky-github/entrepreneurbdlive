@@ -6,37 +6,11 @@ import { pillarPages, pillarPagesPart2 } from '../../data/mock';
 import { ArrowLeft, ArrowRight, BookOpen, ChevronRight, Loader2 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '../../components/ui/accordion';
+import { processHtmlContent } from '../../lib/smartDesign';
 
-const KnowledgeArticlePage = ({ slug }) => {
-  const [firestoreArticle, setFirestoreArticle] = useState(null);
-  const [loading, setLoading] = useState(true);
-
+const KnowledgeArticlePage = ({ slug, article, isFirestore }) => {
   const allPillarPages = [...pillarPages, ...pillarPagesPart2];
-  const pillarArticle = allPillarPages.find(p => p.id === slug);
 
-  useEffect(() => {
-    const loadFromFirestore = async () => {
-      try {
-        const res = await contentAPI.list('knowledge');
-        const match = (res.data || []).find(a => a.slug === slug);
-        if (match) setFirestoreArticle(match);
-      } catch (err) {
-        console.error('Firestore lookup failed:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadFromFirestore();
-  }, [slug]);
-
-  const article = firestoreArticle || pillarArticle;
-  const isFirestore = !!firestoreArticle;
   const articleContent = article?.content || {};
   const articleSections = !isFirestore && Array.isArray(articleContent.sections) ? articleContent.sections : [];
   const articleFaqs = !isFirestore && Array.isArray(articleContent.faqs) ? articleContent.faqs : [];
@@ -44,15 +18,6 @@ const KnowledgeArticlePage = ({ slug }) => {
   const currentIndex = allPillarPages.findIndex(p => p.id === slug);
   const prevArticle = currentIndex > 0 ? allPillarPages[currentIndex - 1] : null;
   const nextArticle = currentIndex < allPillarPages.length - 1 ? allPillarPages[currentIndex + 1] : null;
-
-  if (loading) {
-    return (
-      <div className="py-24 text-center">
-        <Loader2 className="w-8 h-8 animate-spin text-emerald-600 mx-auto" />
-        <p className="text-stone-500 mt-4">Loading article...</p>
-      </div>
-    );
-  }
 
   if (!article) {
     return (
@@ -69,7 +34,7 @@ const KnowledgeArticlePage = ({ slug }) => {
   }
 
   return (
-    <>
+    <div className="bg-stone-50 min-h-screen" data-testid="knowledge-article-page" data-content-id={article.id} data-content-type="knowledge">
       {isFirestore && (
         <CustomCodeInjector
           pageCss={article.custom_css}
@@ -158,112 +123,10 @@ const KnowledgeArticlePage = ({ slug }) => {
               <div className="prose-entrepreneurship max-w-none">
                 {isFirestore ? (
                   /* Firestore rich HTML content */
-                  (() => {
-                    const content = article.content || '';
-                      const applySmartDesign = (html) => {
-                        if (!html) return '';
-                        const parser = new DOMParser();
-                        const doc = parser.parseFromString(html, 'text/html');
-                        
-                        const scanners = ['key takeaways', 'quick overview', 'quick answer', 'key highlights', 'takeaways'];
-                        const processedNodes = new Set();
-                        
-                        const allPossible = Array.from(doc.body.querySelectorAll('*')).filter(el => {
-                          const text = el.innerText.trim().toLowerCase().replace(/[\s\u00A0\u2726]+/g, ' ');
-                          return scanners.some(s => text.startsWith(s)) && text.length < 80;
-                        });
-
-                        allPossible.forEach(el => {
-                          if (processedNodes.has(el)) return;
-                          
-                          // --- BROAD DOUBLE-WRAP PREVENTION ---
-                          // If already inside ANY AI-styled block, do not wrap it again.
-                          if (el.closest('.ai-overview-block, .ai-summary-block, [class*="ai-overview"], [class*="ai-summary"]')) return;
-                          
-                          // If this match is inside another match, skip it
-                          if (allPossible.some(other => other !== el && other.contains(el))) return;
-
-                          const sectionData = { headerHtml: el.innerHTML.replace(/[:.]+$/, '').trim(), bodyHtml: '' };
-                          const nodesToRemove = [el];
-                          
-                          let next = el.nextElementSibling;
-                          let attempts = 0;
-                          while (next && attempts < 15) {
-                            const tag = next.tagName;
-                            if (tag === 'UL' || tag === 'OL') {
-                              sectionData.bodyHtml = next.outerHTML; 
-                              nodesToRemove.push(next);
-                              break;
-                            }
-                            if ((tag === 'P' || tag === 'DIV' || tag === 'SECTION') && next.innerText.trim().length > 5) {
-                              const nt = next.innerText.trim().toLowerCase();
-                              if (scanners.some(s => nt.startsWith(s))) break;
-                              sectionData.bodyHtml = `<div class="quick-answer">${next.innerHTML}</div>`;
-                              nodesToRemove.push(next);
-                              break;
-                            }
-                            next = next.nextElementSibling;
-                            attempts++;
-                          }
-
-                          if (sectionData.bodyHtml) {
-                            const box = document.createElement('div');
-                            box.className = 'ai-overview-block';
-                            box.innerHTML = `<h2>${sectionData.headerHtml}</h2>${sectionData.bodyHtml}`;
-                            el.parentNode.insertBefore(box, el);
-                            nodesToRemove.forEach(node => {
-                              processedNodes.add(node);
-                              try { node.remove(); } catch(e) {}
-                            });
-                          }
-                        });
-
-                        // 3. Fix links with leading/trailing spaces in their text (Premium Content Repair)
-                        doc.querySelectorAll('a').forEach(link => {
-                          const h = link.innerHTML;
-                          const t = h.trim();
-                          if (h !== t) {
-                            const leadMatch = h.match(/^\s+/);
-                            const trailMatch = h.match(/\s+$/);
-                            
-                            if (leadMatch) {
-                              const leadNode = doc.createTextNode(leadMatch[0]);
-                              link.parentNode.insertBefore(leadNode, link);
-                            }
-                            
-                            link.innerHTML = t;
-                            
-                            if (trailMatch) {
-                              const trailNode = doc.createTextNode(trailMatch[0]);
-                              if (link.nextSibling) {
-                                link.parentNode.insertBefore(trailNode, link.nextSibling);
-                              } else {
-                                link.parentNode.appendChild(trailNode);
-                              }
-                            }
-                          }
-                        });
-                        
-                        // 4. Fix tables for responsiveness (Wrap in scrollable container)
-                        doc.querySelectorAll('table').forEach(table => {
-                          if (table.parentNode && table.parentNode.className !== 'table-wrapper') {
-                            const wrapper = doc.createElement('div');
-                            wrapper.className = 'table-wrapper';
-                            table.parentNode.insertBefore(wrapper, table);
-                            wrapper.appendChild(table);
-                          }
-                        });
-
-                        return doc.body.innerHTML;
-                      };
-
-                    return (
-                      <div 
-                        className="prose prose-stone max-w-none"
-                        dangerouslySetInnerHTML={{ __html: sanitizeHtml(applySmartDesign(content)) }}
-                      />
-                    );
-                  })()
+                  <div 
+                    className="prose prose-stone max-w-none"
+                    dangerouslySetInnerHTML={{ __html: sanitizeHtml(processHtmlContent(article.content || '', article.title, article.featured_image)) }}
+                  />
                 ) : (
                   /* Legacy pillar page structured content */
                   <>
@@ -288,13 +151,13 @@ const KnowledgeArticlePage = ({ slug }) => {
                       <h2 className="text-2xl font-bold text-stone-900 mb-6">
                         Frequently Asked Questions
                       </h2>
-                      <Accordion type="single" collapsible className="w-full">
+                      <div className="faq-list space-y-8">
                         {articleFaqs.map((faq, index) => (
-                          <AccordionItem key={index} value={`faq-${index}`} className="border-b border-stone-200">
-                            <AccordionTrigger className="text-left text-stone-900 hover:text-emerald-900 hover:no-underline py-4 font-medium">
+                          <div key={index} className="faq-item border-b border-stone-200 pb-8 last:border-0 last:pb-0">
+                            <h3 className="text-xl font-bold text-stone-900 mb-3 leading-tight">
                               {faq.q}
-                            </AccordionTrigger>
-                            <AccordionContent className="text-stone-600 pb-4 leading-relaxed">
+                            </h3>
+                            <div className="text-stone-700 leading-relaxed prose prose-stone max-w-none prose-p:my-2 prose-a:text-emerald-600 prose-a:font-semibold hover:prose-a:text-emerald-700">
                               {(() => {
                                 const answerHtml = sanitizeHtml(
                                   (faq.a || '')
@@ -304,10 +167,10 @@ const KnowledgeArticlePage = ({ slug }) => {
                                 );
                                 return <div dangerouslySetInnerHTML={{ __html: answerHtml }} />;
                               })()}
-                            </AccordionContent>
-                          </AccordionItem>
+                            </div>
+                          </div>
                         ))}
-                      </Accordion>
+                      </div>
                     </section>
                   </>
                 )}
@@ -386,7 +249,7 @@ const KnowledgeArticlePage = ({ slug }) => {
           </div>
         </div>
       </section>
-    </>
+    </div>
   );
 };
 

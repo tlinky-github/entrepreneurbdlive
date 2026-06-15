@@ -1,9 +1,11 @@
 ---
 import PublicLayout from '../../layouts/PublicLayout.astro';
-import { getDocBySlug, stripHtml } from '../../lib/api';
-import { processHtmlContent } from '../../lib/smartDesign';
+import { getDocBySlug, stripHtml, authorAPI, postAPI } from '../../lib/api';
+import { processHtmlContent, decodeHtmlEntities } from '../../lib/smartDesign';
 import { Badge } from '../../components/ui/badge.jsx';
-import { Calendar, Clock, ArrowLeft } from 'lucide-react';
+import { Calendar, Clock, ArrowLeft, Globe, Linkedin, Twitter, Facebook } from 'lucide-react';
+import BlogInteractionsWrapper from '../../components/blog/BlogInteractionsWrapper.jsx';
+import BrandedPlaceholder from '../../components/blog/BrandedPlaceholder.jsx';
 
 const { slug } = Astro.params;
 
@@ -15,17 +17,24 @@ if (!post) {
   return new Response('Post not found', { status: 404 });
 }
 
-// Generate SEO metadata
-const title = post.seoTitle || post.title || 'Blog Post';
-const description = post.metaDescription || stripHtml(post.excerpt || post.content_html).substring(0, 160);
+// Generate SEO metadata and decode entities
+const rawTitle = post.seoTitle || post.title || 'Blog Post';
+const title = decodeHtmlEntities(rawTitle);
+const description = decodeHtmlEntities(post.metaDescription || stripHtml(post.excerpt || post.content_html).substring(0, 160));
 const image = post.featured_image || '/og-default.png';
 
-// Format Date exactly as in React
-const publishedDate = post.created_at ? new Date(post.created_at).toLocaleDateString('en-US', {
-  year: 'numeric',
-  month: 'long',
-  day: 'numeric'
-}) : '';
+// Format Date safely
+let publishedDate = '';
+if (post.created_at) {
+  const d = new Date(post.created_at);
+  if (!isNaN(d.getTime())) {
+    publishedDate = d.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  }
+}
 
 function getReadingTime(post) {
   const content = post.content || post.content_html || '';
@@ -35,6 +44,38 @@ function getReadingTime(post) {
 // Process the raw HTML with the exact Smart Design pipeline from the React app
 const finalContentHtml = processHtmlContent(post.content_html || post.content || '', post.featured_image, post.title);
 
+// Load Author Data on Server
+let authorData: any = null;
+if (post.authorId) {
+  try {
+    const authorRes = await authorAPI.get(post.authorId);
+    authorData = authorRes?.data || null;
+  } catch (e) {
+    console.error('Failed to fetch author:', e);
+  }
+}
+
+// Fallback to post metadata if profile not found but snapshot exists
+if (!authorData && post.author_name) {
+  authorData = {
+    id: post.authorId || '',
+    name: decodeHtmlEntities(post.author_name),
+    photo: post.author_photo || '',
+    designation: decodeHtmlEntities(post.author_designation || post.designation || 'Professional Author'),
+    slug: post.author_slug || post.authorId || ''
+  };
+}
+
+// Fetch Related Articles
+let relatedPosts: any[] = [];
+if (post.category_id) {
+  try {
+    const relatedRes = await postAPI.list({ category_id: post.category_id, status: 'published', limit: 7 });
+    relatedPosts = (relatedRes.data || []).filter((p: any) => p.id !== post.id).slice(0, 3);
+  } catch (err) {
+    console.error('Error loading related posts:', err);
+  }
+}
 ---
 
 <PublicLayout 
@@ -43,7 +84,7 @@ const finalContentHtml = processHtmlContent(post.content_html || post.content ||
   image={image}
   type="article"
 >
-  <div class="bg-stone-50 min-h-screen" data-testid="blog-detail-page">
+  <div class="bg-stone-50 min-h-screen" data-testid="blog-detail-page" data-content-id={post.id} data-content-type="post">
     
     <!-- Back Button -->
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
@@ -57,26 +98,42 @@ const finalContentHtml = processHtmlContent(post.content_html || post.content ||
     <article class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <header class="mb-8">
         {post.category_name && (
-          <Badge className="bg-emerald-100 text-emerald-900 hover:bg-emerald-100 mb-4">{post.category_name}</Badge>
+          <Badge className="bg-emerald-100 text-emerald-900 hover:bg-emerald-100 mb-4">{decodeHtmlEntities(post.category_name)}</Badge>
         )}
         <h1 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-stone-900 mb-6 leading-tight">
-          {post.title}
+          {decodeHtmlEntities(post.title)}
         </h1>
         {post.excerpt && (
-          <p class="text-xl text-stone-600 mb-6">{post.excerpt}</p>
+          <p class="text-xl text-stone-600 mb-6">{decodeHtmlEntities(post.excerpt)}</p>
         )}
 
         <div class="flex flex-wrap items-center gap-6 text-sm text-stone-500 pb-6 border-b border-stone-200">
           <div class="flex items-center gap-2">
-            <div class="flex items-center gap-2">
-              <div class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-900 flex items-center justify-center font-bold text-sm">
-                {(post.author_name || 'E').charAt(0).toUpperCase()}
+            {authorData ? (
+              <a href={`/author/${authorData.slug}`} class="flex items-center gap-2 group">
+                {authorData.photo ? (
+                  <img src={authorData.photo} alt={authorData.name} class="w-10 h-10 rounded-full border border-stone-200 group-hover:border-emerald-500 transition-colors object-cover" />
+                ) : (
+                  <div class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-900 flex items-center justify-center font-bold text-sm">
+                    {authorData.name?.charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <div>
+                  <p class="font-medium text-stone-900 group-hover:text-emerald-900 transition-colors">{authorData.name}</p>
+                  <p class="text-xs">{authorData.designation || 'Author'}</p>
+                </div>
+              </a>
+            ) : (
+              <div class="flex items-center gap-2">
+                <div class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-900 flex items-center justify-center font-bold text-sm">
+                  {(post.author_name || 'E').charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <p class="font-medium text-stone-900">{decodeHtmlEntities(post.author_name || 'Entrepreneurs BD')}</p>
+                  <p class="text-xs">Author</p>
+                </div>
               </div>
-              <div>
-                <p class="font-medium text-stone-900">{post.author_name || 'Entrepreneurs BD'}</p>
-                <p class="text-xs">Author</p>
-              </div>
-            </div>
+            )}
           </div>
           
           {publishedDate && (
@@ -95,8 +152,113 @@ const finalContentHtml = processHtmlContent(post.content_html || post.content ||
 
       <!-- Processed Article Content (Includes injected featured image and FAQs) -->
       <div class="tiptap-content">
-        <div class="prose prose-stone max-w-none prose-h2:text-2xl prose-h2:font-black prose-p:text-stone-800 prose-p:leading-relaxed prose-p:text-lg" set:html={finalContentHtml}></div>
+        <div class="prose prose-stone max-w-none prose-h2:text-2xl prose-h2:font-black prose-p:text-stone-800 prose-p:leading-relaxed prose-p:text-lg prose-a:text-emerald-600 prose-a:font-semibold hover:prose-a:text-emerald-700 prose-a:no-underline hover:prose-a:underline" set:html={finalContentHtml}></div>
       </div>
+
+      <!-- Author Bio Section -->
+      {authorData && (
+        <div class="mt-12 bg-white border border-stone-200 rounded-2xl p-6 md:p-8 shadow-sm">
+          <div class="flex flex-col md:flex-row gap-6 items-start">
+            <div class="flex-shrink-0">
+              <div class="w-24 h-24 rounded-full overflow-hidden bg-stone-100 border-2 border-emerald-900 shadow-md">
+                 {authorData.photo ? (
+                    <img src={authorData.photo} alt={authorData.name} class="w-full h-full object-cover" />
+                 ) : (
+                    <div class="w-full h-full flex items-center justify-center text-3xl font-bold text-emerald-900">
+                       {authorData.name?.charAt(0)}
+                    </div>
+                 )}
+              </div>
+            </div>
+            <div class="flex-1">
+               <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+                  <div>
+                     <h3 class="text-xl font-bold text-stone-900">About the Author: {authorData.name}</h3>
+                     <p class="text-sm text-emerald-700 font-medium">{authorData.designation || 'Professional Contributor'}</p>
+                  </div>
+                  <div class="flex items-center gap-3">
+                     {authorData.website && (
+                       <a href={authorData.website} target="_blank" rel="noopener noreferrer" class="text-stone-400 hover:text-emerald-900 transition-colors">
+                          <Globe className="w-5 h-5" />
+                       </a>
+                     )}
+                     {authorData.linkedin && (
+                       <a href={authorData.linkedin} target="_blank" rel="noopener noreferrer" class="text-stone-400 hover:text-blue-700 transition-colors">
+                          <Linkedin className="w-5 h-5" />
+                       </a>
+                     )}
+                     {authorData.twitter && (
+                       <a href={authorData.twitter} target="_blank" rel="noopener noreferrer" class="text-stone-400 hover:text-sky-500 transition-colors">
+                          <Twitter className="w-5 h-5" />
+                       </a>
+                     )}
+                     {authorData.facebook && (
+                       <a href={authorData.facebook} target="_blank" rel="noopener noreferrer" class="text-stone-400 hover:text-blue-600 transition-colors">
+                          <Facebook className="w-5 h-5" />
+                       </a>
+                     )}
+                  </div>
+               </div>
+               <p class="text-stone-600 leading-relaxed mb-6">
+                  {authorData.bio || `Expert contributor at Entrepreneurs BD, sharing insights to help the next generation of Bangladeshi founders grow.`}
+               </p>
+               <a href={`/author/${authorData.slug}`} class="inline-block bg-emerald-900 hover:bg-emerald-800 text-white font-semibold px-4 py-2 rounded-lg text-sm transition-colors">
+                  View Full Profile & Contributions
+               </a>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <!-- Engagement Bar & Comments Section (Interactive client island) -->
+      <BlogInteractionsWrapper 
+        client:load 
+        postId={post.id} 
+        postTitle={post.title} 
+        postExcerpt={post.excerpt || ''} 
+        initialLikeCount={post.like_count || 0} 
+      />
+
+      <!-- Related Articles Section -->
+      {relatedPosts.length > 0 && (
+        <section class="mt-16">
+          <h2 class="text-2xl font-bold text-stone-900 mb-8">Related Articles</h2>
+          <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {relatedPosts.map((rPost) => (
+              <a key={rPost.id} href={`/blog/${rPost.slug}`}>
+                <div class="bg-white border border-stone-200 rounded-2xl overflow-hidden hover:shadow-lg hover:border-emerald-900/20 transition-all duration-200 h-full group">
+                  <div class="aspect-video bg-stone-100 overflow-hidden">
+                    {rPost.featured_image ? (
+                      <img
+                        src={rPost.featured_image}
+                        alt={rPost.title}
+                        loading="lazy"
+                        class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    ) : (
+                      <BrandedPlaceholder 
+                        title={rPost.title} 
+                        category={rPost.category_name} 
+                      />
+                    )}
+                  </div>
+                  <div class="p-5">
+                    {rPost.category_name && (
+                      <Badge variant="outline" className="mb-2 text-xs">{rPost.category_name}</Badge>
+                    )}
+                    <h3 class="font-semibold text-stone-900 line-clamp-2 mb-2 group-hover:text-emerald-900 transition-colors">
+                      {rPost.title}
+                    </h3>
+                    {rPost.excerpt && (
+                      <p class="text-sm text-stone-600 line-clamp-2">{rPost.excerpt}</p>
+                    )}
+                  </div>
+                </div>
+              </a>
+            ))}
+          </div>
+        </section>
+      )}
       
     </article>
   </div>

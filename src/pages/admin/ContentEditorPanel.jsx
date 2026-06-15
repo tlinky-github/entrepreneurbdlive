@@ -846,7 +846,7 @@ const ContentEditorPanel = () => {
   const handleSave = async (overrideStatus = null) => {
     if (!title.trim()) {
       toast.error('Title is required');
-      return;
+      return false;
     }
     
 
@@ -854,18 +854,18 @@ const ContentEditorPanel = () => {
       if (type === 'directory') {
         if (!(featuredImage || logo)) {
           toast.error('Logo is required');
-          return;
+          return false;
         }
       } else if (type !== 'blog') {
         if (!(featuredImage || photo)) {
           toast.error('Profile Photo is required');
-          return;
+          return false;
         }
       }
 
     if (!category) {
       toast.error('Category is required');
-      return;
+      return false;
     }
 
     setSaving(true);
@@ -875,7 +875,7 @@ const ContentEditorPanel = () => {
       if (!contentHtml || contentHtml === '<p></p>') {
         toast.warning('Please add some content before saving');
         setSaving(false);
-        return;
+        return false;
       }
 
       // Senior Engineer Fix: Sanitize content before saving (Google Docs compatible)
@@ -997,10 +997,12 @@ const ContentEditorPanel = () => {
       if (!itemId && response?.id) {
         navigate(`/admin/content-editor?type=${type}&id=${response.id}`, { replace: true });
       }
+      return true;
     } catch (error) {
       console.error('Save error:', error);
       const errorMsg = error.message || 'Failed to save content';
       toast.error(`${errorMsg}. Please check your internet connection or Firestore permissions.`);
+      return false;
     } finally {
       setSaving(false);
     }
@@ -1115,7 +1117,7 @@ const ContentEditorPanel = () => {
 
       {/* Branded Navigation Blocker Dialog */}
       <Dialog open={blocker.state === 'blocked'} onOpenChange={() => blocker.reset()}>
-        <DialogContent className="sm:max-w-[425px] border-emerald-100 rounded-3xl p-8">
+        <DialogContent className="sm:max-w-[425px] bg-white border-emerald-100 rounded-3xl p-8">
           <div className="flex flex-col items-center text-center space-y-4">
             <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mb-2">
               <ShieldCheck className="w-8 h-8 text-emerald-600" />
@@ -1137,8 +1139,10 @@ const ContentEditorPanel = () => {
               <Button 
                 className="flex-1 rounded-xl h-12 bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-200"
                 onClick={async () => {
-                  await handleSave();
-                  // Reset dirty state will automatically close the dialog via blocker state
+                  const success = await handleSave();
+                  if (success) {
+                    blocker.proceed();
+                  }
                 }}
               >
                 Save & Continue
@@ -2177,6 +2181,7 @@ const ContentEditorPanel = () => {
                     </div>
                     <EditorContent
                       editor={editor}
+                      className="prose prose-stone max-w-none prose-headings:font-bold prose-a:text-emerald-600 focus:outline-none"
                       style={{
                         outline: 'none',
                         minHeight: '400px',

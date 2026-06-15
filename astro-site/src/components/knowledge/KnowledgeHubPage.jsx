@@ -4,6 +4,7 @@ import { Button } from '../ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { pillarPages, pillarPagesPart2 } from '../../data/mock';
 import { contentAPI } from '../../lib/api';
+import { SitePagination } from '../common/SitePagination';
 
 const iconMap = {
   Lightbulb: Lightbulb,
@@ -18,23 +19,34 @@ const iconMap = {
   Rocket: Rocket,
 };
 
-const KnowledgeHubPage = () => {
-  const [firestoreArticles, setFirestoreArticles] = useState([]);
+const KnowledgeHubPage = ({ firestoreArticles = [] }) => {
+  const allPillarPages = [...pillarPages, ...pillarPagesPart2];
+  
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 9;
 
   useEffect(() => {
-    const loadArticles = async () => {
-      try {
-        const res = await contentAPI.list('knowledge');
-        const published = (res.data || []).filter(a => a.status === 'published');
-        setFirestoreArticles(published);
-      } catch (err) {
-        console.error('Failed to load knowledge articles:', err);
-      }
-    };
-    loadArticles();
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const page = parseInt(params.get('page')) || 1;
+      setCurrentPage(page);
+    }
   }, []);
 
-  const allPillarPages = [...pillarPages, ...pillarPagesPart2];
+  const totalPages = Math.ceil(firestoreArticles.length / ITEMS_PER_PAGE);
+  const safeCurrentPage = Math.max(1, Math.min(currentPage, totalPages || 1));
+  const startIndex = (safeCurrentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedArticles = firestoreArticles.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.searchParams.set('page', page);
+      window.history.pushState({}, '', url);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
 
   return (
     <>
@@ -110,7 +122,7 @@ const KnowledgeHubPage = () => {
                 <h2 className="text-2xl font-bold text-stone-900">More Articles</h2>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {firestoreArticles.map((article) => (
+                {paginatedArticles.map((article) => (
                   <Card
                     key={article.id}
                     className="group hover:scale-105 transition-transform duration-300 border-stone-200 bg-white h-full shadow-sm hover:shadow-xl"
@@ -141,6 +153,16 @@ const KnowledgeHubPage = () => {
                   </Card>
                 ))}
               </div>
+              
+              {totalPages > 1 && (
+                <div className="mt-16 border-t border-stone-200 pt-8">
+                  <SitePagination 
+                    currentPage={safeCurrentPage} 
+                    totalPages={totalPages} 
+                    onPageChange={handlePageChange}
+                  />
+                </div>
+              )}
             </>
           )}
         </div>

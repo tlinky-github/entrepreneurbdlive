@@ -2,14 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { MessageCircle, BookOpen, ArrowRight, ChevronDown, ChevronUp, HelpCircle, ChevronRight } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '../../components/ui/accordion';
+// Accordion removed per user request
 import { faqs as mockFaqs } from '../../data/mock';
-import { faqAPI } from '../../lib/api';
+import { faqCategoriesAPI } from '../../lib/api';
 
 const FAQsPage = () => {
   const [firestoreFaqs, setFirestoreFaqs] = useState([]);
@@ -64,22 +59,21 @@ const FAQsPage = () => {
                 <h2 className="text-2xl font-bold text-stone-900 mb-6 pb-3 border-b border-stone-200">
                   {category.category || category.name || 'FAQ Category'}
                 </h2>
-                <Accordion type="single" collapsible className="w-full">
+                <div className="w-full space-y-8">
                   {(Array.isArray(category.questions) ? category.questions : []).map((faq, faqIndex) => (
-                    <AccordionItem
+                    <div
                       key={faqIndex}
-                      value={`${categoryIndex}-${faqIndex}`}
-                      className="border-b border-stone-200"
+                      className="border-b border-stone-200 pb-8 last:border-0 last:pb-0"
                     >
-                      <AccordionTrigger className="text-left text-stone-900 hover:text-emerald-900 hover:no-underline py-4 text-base font-medium">
+                      <h3 className="text-xl font-bold text-stone-900 mb-3 leading-tight">
                         {faq.q || 'Question unavailable'}
-                      </AccordionTrigger>
-                      <AccordionContent className="text-stone-600 pb-4 leading-relaxed">
+                      </h3>
+                      <div className="text-stone-700 leading-relaxed prose prose-stone max-w-none prose-p:my-2 prose-a:text-emerald-600 prose-a:font-semibold hover:prose-a:text-emerald-700">
                         {faq.a || 'Answer unavailable.'}
-                      </AccordionContent>
-                    </AccordionItem>
+                      </div>
+                    </div>
                   ))}
-                </Accordion>
+                </div>
               </div>
             ))}
           </div>

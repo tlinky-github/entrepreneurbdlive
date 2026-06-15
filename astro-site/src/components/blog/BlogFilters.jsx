@@ -52,7 +52,7 @@ export default function BlogFilters({ initialSearch = '', initialCategory = '', 
         <SelectContent>
           <SelectItem value="all">All Categories</SelectItem>
           {categories.map((cat) => (
-            <SelectItem key={cat.id} value={String(cat.id)}>
+            <SelectItem key={cat.id} value={String(cat.slug || cat.id)}>
               {cat.name}
             </SelectItem>
           ))}
