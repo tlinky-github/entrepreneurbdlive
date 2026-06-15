@@ -1,0 +1,38 @@
+---
+import PublicLayout from '../../layouts/PublicLayout.astro';
+import KnowledgeArticlePage from '../../components/knowledge/KnowledgeArticlePage.jsx';
+import { getDocBySlug } from '../../lib/api';
+import { pillarPages, pillarPagesPart2 } from '../../data/mock';
+
+const { slug } = Astro.params;
+
+let article = null;
+let isFirestore = false;
+
+// 1. Try Firestore
+try {
+  article = await getDocBySlug('resources', slug as string);
+  if (article) {
+    isFirestore = true;
+  }
+} catch (e) {
+  console.error('[Knowledge Article] Firestore fetch failed:', e);
+}
+
+// 2. Try mock/pillar pages
+if (!article) {
+  const allPillarPages = [...pillarPages, ...pillarPagesPart2];
+  article = allPillarPages.find(p => p.id === slug);
+}
+
+// SEO metadata
+const title = article?.title || 'Knowledge Hub Article';
+const description = article?.description || article?.subtitle || 'Read this business knowledge article on Entrepreneur BD.';
+---
+
+<PublicLayout
+  title={`${title} | Entrepreneur BD`}
+  description={description}
+>
+  <KnowledgeArticlePage client:load slug={slug} article={article} isFirestore={isFirestore} />
+</PublicLayout>

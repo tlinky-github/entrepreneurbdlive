@@ -1,0 +1,20 @@
+---
+import PublicLayout from '../../layouts/PublicLayout.astro';
+import KnowledgeHubPage from '../../components/knowledge/KnowledgeHubPage.jsx';
+import { contentAPI } from '../../lib/api';
+
+let firestoreArticles = [];
+try {
+  const res = await contentAPI.list('knowledge');
+  firestoreArticles = (res?.data || []).filter((a: any) => a.status === 'published');
+} catch (e: any) {
+  console.error('[Knowledge Hub] SSR fetch failed:', e.message);
+}
+---
+
+<PublicLayout
+  title="Knowledge Hub | Entrepreneur BD"
+  description="Your complete resource library for building and growing a successful business."
+>
+  <KnowledgeHubPage client:load firestoreArticles={firestoreArticles} />
+</PublicLayout>

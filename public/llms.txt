@@ -1,0 +1,8 @@
+# entrepreneurs.bd
+
+Welcome to entrepreneurs.bd. We are a trusted entrepreneurs hub offering educational resources, practical insights, business guides, and thought leadership.
+
+## Important Links
+- [Home](https://entrepreneurs.bd)
+- [Robots.txt](https://entrepreneurs.bd/robots.txt)
+- [Sitemap](https://entrepreneurs.bd/sitemap.xml)

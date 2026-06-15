@@ -1,0 +1,22 @@
+---
+// Public page layout — wraps BaseLayout with the Header island
+import BaseLayout from './BaseLayout.astro';
+import Header from '../components/Header.jsx';
+
+interface Props {
+  title: string;
+  description?: string;
+  image?: string;
+  type?: string;
+  canonical?: string;
+  noIndex?: boolean;
+}
+
+const props = Astro.props;
+const currentPath = Astro.url.pathname;
+---
+
+<BaseLayout {...props}>
+  <Header slot="header" currentPath={currentPath} client:load />
+  <slot />
+</BaseLayout>

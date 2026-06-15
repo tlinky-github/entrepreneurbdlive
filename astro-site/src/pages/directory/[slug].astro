@@ -1,0 +1,26 @@
+---
+import PublicLayout from '../../layouts/PublicLayout.astro';
+import DirectoryDetail from '../../components/directory/DirectoryDetail.jsx';
+import { listingAPI } from '../../lib/api';
+
+const { slug } = Astro.params;
+
+let listing = null;
+try {
+  const res = await listingAPI.get(slug as string);
+  listing = res.data;
+} catch (e: any) {
+  console.error('[Directory Detail] Fetch failed:', e.message);
+}
+
+// SEO metadata
+const title = listing?.business_name ? `${listing.business_name} | Entrepreneur BD Directory` : 'Business Detail | Entrepreneur BD';
+const description = listing?.short_description || 'View detailed information about this business on Entrepreneur BD.';
+---
+
+<PublicLayout
+  title={title}
+  description={description}
+>
+  <DirectoryDetail client:load slug={slug} initialListing={listing} />
+</PublicLayout>

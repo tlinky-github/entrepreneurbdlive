@@ -1,0 +1,61 @@
+---
+import PublicLayout from '../../layouts/PublicLayout.astro';
+import { Button } from '../../components/ui/button.jsx';
+import { CheckCircle, ArrowRight, Home } from 'lucide-react';
+
+const url = new URL(Astro.request.url);
+const name = url.searchParams.get('name') || 'Entrepreneur';
+const type = url.searchParams.get('type') || 'submission';
+---
+
+<PublicLayout title="Submission Successful | Entrepreneur BD">
+  <div class="min-h-screen bg-stone-50 flex items-center justify-center py-20 px-4">
+    <div class="max-w-xl w-full text-center">
+      <div class="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-8 animate-bounce">
+        <CheckCircle className="w-10 h-10 text-emerald-900" />
+      </div>
+      
+      <h1 class="text-3xl sm:text-4xl font-black text-stone-900 mb-6">
+        Thank You, {name}!
+      </h1>
+      
+      <p class="text-lg text-stone-600 mb-10 leading-relaxed">
+        Your {type === 'listing' ? 'business listing' : 'founder spotlight'} application has been successfully submitted. 
+        Our editorial team will review your details within 24-48 hours.
+      </p>
+
+      <div class="bg-white rounded-2xl p-8 border border-stone-200 shadow-sm mb-10 text-left">
+        <h3 class="font-bold text-stone-900 mb-4">What happens next?</h3>
+        <ul class="space-y-4 text-sm text-stone-600">
+          <li class="flex items-start gap-3">
+            <span class="w-5 h-5 rounded-full bg-emerald-50 text-emerald-900 flex items-center justify-center text-[10px] font-bold mt-0.5">1</span>
+            <span>Manual verification of all provided links and information.</span>
+          </li>
+          <li class="flex items-start gap-3">
+            <span class="w-5 h-5 rounded-full bg-emerald-50 text-emerald-900 flex items-center justify-center text-[10px] font-bold mt-0.5">2</span>
+            <span>Content polishing and SEO optimization by our team.</span>
+          </li>
+          <li class="flex items-start gap-3">
+            <span class="w-5 h-5 rounded-full bg-emerald-50 text-emerald-900 flex items-center justify-center text-[10px] font-bold mt-0.5">3</span>
+            <span>Confirmation email once your profile is live on the platform.</span>
+          </li>
+        </ul>
+      </div>
+
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+        <a href="/">
+          <Button variant="outline" className="border-stone-300 text-stone-600 hover:bg-stone-100 px-8 h-12 rounded-xl">
+            <Home className="w-4 h-4 mr-2" />
+            Back to Home
+          </Button>
+        </a>
+        <a href="/directory">
+          <Button className="bg-emerald-900 text-white hover:bg-emerald-800 px-8 h-12 rounded-xl">
+            Browse Directory
+            <ArrowRight className="w-4 h-4 ml-2" />
+          </Button>
+        </a>
+      </div>
+    </div>
+  </div>
+</PublicLayout>
