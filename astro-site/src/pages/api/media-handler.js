@@ -142,11 +142,22 @@ const verifyFirebaseIdToken = async (idToken) => {
   return verifyFirebaseIdTokenWithoutAdmin(idToken);
 };
 
-const r2Client = new S3Client({
-  region: 'auto',
-  endpoint: `https://${env('R2_ACCOUNT_ID')}.r2.cloudflarestorage.com`,
-  credentials: { accessKeyId: env('R2_ACCESS_KEY_ID'), secretAccessKey: env('R2_SECRET_ACCESS_KEY') },
-});
+let r2ClientInstance = null;
+const getR2Client = () => {
+  if (r2ClientInstance) return r2ClientInstance;
+  const accountId = env('R2_ACCOUNT_ID');
+  const accessKeyId = env('R2_ACCESS_KEY_ID');
+  const secretAccessKey = env('R2_SECRET_ACCESS_KEY');
+  if (!accountId || !accessKeyId || !secretAccessKey) {
+    throw new Error(`R2 configuration is missing or incomplete. Got accountId=${!!accountId}, accessKeyId=${!!accessKeyId}, secretAccessKey=${!!secretAccessKey}`);
+  }
+  r2ClientInstance = new S3Client({
+    region: 'auto',
+    endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
+    credentials: { accessKeyId, secretAccessKey },
+  });
+  return r2ClientInstance;
+};
 
 export const ALL = async ({ request, url }) => {
   const corsHeaders = {
@@ -178,7 +189,7 @@ export const ALL = async ({ request, url }) => {
     if (action === 'list' && request.method === 'GET') {
       const folderPrefix = env('R2_FOLDER_PREFIX') || 'assets/';
       const command = new ListObjectsV2Command({ Bucket: bucketName, Prefix: folderPrefix });
-      const response = await r2Client.send(command);
+      const response = await getR2Client().send(command);
       const mediaItems = (response.Contents || [])
         .filter(item => ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(item.Key.split('.').pop().toLowerCase()))
         .map(item => ({
@@ -197,7 +208,7 @@ export const ALL = async ({ request, url }) => {
       const body = await request.json();
       const { key } = body;
       if (!key) return new Response(JSON.stringify({ error: 'Key required' }), { status: 400, headers: corsHeaders });
-      await r2Client.send(new DeleteObjectCommand({ Bucket: bucketName, Key: key }));
+      await getR2Client().send(new DeleteObjectCommand({ Bucket: bucketName, Key: key }));
       return new Response(JSON.stringify({ success: true }), { status: 200, headers: corsHeaders });
     }
 
@@ -208,7 +219,7 @@ export const ALL = async ({ request, url }) => {
       const folderPrefix = env('R2_FOLDER_PREFIX') || '';
       const uniqueKey = `${folderPrefix ? folderPrefix.replace(/\/$/, '') + '/' : ''}${fileType}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileName.split('.').pop()}`;
       const command = new PutObjectCommand({ Bucket: bucketName, Key: uniqueKey, ContentType: contentType || 'image/jpeg' });
-      const uploadUrl = await getSignedUrl(r2Client, command, { expiresIn: 300 });
+      const uploadUrl = await getSignedUrl(getR2Client(), command, { expiresIn: 300 });
       return new Response(JSON.stringify({ uploadUrl, publicUrl: `${publicUrl}/${uniqueKey}`, key: uniqueKey }), { status: 200, headers: corsHeaders });
     }
 
@@ -255,7 +266,7 @@ export const ALL = async ({ request, url }) => {
       else if (targetExt === 'gif') optimizedBuffer = await pipeline.gif().toBuffer();
       else optimizedBuffer = await pipeline.jpeg({ quality: qNum, mozjpeg: true }).toBuffer();
 
-      await r2Client.send(new PutObjectCommand({ 
+      await getR2Client().send(new PutObjectCommand({ 
         Bucket: bucketName, 
         Key: optimizedKey, 
         ContentType: `image/${targetExt === 'jpg' ? 'jpeg' : targetExt}`, 

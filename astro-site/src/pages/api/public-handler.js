@@ -60,14 +60,22 @@ const ensureFirebaseAdmin = () => {
   }
 };
 
-const r2Client = new S3Client({
-  region: 'auto',
-  endpoint: `https://${env('R2_ACCOUNT_ID')}.r2.cloudflarestorage.com`,
-  credentials: { 
-    accessKeyId: env('R2_ACCESS_KEY_ID'), 
-    secretAccessKey: env('R2_SECRET_ACCESS_KEY') 
-  },
-});
+let r2ClientInstance = null;
+const getR2Client = () => {
+  if (r2ClientInstance) return r2ClientInstance;
+  const accountId = env('R2_ACCOUNT_ID');
+  const accessKeyId = env('R2_ACCESS_KEY_ID');
+  const secretAccessKey = env('R2_SECRET_ACCESS_KEY');
+  if (!accountId || !accessKeyId || !secretAccessKey) {
+    throw new Error(`R2 configuration is missing or incomplete. Got accountId=${!!accountId}, accessKeyId=${!!accessKeyId}, secretAccessKey=${!!secretAccessKey}`);
+  }
+  r2ClientInstance = new S3Client({
+    region: 'auto',
+    endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
+    credentials: { accessKeyId, secretAccessKey },
+  });
+  return r2ClientInstance;
+};
 
 export const ALL = async ({ request }) => {
   const corsHeaders = {
@@ -208,7 +216,7 @@ async function handleGetUploadUrl(fileData, corsHeaders) {
     ContentType: contentType || 'image/jpeg' 
   });
   
-  const uploadUrl = await getSignedUrl(r2Client, command, { expiresIn: 300 });
+  const uploadUrl = await getSignedUrl(getR2Client(), command, { expiresIn: 300 });
   return new Response(JSON.stringify({ success: true, uploadUrl, publicUrl: `${publicUrl}/${key}`, key }), { status: 200, headers: corsHeaders });
 }
 
@@ -249,7 +257,7 @@ async function handleOptimizeImage(params, corsHeaders) {
   const key = `public/optimized/${type}-${Date.now()}.jpg`;
   const bucketName = env('R2_BUCKET_NAME');
 
-  await r2Client.send(new PutObjectCommand({ 
+  await getR2Client().send(new PutObjectCommand({ 
     Bucket: bucketName, 
     Key: key, 
     ContentType: 'image/jpeg', 
