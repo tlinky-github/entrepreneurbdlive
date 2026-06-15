@@ -9,15 +9,28 @@ let firebaseInitError = null;
 let googleCertCache = null;
 let googleCertCacheExpiresAt = 0;
 
+// Safe environment variable helper supporting both Vite (import.meta.env) and Node (process.env)
+const env = (key, fallbackKey) => {
+  if (typeof import.meta.env !== 'undefined') {
+    if (import.meta.env[key]) return import.meta.env[key];
+    if (fallbackKey && import.meta.env[fallbackKey]) return import.meta.env[fallbackKey];
+  }
+  if (typeof process !== 'undefined' && process.env) {
+    if (process.env[key]) return process.env[key];
+    if (fallbackKey && process.env[fallbackKey]) return process.env[fallbackKey];
+  }
+  return undefined;
+};
+
 const getFirebaseServiceAccount = () => {
-  const credsJson = process.env.FIREBASE_CREDENTIALS_JSON || process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+  const credsJson = env('FIREBASE_CREDENTIALS_JSON', 'FIREBASE_SERVICE_ACCOUNT_JSON');
   if (credsJson) {
     return JSON.parse(credsJson);
   }
 
-  const projectId = process.env.FIREBASE_PROJECT_ID || process.env.REACT_APP_FIREBASE_PROJECT_ID;
-  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-  const privateKey = process.env.FIREBASE_PRIVATE_KEY;
+  const projectId = env('FIREBASE_PROJECT_ID', 'REACT_APP_FIREBASE_PROJECT_ID');
+  const clientEmail = env('FIREBASE_CLIENT_EMAIL');
+  const privateKey = env('FIREBASE_PRIVATE_KEY');
 
   if (projectId && clientEmail && privateKey) {
     return {
@@ -87,7 +100,7 @@ const getGoogleCerts = async () => {
 };
 
 const verifyFirebaseIdTokenWithoutAdmin = async (idToken) => {
-  const projectId = process.env.PUBLIC_FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID || process.env.REACT_APP_FIREBASE_PROJECT_ID;
+  const projectId = env('PUBLIC_FIREBASE_PROJECT_ID') || env('FIREBASE_PROJECT_ID') || env('REACT_APP_FIREBASE_PROJECT_ID');
   if (!projectId) {
     throw new Error('FIREBASE_PROJECT_ID is not set');
   }
@@ -131,8 +144,8 @@ const verifyFirebaseIdToken = async (idToken) => {
 
 const r2Client = new S3Client({
   region: 'auto',
-  endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-  credentials: { accessKeyId: process.env.R2_ACCESS_KEY_ID, secretAccessKey: process.env.R2_SECRET_ACCESS_KEY },
+  endpoint: `https://${env('R2_ACCOUNT_ID')}.r2.cloudflarestorage.com`,
+  credentials: { accessKeyId: env('R2_ACCESS_KEY_ID'), secretAccessKey: env('R2_SECRET_ACCESS_KEY') },
 });
 
 export const ALL = async ({ request, url }) => {
@@ -158,12 +171,12 @@ export const ALL = async ({ request, url }) => {
     await verifyFirebaseIdToken(idToken);
 
     const action = url.searchParams.get('action');
-    const bucketName = process.env.R2_BUCKET_NAME;
-    const publicUrl = process.env.R2_PUBLIC_URL;
+    const bucketName = env('R2_BUCKET_NAME');
+    const publicUrl = env('R2_PUBLIC_URL');
 
     // ACTION: LIST
     if (action === 'list' && request.method === 'GET') {
-      const folderPrefix = process.env.R2_FOLDER_PREFIX || 'assets/';
+      const folderPrefix = env('R2_FOLDER_PREFIX') || 'assets/';
       const command = new ListObjectsV2Command({ Bucket: bucketName, Prefix: folderPrefix });
       const response = await r2Client.send(command);
       const mediaItems = (response.Contents || [])
@@ -192,7 +205,7 @@ export const ALL = async ({ request, url }) => {
     if (action === 'upload' && request.method === 'POST') {
       const body = await request.json();
       const { fileName, fileType, contentType } = body;
-      const folderPrefix = process.env.R2_FOLDER_PREFIX || '';
+      const folderPrefix = env('R2_FOLDER_PREFIX') || '';
       const uniqueKey = `${folderPrefix ? folderPrefix.replace(/\/$/, '') + '/' : ''}${fileType}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileName.split('.').pop()}`;
       const command = new PutObjectCommand({ Bucket: bucketName, Key: uniqueKey, ContentType: contentType || 'image/jpeg' });
       const uploadUrl = await getSignedUrl(r2Client, command, { expiresIn: 300 });

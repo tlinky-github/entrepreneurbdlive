@@ -443,13 +443,21 @@ const ContentEditorPanel = () => {
     return true;
   };
 
+  // Memoize extension configurations to prevent re-registration on every component render
+  const mainExtensions = React.useMemo(() => [
+    ...getSharedExtensions(),
+    Placeholder.configure({ placeholder: 'Start typing here...' })
+  ], []);
+
+  const lifeAtCompanyExtensions = React.useMemo(() => [
+    ...getSharedExtensions(),
+    Placeholder.configure({ placeholder: 'Describe company culture, environment, and perks...' })
+  ], []);
+
   // Main Content Editor
   const editor = useEditor({
     immediatelyRender: false,
-    extensions: [
-      ...getSharedExtensions(),
-      Placeholder.configure({ placeholder: 'Start typing here...' })
-    ],
+    extensions: mainExtensions,
     content: '',
     onUpdate: ({ editor }) => {
       // Any specific logic for update if needed
@@ -512,10 +520,7 @@ const ContentEditorPanel = () => {
   // Second Editor for "Life at Company" (Directory Only)
   const lifeAtCompanyEditor = useEditor({
     immediatelyRender: false,
-    extensions: [
-      ...getSharedExtensions(),
-      Placeholder.configure({ placeholder: 'Describe company culture, environment, and perks...' })
-    ],
+    extensions: lifeAtCompanyExtensions,
     content: '',
     editable: true,
     editorProps: {
