@@ -185,7 +185,7 @@ function getReadingTime(post) {
         <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
           {paginatedPosts.map((post) => (
             <a href={`/blog/${post.slug}`}>
-              <Card className="h-full overflow-hidden border-stone-200 hover:border-emerald-900/20 hover:shadow-lg transition-all duration-200">
+              <Card className="h-full overflow-hidden border-stone-200 hover:border-emerald-900/20 hover:shadow-lg transition-all duration-200 group">
                 <div class="aspect-[3/2] bg-stone-100 overflow-hidden">
                   {post.featured_image ? (
                     <img
@@ -206,9 +206,9 @@ function getReadingTime(post) {
                       {post.category_name || post.category}
                     </Badge>
                   )}
-                  <h3 class="font-semibold text-stone-900 mb-2 line-clamp-2 group-hover:text-emerald-900">
+                  <h2 class="font-semibold text-stone-900 mb-2 line-clamp-2 group-hover:text-emerald-900">
                     {post.title}
-                  </h3>
+                  </h2>
                   <p class="text-sm text-stone-600 line-clamp-2 mb-4">{getExcerpt(post)}</p>
                   
                   <div class="flex items-center justify-between text-xs text-stone-500">

@@ -27,14 +27,14 @@ const BrandedPlaceholder = ({ title, category, className = "" }) => {
 
       {/* Title */}
       <div className="relative z-10 mt-auto">
-        <h3 className="text-white font-bold text-lg md:text-xl leading-tight line-clamp-3 group-hover:scale-[1.02] transition-transform duration-500">
+        <p className="text-white font-bold text-lg md:text-xl leading-tight line-clamp-3 group-hover:scale-[1.02] transition-transform duration-500">
           {title}
-        </h3>
+        </p>
         <div className="w-12 h-1 bg-emerald-500 mt-4 rounded-full opacity-50 group-hover:w-20 transition-all duration-500"></div>
       </div>
 
       {/* Site URL Footer */}
-      <div className="absolute bottom-3 right-4 opacity-20 text-[9px] font-medium text-white italic">
+      <div className="absolute bottom-3 right-4 opacity-20 text-[9px] font-medium text-white">
         entrepreneurs.bd
       </div>
     </div>
