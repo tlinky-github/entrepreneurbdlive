@@ -215,7 +215,7 @@ const AdminPosts = () => {
                             <MoreVertical className="w-4 h-4" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
+                        <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
                           <DropdownMenuItem asChild>
                             <Link to={`/blog/${post.slug}`} target="_blank" className="flex items-center gap-2">
                               <Eye className="w-4 h-4" />

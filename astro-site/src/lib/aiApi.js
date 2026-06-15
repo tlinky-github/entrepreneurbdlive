@@ -86,7 +86,7 @@ const aiAPI = {
    * Delete a provider profile
    */
   deleteProfile: async (provider, profileIndex) => {
-    return apiCall('/ai-router?target=providers&action=delete', 'DELETE', {
+    return apiCall(`/ai-router?target=providers&action=delete&provider=${encodeURIComponent(provider)}&profileIndex=${profileIndex}`, 'DELETE', {
       provider,
       profileIndex,
     });

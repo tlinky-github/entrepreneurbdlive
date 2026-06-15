@@ -355,13 +355,29 @@ const ContentEditorPanel = () => {
     }
   };
 
+  const CustomLink = Link.extend({
+    addAttributes() {
+      return {
+        ...this.parent?.(),
+        'data-force-new-tab': {
+          default: null,
+          parseHTML: element => element.getAttribute('data-force-new-tab'),
+          renderHTML: attributes => {
+            if (!attributes['data-force-new-tab']) return {};
+            return { 'data-force-new-tab': attributes['data-force-new-tab'] };
+          }
+        }
+      };
+    }
+  });
+
   // 1. Shared Extensions to prevent duplicates
   // Factory for extensions to avoid duplicate instances between editors
   const getSharedExtensions = () => [
     StarterKit.configure({
       history: true,
     }),
-    Link.configure({
+    CustomLink.configure({
       openOnClick: false,
       HTMLAttributes: {
         class: 'text-emerald-600 underline hover:text-emerald-700 transition-colors',

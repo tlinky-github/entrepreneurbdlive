@@ -12,7 +12,7 @@ const LinkDialog = ({ open, onOpenChange, initialData, onApply }) => {
   useEffect(() => {
     if (open) {
       setUrl(initialData?.href || '');
-      setTargetBlank(initialData?.target === '_blank');
+      setTargetBlank(initialData?.target === '_blank' || initialData?.['data-force-new-tab'] === 'true');
       const rel = initialData?.rel || '';
       setNoFollow(rel.includes('nofollow'));
       setSponsored(rel.includes('sponsored'));
@@ -27,7 +27,8 @@ const LinkDialog = ({ open, onOpenChange, initialData, onApply }) => {
     onApply({
       href: url,
       target: targetBlank ? '_blank' : null,
-      rel: rels.join(' ')
+      rel: rels.join(' '),
+      'data-force-new-tab': targetBlank ? 'true' : null
     });
     onOpenChange(false);
   };

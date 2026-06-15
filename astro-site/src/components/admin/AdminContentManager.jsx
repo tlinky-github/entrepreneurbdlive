@@ -323,7 +323,7 @@ const AdminContentManager = () => {
                                   <MoreVertical size={16} className="text-stone-500" />
                                 </button>
                               </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
+                              <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
                                 {item.status !== 'published' && (
                                   <DropdownMenuItem onClick={() => handleStatusChange(item.id, 'published')} className="text-green-600">
                                     <CheckCircle size={14} className="mr-2" /> Publish
@@ -341,21 +341,36 @@ const AdminContentManager = () => {
                                 )}
                               </DropdownMenuContent>
                             </DropdownMenu>
-                            <Eye
-                              size={18}
-                              className="icon-btn"
-                              onClick={() => window.open(`${config.route}/${item.slug}`)}
-                            />
-                            <Edit2
-                              size={18}
-                              className="icon-btn"
-                              onClick={() => window.location.href = `/admin/content-editor?type=${contentType}&id=${item.id}`}
-                            />
-                            <Trash2
-                              size={18}
-                              className="icon-btn delete"
-                              onClick={() => setDeleteId(item.id)}
-                            />
+                            <button
+                              className="p-1 rounded hover:bg-stone-100 transition-colors"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                window.open(`${config.route}/${item.slug}`);
+                              }}
+                              title="View Post"
+                            >
+                              <Eye size={18} className="text-stone-600" />
+                            </button>
+                            <button
+                              className="p-1 rounded hover:bg-stone-100 transition-colors"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/admin/content-editor?type=${contentType}&id=${item.id}`);
+                              }}
+                              title="Edit Post"
+                            >
+                              <Edit2 size={18} className="text-stone-600" />
+                            </button>
+                            <button
+                              className="p-1 rounded hover:bg-red-50 text-red-500 hover:text-red-700 transition-colors"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDeleteId(item.id);
+                              }}
+                              title="Delete Post"
+                            >
+                              <Trash2 size={18} />
+                            </button>
                           </div>
                         </TableCell>
                       </TableRow>

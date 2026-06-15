@@ -83,7 +83,7 @@ export function processHtmlContent(html: string | null | undefined, featuredImag
     }
   });
 
-  // 3. Fix links with leading/trailing spaces
+  // 3. Fix links with leading/trailing spaces & handle internal links smartly
   $('a').each((_, link) => {
     const $link = $(link);
     const html = $link.html() || '';
@@ -95,6 +95,25 @@ export function processHtmlContent(html: string | null | undefined, featuredImag
       if (leadMatch) $link.before(leadMatch[0]);
       $link.html(trimmed);
       if (trailMatch) $link.after(trailMatch[0]);
+    }
+
+    const href = $link.attr('href') || '';
+    const isInternal = (
+      (href.startsWith('/') && !href.startsWith('//')) ||
+      href.startsWith('#') ||
+      href.includes('localhost') ||
+      href.includes('entrepreneurs.bd') ||
+      href.includes('entrepreneurbd.live')
+    );
+    if (isInternal) {
+      const forceNewTab = $link.attr('data-force-new-tab') === 'true';
+      if (!forceNewTab) {
+        $link.removeAttr('target');
+        const rel = $link.attr('rel') || '';
+        if (rel === 'noopener noreferrer' || rel === 'noopener' || rel === 'noreferrer') {
+          $link.removeAttr('rel');
+        }
+      }
     }
   });
 

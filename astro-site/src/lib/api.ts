@@ -241,6 +241,27 @@ export const listingAPI = {
       console.error('Firestore Listing Get Error:', error);
       throw error;
     }
+  },
+  delete: async (id: string) => {
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      if (token) {
+        const response = await fetch(`/api/ai/ai-router?target=posts&id=${id}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (response.ok) {
+          const resData = await response.json();
+          if (resData.success) return { success: true };
+        }
+      }
+    } catch (e) {
+      console.warn('Server-side listing delete failed, trying client-side...', e);
+    }
+    await deleteDoc(doc(db, 'listings', id));
+    return { success: true };
   }
 };
 
@@ -305,6 +326,27 @@ export const profileAPI = {
       console.error('Firestore Profile Get Error:', error);
       throw error;
     }
+  },
+  delete: async (id: string) => {
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      if (token) {
+        const response = await fetch(`/api/ai/ai-router?target=posts&id=${id}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (response.ok) {
+          const resData = await response.json();
+          if (resData.success) return { success: true };
+        }
+      }
+    } catch (e) {
+      console.warn('Server-side profile delete failed, trying client-side...', e);
+    }
+    await deleteDoc(doc(db, 'profiles', id));
+    return { success: true };
   }
 };
 
@@ -361,6 +403,27 @@ export const resourceAPI = {
   get: async (id: string) => {
     const docSnap = await getDoc(doc(db, 'resources', id));
     return { data: docToData(docSnap) };
+  },
+  delete: async (id: string) => {
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      if (token) {
+        const response = await fetch(`/api/ai/ai-router?target=posts&id=${id}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (response.ok) {
+          const resData = await response.json();
+          if (resData.success) return { success: true };
+        }
+      }
+    } catch (e) {
+      console.warn('Server-side resource delete failed, trying client-side...', e);
+    }
+    await deleteDoc(doc(db, 'resources', id));
+    return { success: true };
   }
 };
 
@@ -458,6 +521,25 @@ export const deadLinkAPI = {
       }
     } catch (e) {
       console.warn('Silent 404 Logging Failed:', e);
+    }
+  },
+  list: async () => {
+    try {
+      const q = query(collection(db, 'dead_links'), orderBy('hit_count', 'desc'));
+      const snapshot = await getDocs(q);
+      return { data: snapshot.docs.map(docToData) };
+    } catch (error) {
+      console.error('Dead Links List Error:', error);
+      return { data: [] };
+    }
+  },
+  delete: async (id: string) => {
+    try {
+      await deleteDoc(doc(db, 'dead_links', id));
+      return { success: true };
+    } catch (error) {
+      console.error('Dead Link Delete Error:', error);
+      throw error;
     }
   }
 };
@@ -584,6 +666,27 @@ export const postAPI = {
       console.error('Firestore Post Get Error:', error);
       throw error;
     }
+  },
+  delete: async (id: string) => {
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      if (token) {
+        const response = await fetch(`/api/ai/ai-router?target=posts&id=${id}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (response.ok) {
+          const resData = await response.json();
+          if (resData.success) return { success: true };
+        }
+      }
+    } catch (e) {
+      console.warn('Server-side post delete failed, trying client-side...', e);
+    }
+    await deleteDoc(doc(db, 'posts', id));
+    return { success: true };
   }
 };
 
@@ -1061,7 +1164,7 @@ const apiDefault = {
   postAPI, profileAPI, listingAPI, contentAPI, interactionAPI, 
   adminAPI, publicAPI, commentAPI, resourceAPI, authAPI, categoryAPI, 
   blogCategoryAPI, industryAPI, cityAPI, taxonomyAPI, settingsAPI, authorAPI, mediaAPI,
-  guidesAPI, faqCategoriesAPI, glossaryAPI, codeSnippetsAPI, redirectAPI,
+  guidesAPI, faqCategoriesAPI, glossaryAPI, codeSnippetsAPI, redirectAPI, deadLinkAPI,
   get: async (url: string) => {
     if (url === '/pages') {
       const snapshot = await getDocs(collection(db, 'pages'));
