@@ -1260,7 +1260,7 @@ const ContentEditorPanel = () => {
                         <div className="flex items-center justify-between">
                           <label className="text-xs font-bold uppercase text-stone-500">Company / Organization</label>
                           <select 
-                            className="text-[10px] bg-white border rounded px-1"
+                            className="text-[10px] bg-white text-stone-900 border border-stone-300 rounded px-2 py-1 shadow-sm"
                             value={linkedBusiness.type}
                             onChange={(e) => setLinkedBusiness(prev => ({
                               ...prev,
@@ -1390,7 +1390,7 @@ const ContentEditorPanel = () => {
                         <div className="flex items-center justify-between">
                           <label className="text-xs font-bold uppercase text-stone-500">Founder</label>
                           <select 
-                            className="text-[10px] bg-white border rounded px-1"
+                            className="text-[10px] bg-white text-stone-900 border border-stone-300 rounded px-2 py-1 shadow-sm"
                             value={leadershipTeam.founder.type}
                             onChange={(e) => setLeadershipTeam(prev => ({
                               ...prev,
@@ -1488,7 +1488,7 @@ const ContentEditorPanel = () => {
                         <div className="flex items-center justify-between">
                           <label className="text-xs font-bold uppercase text-stone-500">CEO / Lead</label>
                           <select 
-                            className="text-[10px] bg-white border rounded px-1"
+                            className="text-[10px] bg-white text-stone-900 border border-stone-300 rounded px-2 py-1 shadow-sm"
                             value={leadershipTeam.ceo.type}
                             onChange={(e) => setLeadershipTeam(prev => ({
                               ...prev,

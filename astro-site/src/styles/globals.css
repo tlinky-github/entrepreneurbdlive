@@ -161,10 +161,40 @@ code {
   margin: 3rem 0;
 }
 
-.tiptap-content a {
-  color: var(--primary);
+.tiptap-content a:not(.editor-cta-button) {
+  color: #10b981;
   text-decoration: underline;
   font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.tiptap-content a:not(.editor-cta-button):hover {
+  color: #064e3b;
+}
+
+.tiptap-content a.editor-cta-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.75rem 1.15rem;
+  margin: 0.25rem 0;
+  border-radius: 0.75rem;
+  background: #064e3b;
+  color: #ffffff;
+  text-decoration: none !important;
+  font-weight: 700;
+  border: 1px solid #064e3b;
+  box-shadow: 0 10px 20px rgba(6, 78, 59, 0.18);
+  transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.tiptap-content a.editor-cta-button:hover {
+  background: #065f46;
+  color: #ffffff;
+  text-decoration: none !important;
+  transform: translateY(-1px);
+  box-shadow: 0 14px 24px rgba(6, 78, 59, 0.22);
 }
 
 .tiptap-content code {

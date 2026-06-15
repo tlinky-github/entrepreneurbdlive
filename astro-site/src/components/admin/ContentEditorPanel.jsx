@@ -293,7 +293,12 @@ const ContentEditorPanel = () => {
   const [isEditingSlug, setIsEditingSlug] = useState(false);
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
   const [activeLinkData, setActiveLinkData] = useState(null);
+  const [buttonDialogOpen, setButtonDialogOpen] = useState(false);
+  const [buttonLabel, setButtonLabel] = useState('');
+  const [buttonUrl, setButtonUrl] = useState('');
+  const [buttonOpenInNewTab, setButtonOpenInNewTab] = useState(true);
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
+  const buttonSelectionRef = useRef({ from: 0, to: 0 });
 
   // Per-post custom code
   const [customCss, setCustomCss] = useState('');
@@ -414,6 +419,30 @@ const ContentEditorPanel = () => {
     QuickAnswer,
   ];
 
+  const openLinkDialogFromClick = (editorInstance, event, setLinkState) => {
+    const target = event?.target;
+    if (!(target instanceof Element)) return false;
+
+    const anchor = target.closest('a');
+    if (!anchor) return false;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    const href = anchor.getAttribute('href') || '';
+    const targetAttr = anchor.getAttribute('target');
+    const rel = anchor.getAttribute('rel') || '';
+
+    if (editorInstance) {
+      editorInstance.commands.setTextSelection({ from: Math.max(1, Math.min(editorInstance.state.selection.from, editorInstance.state.selection.to)), to: Math.max(1, Math.max(editorInstance.state.selection.from, editorInstance.state.selection.to)) });
+      editorInstance.chain().focus().extendMarkRange('link').run();
+    }
+
+    setLinkState({ href, target: targetAttr, rel });
+    setLinkDialogOpen(true);
+    return true;
+  };
+
   // Main Content Editor
   const editor = useEditor({
     immediatelyRender: false,
@@ -431,6 +460,11 @@ const ContentEditorPanel = () => {
       attributes: {
         class: 'tiptap-content focus:outline-none min-height: 400px;',
       },
+      handleClick: (view, pos, event) => {
+        const handled = openLinkDialogFromClick(editor, event, setActiveLinkData);
+        if (!handled) return false;
+        return true;
+      },
       transformPastedHTML: (html) => {
         return upgradeLegacyFaqs(html);
       },
@@ -439,6 +473,41 @@ const ContentEditorPanel = () => {
       }
     },
   });
+
+  const handleApplyButton = () => {
+    if (!editor) return;
+
+    const href = buttonUrl.trim();
+    if (!href) {
+      toast.error('Please add a URL for the button');
+      return;
+    }
+
+    const label = (buttonLabel || 'Button').trim() || 'Button';
+    const buttonAnchor = document.createElement('a');
+    buttonAnchor.textContent = label;
+    buttonAnchor.href = href;
+    buttonAnchor.className = 'editor-cta-button';
+
+    if (buttonOpenInNewTab) {
+      buttonAnchor.target = '_blank';
+      buttonAnchor.rel = 'noopener noreferrer';
+    }
+
+    const selection = buttonSelectionRef.current;
+    const chain = editor.chain().focus();
+
+    if (selection && selection.from !== selection.to) {
+      chain.setTextSelection(selection).insertContent(buttonAnchor.outerHTML).run();
+    } else {
+      chain.insertContent(buttonAnchor.outerHTML).run();
+    }
+
+    setButtonDialogOpen(false);
+    setButtonLabel('');
+    setButtonUrl('');
+    setButtonOpenInNewTab(true);
+  };
 
   // Second Editor for "Life at Company" (Directory Only)
   const lifeAtCompanyEditor = useEditor({
@@ -452,6 +521,11 @@ const ContentEditorPanel = () => {
     editorProps: {
       attributes: {
         class: 'tiptap-content focus:outline-none min-height: 200px;',
+      },
+      handleClick: (view, pos, event) => {
+        const handled = openLinkDialogFromClick(lifeAtCompanyEditor, event, setActiveLinkData);
+        if (!handled) return false;
+        return true;
       },
       transformPastedHTML: (html) => {
         // Senior Engineer Fix: Bulletproof DOM-based cleaning for Google Docs/External junk
@@ -1187,7 +1261,7 @@ const ContentEditorPanel = () => {
                         <div className="flex items-center justify-between">
                           <label className="text-xs font-bold uppercase text-stone-500">Company / Organization</label>
                           <select 
-                            className="text-[10px] bg-white border rounded px-1"
+                            className="text-[10px] bg-white text-stone-900 border border-stone-300 rounded px-2 py-1 shadow-sm"
                             value={linkedBusiness.type}
                             onChange={(e) => setLinkedBusiness(prev => ({
                               ...prev,
@@ -1214,8 +1288,8 @@ const ContentEditorPanel = () => {
                                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                   </Button>
                                 </PopoverTrigger>
-                                <PopoverContent className="w-full p-0">
-                                  <Command>
+                                <PopoverContent className="w-[280px] p-0 overflow-hidden rounded-lg border border-stone-200 bg-white shadow-xl">
+                                  <Command className="bg-white">
                                     <CommandInput 
                                       placeholder="Search directory..."
                                       value={leadershipSearch.business}
@@ -1317,7 +1391,7 @@ const ContentEditorPanel = () => {
                         <div className="flex items-center justify-between">
                           <label className="text-xs font-bold uppercase text-stone-500">Founder</label>
                           <select 
-                            className="text-[10px] bg-white border rounded px-1"
+                            className="text-[10px] bg-white text-stone-900 border border-stone-300 rounded px-2 py-1 shadow-sm"
                             value={leadershipTeam.founder.type}
                             onChange={(e) => setLeadershipTeam(prev => ({
                               ...prev,
@@ -1344,8 +1418,8 @@ const ContentEditorPanel = () => {
                                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                   </Button>
                                 </PopoverTrigger>
-                                <PopoverContent className="w-full p-0">
-                                  <Command>
+                                <PopoverContent className="w-[280px] p-0 overflow-hidden rounded-lg border border-stone-200 bg-white shadow-xl">
+                                  <Command className="bg-white">
                                     <CommandInput 
                                       placeholder="Search entrepreneur..."
                                       value={leadershipSearch.founder}
@@ -1415,7 +1489,7 @@ const ContentEditorPanel = () => {
                         <div className="flex items-center justify-between">
                           <label className="text-xs font-bold uppercase text-stone-500">CEO / Lead</label>
                           <select 
-                            className="text-[10px] bg-white border rounded px-1"
+                            className="text-[10px] bg-white text-stone-900 border border-stone-300 rounded px-2 py-1 shadow-sm"
                             value={leadershipTeam.ceo.type}
                             onChange={(e) => setLeadershipTeam(prev => ({
                               ...prev,
@@ -1442,8 +1516,8 @@ const ContentEditorPanel = () => {
                                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                   </Button>
                                 </PopoverTrigger>
-                                <PopoverContent className="w-full p-0">
-                                  <Command>
+                                <PopoverContent className="w-[280px] p-0 overflow-hidden rounded-lg border border-stone-200 bg-white shadow-xl">
+                                  <Command className="bg-white">
                                     <CommandInput 
                                       placeholder="Search entrepreneur..."
                                       value={leadershipSearch.ceo}
@@ -1983,8 +2057,11 @@ const ContentEditorPanel = () => {
                     Image
                   </button>
                   <button
-                    onClick={() => {
-                      const { href, target, rel } = editor.getAttributes('link');
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      const { href, target, rel } = editor?.getAttributes('link') || {};
                       setActiveLinkData({ href, target, rel });
                       setLinkDialogOpen(true);
                     }}
@@ -1992,6 +2069,23 @@ const ContentEditorPanel = () => {
                     disabled={!editor}
                   >
                     Link
+                  </button>
+                  <button
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => {
+                      const { from, to } = editor.state.selection;
+                      const selectedText = editor.state.doc.textBetween(from, to, ' ').trim();
+                      buttonSelectionRef.current = { from, to };
+                      setButtonLabel(selectedText || 'Read More');
+                      setButtonUrl('');
+                      setButtonOpenInNewTab(true);
+                      setButtonDialogOpen(true);
+                    }}
+                    disabled={!editor}
+                    title="Insert Button"
+                  >
+                    Button
                   </button>
                   <button
                     onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}
@@ -2451,7 +2545,6 @@ const ContentEditorPanel = () => {
           if (linkSource === 'website' || linkSource === 'companyPageUrl') {
             if (linkSource === 'website') setWebsite(data.href || '');
             if (linkSource === 'companyPageUrl') setCompanyPageUrl(data.href || '');
-            
             setWebsiteLinkSettings({
               target: data.target || '_blank',
               rel: data.rel || ''
@@ -2462,11 +2555,11 @@ const ContentEditorPanel = () => {
               // Senior Engineer Fix: Trim selection to avoid linking leading/trailing spaces
               const { from, to } = editor.state.selection;
               const text = editor.state.doc.textBetween(from, to);
-              
+
               if (text) {
                 const leadSpaces = text.match(/^\s*/)[0].length;
                 const trailSpaces = text.match(/\s*$/)[0].length;
-                
+
                 if (leadSpaces > 0 || trailSpaces > 0) {
                   editor.chain()
                     .focus()
@@ -2476,7 +2569,7 @@ const ContentEditorPanel = () => {
                   return;
                 }
               }
-              
+
               editor.chain().focus().setLink(data).run();
             } else {
               editor.chain().focus().unsetLink().run();
@@ -2484,6 +2577,65 @@ const ContentEditorPanel = () => {
           }
         }}
       />
+
+      <Dialog open={buttonDialogOpen} onOpenChange={setButtonDialogOpen}>
+        <DialogContent className="sm:max-w-md bg-white border border-stone-200 shadow-2xl rounded-3xl p-6">
+          <DialogHeader>
+            <DialogTitle>Insert Button</DialogTitle>
+            <DialogDescription>
+              Add a call-to-action button to the content.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-stone-700">Button Label</label>
+              <Input
+                className="bg-white"
+                value={buttonLabel}
+                onChange={(e) => setButtonLabel(e.target.value)}
+                placeholder="Read More"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-stone-700">URL</label>
+              <Input
+                className="bg-white"
+                value={buttonUrl}
+                onChange={(e) => setButtonUrl(e.target.value)}
+                placeholder="https://example.com"
+              />
+            </div>
+
+            <label className="flex items-center gap-2 text-sm text-stone-700">
+              <input
+                type="checkbox"
+                checked={buttonOpenInNewTab}
+                onChange={(e) => setButtonOpenInNewTab(e.target.checked)}
+              />
+              Open in new tab
+            </label>
+          </div>
+
+          <DialogFooter>
+            <button
+              type="button"
+              className="px-4 py-2 text-sm font-medium text-stone-600 hover:text-stone-900"
+              onClick={() => setButtonDialogOpen(false)}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="px-4 py-2 rounded-md bg-emerald-900 text-white text-sm font-semibold hover:bg-emerald-800"
+              onClick={handleApplyButton}
+            >
+              Insert Button
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <ImageEditorDialog
         open={imageDialogOpen}

@@ -100,15 +100,15 @@ const ImageUploader = ({
     }
   };
 
-  const uploadFileToCloudflare = async (file) => {
-    const token = await auth.currentUser?.getIdToken();
-    if (!token) throw new Error('You must be logged in to upload images');
+  const uploadFileToCloudflare = async (file, token) => {
+    const authToken = token || await auth.currentUser?.getIdToken();
+    if (!authToken) throw new Error('You must be logged in to upload images');
 
     const response = await fetch('/api/media-handler?action=upload', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
+        'Authorization': `Bearer ${authToken}`
       },
       body: JSON.stringify({
         fileName: file.name,
@@ -117,7 +117,11 @@ const ImageUploader = ({
       })
     });
 
-    if (!response.ok) throw new Error('Failed to get upload URL');
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText || 'Failed to get upload URL');
+    }
+
     const { uploadUrl, publicUrl } = await response.json();
 
     const uploadRes = await fetch(uploadUrl, {
@@ -331,7 +335,7 @@ const ImageUploader = ({
       const blob = await response.blob();
       const file = new File([blob], `edited-${Date.now()}.png`, { type: 'image/png' });
 
-      const { publicUrl } = await uploadFileToCloudflare(file);
+      const { publicUrl } = await uploadFileToCloudflare(file, token);
       try {
         await mediaAPI.create({
           url: publicUrl,

@@ -3,18 +3,131 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import admin from 'firebase-admin';
 import axios from 'axios';
 import sharp from 'sharp';
+import { createVerify } from 'node:crypto';
 
-// Initialize Firebase Admin (Singleton)
-if (!admin.apps.length) {
-  const projectId = process.env.FIREBASE_PROJECT_ID;
+let firebaseInitError = null;
+let googleCertCache = null;
+let googleCertCacheExpiresAt = 0;
+
+const getFirebaseServiceAccount = () => {
+  const credsJson = process.env.FIREBASE_CREDENTIALS_JSON || process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+  if (credsJson) {
+    return JSON.parse(credsJson);
+  }
+
+  const projectId = process.env.FIREBASE_PROJECT_ID || process.env.REACT_APP_FIREBASE_PROJECT_ID;
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
   const privateKey = process.env.FIREBASE_PRIVATE_KEY;
+
   if (projectId && clientEmail && privateKey) {
-    admin.initializeApp({ credential: admin.credential.cert({ projectId, clientEmail, privateKey: privateKey.replace(/\\n/g, '\n') }) });
-  } else {
-    admin.initializeApp({ projectId: projectId || process.env.REACT_APP_FIREBASE_PROJECT_ID || 'demo-project' });
+    return {
+      project_id: projectId,
+      client_email: clientEmail,
+      private_key: privateKey.replace(/\\n/g, '\n'),
+    };
   }
-}
+
+  return null;
+};
+
+const ensureFirebaseAdmin = () => {
+  if (admin.apps?.length) return true;
+  if (firebaseInitError) return false;
+
+  try {
+    const serviceAccount = getFirebaseServiceAccount();
+    if (!serviceAccount) {
+      firebaseInitError = new Error('Firebase credentials are not configured');
+      return false;
+    }
+
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount),
+    });
+    return true;
+  } catch (error) {
+    firebaseInitError = error;
+    return false;
+  }
+};
+
+const decodeBase64Url = (value) => Buffer.from(value.replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf8');
+
+const parseJwt = (token) => {
+  const [headerPart, payloadPart, signaturePart] = token.split('.');
+  if (!headerPart || !payloadPart || !signaturePart) {
+    throw new Error('Invalid token format');
+  }
+
+  return {
+    header: JSON.parse(decodeBase64Url(headerPart)),
+    payload: JSON.parse(decodeBase64Url(payloadPart)),
+    signature: signaturePart,
+    signingInput: `${headerPart}.${payloadPart}`,
+  };
+};
+
+const getGoogleCerts = async () => {
+  const now = Date.now();
+  if (googleCertCache && now < googleCertCacheExpiresAt) {
+    return googleCertCache;
+  }
+
+  const response = await fetch('https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com');
+  if (!response.ok) {
+    throw new Error('Unable to fetch Firebase public certificates');
+  }
+
+  const cacheControl = response.headers.get('cache-control') || '';
+  const maxAgeMatch = cacheControl.match(/max-age=(\d+)/);
+  const maxAgeSeconds = maxAgeMatch ? Number(maxAgeMatch[1]) : 3600;
+  googleCertCacheExpiresAt = now + maxAgeSeconds * 1000;
+  googleCertCache = await response.json();
+  return googleCertCache;
+};
+
+const verifyFirebaseIdTokenWithoutAdmin = async (idToken) => {
+  const projectId = process.env.PUBLIC_FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID || process.env.REACT_APP_FIREBASE_PROJECT_ID;
+  if (!projectId) {
+    throw new Error('FIREBASE_PROJECT_ID is not set');
+  }
+
+  const { header, payload, signature, signingInput } = parseJwt(idToken);
+  const certs = await getGoogleCerts();
+  const cert = certs[header.kid];
+  if (!cert) {
+    throw new Error('Firebase signing certificate not found');
+  }
+
+  const verified = createVerify('RSA-SHA256')
+    .update(signingInput)
+    .verify(cert, Buffer.from(signature.replace(/-/g, '+').replace(/_/g, '/'), 'base64'));
+
+  if (!verified) {
+    throw new Error('Invalid Firebase ID token signature');
+  }
+
+  const nowSeconds = Math.floor(Date.now() / 1000);
+  if (payload.exp && payload.exp < nowSeconds) {
+    throw new Error('Firebase ID token expired');
+  }
+  if (payload.aud !== projectId) {
+    throw new Error('Firebase ID token audience mismatch');
+  }
+  if (payload.iss !== `https://securetoken.google.com/${projectId}`) {
+    throw new Error('Firebase ID token issuer mismatch');
+  }
+
+  return payload;
+};
+
+const verifyFirebaseIdToken = async (idToken) => {
+  if (admin.apps?.length) {
+    return admin.auth().verifyIdToken(idToken);
+  }
+
+  return verifyFirebaseIdTokenWithoutAdmin(idToken);
+};
 
 const r2Client = new S3Client({
   region: 'auto',
@@ -35,12 +148,14 @@ export const ALL = async ({ request, url }) => {
   }
 
   try {
+    ensureFirebaseAdmin();
+
     const authHeader = request.headers.get('authorization');
     if (!authHeader?.startsWith('Bearer ')) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: corsHeaders });
     }
     const idToken = authHeader.split(' ')[1];
-    await admin.auth().verifyIdToken(idToken);
+    await verifyFirebaseIdToken(idToken);
 
     const action = url.searchParams.get('action');
     const bucketName = process.env.R2_BUCKET_NAME;
