@@ -2,7 +2,9 @@ if (typeof globalThis.navigator === 'undefined') {
   globalThis.navigator = { userAgent: 'node' };
 }
 
-import admin from 'firebase-admin';
+import { initializeApp, getApps, cert } from 'firebase-admin/app';
+import { getFirestore as getAdminFirestore, FieldValue } from 'firebase-admin/firestore';
+import { getAuth as getAdminAuth } from 'firebase-admin/auth';
 import { createVerify } from 'node:crypto';
 import { 
   collection as clientCol, 
@@ -157,32 +159,27 @@ let adminInitError = null;
 
 export const getAdminInitError = () => adminInitError;
 
-export const getFirebaseAdminSDK = () => {
-  if (admin && admin.credential) return admin;
-  if (admin && admin.default && admin.default.credential) return admin.default;
-  return admin;
-};
-
 export const isClientDb = () => {
-  const sdk = getFirebaseAdminSDK();
-  return !sdk || !sdk.apps?.length;
+  try {
+    return !getApps().length;
+  } catch (e) {
+    return true;
+  }
 };
 
 export const getServerTimestamp = () => {
-  const sdk = getFirebaseAdminSDK();
-  if (sdk && sdk.apps?.length) {
-    try {
-      return sdk.firestore.FieldValue.serverTimestamp();
-    } catch (e) {
-      console.warn('[FirebaseAdmin] Failed to get serverTimestamp from Admin SDK, falling back to local Date:', e.message);
+  try {
+    if (getApps().length) {
+      return FieldValue.serverTimestamp();
     }
+  } catch (e) {
+    console.warn('[FirebaseAdmin] Failed to get serverTimestamp from Admin SDK, falling back to local Date:', e.message);
   }
   return new Date();
 };
 
 export const ensureFirebaseAdmin = () => {
-  const sdk = getFirebaseAdminSDK();
-  if (sdk.apps?.length) return sdk.firestore();
+  if (getApps().length) return getAdminFirestore();
 
   try {
     const serviceAccount = getFirebaseServiceAccount();
@@ -190,25 +187,15 @@ export const ensureFirebaseAdmin = () => {
       throw new Error('Firebase credentials are not configured (serviceAccount is null)');
     }
 
-    sdk.initializeApp({
-      credential: sdk.credential.cert(serviceAccount),
+    initializeApp({
+      credential: cert(serviceAccount),
     });
     adminInitError = null;
-    return sdk.firestore();
+    return getAdminFirestore();
   } catch (error) {
-    let details = '';
-    try {
-      details = ` | keys: ${admin ? Object.keys(admin).join(',') : 'null'}`;
-      if (admin && admin.default) {
-        details += ` | default keys: ${Object.keys(admin.default).join(',')}`;
-      }
-    } catch (e) {
-      details = ` | details error: ${e.message}`;
-    }
-    const enhancedError = new Error(`${error.message}${details}`);
-    adminInitError = enhancedError;
-    console.error('[FirebaseAdmin] Initialization failed:', enhancedError.message);
-    throw enhancedError;
+    adminInitError = error;
+    console.error('[FirebaseAdmin] Initialization failed:', error.message);
+    throw error;
   }
 };
 
@@ -297,9 +284,8 @@ const verifyFirebaseIdTokenWithoutAdmin = async (idToken) => {
 export const verifyFirebaseIdToken = async (idToken) => {
   try {
     ensureFirebaseAdmin();
-    const sdk = getFirebaseAdminSDK();
-    if (sdk.apps?.length) {
-      return await sdk.auth().verifyIdToken(idToken);
+    if (getApps().length) {
+      return await getAdminAuth().verifyIdToken(idToken);
     }
   } catch (e) {
     console.warn('[FirebaseAdmin] Failed to verify via Admin SDK, falling back to manual validation:', e.message);
