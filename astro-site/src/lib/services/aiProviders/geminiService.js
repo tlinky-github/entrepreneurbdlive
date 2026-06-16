@@ -3,7 +3,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 const geminiService = {
   async testConnection(apiKey) {
     try {
-      const genAI = new GoogleGenerativeAI(apiKey);
+      const genAI = new GoogleGenerativeAI(apiKey?.trim());
       const models = await this.getAvailableModels(apiKey);
 
       return {
@@ -22,7 +22,7 @@ const geminiService = {
   async generateContent(apiKey, prompt, model, options = {}) {
     try {
       if (!model) throw new Error('AI Model must be specified');
-      const genAI = new GoogleGenerativeAI(apiKey);
+      const genAI = new GoogleGenerativeAI(apiKey?.trim());
       const geminiModel = genAI.getGenerativeModel({ model });
 
       const response = await geminiModel.generateContent({
@@ -49,7 +49,7 @@ const geminiService = {
 
   async getAvailableModels(apiKey) {
     try {
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey?.trim()}`);
       if (!response.ok) {
         throw new Error(`Google API responded with status: ${response.status}`);
       }

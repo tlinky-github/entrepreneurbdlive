@@ -341,7 +341,7 @@ export const ALL = async ({ request, url }) => {
           return successResponse(sanitized);
         } else if (action === 'models') {
           const provider = url.searchParams.get('provider');
-          const apiKeyInput = url.searchParams.get('apiKeyInput');
+          const apiKeyInput = url.searchParams.get('apiKeyInput')?.trim();
 
           const service = getProviderService(provider);
           if (!service) return errorResponse(400, 'Unknown provider');
@@ -352,7 +352,7 @@ export const ALL = async ({ request, url }) => {
             const pConfig = configDoc.data().providers?.[provider.toLowerCase()];
             if (pConfig?.apiKey) {
               try { 
-                apiKey = decrypt(pConfig.apiKey); 
+                apiKey = decrypt(pConfig.apiKey)?.trim(); 
               } catch (e) {
                 console.error('Failed to decrypt API key:', e.message);
               }
@@ -367,7 +367,8 @@ export const ALL = async ({ request, url }) => {
         }
       } else if (request.method === 'POST') {
         if (action === 'setup') {
-          const { provider, apiKey, profileName, selectedModel } = body;
+          let { provider, apiKey, profileName, selectedModel } = body;
+          apiKey = apiKey?.trim();
           const service = getProviderService(provider);
           if (!service) return errorResponse(400, 'Unknown provider');
 
@@ -412,7 +413,8 @@ export const ALL = async ({ request, url }) => {
         }
       } else if (request.method === 'PUT') {
         if (action === 'update') {
-          const { provider, profileIndex, profileName, apiKey, selectedModel } = body;
+          let { provider, profileIndex, profileName, apiKey, selectedModel } = body;
+          apiKey = apiKey?.trim();
           if (!provider || profileIndex === undefined) return errorResponse(400, 'Invalid parameters');
 
           const pLower = provider.toLowerCase();

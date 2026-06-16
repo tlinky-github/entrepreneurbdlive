@@ -94,8 +94,24 @@ export const ALL = async ({ request }) => {
   }
 
   try {
-    const body = await request.json();
-    const { action, turnstileToken, data } = body;
+    const contentTypeHeader = request.headers.get('content-type') || '';
+    let action, turnstileToken, data, body;
+    let file = null, fileName = null, fileType = null;
+
+    if (contentTypeHeader.includes('multipart/form-data')) {
+      const formData = await request.formData();
+      action = formData.get('action');
+      turnstileToken = formData.get('turnstileToken');
+      file = formData.get('file');
+      fileName = formData.get('fileName') || (file ? file.name : '');
+      fileType = formData.get('fileType') || 'public-submission';
+    } else {
+      body = await request.json();
+      action = body.action;
+      turnstileToken = body.turnstileToken;
+      data = body.data;
+    }
+
     if (!action) {
       return new Response(JSON.stringify({ success: false, error: 'Missing action' }), { status: 400, headers: corsHeaders });
     }
@@ -130,6 +146,8 @@ export const ALL = async ({ request }) => {
         return await handleSubmitListing(db, data, corsHeaders);
       case 'get-upload-url':
         return await handleGetUploadUrl(body.fileData, corsHeaders);
+      case 'upload-direct':
+        return await handleUploadDirect(file, fileName, fileType, corsHeaders);
       case 'optimize-image':
         return await handleOptimizeImage(body.imageParams, corsHeaders);
       case 'list-metadata':
@@ -273,4 +291,28 @@ async function handleOptimizeImage(params, corsHeaders) {
 
 function generateSlug(text) {
   return text.toLowerCase().replace(/[^\w ]+/g, '').replace(/ +/g, '-');
+}
+
+async function handleUploadDirect(file, fileName, fileType, corsHeaders) {
+  if (!file) {
+    return new Response(JSON.stringify({ success: false, error: 'No file uploaded' }), { status: 400, headers: corsHeaders });
+  }
+  const bucketName = env('R2_BUCKET_NAME');
+  const publicUrl = env('R2_PUBLIC_URL');
+  const key = `public/submissions/${Date.now()}-${Math.random().toString(36).substring(7)}-${fileName}`;
+
+  const buffer = Buffer.from(await file.arrayBuffer());
+
+  await getR2Client().send(new PutObjectCommand({ 
+    Bucket: bucketName, 
+    Key: key, 
+    ContentType: file.type || 'image/jpeg', 
+    Body: buffer
+  }));
+
+  return new Response(JSON.stringify({ 
+    success: true, 
+    publicUrl: `${publicUrl.replace(/\/$/, '')}/${key}`, 
+    key 
+  }), { status: 200, headers: corsHeaders });
 }

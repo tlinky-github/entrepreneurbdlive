@@ -55,48 +55,21 @@ const PublicImageUploader = ({ onUploadComplete, value, label, turnstileToken, t
           throw new Error('Optimization failed');
         }
       } else {
-        // Standard presigned URL path (for non-strict images)
-        // 1. Get presigned URL
-        const { uploadUrl, publicUrl } = await publicAPI.getUploadUrl(file.name, file.type, turnstileToken);
         setProgress(30);
-
-        // 2. Upload to R2
-        const xhr = new XMLHttpRequest();
-        xhr.open('PUT', uploadUrl, true);
-        xhr.setRequestHeader('Content-Type', file.type);
-
-        xhr.upload.onprogress = (event) => {
-          if (event.lengthComputable) {
-            const percent = Math.round((event.loaded / event.total) * 60) + 30;
-            setProgress(percent);
-          }
-        };
-
-        xhr.onload = () => {
-          if (xhr.status === 200) {
-            setProgress(100);
-            onUploadComplete(publicUrl);
-            toast.success('Image uploaded successfully');
-          } else {
-            toast.error('Upload failed');
-          }
-          setUploading(false);
-        };
-
-        xhr.onerror = () => {
-          toast.error('Network error during upload');
-          setUploading(false);
-        };
-
-        xhr.send(file);
-        return; // Early return because xhr is async
+        const response = await publicAPI.uploadDirect(file, turnstileToken);
+        if (response.success && response.publicUrl) {
+          setProgress(100);
+          onUploadComplete(response.publicUrl);
+          toast.success('Image uploaded successfully');
+        } else {
+          throw new Error('Upload failed');
+        }
       }
     } catch (error) {
       console.error('Upload error:', error);
       toast.error(error.message || 'Failed to upload image');
     } finally {
-      // Only set uploading false if we didn't go into the XHR path (which handles its own finish)
-      if (type) setUploading(false);
+      setUploading(false);
     }
   };
 

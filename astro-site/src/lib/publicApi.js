@@ -95,6 +95,28 @@ const publicAPI = {
       throw new Error(error.error || 'Failed to list metadata');
     }
     return await response.json();
+  },
+
+  /**
+   * Upload an image directly (bypasses browser CORS)
+   */
+  uploadDirect: async (file, turnstileToken) => {
+    const formData = new FormData();
+    formData.append('action', 'upload-direct');
+    formData.append('turnstileToken', turnstileToken);
+    formData.append('file', file);
+    formData.append('fileName', file.name);
+    formData.append('fileType', 'public-submission');
+
+    const response = await fetch(`${API_BASE}`, {
+      method: 'POST',
+      body: formData,
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to upload image');
+    }
+    return await response.json();
   }
 };
 

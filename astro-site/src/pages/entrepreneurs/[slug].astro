@@ -1,16 +1,21 @@
 ---
 import PublicLayout from '../../layouts/PublicLayout.astro';
 import EntrepreneurDetail from '../../components/entrepreneurs/EntrepreneurDetail.jsx';
-import { profileAPI, authorAPI } from '../../lib/api';
+import { profileAPI, authorAPI, taxonomyAPI } from '../../lib/api';
 
 const { slug } = Astro.params;
 
 let profile = null;
 let authorData = null;
+let startupStages = [];
 
 try {
-  const res = await profileAPI.get(slug as string);
-  profile = res.data;
+  const [profileRes, stagesRes] = await Promise.all([
+    profileAPI.get(slug as string),
+    taxonomyAPI.list('startup_stages')
+  ]);
+  profile = profileRes.data;
+  startupStages = stagesRes.data || [];
   
   if (profile?.authorId) {
     try {
@@ -33,5 +38,5 @@ const description = profile?.short_bio || 'View the profile and journey of this 
   title={title}
   description={description}
 >
-  <EntrepreneurDetail client:load slug={slug} initialProfile={profile} initialAuthorData={authorData} />
+  <EntrepreneurDetail client:load slug={slug} initialProfile={profile} initialAuthorData={authorData} startupStages={startupStages} />
 </PublicLayout>

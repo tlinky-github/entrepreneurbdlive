@@ -72,15 +72,45 @@ export const ALL = async ({ request, url }) => {
       return new Response(JSON.stringify({ success: true }), { status: 200, headers: corsHeaders });
     }
 
-    // ACTION: UPLOAD (Presigned URL)
+    // ACTION: UPLOAD (Direct Multipart Upload or Presigned URL)
     if (action === 'upload' && request.method === 'POST') {
-      const body = await request.json();
-      const { fileName, fileType, contentType } = body;
-      const folderPrefix = env('R2_FOLDER_PREFIX') || '';
-      const uniqueKey = `${folderPrefix ? folderPrefix.replace(/\/$/, '') + '/' : ''}${fileType}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileName.split('.').pop()}`;
-      const command = new PutObjectCommand({ Bucket: bucketName, Key: uniqueKey, ContentType: contentType || 'image/jpeg' });
-      const uploadUrl = await getSignedUrl(getR2Client(), command, { expiresIn: 300 });
-      return new Response(JSON.stringify({ uploadUrl, publicUrl: `${publicUrl}/${uniqueKey}`, key: uniqueKey }), { status: 200, headers: corsHeaders });
+      const contentTypeHeader = request.headers.get('content-type') || '';
+      if (contentTypeHeader.includes('multipart/form-data')) {
+        const formData = await request.formData();
+        const file = formData.get('file');
+        const fileName = formData.get('fileName') || (file ? file.name : `file-${Date.now()}`);
+        const fileType = formData.get('fileType') || 'blog';
+
+        if (!file) {
+          return new Response(JSON.stringify({ error: 'No file uploaded' }), { status: 400, headers: corsHeaders });
+        }
+
+        const folderPrefix = env('R2_FOLDER_PREFIX') || '';
+        const uniqueKey = `${folderPrefix ? folderPrefix.replace(/\/$/, '') + '/' : ''}${fileType}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileName.split('.').pop()}`;
+        
+        const buffer = Buffer.from(await file.arrayBuffer());
+        
+        await getR2Client().send(new PutObjectCommand({
+          Bucket: bucketName,
+          Key: uniqueKey,
+          ContentType: file.type || 'image/jpeg',
+          Body: buffer
+        }));
+
+        return new Response(JSON.stringify({ 
+          success: true, 
+          publicUrl: `${publicUrl.replace(/\/$/, '')}/${uniqueKey}`, 
+          key: uniqueKey 
+        }), { status: 200, headers: corsHeaders });
+      } else {
+        const body = await request.json();
+        const { fileName, fileType, contentType } = body;
+        const folderPrefix = env('R2_FOLDER_PREFIX') || '';
+        const uniqueKey = `${folderPrefix ? folderPrefix.replace(/\/$/, '') + '/' : ''}${fileType}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileName.split('.').pop()}`;
+        const command = new PutObjectCommand({ Bucket: bucketName, Key: uniqueKey, ContentType: contentType || 'image/jpeg' });
+        const uploadUrl = await getSignedUrl(getR2Client(), command, { expiresIn: 300 });
+        return new Response(JSON.stringify({ uploadUrl, publicUrl: `${publicUrl}/${uniqueKey}`, key: uniqueKey }), { status: 200, headers: corsHeaders });
+      }
     }
 
     // ACTION: OPTIMIZE

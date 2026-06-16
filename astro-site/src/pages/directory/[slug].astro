@@ -1,14 +1,20 @@
 ---
 import PublicLayout from '../../layouts/PublicLayout.astro';
 import DirectoryDetail from '../../components/directory/DirectoryDetail.jsx';
-import { listingAPI } from '../../lib/api';
+import { listingAPI, taxonomyAPI } from '../../lib/api';
 
 const { slug } = Astro.params;
 
 let listing = null;
+let startupStages = [];
+
 try {
-  const res = await listingAPI.get(slug as string);
-  listing = res.data;
+  const [listingRes, stagesRes] = await Promise.all([
+    listingAPI.get(slug as string),
+    taxonomyAPI.list('startup_stages')
+  ]);
+  listing = listingRes.data;
+  startupStages = stagesRes.data || [];
 } catch (e: any) {
   console.error('[Directory Detail] Fetch failed:', e.message);
 }
@@ -22,5 +28,5 @@ const description = listing?.short_description || 'View detailed information abo
   title={title}
   description={description}
 >
-  <DirectoryDetail client:load slug={slug} initialListing={listing} />
+  <DirectoryDetail client:load slug={slug} initialListing={listing} startupStages={startupStages} />
 </PublicLayout>

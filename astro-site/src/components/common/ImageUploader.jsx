@@ -104,33 +104,25 @@ const ImageUploader = ({
     const authToken = token || await auth.currentUser?.getIdToken();
     if (!authToken) throw new Error('You must be logged in to upload images');
 
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('fileName', file.name);
+    formData.append('fileType', entityType);
+
     const response = await fetch('/api/media-handler?action=upload', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
         'Authorization': `Bearer ${authToken}`
       },
-      body: JSON.stringify({
-        fileName: file.name,
-        fileType: entityType,
-        contentType: file.type
-      })
+      body: formData
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(errorText || 'Failed to get upload URL');
+      throw new Error(errorText || 'Failed to upload image');
     }
 
-    const { uploadUrl, publicUrl } = await response.json();
-
-    const uploadRes = await fetch(uploadUrl, {
-      method: 'PUT',
-      body: file,
-      headers: { 'Content-Type': file.type }
-    });
-
-    if (!uploadRes.ok) throw new Error('Cloudflare upload failed');
+    const { publicUrl } = await response.json();
     return { publicUrl };
   };
 

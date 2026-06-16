@@ -95,15 +95,46 @@ export const env = (key, fallbackKey) => {
   return undefined;
 };
 
-let firebaseInitError = null;
+const sanitizeJsonNewlines = (str) => {
+  let result = '';
+  let inString = false;
+  let escape = false;
+  for (let i = 0; i < str.length; i++) {
+    const char = str[i];
+    if (char === '"' && !escape) {
+      inString = !inString;
+      result += char;
+    } else if (char === '\\' && !escape) {
+      escape = true;
+      result += char;
+    } else if (inString && (char === '\n' || char === '\r')) {
+      if (char === '\n') {
+        result += '\\n';
+      }
+      escape = false;
+    } else {
+      escape = false;
+      result += char;
+    }
+  }
+  return result;
+};
 
 const getFirebaseServiceAccount = () => {
   const credsJson = env('FIREBASE_CREDENTIALS_JSON', 'FIREBASE_SERVICE_ACCOUNT_JSON');
   if (credsJson) {
+    let sanitized = credsJson.trim();
+    // Strip outer quotes if present
+    if ((sanitized.startsWith('"') && sanitized.endsWith('"')) || 
+        (sanitized.startsWith("'") && sanitized.endsWith("'"))) {
+      sanitized = sanitized.slice(1, -1).trim();
+    }
+
+    const cleaned = sanitizeJsonNewlines(sanitized);
     try {
-      return JSON.parse(credsJson);
+      return JSON.parse(cleaned);
     } catch (e) {
-      console.error('[FirebaseAdmin] Failed to parse FIREBASE_CREDENTIALS_JSON:', e.message);
+      console.error('[FirebaseAdmin] Failed to parse FIREBASE_CREDENTIALS_JSON directly:', e.message, 'Length:', cleaned.length, 'Starts with:', cleaned.slice(0, 15));
     }
   }
 
@@ -124,13 +155,11 @@ const getFirebaseServiceAccount = () => {
 
 export const ensureFirebaseAdmin = () => {
   if (admin.apps?.length) return admin.firestore();
-  if (firebaseInitError) throw firebaseInitError;
 
   try {
     const serviceAccount = getFirebaseServiceAccount();
     if (!serviceAccount) {
-      firebaseInitError = new Error('Firebase credentials are not configured');
-      throw firebaseInitError;
+      throw new Error('Firebase credentials are not configured');
     }
 
     admin.initializeApp({
@@ -138,7 +167,7 @@ export const ensureFirebaseAdmin = () => {
     });
     return admin.firestore();
   } catch (error) {
-    firebaseInitError = error;
+    console.error('[FirebaseAdmin] Initialization failed:', error.message);
     throw error;
   }
 };
@@ -235,5 +264,9 @@ export const verifyFirebaseIdToken = async (idToken) => {
     console.warn('[FirebaseAdmin] Failed to verify via Admin SDK, falling back to manual validation:', e.message);
   }
 
-  return verifyFirebaseIdTokenWithoutAdmin(idToken);
+  const payload = await verifyFirebaseIdTokenWithoutAdmin(idToken);
+  if (payload && !payload.uid) {
+    payload.uid = payload.sub;
+  }
+  return payload;
 };

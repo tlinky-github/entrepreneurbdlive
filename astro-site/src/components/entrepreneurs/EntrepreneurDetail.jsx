@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { profileAPI, authorAPI } from '../../lib/api';
+import { profileAPI, authorAPI, taxonomyAPI } from '../../lib/api';
 import CustomCodeInjector from '../../components/common/CustomCodeInjector';
 import NotFound from '../../components/common/NotFound';
 import { Button } from '../../components/ui/button';
@@ -27,12 +27,27 @@ import {
   Share2
 } from 'lucide-react';
 
-const EntrepreneurDetail = ({ slug, initialProfile, initialAuthorData }) => {
+const EntrepreneurDetail = ({ slug, initialProfile, initialAuthorData, startupStages: initialStartupStages = [] }) => {
   const [profile, setProfile] = useState(initialProfile);
   const [loading, setLoading] = useState(!initialProfile);
   const [isExpanded, setIsExpanded] = useState(false);
   const [authorData, setAuthorData] = useState(initialAuthorData);
   const [openFaqIndex, setOpenFaqIndex] = useState(null);
+  const [startupStages, setStartupStages] = useState(initialStartupStages);
+
+  useEffect(() => {
+    const loadStartupStages = async () => {
+      if (startupStages.length === 0) {
+        try {
+          const res = await taxonomyAPI.list('startup_stages');
+          if (res.data) setStartupStages(res.data);
+        } catch (error) {
+          console.error('Error loading startup stages:', error);
+        }
+      }
+    };
+    loadStartupStages();
+  }, []);
 
   useEffect(() => {
     if (initialProfile) return;
@@ -222,7 +237,12 @@ const EntrepreneurDetail = ({ slug, initialProfile, initialAuthorData }) => {
                   {profile.startup_stage && (
                     <div className="flex flex-col">
                       <span className="text-[10px] uppercase font-bold text-stone-600">Stage</span>
-                      <span className="text-sm font-semibold text-stone-700">{profile.startup_stage}</span>
+                      <span className="text-sm font-semibold text-stone-700">
+                        {(() => {
+                          const match = startupStages.find(s => s.id === profile.startup_stage || s.slug === profile.startup_stage || s.name?.toLowerCase() === profile.startup_stage.toLowerCase());
+                          return match ? match.name : profile.startup_stage;
+                        })()}
+                      </span>
                     </div>
                   )}
                   {profile.industry && (

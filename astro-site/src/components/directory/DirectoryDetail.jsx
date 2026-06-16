@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { listingAPI } from '../../lib/api';
+import { listingAPI, taxonomyAPI } from '../../lib/api';
 import CustomCodeInjector from '../../components/common/CustomCodeInjector';
 import NotFound from '../../components/common/NotFound';
 import { Button } from '../../components/ui/button';
@@ -28,10 +28,25 @@ import {
   Facebook as FacebookIcon
 } from 'lucide-react';
 
-const DirectoryDetail = ({ slug, initialListing }) => {
+const DirectoryDetail = ({ slug, initialListing, startupStages: initialStartupStages = [] }) => {
   const [listing, setListing] = useState(initialListing);
   const [loading, setLoading] = useState(!initialListing);
   const [openFaqIndex, setOpenFaqIndex] = useState(null);
+  const [startupStages, setStartupStages] = useState(initialStartupStages);
+
+  useEffect(() => {
+    const loadStartupStages = async () => {
+      if (startupStages.length === 0) {
+        try {
+          const res = await taxonomyAPI.list('startup_stages');
+          if (res.data) setStartupStages(res.data);
+        } catch (error) {
+          console.error('Error loading startup stages:', error);
+        }
+      }
+    };
+    loadStartupStages();
+  }, []);
 
   useEffect(() => {
     if (initialListing) return;
@@ -365,7 +380,10 @@ const DirectoryDetail = ({ slug, initialListing }) => {
                     <div className="flex justify-between items-center">
                       <span className="text-stone-400 text-sm font-bold uppercase tracking-wider">Growth Stage</span>
                       <Badge className="bg-emerald-900 text-white hover:bg-emerald-950 font-black px-4 py-1">
-                        {listing.startup_stage}
+                        {(() => {
+                          const match = startupStages.find(s => s.id === listing.startup_stage || s.slug === listing.startup_stage || s.name?.toLowerCase() === listing.startup_stage.toLowerCase());
+                          return match ? match.name : listing.startup_stage;
+                        })()}
                       </Badge>
                     </div>
                   )}

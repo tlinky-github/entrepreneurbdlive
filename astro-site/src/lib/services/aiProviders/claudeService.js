@@ -3,7 +3,7 @@ import Anthropic from '@anthropic-ai/sdk';
 const claudeService = {
   async testConnection(apiKey) {
     try {
-      const anthropic = new Anthropic({ apiKey });
+      const anthropic = new Anthropic({ apiKey: apiKey?.trim() });
       const models = await this.getAvailableModels(apiKey);
 
       return {
@@ -21,7 +21,7 @@ const claudeService = {
 
   async generateContent(apiKey, prompt, model, options = {}) {
     try {
-      const anthropic = new Anthropic({ apiKey });
+      const anthropic = new Anthropic({ apiKey: apiKey?.trim() });
 
       const response = await anthropic.messages.create({
         model,
@@ -54,7 +54,7 @@ const claudeService = {
       const response = await fetch('https://api.anthropic.com/v1/models', {
         method: 'GET',
         headers: {
-          'x-api-key': apiKey,
+          'x-api-key': apiKey?.trim(),
           'anthropic-version': '2023-06-01'
         }
       });

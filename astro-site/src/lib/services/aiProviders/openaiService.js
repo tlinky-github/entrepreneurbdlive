@@ -3,7 +3,7 @@ import OpenAI from 'openai';
 const openaiService = {
   async testConnection(apiKey) {
     try {
-      const openai = new OpenAI({ apiKey });
+      const openai = new OpenAI({ apiKey: apiKey?.trim() });
       const models = await openai.models.list();
       const gptModels = (models.data || [])
         .filter((m) => m && m.id && (m.id.startsWith('gpt-') || m.id.startsWith('o1-') || m.id.startsWith('o3-')) && !m.id.includes('instruct'))
@@ -34,7 +34,7 @@ const openaiService = {
     if (!model) throw new Error('AI Model must be specified');
     let params = { model: model || 'unspecified' };
     try {
-      const openai = new OpenAI({ apiKey });
+      const openai = new OpenAI({ apiKey: apiKey?.trim() });
 
       const tokenMode = options.tokenMode || 'auto';
       let useCompletionTokens = false;
@@ -76,7 +76,7 @@ const openaiService = {
 
   async getAvailableModels(apiKey) {
     try {
-      const openai = new OpenAI({ apiKey });
+      const openai = new OpenAI({ apiKey: apiKey?.trim() });
       const models = await openai.models.list();
       const availableModels = (models.data || [])
         .filter((m) => m && m.id && (m.id.startsWith('gpt-') || m.id.startsWith('o1-') || m.id.startsWith('o3-')) && !m.id.includes('instruct'))

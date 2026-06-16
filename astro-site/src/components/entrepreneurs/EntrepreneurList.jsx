@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { profileAPI, industryAPI, cityAPI } from '../../lib/api';
+import { profileAPI, industryAPI, cityAPI, taxonomyAPI } from '../../lib/api';
 import { Card, CardContent } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
 import { Input } from '../../components/ui/input';
@@ -45,6 +45,7 @@ const EntrepreneurList = () => {
   const [profiles, setProfiles] = useState([]);
   const [industries, setIndustries] = useState([]);
   const [cities, setCities] = useState([]);
+  const [startupStages, setStartupStages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -56,12 +57,14 @@ const EntrepreneurList = () => {
   useEffect(() => {
     const loadFilters = async () => {
       try {
-        const [indRes, cityRes] = await Promise.all([
+        const [indRes, cityRes, stageRes] = await Promise.all([
           industryAPI.list(),
-          cityAPI.list()
+          cityAPI.list(),
+          taxonomyAPI.list('startup_stages')
         ]);
         setIndustries(indRes.data?.map(i => i.name) || []);
         setCities(cityRes.data?.map(c => c.name) || []);
+        setStartupStages(stageRes.data || []);
       } catch (error) {
         console.error('Error loading filters:', error);
       }
@@ -199,7 +202,7 @@ const EntrepreneurList = () => {
                 </h2>
                 <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
                   {featuredProfiles.map((profile) => (
-                    <ProfileCard key={profile.id} profile={profile} featured />
+                    <ProfileCard key={profile.id} profile={profile} featured startupStages={startupStages} />
                   ))}
                 </div>
               </div>
@@ -208,7 +211,7 @@ const EntrepreneurList = () => {
             {/* All Profiles */}
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {regularProfiles.map((profile) => (
-                <ProfileCard key={profile.id} profile={profile} />
+                <ProfileCard key={profile.id} profile={profile} startupStages={startupStages} />
               ))}
             </div>
           </>
@@ -218,72 +221,80 @@ const EntrepreneurList = () => {
   );
 };
 
-const ProfileCard = ({ profile, featured }) => (
-  <a href={`/entrepreneurs/${profile.slug}`} className="block h-full">
-    <Card className={`h-full border-stone-200 hover:border-emerald-900/20 hover:shadow-lg transition-all duration-200 rounded-2xl ${featured ? 'ring-2 ring-yellow-200' : ''}`}>
-      <CardContent className="p-6">
-        <div className="text-center">
-          <div className="w-20 h-20 bg-emerald-100 rounded-full mx-auto mb-4 flex items-center justify-center overflow-hidden">
-            {(profile.featured_image || profile.photo) ? (
-              <img src={profile.featured_image || profile.photo} alt={profile.name} className="w-full h-full object-cover" />
-            ) : (
-              <span className="text-2xl font-bold text-emerald-900">
-                {profile.name?.charAt(0)}
-              </span>
+const ProfileCard = ({ profile, featured, startupStages = [] }) => {
+  const getStageName = (stageVal) => {
+    if (!stageVal) return '';
+    const match = startupStages.find(s => s.id === stageVal || s.slug === stageVal || s.name?.toLowerCase() === stageVal.toLowerCase());
+    return match ? match.name : stageVal;
+  };
+
+  return (
+    <a href={`/entrepreneurs/${profile.slug}`} className="block h-full">
+      <Card className={`h-full border-stone-200 hover:border-emerald-900/20 hover:shadow-lg transition-all duration-200 rounded-2xl ${featured ? 'ring-2 ring-yellow-200' : ''}`}>
+        <CardContent className="p-6">
+          <div className="text-center">
+            <div className="w-20 h-20 bg-emerald-100 rounded-full mx-auto mb-4 flex items-center justify-center overflow-hidden">
+              {(profile.featured_image || profile.photo) ? (
+                <img src={profile.featured_image || profile.photo} alt={profile.name} className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-2xl font-bold text-emerald-900">
+                  {profile.name?.charAt(0)}
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center justify-center gap-1 mb-1">
+              <h3 className="font-semibold text-stone-900">{profile.name}</h3>
+              {featured && <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />}
+            </div>
+
+            {(profile.designation || profile.role_title) && profile.company_name && (
+              <p className="text-sm text-stone-500 mb-2">
+                {profile.designation || profile.role_title} at {profile.company_name}
+              </p>
             )}
+
+            {(profile.city || profile.headquarters) && (
+              <p className="text-xs text-stone-400 flex items-center justify-center gap-1 mb-3">
+                <MapPin className="w-3 h-3" />
+                {profile.headquarters || `${profile.city}${profile.country ? `, ${profile.country}` : ''}`}
+              </p>
+            )}
+
+            {profile.industry && (
+              <Badge variant="outline" className="text-xs mb-3">
+                {profile.industry}
+              </Badge>
+            )}
+
+            {profile.startup_stage && (
+              <Badge className="bg-emerald-100 text-emerald-900 text-xs ml-2">
+                {getStageName(profile.startup_stage)}
+              </Badge>
+            )}
+
+            {(profile.details || profile.short_bio) && (
+              <p className="text-sm text-stone-600 mt-3 line-clamp-3">
+                {profile.details || profile.short_bio}
+              </p>
+            )}
+
+            <div className="flex justify-center gap-3 mt-4">
+              {(profile.company_page_url || profile.website) && (
+                <Globe className="w-4 h-4 text-stone-400 hover:text-emerald-900" />
+              )}
+              {profile.linkedin && (
+                <Linkedin className="w-4 h-4 text-stone-400 hover:text-emerald-900" />
+              )}
+              {profile.twitter && (
+                <Twitter className="w-4 h-4 text-stone-400 hover:text-emerald-900" />
+              )}
+            </div>
           </div>
-
-          <div className="flex items-center justify-center gap-1 mb-1">
-            <h3 className="font-semibold text-stone-900">{profile.name}</h3>
-            {featured && <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />}
-          </div>
-
-          {(profile.designation || profile.role_title) && profile.company_name && (
-            <p className="text-sm text-stone-500 mb-2">
-              {profile.designation || profile.role_title} at {profile.company_name}
-            </p>
-          )}
-
-          {(profile.city || profile.headquarters) && (
-            <p className="text-xs text-stone-400 flex items-center justify-center gap-1 mb-3">
-              <MapPin className="w-3 h-3" />
-              {profile.headquarters || `${profile.city}${profile.country ? `, ${profile.country}` : ''}`}
-            </p>
-          )}
-
-          {profile.industry && (
-            <Badge variant="outline" className="text-xs mb-3">
-              {profile.industry}
-            </Badge>
-          )}
-
-          {profile.startup_stage && (
-            <Badge className="bg-emerald-100 text-emerald-900 text-xs ml-2">
-              {profile.startup_stage}
-            </Badge>
-          )}
-
-          {(profile.details || profile.short_bio) && (
-            <p className="text-sm text-stone-600 mt-3 line-clamp-3">
-              {profile.details || profile.short_bio}
-            </p>
-          )}
-
-          <div className="flex justify-center gap-3 mt-4">
-            {(profile.company_page_url || profile.website) && (
-              <Globe className="w-4 h-4 text-stone-400 hover:text-emerald-900" />
-            )}
-            {profile.linkedin && (
-              <Linkedin className="w-4 h-4 text-stone-400 hover:text-emerald-900" />
-            )}
-            {profile.twitter && (
-              <Twitter className="w-4 h-4 text-stone-400 hover:text-emerald-900" />
-            )}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  </a>
-);
+        </CardContent>
+      </Card>
+    </a>
+  );
+};
 
 export default EntrepreneurList;
