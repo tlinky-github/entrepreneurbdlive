@@ -6,22 +6,31 @@ import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getFirestore as getAdminFirestore, FieldValue } from 'firebase-admin/firestore';
 import { getAuth as getAdminAuth } from 'firebase-admin/auth';
 import { createVerify } from 'node:crypto';
-import { 
-  collection as clientCol, 
-  doc as clientDoc, 
-  getDoc as clientGetDoc, 
-  getDocs as clientGetDocs, 
-  setDoc as clientSetDoc, 
-  addDoc as clientAddDoc, 
-  deleteDoc as clientDeleteDoc, 
-  query as clientQuery, 
-  where as clientWhere 
-} from 'firebase/firestore';
-import { db as clientDb } from './firebase.ts';
+let clientDb = null;
+let clientFirestore = null;
 
-const makeAdminFirestoreWrapper = (clientDb) => {
+const getClientFirestore = async () => {
+  if (!clientFirestore) {
+    clientFirestore = await import('firebase/firestore');
+  }
+  return clientFirestore;
+};
+
+const getClientDb = async () => {
+  if (!clientDb) {
+    const firebaseModule = await import('./firebase.ts');
+    clientDb = firebaseModule.db;
+  }
+  return clientDb;
+};
+
+const makeAdminFirestoreWrapper = () => {
+  const getDb = async () => {
+    return await getClientDb();
+  };
+
   const wrapDocSnapshot = (snap) => ({
-    exists: snap.exists(),
+    exists: () => snap.exists(),
     id: snap.id,
     data: () => snap.data(),
   });
@@ -36,17 +45,22 @@ const makeAdminFirestoreWrapper = (clientDb) => {
   };
 
   const docWrapper = (collectionName, docId) => {
-    const docRef = clientDoc(clientDb, collectionName, docId);
     return {
       get: async () => {
-        const snap = await clientGetDoc(docRef);
+        const db = await getDb();
+        const { doc, getDoc } = await getClientFirestore();
+        const snap = await getDoc(doc(db, collectionName, docId));
         return wrapDocSnapshot(snap);
       },
       set: async (data, options) => {
-        await clientSetDoc(docRef, data, options);
+        const db = await getDb();
+        const { doc, setDoc } = await getClientFirestore();
+        await setDoc(doc(db, collectionName, docId), data, options);
       },
       delete: async () => {
-        await clientDeleteDoc(docRef);
+        const db = await getDb();
+        const { doc, deleteDoc } = await getClientFirestore();
+        await deleteDoc(doc(db, collectionName, docId));
       }
     };
   };
@@ -55,25 +69,35 @@ const makeAdminFirestoreWrapper = (clientDb) => {
     return {
       doc: (docId) => docWrapper(collectionName, docId),
       add: async (data) => {
-        const docRef = await clientAddDoc(clientCol(clientDb, collectionName), data);
+        const db = await getDb();
+        const { collection, addDoc } = await getClientFirestore();
+        const docRef = await addDoc(collection(db, collectionName), data);
         return { id: docRef.id };
       },
       where: (field, op, value) => {
-        let q = clientQuery(clientCol(clientDb, collectionName), clientWhere(field, op, value));
+        let filters = [{ field, op, value }];
         const queryChain = {
           where: (f, o, v) => {
-            q = clientQuery(q, clientWhere(f, o, v));
+            filters.push({ field: f, op: o, value: v });
             return queryChain;
           },
           get: async () => {
-            const snap = await clientGetDocs(q);
+            const db = await getDb();
+            const { collection, query, where, getDocs } = await getClientFirestore();
+            let q = collection(db, collectionName);
+            for (const filter of filters) {
+              q = query(q, where(filter.field, filter.op, filter.value));
+            }
+            const snap = await getDocs(q);
             return wrapQuerySnapshot(snap);
           }
         };
         return queryChain;
       },
       get: async () => {
-        const snap = await clientGetDocs(clientCol(clientDb, collectionName));
+        const db = await getDb();
+        const { collection, getDocs } = await getClientFirestore();
+        const snap = await getDocs(collection(db, collectionName));
         return wrapQuerySnapshot(snap);
       }
     };
@@ -204,7 +228,7 @@ export const getFirestore = () => {
     return ensureFirebaseAdmin();
   } catch (e) {
     console.warn('[FirebaseAdmin] Admin credentials missing. Using Client SDK wrapper fallback:', e.message);
-    return makeAdminFirestoreWrapper(clientDb);
+    return makeAdminFirestoreWrapper();
   }
 };
 
