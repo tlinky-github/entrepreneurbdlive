@@ -8,11 +8,17 @@ import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 
 // In Vite/Astro SSR (Node.js), import.meta.env only has vars injected at build time.
 // REACT_APP_* vars need to also be read from process.env for server-side rendering.
-const env = (key: string, reactKey: string) =>
-  import.meta.env[key] ||
-  import.meta.env[reactKey] ||
-  (typeof process !== 'undefined' ? process.env[reactKey] : undefined) ||
-  (typeof process !== 'undefined' ? process.env[key] : undefined);
+const env = (key: string, reactKey: string) => {
+  if (typeof import.meta.env !== 'undefined') {
+    if (import.meta.env[key]) return import.meta.env[key];
+    if (import.meta.env[reactKey]) return import.meta.env[reactKey];
+  }
+  if (typeof process !== 'undefined' && process.env) {
+    if (process.env[reactKey]) return process.env[reactKey];
+    if (process.env[key]) return process.env[key];
+  }
+  return undefined;
+};
 
 const firebaseConfig = {
   apiKey:            env('PUBLIC_FIREBASE_API_KEY',            'REACT_APP_FIREBASE_API_KEY'),
