@@ -2,10 +2,14 @@ if (typeof globalThis.navigator === 'undefined') {
   globalThis.navigator = { userAgent: 'node' };
 }
 
-import { initializeApp, getApps, cert } from 'firebase-admin/app';
-import { getFirestore as getAdminFirestore, FieldValue } from 'firebase-admin/firestore';
-import { getAuth as getAdminAuth } from 'firebase-admin/auth';
+import admin from 'firebase-admin';
 import { createVerify } from 'node:crypto';
+
+const { initializeApp, cert } = admin;
+const getApps = () => admin.apps || [];
+const getAdminFirestore = (app) => admin.firestore(app);
+const getAdminAuth = (app) => admin.auth(app);
+const FieldValue = admin.firestore.FieldValue;
 let clientDb = null;
 let clientFirestore = null;
 
@@ -57,6 +61,11 @@ const makeAdminFirestoreWrapper = () => {
         const { doc, setDoc } = await getClientFirestore();
         await setDoc(doc(db, collectionName, docId), data, options);
       },
+      update: async (data) => {
+        const db = await getDb();
+        const { doc, updateDoc } = await getClientFirestore();
+        await updateDoc(doc(db, collectionName, docId), data);
+      },
       delete: async () => {
         const db = await getDb();
         const { doc, deleteDoc } = await getClientFirestore();
@@ -66,6 +75,33 @@ const makeAdminFirestoreWrapper = () => {
   };
 
   const collectionWrapper = (collectionName) => {
+    let filters = [];
+    let limitVal = null;
+
+    const queryChain = {
+      where: (field, op, value) => {
+        filters.push({ field, op, value });
+        return queryChain;
+      },
+      limit: (num) => {
+        limitVal = num;
+        return queryChain;
+      },
+      get: async () => {
+        const db = await getDb();
+        const { collection, query, where, limit, getDocs } = await getClientFirestore();
+        let q = collection(db, collectionName);
+        for (const filter of filters) {
+          q = query(q, where(filter.field, filter.op, filter.value));
+        }
+        if (limitVal !== null && typeof limit === 'function') {
+          q = query(q, limit(limitVal));
+        }
+        const snap = await getDocs(q);
+        return wrapQuerySnapshot(snap);
+      }
+    };
+
     return {
       doc: (docId) => docWrapper(collectionName, docId),
       add: async (data) => {
@@ -75,23 +111,11 @@ const makeAdminFirestoreWrapper = () => {
         return { id: docRef.id };
       },
       where: (field, op, value) => {
-        let filters = [{ field, op, value }];
-        const queryChain = {
-          where: (f, o, v) => {
-            filters.push({ field: f, op: o, value: v });
-            return queryChain;
-          },
-          get: async () => {
-            const db = await getDb();
-            const { collection, query, where, getDocs } = await getClientFirestore();
-            let q = collection(db, collectionName);
-            for (const filter of filters) {
-              q = query(q, where(filter.field, filter.op, filter.value));
-            }
-            const snap = await getDocs(q);
-            return wrapQuerySnapshot(snap);
-          }
-        };
+        filters.push({ field, op, value });
+        return queryChain;
+      },
+      limit: (num) => {
+        limitVal = num;
         return queryChain;
       },
       get: async () => {

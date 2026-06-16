@@ -1,5 +1,6 @@
 import { getFirestore, ensureFirebaseAdmin, getAdminInitError, env } from '../../../lib/firebaseAdmin.js';
-import { getApps } from 'firebase-admin/app';
+import admin from 'firebase-admin';
+const getApps = () => admin.apps || [];
 
 export const ALL = async ({ request }) => {
   const corsHeaders = {
