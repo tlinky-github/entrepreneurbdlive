@@ -8,6 +8,31 @@ let initialized = false;
 // Force rebuild marker
 const BUILD_VERSION = '2';
 
+const sanitizeJsonNewlines = (str) => {
+  let result = '';
+  let inString = false;
+  let escape = false;
+  for (let i = 0; i < str.length; i++) {
+    const char = str[i];
+    if (char === '"' && !escape) {
+      inString = !inString;
+      result += char;
+    } else if (char === '\\' && !escape) {
+      escape = true;
+      result += char;
+    } else if (inString && (char === '\n' || char === '\r')) {
+      if (char === '\n') {
+        result += '\\n';
+      }
+      escape = false;
+    } else {
+      escape = false;
+      result += char;
+    }
+  }
+  return result;
+};
+
 function initializeFirebase() {
   if (initialized) return db;
   
@@ -21,7 +46,12 @@ function initializeFirebase() {
       
       let serviceAccount;
       try {
-        serviceAccount = JSON.parse(credsJson);
+        let sanitized = credsJson.trim();
+        if ((sanitized.startsWith('"') && sanitized.endsWith('"')) || 
+            (sanitized.startsWith("'") && sanitized.endsWith("'"))) {
+          sanitized = sanitized.slice(1, -1).trim();
+        }
+        serviceAccount = JSON.parse(sanitizeJsonNewlines(sanitized));
       } catch (parseErr) {
         console.error('Failed to parse FIREBASE_CREDENTIALS_JSON:', parseErr.message);
         console.error('First 100 chars:', credsJson.substring(0, 100));

@@ -1,11 +1,41 @@
 const axios = require('axios');
 const admin = require('firebase-admin');
 
+const sanitizeJsonNewlines = (str) => {
+  let result = '';
+  let inString = false;
+  let escape = false;
+  for (let i = 0; i < str.length; i++) {
+    const char = str[i];
+    if (char === '"' && !escape) {
+      inString = !inString;
+      result += char;
+    } else if (char === '\\' && !escape) {
+      escape = true;
+      result += char;
+    } else if (inString && (char === '\n' || char === '\r')) {
+      if (char === '\n') {
+        result += '\\n';
+      }
+      escape = false;
+    } else {
+      escape = false;
+      result += char;
+    }
+  }
+  return result;
+};
+
 // 1. Initialize Firebase Admin
 if (!admin.apps.length) {
   const credsJson = process.env.FIREBASE_CREDENTIALS_JSON;
   if (credsJson) {
-    const serviceAccount = JSON.parse(credsJson);
+    let sanitized = credsJson.trim();
+    if ((sanitized.startsWith('"') && sanitized.endsWith('"')) || 
+        (sanitized.startsWith("'") && sanitized.endsWith("'"))) {
+      sanitized = sanitized.slice(1, -1).trim();
+    }
+    const serviceAccount = JSON.parse(sanitizeJsonNewlines(sanitized));
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),
     });
