@@ -26,10 +26,10 @@ export default defineConfig({
     envPrefix: ['PUBLIC_', 'REACT_APP_'],
     ssr: {
       noExternal: ['lucide-react', 'react-router-dom', 'react-router'],
-      external: ['sharp', 'firebase-admin', '@aws-sdk/client-s3'],
+      external: ['sharp', 'firebase-admin', 'firebase-admin/app', 'firebase-admin/firestore', 'firebase-admin/auth', '@aws-sdk/client-s3'],
     },
     optimizeDeps: {
-      exclude: ['sharp', 'firebase-admin', '@aws-sdk/client-s3'],
+      exclude: ['sharp', 'firebase-admin', 'firebase-admin/app', 'firebase-admin/firestore', 'firebase-admin/auth', '@aws-sdk/client-s3'],
     },
   },
 });
