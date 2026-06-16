@@ -1,5 +1,6 @@
 import { getFirestore, ensureFirebaseAdmin, getAdminInitError, env } from '../../../lib/firebaseAdmin.js';
-import admin from 'firebase-admin';
+import * as adminModule from 'firebase-admin';
+const admin = adminModule.default || adminModule;
 const getApps = () => admin.apps || [];
 
 export const ALL = async ({ request }) => {

@@ -2,7 +2,6 @@ const { initializeFirebase, errorResponse, successResponse } = require('./ai/_li
 const admin = require('firebase-admin');
 const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
-const sharp = require('sharp');
 
 // Initialize R2 Client
 const r2Client = new S3Client({
@@ -165,6 +164,7 @@ async function handleOptimizeImage(params, res) {
     targetQuality = 65; // Balanced for < 50KB
   }
 
+  const sharp = require('sharp');
   let pipeline = sharp(buffer);
   pipeline = pipeline.resize({ 
     width: targetWidth, 

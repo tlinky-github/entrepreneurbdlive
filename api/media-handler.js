@@ -2,7 +2,6 @@ const { S3Client, ListObjectsV2Command, PutObjectCommand, DeleteObjectCommand } 
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 const admin = require('firebase-admin');
 const axios = require('axios');
-const sharp = require('sharp');
 const { createVerify } = require('crypto');
 
 let firebaseInitError = null;
@@ -244,6 +243,7 @@ module.exports = async (req, res) => {
       const targetExt = format !== 'auto' ? format : getExt(sourceMime);
       const optimizedKey = `assets/optimized/${Date.now()}-${Math.random().toString(36).substring(2, 10)}.${targetExt}`;
       
+      const sharp = require('sharp');
       let pipeline = sharp(buffer);
       if (width || height) {
         pipeline = pipeline.resize({ 

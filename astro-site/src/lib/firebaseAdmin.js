@@ -1,15 +1,11 @@
-if (typeof globalThis.navigator === 'undefined') {
-  globalThis.navigator = { userAgent: 'node' };
-}
-
-import admin from 'firebase-admin';
+import * as adminModule from 'firebase-admin';
 import { createVerify } from 'node:crypto';
 
-const { initializeApp, cert } = admin;
-const getApps = () => admin.apps || [];
-const getAdminFirestore = (app) => admin.firestore(app);
-const getAdminAuth = (app) => admin.auth(app);
-const FieldValue = admin.firestore.FieldValue;
+const getAdmin = () => adminModule.default || adminModule;
+const getApps = () => getAdmin().apps || [];
+const getAdminFirestore = (app) => getAdmin().firestore(app);
+const getAdminAuth = (app) => getAdmin().auth(app);
+
 let clientDb = null;
 let clientFirestore = null;
 
@@ -218,7 +214,7 @@ export const isClientDb = () => {
 export const getServerTimestamp = () => {
   try {
     if (getApps().length) {
-      return FieldValue.serverTimestamp();
+      return getAdmin().firestore.FieldValue.serverTimestamp();
     }
   } catch (e) {
     console.warn('[FirebaseAdmin] Failed to get serverTimestamp from Admin SDK, falling back to local Date:', e.message);
@@ -235,8 +231,9 @@ export const ensureFirebaseAdmin = () => {
       throw new Error('Firebase credentials are not configured (serviceAccount is null)');
     }
 
-    initializeApp({
-      credential: cert(serviceAccount),
+    const admin = getAdmin();
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount),
     });
     adminInitError = null;
     return getAdminFirestore();
