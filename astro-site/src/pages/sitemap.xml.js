@@ -1,4 +1,26 @@
-import { getPublishedDocs } from '../lib/api';
+import { getFirestore } from '../lib/firebaseAdmin.js';
+
+async function getPublishedDocs(collectionName, limitCount = 1000) {
+  try {
+    const db = getFirestore();
+    const snapshot = await db.collection(collectionName)
+      .where('status', '==', 'published')
+      .limit(limitCount)
+      .get();
+    return snapshot.docs.map(doc => {
+      const data = doc.data();
+      for (const key in data) {
+        if (data[key] && typeof data[key].toDate === 'function') {
+          data[key] = data[key].toDate();
+        }
+      }
+      return { id: doc.id, ...data };
+    });
+  } catch (e) {
+    console.error(`Error fetching ${collectionName} for sitemap:`, e);
+    return [];
+  }
+}
 
 const formatDate = (dateVal) => {
   if (!dateVal) return new Date().toISOString();

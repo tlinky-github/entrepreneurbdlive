@@ -1,7 +1,6 @@
 import { S3Client, ListObjectsV2Command, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import axios from 'axios';
-import sharp from 'sharp';
 import { verifyFirebaseIdToken, env } from '../../lib/firebaseAdmin.js';
 
 let r2ClientInstance = null;
@@ -139,6 +138,8 @@ export const ALL = async ({ request, url }) => {
       const targetExt = format !== 'auto' ? format : getExt(sourceMime);
       const optimizedKey = `assets/optimized/${Date.now()}-${Math.random().toString(36).substring(2, 10)}.${targetExt}`;
       
+      const sharpModule = await import('sharp');
+      const sharp = sharpModule.default;
       let pipeline = sharp(buffer);
       if (width || height) {
         pipeline = pipeline.resize({ 

@@ -1,7 +1,7 @@
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { getFirestore, getServerTimestamp } from '../../lib/firebaseAdmin.js';
-import sharp from 'sharp';
+
 
 // Safe environment variable helper supporting both Vite (import.meta.env) and Node (process.env)
 const env = (key, fallbackKey) => {
@@ -212,6 +212,8 @@ async function handleOptimizeImage(params, corsHeaders) {
     targetQuality = 65;
   }
 
+  const sharpModule = await import('sharp');
+  const sharp = sharpModule.default;
   let pipeline = sharp(buffer);
   pipeline = pipeline.resize({ 
     width: targetWidth, 

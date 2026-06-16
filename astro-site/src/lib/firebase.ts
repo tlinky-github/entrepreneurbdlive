@@ -29,10 +29,66 @@ const firebaseConfig = {
   appId:             env('PUBLIC_FIREBASE_APP_ID',             'REACT_APP_FIREBASE_APP_ID'),
 };
 
-// Prevent duplicate app initialization in SSR hot-reload scenarios
-const apps = typeof getApps === 'function' ? (getApps() || []) : [];
-const app = apps.length ? apps[0] : initializeApp(firebaseConfig);
-export const db = getFirestore(app);
-export const auth = getAuth(app);
-export const googleProvider = new GoogleAuthProvider();
+let _db: any = null;
+const getDb = () => {
+  if (!_db) {
+    const apps = typeof getApps === 'function' ? (getApps() || []) : [];
+    const app = apps.length ? apps[0] : initializeApp(firebaseConfig);
+    _db = getFirestore(app);
+  }
+  return _db;
+};
+
+let _auth: any = null;
+const getAuthInstance = () => {
+  if (!_auth) {
+    const apps = typeof getApps === 'function' ? (getApps() || []) : [];
+    const app = apps.length ? apps[0] : initializeApp(firebaseConfig);
+    _auth = getAuth(app);
+  }
+  return _auth;
+};
+
+let _googleProvider: any = null;
+
+export const db = new Proxy({}, {
+  get: (target, prop, receiver) => {
+    const inst = getDb();
+    const value = Reflect.get(inst, prop);
+    if (typeof value === 'function') {
+      return value.bind(inst);
+    }
+    return value;
+  },
+  set: (target, prop, value) => {
+    return Reflect.set(getDb(), prop, value);
+  }
+}) as any;
+
+export const auth = new Proxy({}, {
+  get: (target, prop, receiver) => {
+    const inst = getAuthInstance();
+    const value = Reflect.get(inst, prop);
+    if (typeof value === 'function') {
+      return value.bind(inst);
+    }
+    return value;
+  },
+  set: (target, prop, value) => {
+    return Reflect.set(getAuthInstance(), prop, value);
+  }
+}) as any;
+
+export const googleProvider = new Proxy({}, {
+  get: (target, prop, receiver) => {
+    if (!_googleProvider) {
+      _googleProvider = new GoogleAuthProvider();
+    }
+    const value = Reflect.get(_googleProvider, prop);
+    if (typeof value === 'function') {
+      return value.bind(_googleProvider);
+    }
+    return value;
+  }
+}) as any;
 
