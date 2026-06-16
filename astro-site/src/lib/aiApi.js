@@ -48,11 +48,12 @@ const apiCall = async (endpoint, method = 'GET', body = null) => {
     const response = await fetch(`${API_BASE}${endpoint}`, options);
 
     if (!response.ok) {
+      const responseText = await response.text();
       let errorData;
       try {
-        errorData = await response.json();
+        errorData = JSON.parse(responseText);
       } catch (e) {
-        errorData = { error: response.statusText || 'API request failed' };
+        errorData = { error: responseText.slice(0, 300) || response.statusText || 'API request failed' };
       }
       const err = new Error(errorData.error || errorData.message || 'API request failed');
       err.status = response.status;
