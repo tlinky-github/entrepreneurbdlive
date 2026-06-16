@@ -59,7 +59,7 @@ export const ProviderSetup = ({ refreshTrigger }) => {
       setAllProfiles(profilesList);
     } catch (error) {
       console.error('Failed to load providers:', error);
-      toast.error('Failed to load provider configuration');
+      toast.error(error.message || error.error || 'Failed to load provider configuration');
     } finally {
       setLoading(false);
     }

@@ -48,13 +48,21 @@ const apiCall = async (endpoint, method = 'GET', body = null) => {
     const response = await fetch(`${API_BASE}${endpoint}`, options);
 
     if (!response.ok) {
-      const error = await response.json();
-      throw error;
+      let errorData;
+      try {
+        errorData = await response.json();
+      } catch (e) {
+        errorData = { error: response.statusText || 'API request failed' };
+      }
+      const err = new Error(errorData.error || errorData.message || 'API request failed');
+      err.status = response.status;
+      err.data = errorData;
+      throw err;
     }
 
     return await response.json();
   } catch (error) {
-    console.error(`API call failed: ${method} ${endpoint}`, error);
+    console.error(`API call failed: ${method} ${endpoint}`, error.message || error);
     throw error;
   }
 };
