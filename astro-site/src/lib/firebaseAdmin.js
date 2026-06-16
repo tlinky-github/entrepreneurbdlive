@@ -157,8 +157,32 @@ let adminInitError = null;
 
 export const getAdminInitError = () => adminInitError;
 
+export const getFirebaseAdminSDK = () => {
+  if (admin && admin.credential) return admin;
+  if (admin && admin.default && admin.default.credential) return admin.default;
+  return admin;
+};
+
+export const isClientDb = () => {
+  const sdk = getFirebaseAdminSDK();
+  return !sdk || !sdk.apps?.length;
+};
+
+export const getServerTimestamp = () => {
+  const sdk = getFirebaseAdminSDK();
+  if (sdk && sdk.apps?.length) {
+    try {
+      return sdk.firestore.FieldValue.serverTimestamp();
+    } catch (e) {
+      console.warn('[FirebaseAdmin] Failed to get serverTimestamp from Admin SDK, falling back to local Date:', e.message);
+    }
+  }
+  return new Date();
+};
+
 export const ensureFirebaseAdmin = () => {
-  if (admin.apps?.length) return admin.firestore();
+  const sdk = getFirebaseAdminSDK();
+  if (sdk.apps?.length) return sdk.firestore();
 
   try {
     const serviceAccount = getFirebaseServiceAccount();
@@ -166,11 +190,11 @@ export const ensureFirebaseAdmin = () => {
       throw new Error('Firebase credentials are not configured (serviceAccount is null)');
     }
 
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
+    sdk.initializeApp({
+      credential: sdk.credential.cert(serviceAccount),
     });
     adminInitError = null;
-    return admin.firestore();
+    return sdk.firestore();
   } catch (error) {
     adminInitError = error;
     console.error('[FirebaseAdmin] Initialization failed:', error.message);
@@ -263,8 +287,9 @@ const verifyFirebaseIdTokenWithoutAdmin = async (idToken) => {
 export const verifyFirebaseIdToken = async (idToken) => {
   try {
     ensureFirebaseAdmin();
-    if (admin.apps?.length) {
-      return await admin.auth().verifyIdToken(idToken);
+    const sdk = getFirebaseAdminSDK();
+    if (sdk.apps?.length) {
+      return await sdk.auth().verifyIdToken(idToken);
     }
   } catch (e) {
     console.warn('[FirebaseAdmin] Failed to verify via Admin SDK, falling back to manual validation:', e.message);

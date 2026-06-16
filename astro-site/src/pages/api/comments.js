@@ -1,5 +1,4 @@
-import admin from 'firebase-admin';
-import { getFirestore, env } from '../../lib/firebaseAdmin.js';
+import { getFirestore, env, isClientDb, getServerTimestamp } from '../../lib/firebaseAdmin.js';
 
 export const ALL = async ({ request }) => {
   const corsHeaders = {
@@ -52,12 +51,9 @@ export const ALL = async ({ request }) => {
 
     const db = getFirestore();
 
-    const isClientDb = !admin.apps?.length;
     const docRef = await db.collection('comments').add({
       ...commentData,
-      created_at: isClientDb 
-        ? new Date() 
-        : admin.firestore.FieldValue.serverTimestamp(),
+      created_at: getServerTimestamp(),
     });
 
     return new Response(JSON.stringify({ 

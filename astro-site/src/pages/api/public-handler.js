@@ -1,6 +1,6 @@
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import admin from 'firebase-admin';
+import { getFirestore, getServerTimestamp } from '../../lib/firebaseAdmin.js';
 import sharp from 'sharp';
 
 // Safe environment variable helper supporting both Vite (import.meta.env) and Node (process.env)
@@ -14,50 +14,6 @@ const env = (key, fallbackKey) => {
     if (fallbackKey && process.env[fallbackKey]) return process.env[fallbackKey];
   }
   return undefined;
-};
-
-let firebaseInitError = null;
-
-const getFirebaseServiceAccount = () => {
-  const credsJson = env('FIREBASE_CREDENTIALS_JSON', 'FIREBASE_SERVICE_ACCOUNT_JSON');
-  if (credsJson) {
-    return JSON.parse(credsJson);
-  }
-
-  const projectId = env('FIREBASE_PROJECT_ID', 'REACT_APP_FIREBASE_PROJECT_ID');
-  const clientEmail = env('FIREBASE_CLIENT_EMAIL');
-  const privateKey = env('FIREBASE_PRIVATE_KEY');
-
-  if (projectId && clientEmail && privateKey) {
-    return {
-      project_id: projectId,
-      client_email: clientEmail,
-      private_key: privateKey.replace(/\\n/g, '\n'),
-    };
-  }
-
-  return null;
-};
-
-const ensureFirebaseAdmin = () => {
-  if (admin.apps?.length) return admin.firestore();
-  if (firebaseInitError) throw firebaseInitError;
-
-  try {
-    const serviceAccount = getFirebaseServiceAccount();
-    if (!serviceAccount) {
-      firebaseInitError = new Error('Firebase credentials are not configured');
-      throw firebaseInitError;
-    }
-
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
-    });
-    return admin.firestore();
-  } catch (error) {
-    firebaseInitError = error;
-    throw error;
-  }
 };
 
 let r2ClientInstance = null;
@@ -137,7 +93,7 @@ export const ALL = async ({ request }) => {
       }
     }
 
-    const db = ensureFirebaseAdmin();
+    const db = getFirestore();
 
     switch (action) {
       case 'submit-entrepreneur':
@@ -195,8 +151,8 @@ async function handleSubmitProfile(db, data, corsHeaders) {
     source: 'public',
     is_featured: false,
     view_count: 0,
-    created_at: admin.firestore.FieldValue.serverTimestamp(),
-    updated_at: admin.firestore.FieldValue.serverTimestamp(),
+    created_at: getServerTimestamp(),
+    updated_at: getServerTimestamp(),
     slug: data.slug || generateSlug(data.name)
   };
   const docRef = await db.collection('profiles').add(submission);
@@ -214,8 +170,8 @@ async function handleSubmitListing(db, data, corsHeaders) {
     is_featured: false,
     is_verified: false,
     view_count: 0,
-    created_at: admin.firestore.FieldValue.serverTimestamp(),
-    updated_at: admin.firestore.FieldValue.serverTimestamp(),
+    created_at: getServerTimestamp(),
+    updated_at: getServerTimestamp(),
     slug: data.slug || generateSlug(data.business_name)
   };
   const docRef = await db.collection('listings').add(submission);
