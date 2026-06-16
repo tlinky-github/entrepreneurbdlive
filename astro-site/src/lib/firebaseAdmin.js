@@ -196,9 +196,19 @@ export const ensureFirebaseAdmin = () => {
     adminInitError = null;
     return sdk.firestore();
   } catch (error) {
-    adminInitError = error;
-    console.error('[FirebaseAdmin] Initialization failed:', error.message);
-    throw error;
+    let details = '';
+    try {
+      details = ` | keys: ${admin ? Object.keys(admin).join(',') : 'null'}`;
+      if (admin && admin.default) {
+        details += ` | default keys: ${Object.keys(admin.default).join(',')}`;
+      }
+    } catch (e) {
+      details = ` | details error: ${e.message}`;
+    }
+    const enhancedError = new Error(`${error.message}${details}`);
+    adminInitError = enhancedError;
+    console.error('[FirebaseAdmin] Initialization failed:', enhancedError.message);
+    throw enhancedError;
   }
 };
 
