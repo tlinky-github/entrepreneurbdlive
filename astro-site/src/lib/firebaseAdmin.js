@@ -153,20 +153,26 @@ const getFirebaseServiceAccount = () => {
   return null;
 };
 
+let adminInitError = null;
+
+export const getAdminInitError = () => adminInitError;
+
 export const ensureFirebaseAdmin = () => {
   if (admin.apps?.length) return admin.firestore();
 
   try {
     const serviceAccount = getFirebaseServiceAccount();
     if (!serviceAccount) {
-      throw new Error('Firebase credentials are not configured');
+      throw new Error('Firebase credentials are not configured (serviceAccount is null)');
     }
 
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),
     });
+    adminInitError = null;
     return admin.firestore();
   } catch (error) {
+    adminInitError = error;
     console.error('[FirebaseAdmin] Initialization failed:', error.message);
     throw error;
   }

@@ -1,4 +1,4 @@
-import { getFirestore, verifyFirebaseIdToken } from '../../../lib/firebaseAdmin.js';
+import { getFirestore, verifyFirebaseIdToken, getAdminInitError } from '../../../lib/firebaseAdmin.js';
 import postGeneratorService from '../../../lib/services/postGeneratorService.js';
 import { encrypt, decrypt } from '../../../lib/services/encryptionService.js';
 import openaiService from '../../../lib/services/aiProviders/openaiService.js';
@@ -475,9 +475,14 @@ export const ALL = async ({ request, url }) => {
     return errorResponse(400, 'Invalid target or action');
   } catch (error) {
     console.error('API execution error:', error);
+    let errorMsg = error.message;
+    const initError = getAdminInitError();
+    if (initError && (errorMsg.includes('permission') || errorMsg.includes('credential'))) {
+      errorMsg += ` [FirebaseAdmin SDK Init Error: ${initError.message}]`;
+    }
     return errorResponse(
-      error.message.includes('Unauthorized') ? 401 : 500, 
-      error.message
+      errorMsg.includes('Unauthorized') ? 401 : 500, 
+      errorMsg
     );
   }
 };
