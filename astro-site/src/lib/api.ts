@@ -734,6 +734,42 @@ export const commentAPI = {
       console.error('Comment Create Error:', error);
       throw error;
     }
+  },
+  delete: async (id: string) => {
+    try {
+      await deleteDoc(doc(db, 'comments', id));
+      return { success: true };
+    } catch (error) {
+      console.error('Comment Delete Error:', error);
+      throw error;
+    }
+  },
+  update: async (id: string, content: string) => {
+    try {
+      await updateDoc(doc(db, 'comments', id), {
+        content,
+        updated_at: serverTimestamp(),
+        is_edited: true
+      });
+      return { success: true };
+    } catch (error) {
+      console.error('Comment Update Error:', error);
+      throw error;
+    }
+  },
+  report: async (commentId: string, reason: string) => {
+    try {
+      await addDoc(collection(db, 'comment_reports'), {
+        comment_id: commentId,
+        reason,
+        status: 'pending',
+        created_at: serverTimestamp()
+      });
+      return { success: true };
+    } catch (error) {
+      console.error('Comment Report Error:', error);
+      throw error;
+    }
   }
 };
 
