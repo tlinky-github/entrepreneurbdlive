@@ -1,7 +1,4 @@
 {
-  "buildCommand": "npm --prefix astro-site install && npm --prefix astro-site run build && cp -r astro-site/.vercel/output .vercel/output",
-  "framework": null,
-  "installCommand": "npm install",
   "headers": [
     {
       "source": "/_astro/(.*)",
