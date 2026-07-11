@@ -40,16 +40,15 @@ const PublicImageUploader = ({ onUploadComplete, value, label, turnstileToken, t
         });
         
         const fileBase64 = await base64Promise;
-        setProgress(40);
-
-        const response = await publicAPI.optimizeImage(fileBase64, { 
+        const response = await publicAPI.optimizeImage({ 
+          fileBase64,
           type, 
           crop: true 
         }, turnstileToken);
 
-        if (response.success && response.data.publicUrl) {
+        if (response.success && response.publicUrl) {
           setProgress(100);
-          onUploadComplete(response.data.publicUrl);
+          onUploadComplete(response.publicUrl);
           toast.success(`${label || 'Image'} uploaded and optimized`);
         } else {
           throw new Error('Optimization failed');

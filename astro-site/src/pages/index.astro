@@ -1,6 +1,6 @@
 ---
 import PublicLayout from '../layouts/PublicLayout.astro';
-import { getRecentPosts, getFeaturedDocs, getPublicStats } from '../lib/api';
+import { getRecentPosts, getFeaturedDocs, getPublicStats } from '../lib/serverApi';
 import { Badge } from '../components/ui/badge.jsx';
 import { Button } from '../components/ui/button.jsx';
 import { Card, CardContent } from '../components/ui/card.jsx';
@@ -37,7 +37,7 @@ try {
   // Note: Assuming 'resources' collection exists, we fallback to it. But we don't have getRecentResources.
   const resDocs = await getFeaturedDocs('resources', 6);
   if (resDocs.length === 0) {
-     const { getPublishedDocs } = await import('../lib/api');
+     const { getPublishedDocs } = await import('../lib/serverApi');
      const allRes = await getPublishedDocs('resources', 6);
      knowledgeItems = allRes;
   } else {

@@ -1,9 +1,66 @@
-import * as adminModule from 'firebase-admin';
+import { createRequire } from 'node:module';
 import { createVerify } from 'node:crypto';
 
-const getAdmin = () => adminModule.default || adminModule;
+// Use createRequire so the firebase-admin CJS module is loaded at runtime,
+// bypassing Vite's ESM interop transform which breaks .credential/.initializeApp.
+const _require = createRequire(import.meta.url);
+
+let _adminCache = null;
+const getAdmin = () => {
+  if (!_adminCache) {
+    const mod = _require('firebase-admin');
+    // firebase-admin v12+ changed the API: credential.cert() is gone, cert() is now a direct export.
+    // We normalize to always expose a `.credential.cert` shim for backward compat.
+    let admin = mod;
+    if (mod && mod.default && typeof mod.default.initializeApp === 'function') {
+      admin = mod.default;
+    } else if (mod && mod.__esModule && mod.default) {
+      admin = mod.default;
+    }
+
+    // Build a credential shim if not present (firebase-admin v12+)
+    if (admin && !admin.credential) {
+      const certFn = admin.cert || mod.cert;
+      if (certFn) {
+        admin = Object.assign(Object.create(null), admin, {
+          credential: { cert: certFn.bind(null) },
+        });
+      }
+    }
+
+    _adminCache = admin;
+  }
+  return _adminCache;
+};
+
 const getApps = () => getAdmin().apps || [];
-const getAdminFirestore = (app) => getAdmin().firestore(app);
+
+// firebase-admin v12+: getFirestore is now from 'firebase-admin/firestore', not admin.firestore()
+let _adminFirestoreFn = null;
+const getAdminFirestoreFn = () => {
+  if (!_adminFirestoreFn) {
+    try {
+      const fsModule = _require('firebase-admin/firestore');
+      if (fsModule && typeof fsModule.getFirestore === 'function') {
+        _adminFirestoreFn = fsModule.getFirestore;
+        return _adminFirestoreFn;
+      }
+    } catch (e) { /* not available, fall through */ }
+    // v11 fallback
+    const admin = getAdmin();
+    if (typeof admin.firestore === 'function') {
+      _adminFirestoreFn = (app) => admin.firestore(app);
+    } else {
+      _adminFirestoreFn = () => { throw new Error('firebase-admin: getFirestore not found'); };
+    }
+  }
+  return _adminFirestoreFn;
+};
+
+const getAdminFirestore = (app) => {
+  const fn = getAdminFirestoreFn();
+  return app ? fn(app) : fn();
+};
 const getAdminAuth = (app) => getAdmin().auth(app);
 
 let clientDb = null;
@@ -18,8 +75,28 @@ const getClientFirestore = async () => {
 
 const getClientDb = async () => {
   if (!clientDb) {
-    const firebaseModule = await import('./firebase.ts');
-    clientDb = firebaseModule.db;
+    // Import directly — do NOT use the Proxy from firebase.ts.
+    // firebase/firestore's collection() does instanceof checks and rejects a Proxy.
+    const { initializeApp, getApps, getApp } = await import('firebase/app');
+    const { getFirestore: getClientFirestoreInstance } = await import('firebase/firestore');
+
+    const projectId = env('PUBLIC_FIREBASE_PROJECT_ID') || env('FIREBASE_PROJECT_ID') || env('REACT_APP_FIREBASE_PROJECT_ID');
+    const apiKey    = env('PUBLIC_FIREBASE_API_KEY')    || env('REACT_APP_FIREBASE_API_KEY');
+    const appId     = env('PUBLIC_FIREBASE_APP_ID')     || env('REACT_APP_FIREBASE_APP_ID');
+
+    const firebaseConfig = {
+      apiKey,
+      authDomain:        env('PUBLIC_FIREBASE_AUTH_DOMAIN')        || env('REACT_APP_FIREBASE_AUTH_DOMAIN')        || `${projectId}.firebaseapp.com`,
+      projectId,
+      storageBucket:     env('PUBLIC_FIREBASE_STORAGE_BUCKET')     || env('REACT_APP_FIREBASE_STORAGE_BUCKET')     || `${projectId}.firebasestorage.app`,
+      messagingSenderId: env('PUBLIC_FIREBASE_MESSAGING_SENDER_ID')|| env('REACT_APP_FIREBASE_MESSAGING_SENDER_ID'),
+      appId,
+    };
+
+    // Re-use any already-initialized app (avoid duplicate-app error)
+    const existingApps = getApps();
+    const app = existingApps.length > 0 ? existingApps[0] : initializeApp(firebaseConfig);
+    clientDb = getClientFirestoreInstance(app);
   }
   return clientDb;
 };
@@ -73,6 +150,8 @@ const makeAdminFirestoreWrapper = () => {
   const collectionWrapper = (collectionName) => {
     let filters = [];
     let limitVal = null;
+    let orderByField = null;
+    let orderByDir = 'asc';
 
     const queryChain = {
       where: (field, op, value) => {
@@ -83,12 +162,40 @@ const makeAdminFirestoreWrapper = () => {
         limitVal = num;
         return queryChain;
       },
+      orderBy: (field, dir = 'asc') => {
+        orderByField = field;
+        orderByDir = dir;
+        return queryChain;
+      },
+      /** count() — returns a CountQuery-like object with .get() that resolves {data: () => {count}} */
+      count: () => ({
+        get: async () => {
+          const db = await getDb();
+          const { collection, query, where, getCountFromServer } = await getClientFirestore();
+          let q = collection(db, collectionName);
+          for (const filter of filters) {
+            q = query(q, where(filter.field, filter.op, filter.value));
+          }
+          try {
+            const snap = await getCountFromServer(q);
+            return { data: () => ({ count: snap.data().count }) };
+          } catch (e) {
+            // getCountFromServer may not be available in all SDK versions — fall back to full fetch
+            const { getDocs } = await getClientFirestore();
+            const snap = await getDocs(q);
+            return { data: () => ({ count: snap.size }) };
+          }
+        }
+      }),
       get: async () => {
         const db = await getDb();
-        const { collection, query, where, limit, getDocs } = await getClientFirestore();
+        const { collection, query, where, limit, orderBy, getDocs } = await getClientFirestore();
         let q = collection(db, collectionName);
         for (const filter of filters) {
           q = query(q, where(filter.field, filter.op, filter.value));
+        }
+        if (orderByField) {
+          q = query(q, orderBy(orderByField, orderByDir));
         }
         if (limitVal !== null && typeof limit === 'function') {
           q = query(q, limit(limitVal));
@@ -110,10 +217,16 @@ const makeAdminFirestoreWrapper = () => {
         filters.push({ field, op, value });
         return queryChain;
       },
+      orderBy: (field, dir = 'asc') => {
+        orderByField = field;
+        orderByDir = dir;
+        return queryChain;
+      },
       limit: (num) => {
         limitVal = num;
         return queryChain;
       },
+      count: () => queryChain.count(),
       get: async () => {
         const db = await getDb();
         const { collection, getDocs } = await getClientFirestore();
@@ -223,7 +336,7 @@ export const getServerTimestamp = () => {
 };
 
 export const ensureFirebaseAdmin = () => {
-  if (getApps().length) return getAdminFirestore();
+  if (getApps().length) return getAdminFirestore(getApps()[0]);
 
   try {
     const serviceAccount = getFirebaseServiceAccount();
@@ -232,11 +345,31 @@ export const ensureFirebaseAdmin = () => {
     }
 
     const admin = getAdmin();
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
-    });
+    // Support both firebase-admin v11 (admin.credential.cert) and v12+ (admin.cert directly)
+    const certFn = (admin.credential && admin.credential.cert)
+      ? admin.credential.cert.bind(admin.credential)
+      : (admin.cert ? admin.cert.bind(admin) : null);
+
+    if (!certFn) {
+      throw new Error('firebase-admin: cannot find cert() function on module');
+    }
+
+    let app;
+    try {
+      app = admin.initializeApp({
+        credential: certFn(serviceAccount),
+      });
+    } catch (initErr) {
+      // If the app already exists (e.g. from client SDK init), reuse it
+      if (initErr.code === 'app/duplicate-app' || (initErr.message && initErr.message.includes('already exists'))) {
+        app = admin.getApp ? admin.getApp() : getApps()[0];
+      } else {
+        throw initErr;
+      }
+    }
+
     adminInitError = null;
-    return getAdminFirestore();
+    return getAdminFirestore(app);
   } catch (error) {
     adminInitError = error;
     console.error('[FirebaseAdmin] Initialization failed:', error.message);

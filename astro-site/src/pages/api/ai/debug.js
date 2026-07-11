@@ -26,6 +26,15 @@ export const ALL = async ({ request }) => {
       FIREBASE_PROJECT_ID: env('FIREBASE_PROJECT_ID') || 'not set',
     },
     jsonParseTest: null,
+    adminModuleInspect: {
+      isDefaultNil: adminModule.default === undefined || adminModule.default === null,
+      keysOfModule: Object.keys(adminModule),
+      keysOfDefault: adminModule.default ? Object.keys(adminModule.default) : null,
+      typeOfDefaultCredential: adminModule.default ? typeof adminModule.default.credential : 'n/a',
+      typeOfModuleCredential: typeof adminModule.credential,
+      typeOfDefaultInitializeApp: adminModule.default ? typeof adminModule.default.initializeApp : 'n/a',
+      typeOfModuleInitializeApp: typeof adminModule.initializeApp,
+    },
     sdkState: {
       appsInitialized: 0,
       initAttemptError: null,

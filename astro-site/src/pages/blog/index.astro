@@ -2,7 +2,7 @@
 // Blog List — fetches published posts from Firestore at request time (SSR)
 // This strictly matches BlogList.jsx with 100% UI parity
 import PublicLayout from '../../layouts/PublicLayout.astro';
-import { getRecentPosts, getCategories, stripHtml } from '../../lib/api';
+import { getRecentPosts, getCategories, stripHtml } from '../../lib/serverApi';
 import { decodeHtmlEntities } from '../../lib/smartDesign';
 import BlogFilters from '../../components/blog/BlogFilters.jsx';
 import BrandedPlaceholder from '../../components/blog/BrandedPlaceholder.jsx';

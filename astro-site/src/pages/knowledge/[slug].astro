@@ -1,7 +1,7 @@
 ---
 import PublicLayout from '../../layouts/PublicLayout.astro';
 import KnowledgeArticlePage from '../../components/knowledge/KnowledgeArticlePage.jsx';
-import { getDocBySlug } from '../../lib/api';
+import { getDocBySlug } from '../../lib/serverApi';
 import { pillarPages, pillarPagesPart2 } from '../../data/mock';
 
 const { slug } = Astro.params;

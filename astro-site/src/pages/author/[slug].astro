@@ -1,6 +1,6 @@
 ---
 import PublicLayout from '../../layouts/PublicLayout.astro';
-import { authorAPI, postAPI, profileAPI, listingAPI, resourceAPI } from '../../lib/api';
+import { authorAPI, postAPI, profileAPI, listingAPI, resourceAPI } from '../../lib/serverApi';
 import { decodeHtmlEntities } from '../../lib/smartDesign';
 import { Card, CardContent } from '../../components/ui/card.jsx';
 import { Badge } from '../../components/ui/badge.jsx';
@@ -24,8 +24,7 @@ const { slug } = Astro.params;
 // Fetch author from database
 let author: any = null;
 try {
-  const authorRes = await authorAPI.getBySlug(slug as string);
-  author = authorRes.data;
+  author = await authorAPI.getBySlug(slug as string);
   if (author) {
     author = {
       ...author,
@@ -46,19 +45,19 @@ if (!author) {
 let contents: any[] = [];
 try {
   const [posts, profiles, listings, resources] = await Promise.all([
-    postAPI.list({ isAdmin: false, limit: 100 }),
-    profileAPI.list({ status: 'published' }),
-    listingAPI.list({ status: 'published' }),
+    postAPI.list(),
+    profileAPI.list(),
+    listingAPI.list(),
     resourceAPI.list()
   ]);
 
   contents = [
-    ...(posts.data || []).map(p => ({ ...p, type: 'blog', link: `/blog/${p.slug}`, icon: FileText })),
-    ...(profiles.data || []).map(p => ({ ...p, type: 'entrepreneur', link: `/entrepreneurs/${p.slug}`, icon: Users, title: p.name })),
-    ...(listings.data || []).map(l => ({ ...l, type: 'directory', link: `/directory/${l.slug}`, icon: Building2, title: l.business_name })),
-    ...(resources.data || []).map(r => ({ ...r, type: 'knowledge', link: `/knowledge/${r.slug}`, icon: BookOpen }))
-  ].filter(item => item.authorId === author.id)
-   .map(item => ({
+    ...(posts || []).map((p: any) => ({ ...p, type: 'blog', link: `/blog/${p.slug}`, icon: FileText })),
+    ...(profiles || []).map((p: any) => ({ ...p, type: 'entrepreneur', link: `/entrepreneurs/${p.slug}`, icon: Users, title: p.name })),
+    ...(listings || []).map((l: any) => ({ ...l, type: 'directory', link: `/directory/${l.slug}`, icon: Building2, title: l.business_name })),
+    ...(resources || []).map((r: any) => ({ ...r, type: 'knowledge', link: `/knowledge/${r.slug}`, icon: BookOpen }))
+  ].filter((item: any) => item.authorId === author.id)
+   .map((item: any) => ({
      ...item,
      title: decodeHtmlEntities(item.title || ''),
      excerpt: decodeHtmlEntities(item.excerpt || item.details || item.short_description || '')

@@ -1,12 +1,11 @@
 ---
 import PublicLayout from '../../layouts/PublicLayout.astro';
 import KnowledgeHubPage from '../../components/knowledge/KnowledgeHubPage.jsx';
-import { contentAPI } from '../../lib/api';
+import { contentAPI } from '../../lib/serverApi';
 
 let firestoreArticles = [];
 try {
-  const res = await contentAPI.list('knowledge');
-  firestoreArticles = (res?.data || []).filter((a: any) => a.status === 'published');
+  firestoreArticles = await contentAPI.list();
 } catch (e: any) {
   console.error('[Knowledge Hub] SSR fetch failed:', e.message);
 }

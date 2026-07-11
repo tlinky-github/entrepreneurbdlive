@@ -42,6 +42,21 @@ const convertTimestamps = (data: any): any => {
   return converted;
 };
 
+const fileToBase64 = (file: File): Promise<string> => new Promise<string>((resolve, reject) => {
+  const reader = new FileReader();
+  reader.onload = () => {
+    const result = reader.result;
+    if (typeof result === 'string') {
+      const base64 = result.split(',')[1];
+      resolve(base64);
+    } else {
+      reject(new Error('Unable to convert file to base64'));
+    }
+  };
+  reader.onerror = reject;
+  reader.readAsDataURL(file);
+});
+
 /**
  * Fetch a single document by slug from a Firestore collection
  */
@@ -464,15 +479,75 @@ export const glossaryAPI = {
 };
 
 export const mediaAPI = {
-  list: async () => {
+  list: async (params: any = {}) => {
     try {
-      const snapshot = await getDocs(collection(db, 'media'));
-      return { data: snapshot.docs.map(docToData) };
+      const q = collection(db, 'media');
+      
+      try {
+        let sortedQ: any = q;
+        if (!params.noSort) {
+          sortedQ = query(q, orderBy('created_at', 'desc'));
+        }
+        if (params.limit) {
+          sortedQ = query(sortedQ, fsLimit(params.limit));
+        }
+        const snapshot = await getDocs(sortedQ);
+        return { data: snapshot.docs.map(docToData) };
+      } catch (sortError) {
+        console.warn('Media list sort failed (possibly missing index), falling back to unsorted:', sortError);
+        const snapshot = await getDocs(q);
+        return { data: snapshot.docs.map(docToData) };
+      }
     } catch (error) {
-      console.error('Media list error:', error);
+      console.error('Error listing media:', error);
       return { data: [] };
     }
   },
+
+  create: async (data: any) => {
+    try {
+      const res = await addDoc(collection(db, 'media'), {
+        ...data,
+        created_at: serverTimestamp()
+      });
+      return { id: res.id, ...data };
+    } catch (error) {
+      console.error('Error creating media entry:', error);
+      throw error;
+    }
+  },
+
+  delete: async (id: string) => {
+    try {
+      await deleteDoc(doc(db, 'media', id));
+      return { success: true };
+    } catch (error) {
+      console.error('Error deleting media entry:', error);
+      throw error;
+    }
+  },
+
+  listR2: async () => {
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) throw new Error('Not authenticated');
+      
+      const response = await fetch('/api/media-handler?action=list', {
+        method: 'GET',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) throw new Error('Failed to list R2 contents');
+      return await response.json();
+    } catch (error) {
+      console.error('R2 List API Error:', error);
+      throw error;
+    }
+  },
+
   deleteR2: async (key: string) => {
     try {
       const token = await auth.currentUser?.getIdToken();
@@ -495,6 +570,41 @@ export const mediaAPI = {
       return { success: true };
     } catch (error) {
       console.error('R2 Delete API Error:', error);
+      throw error;
+    }
+  },
+
+  optimize: async (source: File | string, options: any = {}) => {
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) throw new Error('Not authenticated');
+
+      const body: any = { ...options };
+      if (source instanceof File) {
+        body.fileBase64 = await fileToBase64(source);
+        body.contentType = source.type;
+        body.fileName = source.name;
+      } else {
+        body.sourceUrl = source;
+      }
+
+      const response = await fetch('/api/media-handler?action=optimize', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(body)
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to optimize image: ${errorText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('R2 Optimize API Error:', error);
       throw error;
     }
   }

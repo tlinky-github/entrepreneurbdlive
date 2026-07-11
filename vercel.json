@@ -1,206 +1,19 @@
 {
-  "buildCommand": "npm run build",
-  "outputDirectory": "build",
-  "framework": "create-react-app",
-  "env": {
-    "SKIP_ENV_VALIDATION": "true"
-  },
-  "functions": {
-    "api/seo-handler.js": {
-      "memory": 1024,
-      "maxDuration": 10
-    }
-  },
-  "rewrites": [
-    {
-      "source": "/sitemap.xml",
-      "destination": "/api/sitemap"
-    },
-    {
-      "source": "/sitemap-news.xml",
-      "destination": "/api/seo-handler?action=sitemap-news"
-    },
-    {
-      "source": "/api/og-image",
-      "destination": "/api/seo-handler?render=image"
-    },
-    {
-      "source": "/",
-      "has": [{ "type": "query", "key": "no_bot", "value": "1" }],
-      "destination": "/index.html"
-    },
-    {
-      "source": "/",
-      "destination": "/api/seo-handler?path=home"
-    },
-    {
-      "source": "/blog/:slug",
-      "has": [{ "type": "query", "key": "no_bot", "value": "1" }],
-      "destination": "/index.html"
-    },
-    {
-      "source": "/directory/:slug",
-      "has": [{ "type": "query", "key": "no_bot", "value": "1" }],
-      "destination": "/index.html"
-    },
-    {
-      "source": "/entrepreneurs/:slug",
-      "has": [{ "type": "query", "key": "no_bot", "value": "1" }],
-      "destination": "/index.html"
-    },
-    {
-      "source": "/knowledge/:slug",
-      "has": [{ "type": "query", "key": "no_bot", "value": "1" }],
-      "destination": "/index.html"
-    },
-    {
-      "source": "/blog/:slug",
-      "destination": "/api/seo-handler?path=blog/:slug"
-    },
-    {
-      "source": "/directory/:slug",
-      "destination": "/api/seo-handler?path=directory/:slug"
-    },
-    {
-      "source": "/entrepreneurs/:slug",
-      "destination": "/api/seo-handler?path=entrepreneurs/:slug"
-    },
-    {
-      "source": "/knowledge/:slug",
-      "destination": "/api/seo-handler?path=knowledge/:slug"
-    },
-    {
-      "source": "/author/:slug",
-      "has": [{ "type": "query", "key": "no_bot", "value": "1" }],
-      "destination": "/index.html"
-    },
-    {
-      "source": "/author/:slug",
-      "destination": "/api/seo-handler?path=author/:slug"
-    },
-    {
-      "source": "/resources/:slug",
-      "has": [{ "type": "query", "key": "no_bot", "value": "1" }],
-      "destination": "/index.html"
-    },
-    {
-      "source": "/resources/:slug",
-      "destination": "/api/seo-handler?path=resources/:slug"
-    },
-    {
-      "source": "/page/:slug",
-      "has": [{ "type": "query", "key": "no_bot", "value": "1" }],
-      "destination": "/index.html"
-    },
-    {
-      "source": "/page/:slug",
-      "destination": "/api/seo-handler?path=page/:slug"
-    },
-    {
-      "source": "/submit",
-      "has": [{ "type": "query", "key": "no_bot", "value": "1" }],
-      "destination": "/index.html"
-    },
-    {
-      "source": "/submit",
-      "destination": "/api/seo-handler?path=submit"
-    },
-    {
-      "source": "/about",
-      "has": [{ "type": "query", "key": "no_bot", "value": "1" }],
-      "destination": "/index.html"
-    },
-    {
-      "source": "/about",
-      "destination": "/api/seo-handler?path=about"
-    },
-    {
-      "source": "/contact",
-      "has": [{ "type": "query", "key": "no_bot", "value": "1" }],
-      "destination": "/index.html"
-    },
-    {
-      "source": "/contact",
-      "destination": "/api/seo-handler?path=contact"
-    },
-    {
-      "source": "/blog",
-      "has": [{ "type": "query", "key": "no_bot", "value": "1" }],
-      "destination": "/index.html"
-    },
-    {
-      "source": "/blog",
-      "destination": "/api/seo-handler?path=blog"
-    },
-    {
-      "source": "/entrepreneurs",
-      "has": [{ "type": "query", "key": "no_bot", "value": "1" }],
-      "destination": "/index.html"
-    },
-    {
-      "source": "/entrepreneurs",
-      "destination": "/api/seo-handler?path=entrepreneurs"
-    },
-    {
-      "source": "/directory",
-      "has": [{ "type": "query", "key": "no_bot", "value": "1" }],
-      "destination": "/index.html"
-    },
-    {
-      "source": "/directory",
-      "destination": "/api/seo-handler?path=directory"
-    },
-    {
-      "source": "/knowledge",
-      "has": [{ "type": "query", "key": "no_bot", "value": "1" }],
-      "destination": "/index.html"
-    },
-    {
-      "source": "/knowledge",
-      "destination": "/api/seo-handler?path=knowledge"
-    },
-    {
-      "source": "/resources",
-      "has": [{ "type": "query", "key": "no_bot", "value": "1" }],
-      "destination": "/index.html"
-    },
-    {
-      "source": "/resources",
-      "destination": "/api/seo-handler?path=resources"
-    },
-    {
-      "source": "/editorial",
-      "has": [{ "type": "query", "key": "no_bot", "value": "1" }],
-      "destination": "/index.html"
-    },
-    {
-      "source": "/editorial",
-      "destination": "/api/seo-handler?path=editorial"
-    },
-    { "source": "/faqs", "has": [{ "type": "query", "key": "no_bot", "value": "1" }], "destination": "/index.html" },
-    { "source": "/faqs", "destination": "/api/seo-handler?path=faqs" },
-    { "source": "/guides", "has": [{ "type": "query", "key": "no_bot", "value": "1" }], "destination": "/index.html" },
-    { "source": "/guides", "destination": "/api/seo-handler?path=guides" },
-    { "source": "/glossary", "has": [{ "type": "query", "key": "no_bot", "value": "1" }], "destination": "/index.html" },
-    { "source": "/glossary", "destination": "/api/seo-handler?path=glossary" },
-    { "source": "/privacy", "has": [{ "type": "query", "key": "no_bot", "value": "1" }], "destination": "/index.html" },
-    { "source": "/privacy", "destination": "/api/seo-handler?path=privacy" },
-    { "source": "/disclaimer", "has": [{ "type": "query", "key": "no_bot", "value": "1" }], "destination": "/index.html" },
-    { "source": "/disclaimer", "destination": "/api/seo-handler?path=disclaimer" },
-    { "source": "/terms", "has": [{ "type": "query", "key": "no_bot", "value": "1" }], "destination": "/index.html" },
-    { "source": "/terms", "destination": "/api/seo-handler?path=terms" },
-    {
-      "source": "/api/:path*",
-      "destination": "/api/:path*"
-    },
-    {
-      "source": "/((?!api/).*)",
-      "destination": "/index.html"
-    }
-  ],
+  "buildCommand": "npm --prefix astro-site install && npm --prefix astro-site run build && cp -r astro-site/.vercel/output .vercel/output",
+  "framework": null,
+  "installCommand": "npm install",
   "headers": [
     {
-      "source": "/api/((?!og-image).*)",
+      "source": "/_astro/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/api/(.*)",
       "headers": [
         {
           "key": "Cache-Control",
@@ -209,11 +22,11 @@
       ]
     },
     {
-      "source": "/:path*.(js|css)",
+      "source": "/sitemap(.*).xml",
       "headers": [
         {
           "key": "Cache-Control",
-          "value": "public, max-age=31536000, immutable"
+          "value": "public, max-age=3600, s-maxage=86400"
         }
       ]
     }
