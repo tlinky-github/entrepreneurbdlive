@@ -35,6 +35,8 @@ try {
   console.error('[Directory Detail] Fetch failed:', e.message);
 }
 
+const coverImg = listing?.og_image || listing?.cover_image || listing?.logo || '';
+
 // SEO metadata
 const title = listing?.business_name ? `${listing.business_name} | Entrepreneur BD Directory` : 'Business Detail | Entrepreneur BD';
 const description = listing?.short_description || 'View detailed information about this business on Entrepreneur BD.';
@@ -43,6 +45,7 @@ const description = listing?.short_description || 'View detailed information abo
 <PublicLayout
   title={title}
   description={description}
+  image={coverImg}
 >
   <DirectoryDetail client:load slug={slug} initialListing={listing} startupStages={startupStages} />
 </PublicLayout>

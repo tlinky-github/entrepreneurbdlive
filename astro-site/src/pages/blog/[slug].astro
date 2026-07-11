@@ -37,7 +37,7 @@ if (post && post.id) {
 const rawTitle = post.seoTitle || post.title || 'Blog Post';
 const title = decodeHtmlEntities(rawTitle);
 const description = decodeHtmlEntities(post.metaDescription || stripHtml(post.excerpt || post.content_html).substring(0, 160));
-const image = post.featured_image || '/og-default.png';
+const image = post.og_image || post.featured_image || '';
 
 // Format Date safely
 let publishedDate = '';

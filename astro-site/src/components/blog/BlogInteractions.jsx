@@ -24,6 +24,7 @@ import {
   Check,
   X
 } from 'lucide-react';
+import ShareModal from '../common/ShareModal';
 
 const formatRelativeDate = (date) => {
   if (!date) return 'Recently Published';
@@ -51,6 +52,7 @@ export default function BlogInteractions({ postId, postTitle, postExcerpt, initi
   const [comments, setComments] = useState([]);
   const [liked, setLiked] = useState(false);
   const [bookmarked, setBookmarked] = useState(false);
+  const [isShareOpen, setIsShareOpen] = useState(false);
   const [newComment, setNewComment] = useState('');
   const [commenterName, setCommenterName] = useState('');
   const [commenterGender, setCommenterGender] = useState('male');
@@ -163,17 +165,8 @@ export default function BlogInteractions({ postId, postTitle, postExcerpt, initi
     }
   };
 
-  const handleShare = async () => {
-    try {
-      await navigator.share({
-        title: postTitle,
-        text: postExcerpt,
-        url: window.location.href,
-      });
-    } catch {
-      navigator.clipboard.writeText(window.location.href);
-      toast.success('Link copied to clipboard');
-    }
+  const handleShare = () => {
+    setIsShareOpen(true);
   };
 
   const getVisibleCommentsCount = () => {
@@ -446,6 +439,13 @@ export default function BlogInteractions({ postId, postTitle, postExcerpt, initi
           </div>
         )}
       </section>
+
+      <ShareModal 
+        isOpen={isShareOpen}
+        onClose={() => setIsShareOpen(false)}
+        shareTitle={postTitle}
+        shareText={postExcerpt}
+      />
     </div>
   );
 }

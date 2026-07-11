@@ -45,6 +45,8 @@ try {
   console.error('[Entrepreneur Detail] Profile fetch failed:', e.message);
 }
 
+const profileImg = profile?.og_image || profile?.featured_image || profile?.photo || '';
+
 // SEO metadata
 const title = profile?.name ? `${profile.name} | Entrepreneur BD Profile` : 'Entrepreneur Profile | Entrepreneur BD';
 const description = profile?.short_bio || 'View the profile and journey of this entrepreneur on Entrepreneur BD.';
@@ -53,6 +55,7 @@ const description = profile?.short_bio || 'View the profile and journey of this 
 <PublicLayout
   title={title}
   description={description}
+  image={profileImg}
 >
   <EntrepreneurDetail client:load slug={slug} initialProfile={profile} initialAuthorData={authorData} startupStages={startupStages} />
 </PublicLayout>
