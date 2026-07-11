@@ -803,11 +803,13 @@ const ContentEditorPanel = () => {
     if (type === 'directory') {
       refreshListingTypes();
       refreshCities();
+      refreshIndustries();
       refreshEntrepreneurs();
     }
     if (type === 'entrepreneurs') {
       refreshStartupStages();
       refreshIndustries();
+      refreshCities();
       refreshListings();
     }
   }, [type, refreshListingTypes, refreshCities, refreshStartupStages, refreshIndustries, refreshListings, refreshEntrepreneurs]);
