@@ -337,6 +337,7 @@ const BlogDetail = () => {
         title={post.seoTitle || post.title}
         description={post.metaDescription || post.excerpt}
         image={post.featured_image}
+        ogImage={post.og_image}
         type="article"
         author={authorData?.name || post.author_name}
         publishedTime={post.created_at}

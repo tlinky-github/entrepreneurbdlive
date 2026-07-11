@@ -83,6 +83,8 @@ const KnowledgeArticlePage = () => {
       <SEO
         title={article.title}
         description={isFirestore ? (article.seo_description || article.excerpt) : article.description}
+        image={article.featured_image}
+        ogImage={article.og_image}
         type="article"
         keywords={[article.title, article.subtitle, 'Entrepreneurship Knowledge', 'Business Guide'].filter(Boolean)}
         breadcrumbs={[

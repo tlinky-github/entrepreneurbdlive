@@ -127,6 +127,7 @@ const EntrepreneurDetail = () => {
         title={profile.seoTitle || profile.name}
         description={profile.metaDescription || profile.short_bio || profile.details}
         image={profile.featured_image || profile.photo}
+        ogImage={profile.og_image}
         type="profile"
         author={authorData?.name || "Entrepreneur BD"}
         faqs={profile.faqs}

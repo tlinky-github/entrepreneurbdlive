@@ -29,7 +29,7 @@ export const SEO = ({
     const metaTags = {
         title: brandedTitle,
         description: descriptionText,
-        image: dynamicOgUrl, 
+        image: ogImage || dynamicOgUrl, 
         type: type || staticConfig.type || defaultConfig.type,
         keywords: props.keywords || staticConfig.keywords || defaultConfig.keywords || [],
     };

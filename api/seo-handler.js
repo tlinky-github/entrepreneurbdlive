@@ -351,7 +351,7 @@ module.exports = async (req, res) => {
             title = docData.seoTitle || docData.seo_title || docData.title || docData.business_name || docData.name || title;
             const rawDesc = docData.metaDescription || docData.seo_description || docData.seoDescription || docData.excerpt || docData.short_description || docData.bio || docData.short_bio || docData.about || docData.details || description;
             description = rawDesc.replace(/<[^>]*>/g, '').substring(0, 160);
-            image = docData.featured_image || docData.logo || docData.photo || image;
+            image = docData.og_image || docData.ogImage || docData.featured_image || docData.logo || docData.photo || image;
           }
         }
       } else if (STATIC_PAGES[type]) {
@@ -368,6 +368,12 @@ module.exports = async (req, res) => {
     const safeDescription = esc(description);
     const dynamicCategory = (STATIC_PAGES[type] && STATIC_PAGES[type].category) || type;
     const dynamicOgUrl = `${SITE_URL}/api/og-image?title=${encodeURIComponent(title.substring(0, 100))}&amp;description=${encodeURIComponent(description.substring(0, 160))}&amp;image=${encodeURIComponent(image)}&amp;category=${encodeURIComponent(dynamicCategory)}`;
+
+    const hasCustomOg = docData && (docData.og_image || docData.ogImage);
+    let resolvedOgImage = hasCustomOg ? (docData.og_image || docData.ogImage) : dynamicOgUrl;
+    if (resolvedOgImage && !resolvedOgImage.startsWith('http') && !resolvedOgImage.startsWith('//')) {
+      resolvedOgImage = `${SITE_URL}${resolvedOgImage.startsWith('/') ? '' : '/'}${resolvedOgImage}`;
+    }
 
     const orgSchema = { 
       "@context": "https://schema.org", "@type": "Organization", "name": "Entrepreneurs BD", 
@@ -392,7 +398,7 @@ module.exports = async (req, res) => {
       <meta property="og:type" content="${type === 'blog' ? 'article' : 'website'}">
       <meta property="og:title" content="${safeTitle}">
       <meta property="og:description" content="${safeDescription}">
-      <meta property="og:image" content="${dynamicOgUrl}">
+      <meta property="og:image" content="${resolvedOgImage}">
       <meta property="og:image:width" content="1200">
       <meta property="og:image:height" content="630">
       <meta property="og:image:type" content="image/png">
@@ -401,7 +407,7 @@ module.exports = async (req, res) => {
       <meta name="twitter:site" content="@entrepreneursbd">
       <meta name="twitter:title" content="${safeTitle}">
       <meta name="twitter:description" content="${safeDescription}">
-      <meta name="twitter:image" content="${dynamicOgUrl}">
+      <meta name="twitter:image" content="${resolvedOgImage}">
       <script type="application/ld+json">${JSON.stringify(orgSchema)}</script>
       <script type="application/ld+json">${JSON.stringify(websiteSchema)}</script>
       <script type="application/ld+json">${JSON.stringify(mainSchema)}</script>

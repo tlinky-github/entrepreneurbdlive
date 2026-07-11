@@ -45,11 +45,13 @@ if (!article) {
 // SEO metadata
 const title = article?.title || 'Knowledge Hub Article';
 const description = article?.description || article?.subtitle || 'Read this business knowledge article on Entrepreneur BD.';
+const image = article?.og_image || article?.featured_image || '';
 ---
 
 <PublicLayout
   title={`${title} | Entrepreneur BD`}
   description={description}
+  image={image}
 >
   <KnowledgeArticlePage client:load slug={slug} article={article} isFirestore={isFirestore} />
 </PublicLayout>

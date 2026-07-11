@@ -106,6 +106,7 @@ const DirectoryDetail = () => {
         title={listing.seoTitle || listing.business_name}
         description={listing.metaDescription || listing.short_description || listing.details}
         image={listing.logo}
+        ogImage={listing.og_image}
         type="business.business"
         faqs={listing.faqs}
         businessData={{
