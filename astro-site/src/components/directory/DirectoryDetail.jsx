@@ -28,11 +28,14 @@ import {
   Facebook as FacebookIcon
 } from 'lucide-react';
 
+import ShareModal from '../common/ShareModal';
+
 const DirectoryDetail = ({ slug, initialListing, startupStages: initialStartupStages = [] }) => {
   const [listing, setListing] = useState(initialListing);
   const [loading, setLoading] = useState(!initialListing);
   const [openFaqIndex, setOpenFaqIndex] = useState(null);
   const [startupStages, setStartupStages] = useState(initialStartupStages);
+  const [isShareOpen, setIsShareOpen] = useState(false);
 
   useEffect(() => {
     const loadStartupStages = async () => {
@@ -65,17 +68,8 @@ const DirectoryDetail = ({ slug, initialListing, startupStages: initialStartupSt
     loadListing();
   }, [slug, initialListing]);
 
-  const handleShare = async () => {
-    try {
-      await navigator.share({
-        title: listing.business_name,
-        text: listing.short_description,
-        url: window.location.href,
-      });
-    } catch {
-      navigator.clipboard.writeText(window.location.href);
-      toast.success('Link copied to clipboard');
-    }
+  const handleShare = () => {
+    setIsShareOpen(true);
   };
 
   if (loading) {
@@ -526,6 +520,14 @@ const DirectoryDetail = ({ slug, initialListing, startupStages: initialStartupSt
           </div>
         </div>
       </div>
+      
+      {/* Share Modal */}
+      <ShareModal 
+        isOpen={isShareOpen} 
+        onClose={() => setIsShareOpen(false)} 
+        shareTitle={listing.business_name}
+        shareText={listing.short_description}
+      />
     </div>
   );
 };

@@ -565,3 +565,33 @@ code {
   font-weight: 700;
   color: #111827;
 }
+
+/* Image Figures and Captions styling inside Tiptap content */
+.tiptap-content figure.editor-figure {
+  margin: 2rem auto;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.tiptap-content figure.editor-figure img {
+  margin: 0 auto;
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.tiptap-content figcaption.editor-figcaption {
+  margin-top: 0.75rem;
+  font-size: 0.875rem;
+  color: #6b7280;
+  font-style: italic;
+  line-height: 1.5;
+  text-align: center;
+  width: 100%;
+  max-width: 90%;
+}
+

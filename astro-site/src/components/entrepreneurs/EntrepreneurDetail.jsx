@@ -27,6 +27,8 @@ import {
   Share2
 } from 'lucide-react';
 
+import ShareModal from '../common/ShareModal';
+
 const EntrepreneurDetail = ({ slug, initialProfile, initialAuthorData, startupStages: initialStartupStages = [] }) => {
   const [profile, setProfile] = useState(initialProfile);
   const [loading, setLoading] = useState(!initialProfile);
@@ -34,6 +36,7 @@ const EntrepreneurDetail = ({ slug, initialProfile, initialAuthorData, startupSt
   const [authorData, setAuthorData] = useState(initialAuthorData);
   const [openFaqIndex, setOpenFaqIndex] = useState(null);
   const [startupStages, setStartupStages] = useState(initialStartupStages);
+  const [isShareOpen, setIsShareOpen] = useState(false);
 
   useEffect(() => {
     const loadStartupStages = async () => {
@@ -83,17 +86,8 @@ const EntrepreneurDetail = ({ slug, initialProfile, initialAuthorData, startupSt
     loadProfile();
   }, [slug, initialProfile]);
 
-  const handleShare = async () => {
-    try {
-      await navigator.share({
-        title: profile.name,
-        text: profile.short_bio,
-        url: window.location.href,
-      });
-    } catch {
-      navigator.clipboard.writeText(window.location.href);
-      toast.success('Link copied to clipboard');
-    }
+  const handleShare = () => {
+    setIsShareOpen(true);
   };
 
   if (loading) {
@@ -432,6 +426,14 @@ const EntrepreneurDetail = ({ slug, initialProfile, initialAuthorData, startupSt
           </CardContent>
         </Card>
       </div>
+      
+      {/* Share Modal */}
+      <ShareModal 
+        isOpen={isShareOpen} 
+        onClose={() => setIsShareOpen(false)} 
+        shareTitle={profile.name}
+        shareText={profile.short_bio}
+      />
     </div>
   );
 };
