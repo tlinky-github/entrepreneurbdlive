@@ -232,6 +232,9 @@ const DirectoryDetail = ({ slug, initialListing, startupStages: initialStartupSt
                       // Automatically upgrades legacy content to the premium emerald design on-the-fly
                       const applySmartDesign = (html) => {
                         if (!html) return '';
+                        if (typeof document === 'undefined' || typeof DOMParser === 'undefined') {
+                          return html;
+                        }
                         const parser = new DOMParser();
                         const doc = parser.parseFromString(html, 'text/html');
                         

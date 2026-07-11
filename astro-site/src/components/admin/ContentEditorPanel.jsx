@@ -1049,7 +1049,7 @@ const ContentEditorPanel = () => {
         website_link_settings: websiteLinkSettings,
         logo: type === 'directory' ? (featuredImage || logo) : logo,
         photo: type === 'entrepreneurs' ? (featuredImage || photo) : photo,
-        cover_image: featuredImage || coverImage,
+        cover_image: (type === 'directory' || type === 'entrepreneurs') ? coverImage : (featuredImage || coverImage),
         leadership_team: leadershipTeam,
         linked_business: linkedBusiness,
         // MIRROR FIELDS for frontend compatibility

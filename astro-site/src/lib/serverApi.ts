@@ -8,6 +8,8 @@
  * without any browser polyfills.
  */
 import { getFirestore } from './firebaseAdmin.js';
+import { createRequire } from 'node:module';
+const _require = createRequire(import.meta.url);
 
 // Recursively convert Admin SDK Timestamps and plain objects to serializable types
 function convertTimestamps(data: any): any {
@@ -213,6 +215,10 @@ export const profileAPI = {
   list: (limit = 50) =>
     queryCollection('profiles', [['status', '==', 'published']], limit),
   getBySlug: (slug: string) => getDocBySlug('profiles', slug),
+  get: async (slug: string) => {
+    const doc = await getDocBySlug('profiles', slug);
+    return { data: doc };
+  },
   featured: (limit = 4) => getFeaturedDocs('profiles', limit),
 };
 
@@ -221,6 +227,10 @@ export const listingAPI = {
   list: (limit = 50) =>
     queryCollection('listings', [['status', '==', 'published']], limit),
   getBySlug: (slug: string) => getDocBySlug('listings', slug),
+  get: async (slug: string) => {
+    const doc = await getDocBySlug('listings', slug);
+    return { data: doc };
+  },
   featured: (limit = 4) => getFeaturedDocs('listings', limit),
 };
 
@@ -236,6 +246,10 @@ export const resourceAPI = {
 export const authorAPI = {
   getBySlug: (slug: string) => getDocBySlug('authors', slug),
   getById: (id: string) => getDocById('authors', id),
+  get: async (id: string) => {
+    const doc = await getDocById('authors', id);
+    return { data: doc };
+  },
   list: (limit = 50) => queryCollection('authors', [], limit),
 };
 
@@ -250,4 +264,48 @@ export const contentAPI = {
 export const taxonomyAPI = {
   getCategories: () => getCategories(),
   getByCollection: (collectionName: string) => queryCollection(collectionName, [], 200),
+  list: async (type: string) => {
+    const colMap: any = {
+      categories: 'categories',
+      blog_categories: 'blog_categories',
+      industries: 'industries',
+      cities: 'cities'
+    };
+    const colName = colMap[type] || type;
+    const data = await queryCollection(colName, [], 200);
+    return { data };
+  }
 };
+
+/** Increment a document's view count */
+export async function incrementViewCount(collectionName: string, id: string) {
+  try {
+    const db = getDb() as any;
+    
+    let incValue: any;
+    try {
+      // 1. Try Firebase Admin SDK FieldValue
+      const adminFs = _require('firebase-admin/firestore');
+      incValue = adminFs.FieldValue.increment(1);
+    } catch (e) {
+      try {
+        const admin = _require('firebase-admin');
+        incValue = admin.firestore.FieldValue.increment(1);
+      } catch (e2) {
+        // 2. Try Client SDK fallback increment
+        try {
+          const { increment } = await import('firebase/firestore');
+          incValue = increment(1);
+        } catch (e3) {
+          incValue = 1;
+        }
+      }
+    }
+    
+    await db.collection(collectionName).doc(id).update({
+      view_count: incValue
+    });
+  } catch (error: any) {
+    console.warn(`[serverApi] Failed to increment view count for ${collectionName}/${id}:`, error.message);
+  }
+}

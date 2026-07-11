@@ -14,6 +14,23 @@ try {
   article = await getDocBySlug('resources', slug as string);
   if (article) {
     isFirestore = true;
+    
+    // Cookie-controlled view counting
+    if (article.id) {
+      const cookieName = `viewed_res_${article.id}`;
+      if (!Astro.cookies.has(cookieName)) {
+        Astro.cookies.set(cookieName, '1', {
+          path: '/',
+          httpOnly: true,
+          secure: true,
+          sameSite: 'lax',
+          maxAge: 60 * 60 * 24 // 24 hours
+        });
+        // Increment views on firestore
+        const { incrementViewCount } = await import('../../lib/serverApi');
+        incrementViewCount('resources', article.id);
+      }
+    }
   }
 } catch (e) {
   console.error('[Knowledge Article] Firestore fetch failed:', e);

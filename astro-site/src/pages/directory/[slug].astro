@@ -15,6 +15,22 @@ try {
   ]);
   listing = listingRes.data;
   startupStages = stagesRes.data || [];
+
+  if (listing && listing.id) {
+    const cookieName = `viewed_dir_${listing.id}`;
+    if (!Astro.cookies.has(cookieName)) {
+      Astro.cookies.set(cookieName, '1', {
+        path: '/',
+        httpOnly: true,
+        secure: true,
+        sameSite: 'lax',
+        maxAge: 60 * 60 * 24 // 24 hours
+      });
+      // Increment views on firestore
+      const { incrementViewCount } = await import('../../lib/serverApi');
+      incrementViewCount('listings', listing.id);
+    }
+  }
 } catch (e: any) {
   console.error('[Directory Detail] Fetch failed:', e.message);
 }

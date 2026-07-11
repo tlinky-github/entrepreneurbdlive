@@ -16,6 +16,22 @@ try {
   ]);
   profile = profileRes.data;
   startupStages = stagesRes.data || [];
+
+  if (profile && profile.id) {
+    const cookieName = `viewed_ent_${profile.id}`;
+    if (!Astro.cookies.has(cookieName)) {
+      Astro.cookies.set(cookieName, '1', {
+        path: '/',
+        httpOnly: true,
+        secure: true,
+        sameSite: 'lax',
+        maxAge: 60 * 60 * 24 // 24 hours
+      });
+      // Increment views on firestore
+      const { incrementViewCount } = await import('../../lib/serverApi');
+      incrementViewCount('profiles', profile.id);
+    }
+  }
   
   if (profile?.authorId) {
     try {
