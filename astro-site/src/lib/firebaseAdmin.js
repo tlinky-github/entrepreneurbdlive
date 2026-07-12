@@ -39,20 +39,35 @@ const getApps = () => getAdmin().apps || [];
 let _adminFirestoreFn = null;
 const getAdminFirestoreFn = () => {
   if (!_adminFirestoreFn) {
+    // 1. Try the dedicated sub-package (firebase-admin v12+)
     try {
       const fsModule = _require('firebase-admin/firestore');
-      if (fsModule && typeof fsModule.getFirestore === 'function') {
-        _adminFirestoreFn = fsModule.getFirestore;
+      // Handle named export, .default, or any shape that exposes getFirestore
+      const candidate =
+        (fsModule && typeof fsModule.getFirestore === 'function' && fsModule.getFirestore) ||
+        (fsModule && fsModule.default && typeof fsModule.default.getFirestore === 'function' && fsModule.default.getFirestore);
+      if (candidate) {
+        _adminFirestoreFn = candidate;
         return _adminFirestoreFn;
       }
-    } catch (e) { /* not available, fall through */ }
-    // v11 fallback
-    const admin = getAdmin();
-    if (typeof admin.firestore === 'function') {
-      _adminFirestoreFn = (app) => admin.firestore(app);
-    } else {
-      _adminFirestoreFn = () => { throw new Error('firebase-admin: getFirestore not found'); };
-    }
+    } catch (e) { /* sub-package not available, fall through */ }
+
+    // 2. Try the root firebase-admin module's .firestore() method (v11 and some v12 builds)
+    try {
+      const admin = getAdmin();
+      if (typeof admin.firestore === 'function') {
+        _adminFirestoreFn = (app) => app ? admin.firestore(app) : admin.firestore();
+        return _adminFirestoreFn;
+      }
+      // v12 root may expose getFirestore directly
+      if (typeof admin.getFirestore === 'function') {
+        _adminFirestoreFn = (app) => app ? admin.getFirestore(app) : admin.getFirestore();
+        return _adminFirestoreFn;
+      }
+    } catch (e) { /* ignore */ }
+
+    // 3. Nothing worked — throw a clear error
+    _adminFirestoreFn = () => { throw new Error('firebase-admin: getFirestore not found'); };
   }
   return _adminFirestoreFn;
 };

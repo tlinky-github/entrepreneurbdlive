@@ -86,8 +86,8 @@ if (!authorData && post.author_name) {
 let relatedPosts: any[] = [];
 if (post.category_id) {
   try {
-    const relatedRes = await postAPI.list({ category_id: post.category_id, status: 'published', limit: 7 });
-    relatedPosts = (relatedRes.data || []).filter((p: any) => p.id !== post.id).slice(0, 3);
+    const related = await postAPI.getByCategory(post.category_id, 7);
+    relatedPosts = (related || []).filter((p: any) => p.id !== post.id).slice(0, 3);
   } catch (err) {
     console.error('Error loading related posts:', err);
   }
