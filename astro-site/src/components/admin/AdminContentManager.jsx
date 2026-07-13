@@ -37,6 +37,16 @@ import {
 import { contentAPI, categoryAPI, blogCategoryAPI, adminAPI } from '../../lib/api';
 import './AdminContentManager.css';
 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../../components/ui/select';
+
+// ... (imports remain at the top)
+
 const AdminContentManager = () => {
   const navigate = useNavigate();
   const { refreshStats } = useOutletContext();
@@ -45,11 +55,15 @@ const AdminContentManager = () => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [sortBy, setSortBy] = useState('created_at');
+  const [sortOrder, setSortOrder] = useState('desc');
   const [deleteId, setDeleteId] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [newCategory, setNewCategory] = useState('');
 
+  // ... (contentConfig and API loading stay the same)
   const contentConfig = {
     blog: {
       icon: BookOpen,
@@ -174,13 +188,47 @@ const AdminContentManager = () => {
   };
 
   const filteredItems = items.filter(item => {
-    const searchStr = search.toLowerCase();
-    return (
-      (item.title?.toLowerCase().includes(searchStr)) ||
-      (item.slug?.toLowerCase().includes(searchStr)) ||
-      (item.company_name?.toLowerCase().includes(searchStr)) ||
-      (item.first_name?.toLowerCase().includes(searchStr))
-    );
+    // 1. Filter by Status
+    if (filterStatus !== 'all') {
+       const currentStatus = item.status || 'draft';
+       if (currentStatus !== filterStatus) return false;
+    }
+
+    // 2. Filter by Search
+    if (search) {
+      const searchStr = search.toLowerCase();
+      const match = (
+        (item.title?.toLowerCase().includes(searchStr)) ||
+        (item.slug?.toLowerCase().includes(searchStr)) ||
+        (item.company_name?.toLowerCase().includes(searchStr)) ||
+        (item.first_name?.toLowerCase().includes(searchStr)) ||
+        (item.business_name?.toLowerCase().includes(searchStr)) ||
+        (item.name?.toLowerCase().includes(searchStr))
+      );
+      if (!match) return false;
+    }
+
+    return true;
+  }).sort((a, b) => {
+    // 3. Sort By
+    let valA = a[sortBy];
+    let valB = b[sortBy];
+
+    if (sortBy === 'created_at' || sortBy === 'createdAt') {
+      valA = new Date(a.created_at || a.createdAt || 0).getTime();
+      valB = new Date(b.created_at || b.createdAt || 0).getTime();
+    } else if (sortBy === 'view_count') {
+      valA = Number(valA || a.view_count || a.views || 0);
+      valB = Number(valB || b.view_count || b.views || 0);
+    } else {
+      valA = (valA || a.title || a.name || a.business_name || '').toString().toLowerCase();
+      valB = (valB || b.title || b.name || b.business_name || '').toString().toLowerCase();
+    }
+
+    const direction = sortOrder === 'asc' ? 1 : -1;
+    if (valA < valB) return -1 * direction;
+    if (valA > valB) return 1 * direction;
+    return 0;
   });
 
   return (
@@ -231,24 +279,63 @@ const AdminContentManager = () => {
       </div>
 
       {/* Controls */}
-      <div className="manager-controls">
-        <div className="search-box">
-          <Search size={18} />
-          <Input
-            placeholder="Search..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+      <div className="flex flex-col xl:flex-row gap-4 justify-between items-start xl:items-center mb-6">
+        <div className="flex gap-4 flex-wrap">
+          <Select value={filterStatus} onValueChange={setFilterStatus}>
+            <SelectTrigger className="w-[140px] bg-white">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="published">Published</SelectItem>
+              <SelectItem value="draft">Draft</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="rejected">Rejected</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger className="w-[140px] bg-white">
+              <SelectValue placeholder="Sort By" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="created_at">Date</SelectItem>
+              <SelectItem value="view_count">Views</SelectItem>
+              <SelectItem value="title">Title / Name</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={sortOrder} onValueChange={setSortOrder}>
+            <SelectTrigger className="w-[140px] bg-white">
+              <SelectValue placeholder="Order" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="desc">Descending</SelectItem>
+              <SelectItem value="asc">Ascending</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
-        <div className="action-buttons">
-          <Button onClick={() => setShowCategoryModal(true)} variant="outline">
-            <Settings size={18} />
-            Manage Categories
-          </Button>
-          <Button onClick={() => window.location.href = `/admin/content-editor?type=${contentType}`}>
-            <Plus size={18} />
-            Create New
-          </Button>
+        
+        <div className="flex flex-wrap gap-4 items-center">
+          <div className="search-box m-0 bg-white shadow-sm border border-stone-200">
+            <Search size={18} className="text-stone-400" />
+            <Input
+              placeholder={`Search ${config.label}...`}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="border-0 shadow-none focus-visible:ring-0"
+            />
+          </div>
+          <div className="action-buttons m-0">
+            <Button onClick={() => setShowCategoryModal(true)} variant="outline" className="bg-white">
+              <Settings size={18} />
+              <span className="hidden sm:inline">Categories</span>
+            </Button>
+            <Button onClick={() => window.location.href = `/admin/content-editor?type=${contentType}`}>
+              <Plus size={18} />
+              <span className="hidden sm:inline">Create</span>
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -279,7 +366,7 @@ const AdminContentManager = () => {
                     <TableHead>Title/Name</TableHead>
                     <TableHead>Category</TableHead>
                     <TableHead>Status</TableHead>
-                    {contentType === 'blog' && <TableHead>Views</TableHead>}
+                    <TableHead>Views</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -314,7 +401,11 @@ const AdminContentManager = () => {
                             {item.status || 'draft'}
                           </Badge>
                         </TableCell>
-                        {contentType === 'blog' && <TableCell>{item.views || 0}</TableCell>}
+                        <TableCell>
+                          <span className="font-mono bg-stone-100 px-2 py-0.5 rounded text-xs">
+                            {(item.view_count || item.views || 0).toLocaleString()}
+                          </span>
+                        </TableCell>
                         <TableCell>
                           <div className="action-icons">
                             <DropdownMenu>

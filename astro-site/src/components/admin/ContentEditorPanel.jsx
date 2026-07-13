@@ -195,7 +195,9 @@ const ContentEditorPanel = () => {
   const [category, setCategory] = useState('');
   const [status, setStatus] = useState('draft');
   const [featuredImage, setFeaturedImage] = useState('');
+  const [featuredImageAlt, setFeaturedImageAlt] = useState('');
   const [saving, setSaving] = useState(false);
+  const isSubmittingRef = useRef(false);
   const [publishing, setPublishing] = useState(false);
   const [contentLoaded, setContentLoaded] = useState(false);
   const [editorReady, setEditorReady] = useState(false);
@@ -208,6 +210,7 @@ const ContentEditorPanel = () => {
   const [seoDescription, setSeoDescription] = useState('');
   const [seoKeywords, setSeoKeywords] = useState('');
   const [ogImage, setOgImage] = useState('');
+  const [ogImageAlt, setOgImageAlt] = useState('');
 
   // Specialized Fields
   const [designation, setDesignation] = useState('');
@@ -227,8 +230,11 @@ const ContentEditorPanel = () => {
   const [listingType, setListingType] = useState('');
   const [startupStage, setStartupStage] = useState('');
   const [logo, setLogo] = useState('');
+  const [logoAlt, setLogoAlt] = useState('');
   const [photo, setPhoto] = useState('');
+  const [photoAlt, setPhotoAlt] = useState('');
   const [coverImage, setCoverImage] = useState('');
+  const [coverImageAlt, setCoverImageAlt] = useState('');
   
   // Author & FAQ State
   const [authorId, setAuthorId] = useState('');
@@ -391,6 +397,28 @@ const ContentEditorPanel = () => {
           caption: { default: null },
           title: { default: null },
         };
+      },
+      parseHTML() {
+        return [
+          {
+            tag: 'figure.editor-figure',
+            contentElement: 'img',
+            getAttrs: (element) => {
+              const img = element.querySelector('img');
+              const caption = element.querySelector('figcaption')?.innerText || null;
+              if (!img) return false;
+              return {
+                src: img.getAttribute('src'),
+                alt: img.getAttribute('alt'),
+                title: img.getAttribute('title'),
+                caption,
+              };
+            },
+          },
+          {
+            tag: 'img[src]',
+          },
+        ];
       },
       renderHTML({ HTMLAttributes }) {
         if (HTMLAttributes.caption) {
@@ -649,10 +677,15 @@ const ContentEditorPanel = () => {
             setSeoDescription(data.seo_description || '');
             setSeoKeywords(data.seo_keywords || '');
             setFeaturedImage(data.featured_image || '');
+            setFeaturedImageAlt(data.featured_image_alt || '');
             setOgImage(data.og_image || '');
+            setOgImageAlt(data.og_image_alt || '');
             setLogo(data.logo || '');
+            setLogoAlt(data.logo_alt || '');
             setPhoto(data.photo || '');
+            setPhotoAlt(data.photo_alt || '');
             setCoverImage(data.cover_image || '');
+            setCoverImageAlt(data.cover_image_alt || '');
 
             // Load specialized fields
             setDesignation(data.designation || '');
@@ -943,8 +976,12 @@ const ContentEditorPanel = () => {
   }, [title, seoTitle]);
 
   const handleSave = async (overrideStatus = null) => {
+    if (isSubmittingRef.current) return false;
+    isSubmittingRef.current = true;
+
     if (!title.trim()) {
       toast.error('Title is required');
+      isSubmittingRef.current = false;
       return false;
     }
     
@@ -953,17 +990,20 @@ const ContentEditorPanel = () => {
       if (type === 'directory') {
         if (!(featuredImage || logo)) {
           toast.error('Logo is required');
+          isSubmittingRef.current = false;
           return false;
         }
       } else if (type !== 'blog') {
         if (!(featuredImage || photo)) {
           toast.error('Profile Photo is required');
+          isSubmittingRef.current = false;
           return false;
         }
       }
 
     if (!category) {
       toast.error('Category is required');
+      isSubmittingRef.current = false;
       return false;
     }
 
@@ -974,6 +1014,7 @@ const ContentEditorPanel = () => {
       if (!contentHtml || contentHtml === '<p></p>') {
         toast.warning('Please add some content before saving');
         setSaving(false);
+        isSubmittingRef.current = false;
         return false;
       }
 
@@ -1016,10 +1057,12 @@ const ContentEditorPanel = () => {
         status: isScheduled ? 'scheduled' : (overrideStatus || status),
         scheduled_at: isScheduled ? scheduledAt : null,
         featured_image: featuredImage,
+        featured_image_alt: featuredImageAlt,
         seo_title: seoTitle,
         seo_description: seoDescription,
         seo_keywords: seoKeywords,
         og_image: ogImage,
+        og_image_alt: ogImageAlt,
         faqs: extractedFaqs, // Keep array in sync for SEO component
         // Include all specialized fields in payload
         designation,
@@ -1048,8 +1091,11 @@ const ContentEditorPanel = () => {
         author_designation: selectedAuthor?.designation || '',
         website_link_settings: websiteLinkSettings,
         logo: type === 'directory' ? (featuredImage || logo) : logo,
+        logo_alt: type === 'directory' ? (featuredImageAlt || logoAlt) : logoAlt,
         photo: type === 'entrepreneurs' ? (featuredImage || photo) : photo,
+        photo_alt: type === 'entrepreneurs' ? (featuredImageAlt || photoAlt) : photoAlt,
         cover_image: (type === 'directory' || type === 'entrepreneurs') ? coverImage : (featuredImage || coverImage),
+        cover_image_alt: (type === 'directory' || type === 'entrepreneurs') ? coverImageAlt : (featuredImageAlt || coverImageAlt),
         leadership_team: leadershipTeam,
         linked_business: linkedBusiness,
         // MIRROR FIELDS for frontend compatibility
@@ -1100,6 +1146,7 @@ const ContentEditorPanel = () => {
       return false;
     } finally {
       setSaving(false);
+      isSubmittingRef.current = false;
     }
   };
 
@@ -1836,10 +1883,8 @@ const ContentEditorPanel = () => {
                     value={featuredImage} 
                     onChange={(url, meta) => {
                       setFeaturedImage(url);
-                      if (meta) {
-                        console.log('Image Meta:', meta);
-                        // You could store these in the document state if needed
-                        // For now, they are available here.
+                      if (meta && meta.alt) {
+                        setFeaturedImageAlt(meta.alt);
                       }
                     }} 
                     entityType={type}
@@ -2366,10 +2411,19 @@ const ContentEditorPanel = () => {
                 </label>
                 <ImageUploader 
                   value={type === 'directory' ? logo : type === 'entrepreneurs' ? photo : featuredImage}
-                  onChange={(url) => {
-                    if (type === 'directory') setLogo(url);
-                    else if (type === 'entrepreneurs') setPhoto(url);
-                    else setFeaturedImage(url);
+                  onChange={(url, meta) => {
+                    if (type === 'directory') {
+                      setLogo(url);
+                      if (meta?.alt) setLogoAlt(meta.alt);
+                    }
+                    else if (type === 'entrepreneurs') {
+                      setPhoto(url);
+                      if (meta?.alt) setPhotoAlt(meta.alt);
+                    }
+                    else {
+                      setFeaturedImage(url);
+                      if (meta?.alt) setFeaturedImageAlt(meta.alt);
+                    }
                   }}
                   entityType={type}
                   placeholder={type === 'directory' ? "Upload logo" : "Upload photo"}
@@ -2383,7 +2437,10 @@ const ContentEditorPanel = () => {
                   <label className="text-xs font-bold uppercase tracking-widest text-stone-400">Cover Background</label>
                   <ImageUploader 
                     value={coverImage}
-                    onChange={(url) => setCoverImage(url)}
+                    onChange={(url, meta) => {
+                      setCoverImage(url);
+                      if (meta?.alt) setCoverImageAlt(meta.alt);
+                    }}
                     entityType="cover"
                     placeholder="Premium background image"
                   />
@@ -2436,7 +2493,10 @@ const ContentEditorPanel = () => {
                 <label className="text-xs font-bold uppercase tracking-wider text-stone-500">Social Media Image (OpenGraph)</label>
                 <ImageUploader 
                   value={ogImage}
-                  onChange={(url) => setOgImage(url)}
+                  onChange={(url, meta) => {
+                    setOgImage(url);
+                    if (meta && meta.alt) setOgImageAlt(meta.alt);
+                  }}
                   entityType="seo"
                   placeholder="Custom image for social sharing"
                 />
@@ -2664,7 +2724,10 @@ const ContentEditorPanel = () => {
         open={imageDialogOpen}
         onOpenChange={setImageDialogOpen}
         onInsert={(data) => {
-          editor.chain().focus().setImage(data).run();
+          editor.chain().focus().insertContent({
+            type: 'image',
+            attrs: data
+          }).run();
         }}
       />
 

@@ -45,7 +45,7 @@ const description = listing?.short_description || 'View detailed information abo
 <PublicLayout
   title={title}
   description={description}
-  image={coverImg}
+  image={coverImg || undefined}
 >
   <DirectoryDetail client:load slug={slug} initialListing={listing} startupStages={startupStages} />
 </PublicLayout>

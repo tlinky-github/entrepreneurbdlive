@@ -145,7 +145,7 @@ const EntrepreneurDetail = ({ slug, initialProfile, initialAuthorData, startupSt
               <div className="flex-shrink-0">
                 <div className="w-32 h-32 bg-white rounded-2xl shadow-lg flex items-center justify-center overflow-hidden border-4 border-white">
                   {(profile.featured_image || profile.photo) ? (
-                    <img src={profile.featured_image || profile.photo} alt={profile.name} className="w-full h-full object-cover" />
+                    <img src={profile.featured_image || profile.photo} alt={profile.featured_image_alt || profile.photo_alt || profile.name} className="w-full h-full object-cover" />
                   ) : (
                     <span className="text-4xl font-bold text-emerald-900">
                       {profile.name?.charAt(0)}

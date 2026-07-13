@@ -745,12 +745,40 @@ export const postAPI = {
 
       const seenIds = new Set(sortedResults.map(r => r.id));
       const legacyOnly = unsortedResults.filter(r => !seenIds.has(r.id));
-      const merged = [...sortedResults, ...legacyOnly];
+      let merged = [...sortedResults, ...legacyOnly];
+
+      // 1. Search Filter
+      if (params.search) {
+        const searchTerms = params.search.toLowerCase().split(' ').filter(Boolean);
+        merged = merged.filter((p: any) => {
+          const searchable = `${p.title || ''} ${p.author_name || ''} ${p.slug || ''}`.toLowerCase();
+          return searchTerms.every((term: string) => searchable.includes(term));
+        });
+      }
+
+      // 2. Sorting
+      const sortBy = params.sortBy || 'created_at';
+      const sortOrder = params.sortOrder === 'asc' ? 1 : -1;
 
       merged.sort((a: any, b: any) => {
-        const da = new Date(a.created_at || a.createdAt || 0);
-        const db2 = new Date(b.created_at || b.createdAt || 0);
-        return db2.getTime() - da.getTime();
+        let valA = a[sortBy];
+        let valB = b[sortBy];
+
+        // Handle specific field types
+        if (sortBy === 'created_at' || sortBy === 'createdAt') {
+          valA = new Date(a.created_at || a.createdAt || 0).getTime();
+          valB = new Date(b.created_at || b.createdAt || 0).getTime();
+        } else if (sortBy === 'view_count') {
+          valA = Number(valA || 0);
+          valB = Number(valB || 0);
+        } else if (typeof valA === 'string' && typeof valB === 'string') {
+          valA = valA.toLowerCase();
+          valB = valB.toLowerCase();
+        }
+
+        if (valA < valB) return -1 * sortOrder;
+        if (valA > valB) return 1 * sortOrder;
+        return 0;
       });
 
       if (params.limit) {

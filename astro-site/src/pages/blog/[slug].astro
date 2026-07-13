@@ -58,7 +58,7 @@ function getReadingTime(post) {
 }
 
 // Process the raw HTML with the exact Smart Design pipeline from the React app
-const finalContentHtml = processHtmlContent(post.content_html || post.content || '', post.featured_image, post.title);
+const finalContentHtml = processHtmlContent(post.content_html || post.content || '', post.featured_image, post.featured_image_alt || post.title);
 
 // Load Author Data on Server
 let authorData: any = null;
@@ -97,7 +97,7 @@ if (post.category_id) {
 <PublicLayout 
   title={`${title} | Entrepreneurs BD`}
   description={description}
-  image={image}
+  image={image || undefined}
   type="article"
 >
   <div class="bg-stone-50 min-h-screen" data-testid="blog-detail-page" data-content-id={post.id} data-content-type="post">

@@ -55,7 +55,7 @@ const description = profile?.short_bio || 'View the profile and journey of this 
 <PublicLayout
   title={title}
   description={description}
-  image={profileImg}
+  image={profileImg || undefined}
 >
   <EntrepreneurDetail client:load slug={slug} initialProfile={profile} initialAuthorData={authorData} startupStages={startupStages} />
 </PublicLayout>

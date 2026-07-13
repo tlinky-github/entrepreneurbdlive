@@ -51,7 +51,7 @@ const image = article?.og_image || article?.featured_image || '';
 <PublicLayout
   title={`${title} | Entrepreneur BD`}
   description={description}
-  image={image}
+  image={image || undefined}
 >
   <KnowledgeArticlePage client:load slug={slug} article={article} isFirestore={isFirestore} />
 </PublicLayout>

@@ -122,7 +122,7 @@ const DirectoryDetail = ({ slug, initialListing, startupStages: initialStartupSt
           {listing.cover_image ? (
             <img 
               src={listing.cover_image} 
-              alt="" 
+              alt={listing.cover_image_alt || listing.business_name} 
               className="w-full h-full object-cover transform transition-transform duration-700 group-hover:scale-105" 
             />
           ) : (
@@ -142,7 +142,7 @@ const DirectoryDetail = ({ slug, initialListing, startupStages: initialStartupSt
           {/* Logo with specific negative margin */}
           <div className="-mt-12 md:-mt-20 w-24 h-24 md:w-40 md:h-40 bg-white rounded-2xl md:rounded-3xl shadow-2xl border-4 md:border-[8px] border-white flex items-center justify-center overflow-hidden flex-shrink-0 z-10 transition-all hover:scale-105 duration-300">
             {listing.logo ? (
-              <img src={listing.logo} alt={listing.business_name} className="w-full h-full object-contain p-3 md:p-6" />
+              <img src={listing.logo} alt={listing.logo_alt || listing.business_name} className="w-full h-full object-contain p-3 md:p-6" />
             ) : (
               <Building2 className="w-12 h-12 md:w-20 md:h-20 text-stone-200" />
             )}

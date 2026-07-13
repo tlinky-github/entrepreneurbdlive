@@ -66,6 +66,17 @@ try {
     author_name: decodeHtmlEntities(post.author_name || '')
   }));
 
+  // Deduplicate by slug in case of double-save bugs in Firestore
+  const uniquePosts = [];
+  const seenSlugs = new Set();
+  for (const p of posts) {
+    if (!seenSlugs.has(p.slug)) {
+      seenSlugs.add(p.slug);
+      uniquePosts.push(p);
+    }
+  }
+  posts = uniquePosts;
+
 } catch (e) {
   console.error('[Blog List] Firestore fetch failed:', e.message);
   error = e.message;

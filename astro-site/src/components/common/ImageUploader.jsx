@@ -540,6 +540,8 @@ const ImageUploader = ({
 
     onChange(insertUrl, { alt, caption, title });
     setOptimizeBeforeInsert(false);
+    toast.success('Image applied successfully!');
+    setPreviewUrl('');
   };
 
   const handleRemove = async () => {

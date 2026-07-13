@@ -141,16 +141,18 @@ export function processHtmlContent(html: string | null | undefined, featuredImag
       const injectionMatch = matches.length >= 2 ? matches[1] : matches[0];
       const injectionPoint = injectionMatch.index;
       
+      const finalAlt = (title && title !== 'undefined') ? title : 'Featured Image';
       const imageHtml = `
-        <div class="featured-image-inline mt-8 mb-12 rounded-2xl overflow-hidden shadow-2xl border border-stone-100 ring-1 ring-stone-900/5 group">
-          <img src="${featuredImage}" alt="${title}" class="w-full h-auto object-cover transform transition-transform duration-700 group-hover:scale-105" />
+        <div class="featured-image-inline">
+          <img src="${featuredImage}" alt="${finalAlt}" class="w-full h-auto object-cover" />
         </div>
       `;
       content = content.slice(0, injectionPoint) + imageHtml + content.slice(injectionPoint);
     } else {
+      const finalAlt = (title && title !== 'undefined') ? title : 'Featured Image';
       const imageHtml = `
-        <div class="featured-image-inline mb-10 rounded-2xl overflow-hidden shadow-xl border border-stone-200">
-          <img src="${featuredImage}" alt="${title}" class="w-full h-auto" />
+        <div class="featured-image-inline">
+          <img src="${featuredImage}" alt="${finalAlt}" class="w-full h-auto" />
         </div>
       `;
       content = imageHtml + content;

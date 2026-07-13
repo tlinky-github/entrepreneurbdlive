@@ -125,7 +125,7 @@ const KnowledgeArticlePage = ({ slug, article, isFirestore }) => {
                   /* Firestore rich HTML content */
                   <div 
                     className="prose prose-stone max-w-none"
-                    dangerouslySetInnerHTML={{ __html: sanitizeHtml(processHtmlContent(article.content || '', article.title, article.featured_image)) }}
+                    dangerouslySetInnerHTML={{ __html: sanitizeHtml(processHtmlContent(article.content || '', article.featured_image, article.featured_image_alt || article.title)) }}
                   />
                 ) : (
                   /* Legacy pillar page structured content */
