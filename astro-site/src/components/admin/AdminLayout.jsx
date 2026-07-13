@@ -98,11 +98,11 @@ const AdminLayout = () => {
             {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </Button>
           <span className="font-semibold text-stone-900">Admin Dashboard</span>
-          <Link to="/">
+          <a href="/" title="Go to Homepage">
             <Button variant="ghost" size="sm">
               <Home className="w-5 h-5" />
             </Button>
-          </Link>
+          </a>
         </div>
       </div>
 
