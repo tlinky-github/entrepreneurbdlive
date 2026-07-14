@@ -51,7 +51,7 @@ function buildPayload(type, frontmatter, body) {
     slug: frontmatter.slug || '',
     seo_title: frontmatter.title_tag || '',
     seo_description: frontmatter.meta_description || '',
-    excerpt: frontmatter.meta_description || frontmatter.excerpt || '',
+    excerpt: frontmatter.short_bio || frontmatter.short_description || frontmatter.excerpt || '',
     content: contentHtml,
     content_html: contentHtml,
     status: 'draft',
@@ -113,13 +113,8 @@ twitter: https://twitter.com/janedoe
 website: https://exampleco.com
 title_tag: "Jane Doe | ExampleCo Co-Founder & CEO | Entrepreneur BD"
 meta_description: "Jane Doe co-founded ExampleCo, a fintech startup..."
+short_bio: "Jane Doe is a fintech entrepreneur based in Dhaka..."
 ---
-
-## Short Bio
-
-**Co-Founder & CEO at ExampleCo**
-
-Jane Doe is a fintech entrepreneur based in Dhaka...
 
 ## About Jane Doe
 
@@ -136,11 +131,8 @@ linkedin: https://linkedin.com/company/exampleco
 facebook: https://facebook.com/exampleco
 title_tag: "ExampleCo Ltd | FinTech Startup | Entrepreneur BD Directory"
 meta_description: "ExampleCo Ltd is a Dhaka-based fintech startup..."
+short_description: "ExampleCo Ltd is a fintech company focused on..."
 ---
-
-## About ExampleCo
-
-ExampleCo Ltd is a fintech company focused on...
 
 ## Services
 

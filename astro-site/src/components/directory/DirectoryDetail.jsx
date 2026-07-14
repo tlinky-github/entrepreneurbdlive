@@ -27,6 +27,7 @@ import {
   Twitter as TwitterIcon,
   Facebook as FacebookIcon
 } from 'lucide-react';
+import DirectoryCard from './DirectoryCard';
 
 import ShareModal from '../common/ShareModal';
 
@@ -36,6 +37,7 @@ const DirectoryDetail = ({ slug, initialListing, startupStages: initialStartupSt
   const [openFaqIndex, setOpenFaqIndex] = useState(null);
   const [startupStages, setStartupStages] = useState(initialStartupStages);
   const [isShareOpen, setIsShareOpen] = useState(false);
+  const [relatedListings, setRelatedListings] = useState([]);
 
   useEffect(() => {
     const loadStartupStages = async () => {
@@ -67,6 +69,28 @@ const DirectoryDetail = ({ slug, initialListing, startupStages: initialStartupSt
 
     loadListing();
   }, [slug, initialListing]);
+
+  useEffect(() => {
+    const loadRelated = async () => {
+      if (!listing?.category) return;
+      try {
+        const res = await listingAPI.list({
+          category: listing.category,
+          status: 'published',
+          limit: 4
+        });
+        if (res.data) {
+          const filtered = res.data.filter(l => l.id !== listing?.id).slice(0, 3);
+          setRelatedListings(filtered);
+        }
+      } catch (err) {
+        console.error('Failed to load related listings:', err);
+      }
+    };
+    if (listing) {
+      loadRelated();
+    }
+  }, [listing?.id, listing?.category]);
 
   const handleShare = () => {
     setIsShareOpen(true);
@@ -520,6 +544,20 @@ const DirectoryDetail = ({ slug, initialListing, startupStages: initialStartupSt
           </div>
         </div>
       </div>
+
+      {/* Related Businesses */}
+      {relatedListings.length > 0 && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <h2 className="text-2xl font-bold text-stone-900 mb-8 text-center sm:text-left border-b border-stone-200 pb-4">
+            Similar Businesses
+          </h2>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {relatedListings.map(relatedListing => (
+              <DirectoryCard key={relatedListing.id} listing={relatedListing} />
+            ))}
+          </div>
+        </div>
+      )}
       
       {/* Share Modal */}
       <ShareModal 

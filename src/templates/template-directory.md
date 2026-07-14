@@ -9,11 +9,8 @@ linkedin: https://linkedin.com/company/yourbusiness
 facebook: https://facebook.com/yourbusiness
 title_tag: "Your Business Name | FinTech Startup | Entrepreneurs BD Directory"
 meta_description: "Brief 155-char description for search engines about this business and what it does."
+short_description: "Your Business Name is a city-based industry company that does something."
 ---
-
-## About [Business Name]
-
-[Business Name] is a [city]-based [industry] company that [what it does in one sentence].
 
 ## What We Do
 

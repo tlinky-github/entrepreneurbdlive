@@ -12,14 +12,8 @@ twitter: https://twitter.com/yourprofile
 website: https://yourcompany.com
 title_tag: "Your Name | YourCompany Co-Founder & CEO | Entrepreneur BD Profile"
 meta_description: "Brief 155-char description for search engines about this entrepreneur and what they do."
+short_bio: "One paragraph intro about who this person is and what they built."
 ---
-
-## Short Bio
-
-**Co-Founder & CEO at YourCompany**
-Dhaka | Stage: Growth-stage | Industry: EdTech
-
-One paragraph intro about who this person is and what they built.
 
 ## About [Full Name]
 
