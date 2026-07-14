@@ -27,7 +27,7 @@ import {
   Share2
 } from 'lucide-react';
 import DefaultAvatar from '../ui/DefaultAvatar';
-import ProfileCard from './ProfileCard';
+import CompactProfileCard from './CompactProfileCard';
 
 import ShareModal from '../common/ShareModal';
 
@@ -458,7 +458,7 @@ const EntrepreneurDetail = ({ slug, initialProfile, initialAuthorData, startupSt
           </h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {relatedProfiles.map(relatedProfile => (
-              <ProfileCard key={relatedProfile.id} profile={relatedProfile} startupStages={startupStages} />
+              <CompactProfileCard key={relatedProfile.id} profile={relatedProfile} />
             ))}
           </div>
         </div>
