@@ -18,6 +18,7 @@ import {
 } from '../../components/ui/alert-dialog';
 import { contentAPI, guidesAPI, faqCategoriesAPI, glossaryAPI } from '../../lib/api';
 import { useOutletContext } from 'react-router-dom';
+import ImportDrawer from './ImportDrawer';
 
 const AdminKnowledgeHub = () => {
   const navigate = useNavigate();
@@ -73,9 +74,12 @@ const KnowledgeArticlesTab = ({ navigate }) => {
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Knowledge Articles</CardTitle>
-        <Button className="bg-emerald-900 text-white hover:bg-emerald-800" onClick={() => navigate('/admin/content-editor?type=knowledge')}>
-          <Plus className="w-4 h-4 mr-2" /> New Article
-        </Button>
+        <div className="flex items-center gap-2">
+          <ImportDrawer contentType="knowledge" onImported={() => { setLoading(true); contentAPI.list('knowledge').then(r => setArticles(r.data || [])).finally(() => setLoading(false)); }} />
+          <Button className="bg-emerald-900 text-white hover:bg-emerald-800" onClick={() => navigate('/admin/content-editor?type=knowledge')}>
+            <Plus className="w-4 h-4 mr-2" /> New Article
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
         {loading ? (

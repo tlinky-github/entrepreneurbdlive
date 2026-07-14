@@ -49,6 +49,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../../components/ui/select';
+import ImportDrawer from './ImportDrawer';
 
 const formatDate = (date) => {
   if (!date) return '-';
@@ -134,6 +135,7 @@ const AdminPosts = () => {
             <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
+          <ImportDrawer contentType="blog" onImported={loadPosts} />
           <Button asChild className="bg-emerald-900 text-white group hover:bg-emerald-800">
             <Link to="/admin/content-editor?type=blog">
               <Plus className="w-4 h-4 mr-2 group-hover:rotate-90 transition-transform" />

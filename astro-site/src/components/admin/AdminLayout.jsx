@@ -30,6 +30,7 @@ import {
   AlertTriangle,
   Inbox,
   ArrowRightLeft,
+  Upload,
 } from 'lucide-react';
 
 const AdminLayout = () => {
@@ -74,6 +75,7 @@ const AdminLayout = () => {
     { href: '/admin/users', label: 'Users', icon: Users },
     { href: '/admin/ai-settings', label: '✨ AI Generator', icon: TrendingUp },
     { href: '/admin/reports', label: 'Reports', icon: AlertTriangle },
+    { href: '/admin/import', label: 'Import Content', icon: Upload },
     { href: '/admin/settings', label: 'Settings', icon: Settings },
   ];
 

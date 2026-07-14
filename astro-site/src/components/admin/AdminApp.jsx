@@ -22,6 +22,7 @@ import AdminKnowledgeHub from './AdminKnowledgeHub';
 import AdminReports from './AdminReports';
 import AdminSubmissions from './AdminSubmissions';
 import AdminTrafficCenter from './AdminTrafficCenter';
+import AdminImport from './AdminImport';
 import TestEditor from './TestEditor';
 
 const PageEditor = () => (
@@ -89,7 +90,8 @@ const router = createBrowserRouter([
       { path: "ai-settings", element: <AISettings /> },
       { path: "analytics", element: <AdminAnalytics /> },
       { path: "submissions", element: <AdminSubmissions /> },
-      { path: "reports", element: <AdminReports /> }
+      { path: "reports", element: <AdminReports /> },
+      { path: "import", element: <AdminImport /> }
     ]
   }
 ]);

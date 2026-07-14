@@ -287,7 +287,7 @@ const ListingCard = ({ listing, featured }) => (
         <div className="flex items-start gap-4">
           <div className="w-16 h-16 bg-stone-100 rounded-2xl flex items-center justify-center flex-shrink-0 overflow-hidden">
             {listing.logo ? (
-              <img src={listing.logo} alt={listing.business_name} className="w-full h-full object-cover" />
+              <img src={listing.logo} alt={listing.logo_alt || listing.business_name} className="w-full h-full object-cover" />
             ) : (
               <Building2 className="w-8 h-8 text-stone-400" />
             )}

@@ -18,6 +18,7 @@ import {
   Plus,
   Pencil
 } from 'lucide-react';
+import ImportDrawer from './ImportDrawer';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -147,12 +148,15 @@ const AdminEntrepreneurs = () => {
           <h1 className="text-2xl font-bold text-stone-900">Entrepreneur Profiles</h1>
           <p className="text-stone-500">Manage and approve entrepreneur profiles</p>
         </div>
-        <Button asChild className="bg-emerald-900 text-white group hover:bg-emerald-800">
-          <Link to="/admin/content-editor?type=entrepreneurs">
-            <Plus className="w-4 h-4 mr-2 group-hover:rotate-90 transition-transform" />
-            Add New Profile
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <ImportDrawer contentType="entrepreneurs" onImported={loadProfiles} />
+          <Button asChild className="bg-emerald-900 text-white group hover:bg-emerald-800">
+            <Link to="/admin/content-editor?type=entrepreneurs">
+              <Plus className="w-4 h-4 mr-2 group-hover:rotate-90 transition-transform" />
+              Add New Profile
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}

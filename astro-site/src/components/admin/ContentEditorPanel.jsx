@@ -233,6 +233,7 @@ const ContentEditorPanel = () => {
   const [logoAlt, setLogoAlt] = useState('');
   const [photo, setPhoto] = useState('');
   const [photoAlt, setPhotoAlt] = useState('');
+  const [gender, setGender] = useState('male');
   const [coverImage, setCoverImage] = useState('');
   const [coverImageAlt, setCoverImageAlt] = useState('');
   
@@ -684,6 +685,7 @@ const ContentEditorPanel = () => {
             setLogoAlt(data.logo_alt || '');
             setPhoto(data.photo || '');
             setPhotoAlt(data.photo_alt || '');
+            setGender(data.gender || 'male');
             setCoverImage(data.cover_image || '');
             setCoverImageAlt(data.cover_image_alt || '');
 
@@ -986,22 +988,11 @@ const ContentEditorPanel = () => {
     }
     
 
-      // IMAGE VALIDATION (Mandatory only for directory/profile, NOT blog)
-      if (type === 'directory') {
-        if (!(featuredImage || logo)) {
-          toast.error('Logo is required');
-          isSubmittingRef.current = false;
-          return false;
-        }
-      } else if (type !== 'blog') {
-        if (!(featuredImage || photo)) {
-          toast.error('Profile Photo is required');
-          isSubmittingRef.current = false;
-          return false;
-        }
-      }
+      // Logo validation: optional for all types now — defaults used if missing
+      // (directory logo, entrepreneur photo are optional — fallback avatars shown)
 
-    if (!category) {
+    // Category is recommended but not blocking for blog
+    if (!category && type !== 'blog' && type !== 'knowledge') {
       toast.error('Category is required');
       isSubmittingRef.current = false;
       return false;
@@ -1011,7 +1002,8 @@ const ContentEditorPanel = () => {
     try {
       let contentHtml = editor?.getHTML() || '';
 
-      if (!contentHtml || contentHtml === '<p></p>') {
+      // For blog/knowledge allow empty content (draft without body is fine)
+      if ((!contentHtml || contentHtml === '<p></p>') && type !== 'blog' && type !== 'knowledge') {
         toast.warning('Please add some content before saving');
         setSaving(false);
         isSubmittingRef.current = false;
@@ -1094,6 +1086,7 @@ const ContentEditorPanel = () => {
         logo_alt: type === 'directory' ? (featuredImageAlt || logoAlt) : logoAlt,
         photo: type === 'entrepreneurs' ? (featuredImage || photo) : photo,
         photo_alt: type === 'entrepreneurs' ? (featuredImageAlt || photoAlt) : photoAlt,
+        gender: type === 'entrepreneurs' ? gender : undefined,
         cover_image: (type === 'directory' || type === 'entrepreneurs') ? coverImage : (featuredImage || coverImage),
         cover_image_alt: (type === 'directory' || type === 'entrepreneurs') ? coverImageAlt : (featuredImageAlt || coverImageAlt),
         leadership_team: leadershipTeam,
@@ -2405,9 +2398,10 @@ const ContentEditorPanel = () => {
               {/* Primary Image: Logo, Photo, or Featured Image */}
               <div className="space-y-2">
                 <label className="text-xs font-bold uppercase tracking-widest text-stone-400">
-                  {type === 'directory' ? 'Business Logo *' : 
-                   type === 'entrepreneurs' ? 'Profile Photo *' : 
-                   'Featured Image *'}
+                  {type === 'directory' ? 'Business Logo' : 
+                   type === 'entrepreneurs' ? 'Profile Photo' : 
+                   'Featured Image'}
+                  <span className="ml-1 text-stone-300 normal-case font-normal">(optional)</span>
                 </label>
                 <ImageUploader 
                   value={type === 'directory' ? logo : type === 'entrepreneurs' ? photo : featuredImage}
@@ -2428,8 +2422,32 @@ const ContentEditorPanel = () => {
                   entityType={type}
                   placeholder={type === 'directory' ? "Upload logo" : "Upload photo"}
                 />
-                <p className="text-[10px] text-stone-400">Recommended: Square format for logos and photos.</p>
+                <p className="text-[10px] text-stone-400">Recommended: Square format for logos and photos. Leave blank to use a default avatar.</p>
               </div>
+
+              {/* Gender selector for Entrepreneurs (controls default avatar) */}
+              {type === 'entrepreneurs' && !photo && !featuredImage && (
+                <div className="space-y-2 pt-2">
+                  <label className="text-xs font-bold uppercase tracking-widest text-stone-400">Default Avatar Gender</label>
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setGender('male')}
+                      className={`flex-1 py-2 rounded-lg border text-sm font-semibold transition-all ${gender === 'male' ? 'border-emerald-900 bg-emerald-50 text-emerald-900' : 'border-stone-200 text-stone-500 hover:border-stone-300'}`}
+                    >
+                      👤 Male
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setGender('female')}
+                      className={`flex-1 py-2 rounded-lg border text-sm font-semibold transition-all ${gender === 'female' ? 'border-emerald-900 bg-emerald-50 text-emerald-900' : 'border-stone-200 text-stone-500 hover:border-stone-300'}`}
+                    >
+                      👤 Female
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-stone-400">Used for the default avatar when no photo is uploaded.</p>
+                </div>
+              )}
 
               {/* Cover Background (Only for Directory/Entrepreneurs) */}
               {(type === 'directory' || type === 'entrepreneurs') && (

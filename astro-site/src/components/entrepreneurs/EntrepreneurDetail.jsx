@@ -146,10 +146,25 @@ const EntrepreneurDetail = ({ slug, initialProfile, initialAuthorData, startupSt
                 <div className="w-32 h-32 bg-white rounded-2xl shadow-lg flex items-center justify-center overflow-hidden border-4 border-white">
                   {(profile.featured_image || profile.photo) ? (
                     <img src={profile.featured_image || profile.photo} alt={profile.featured_image_alt || profile.photo_alt || profile.name} className="w-full h-full object-cover" />
+                  ) : profile.gender === 'female' ? (
+                    /* Default Female Avatar */
+                    <svg viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+                      <rect width="128" height="128" fill="#d1fae5"/>
+                      <ellipse cx="64" cy="52" rx="24" ry="26" fill="#6ee7b7"/>
+                      <ellipse cx="64" cy="120" rx="40" ry="28" fill="#6ee7b7"/>
+                      <ellipse cx="64" cy="50" rx="18" ry="20" fill="#fde68a"/>
+                      <path d="M46 55 Q46 42 64 40 Q82 42 82 55" fill="#92400e"/>
+                      <path d="M42 58 Q40 44 64 40 Q88 44 86 58" stroke="#92400e" strokeWidth="3" fill="#92400e"/>
+                    </svg>
                   ) : (
-                    <span className="text-4xl font-bold text-emerald-900">
-                      {profile.name?.charAt(0)}
-                    </span>
+                    /* Default Male Avatar */
+                    <svg viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+                      <rect width="128" height="128" fill="#d1fae5"/>
+                      <ellipse cx="64" cy="52" rx="24" ry="26" fill="#6ee7b7"/>
+                      <ellipse cx="64" cy="122" rx="42" ry="28" fill="#6ee7b7"/>
+                      <ellipse cx="64" cy="50" rx="18" ry="20" fill="#fde68a"/>
+                      <path d="M46 44 Q46 32 64 30 Q82 32 82 44 L82 48 Q80 40 64 38 Q48 40 46 48Z" fill="#78350f"/>
+                    </svg>
                   )}
                 </div>
               </div>
