@@ -192,7 +192,7 @@ const AdminResources = () => {
                           </div>
                           <div>
                             <p className="font-medium text-stone-900">{resource.title}</p>
-                            <p className="text-xs text-stone-500">/{resource.slug}</p>
+                            <p className="text-sm text-stone-500">/{resource.slug}</p>
                           </div>
                         </div>
                       </TableCell>

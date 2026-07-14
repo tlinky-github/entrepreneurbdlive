@@ -169,7 +169,7 @@ const AdminTrafficCenter = () => {
         <CardContent className="p-6">
           <div className="grid md:grid-cols-7 gap-6 items-start">
             <div className="md:col-span-3 space-y-2">
-              <label className="text-xs font-bold text-stone-500 uppercase tracking-wider">Source Path (Old URL)</label>
+              <label className="text-sm font-bold text-stone-500 uppercase tracking-wider">Source Path (Old URL)</label>
               <Input 
                 placeholder="/blog/old-slug" 
                 value={newRedirect.fromPath}
@@ -183,7 +183,7 @@ const AdminTrafficCenter = () => {
             </div>
 
             <div className="md:col-span-3 space-y-2">
-              <label className="text-xs font-bold text-stone-500 uppercase tracking-wider">Target Destination (New URL)</label>
+              <label className="text-sm font-bold text-stone-500 uppercase tracking-wider">Target Destination (New URL)</label>
               <div className="relative">
                 <Input 
                   placeholder="/blog/new-slug" 
@@ -207,7 +207,7 @@ const AdminTrafficCenter = () => {
                       <button 
                         key={match}
                         onClick={() => setNewRedirect({...newRedirect, toPath: match})}
-                        className="text-xs py-1.5 px-3 bg-stone-100 border border-stone-200 rounded-full hover:bg-emerald-900 hover:text-white hover:border-emerald-900 transition-all"
+                        className="text-sm py-1.5 px-3 bg-stone-100 border border-stone-200 rounded-full hover:bg-emerald-900 hover:text-white hover:border-emerald-900 transition-all"
                       >
                         {match}
                       </button>
@@ -219,7 +219,7 @@ const AdminTrafficCenter = () => {
           </div>
           
           <div className="mt-8 flex items-center justify-between pt-6 border-t border-stone-100">
-            <div className="flex items-center gap-2 text-xs text-stone-500 italic">
+            <div className="flex items-center gap-2 text-sm text-stone-500 italic">
                <Info className="w-4 h-4 text-emerald-600" />
                <span>Supports internal slugs and absolute external URLs.</span>
             </div>

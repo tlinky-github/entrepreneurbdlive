@@ -109,7 +109,7 @@ const PublicImageUploader = ({ onUploadComplete, value, label, turnstileToken, t
                   <p className="text-sm font-medium text-stone-900 group-hover:text-emerald-900">
                     Click to upload image
                   </p>
-                  <p className="text-xs text-stone-500 mt-1">PNG, JPG or WEBP (Max 5MB)</p>
+                  <p className="text-sm text-stone-500 mt-1">PNG, JPG or WEBP (Max 5MB)</p>
                 </div>
               </>
             )}

@@ -316,7 +316,7 @@ const AdminAuthors = () => {
                     <div>
                       <h3 className="font-semibold text-stone-900">{author.name}</h3>
                       <div className="flex items-center gap-2 mt-1">
-                        <Badge variant="outline" className="text-xs font-normal">
+                        <Badge variant="outline" className="text-sm font-normal">
                           {author.designation || 'Author'}
                         </Badge>
                         <div className="flex items-center gap-1.5 ml-2">

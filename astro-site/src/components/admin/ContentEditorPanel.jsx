@@ -1235,14 +1235,14 @@ const ContentEditorPanel = () => {
               size="sm" 
               variant="ghost" 
               onClick={() => setIsDirty(false)} 
-              className="text-xs h-9 text-white hover:bg-white/10 border-white/20"
+              className="text-sm h-9 text-white hover:bg-white/10 border-white/20"
             >
               Ignore Changes
             </Button>
             <Button 
               size="sm" 
               onClick={() => handleSave()} 
-              className="text-xs h-9 bg-white text-emerald-700 hover:bg-emerald-50 border-0 font-bold px-5"
+              className="text-sm h-9 bg-white text-emerald-700 hover:bg-emerald-50 border-0 font-bold px-5"
             >
               Save Draft Now
             </Button>
@@ -1322,7 +1322,7 @@ const ContentEditorPanel = () => {
                      <div>
                       <div className="space-y-2 p-3 bg-stone-50 rounded-lg border border-stone-200">
                         <div className="flex items-center justify-between">
-                          <label className="text-xs font-bold uppercase text-stone-500">Company / Organization</label>
+                          <label className="text-sm font-bold uppercase text-stone-500">Company / Organization</label>
                           <select 
                             className="text-[10px] bg-white text-stone-900 border border-stone-300 rounded px-2 py-1 shadow-sm"
                             value={linkedBusiness.type}
@@ -1452,7 +1452,7 @@ const ContentEditorPanel = () => {
                       {/* Founder Selector */}
                       <div className="space-y-3 p-4 bg-stone-50 rounded-xl border border-stone-200">
                         <div className="flex items-center justify-between">
-                          <label className="text-xs font-bold uppercase text-stone-500">Founder</label>
+                          <label className="text-sm font-bold uppercase text-stone-500">Founder</label>
                           <select 
                             className="text-[10px] bg-white text-stone-900 border border-stone-300 rounded px-2 py-1 shadow-sm"
                             value={leadershipTeam.founder.type}
@@ -1550,7 +1550,7 @@ const ContentEditorPanel = () => {
                       {/* CEO Selector */}
                       <div className="space-y-3 p-4 bg-stone-50 rounded-xl border border-stone-200">
                         <div className="flex items-center justify-between">
-                          <label className="text-xs font-bold uppercase text-stone-500">CEO / Lead</label>
+                          <label className="text-sm font-bold uppercase text-stone-500">CEO / Lead</label>
                           <select 
                             className="text-[10px] bg-white text-stone-900 border border-stone-300 rounded px-2 py-1 shadow-sm"
                             value={leadershipTeam.ceo.type}
@@ -2198,9 +2198,9 @@ const ContentEditorPanel = () => {
                 <div className="toolbar-divider" />
 
                 <div className="toolbar-group flex items-center bg-indigo-50 border border-indigo-100 rounded-md p-1 ml-auto">
-                  <span className="text-xs font-bold text-indigo-800 mx-2 flex items-center uppercase tracking-wider">AI Copilot</span>
+                  <span className="text-sm font-bold text-indigo-800 mx-2 flex items-center uppercase tracking-wider">AI Copilot</span>
                   {isCopilotLoading ? (
-                    <span className="text-xs font-semibold text-indigo-600 px-2 py-1 flex items-center gap-1">
+                    <span className="text-sm font-semibold text-indigo-600 px-2 py-1 flex items-center gap-1">
                       <Loader2 size={12} className="animate-spin" /> Thinking...
                     </span>
                   ) : (
@@ -2225,7 +2225,7 @@ const ContentEditorPanel = () => {
                         onClick={(e) => { e.preventDefault(); handleCopilot('summarize'); }} 
                         title="Summarize" 
                         disabled={!editor} 
-                        className="text-xs font-bold text-indigo-700 hover:bg-indigo-100 px-1.5 py-1 rounded transition-colors"
+                        className="text-sm font-bold text-indigo-700 hover:bg-indigo-100 px-1.5 py-1 rounded transition-colors"
                       >
                         SUM
                       </button>
@@ -2233,7 +2233,7 @@ const ContentEditorPanel = () => {
                         onClick={(e) => { e.preventDefault(); handleCopilot('grammar'); }} 
                         title="Fix Grammar" 
                         disabled={!editor} 
-                        className="text-xs font-bold text-indigo-700 hover:bg-indigo-100 px-1.5 py-1 rounded transition-colors"
+                        className="text-sm font-bold text-indigo-700 hover:bg-indigo-100 px-1.5 py-1 rounded transition-colors"
                       >
                         A+
                       </button>
@@ -2251,7 +2251,7 @@ const ContentEditorPanel = () => {
                         }}
                         disabled={!editor} 
                         title="Smart FAQ Scan: Detects plain-text FAQs and converts them to dynamic blocks"
-                        className="text-xs font-bold text-indigo-700 hover:bg-indigo-100 px-1.5 py-1 rounded transition-colors flex items-center gap-1"
+                        className="text-sm font-bold text-indigo-700 hover:bg-indigo-100 px-1.5 py-1 rounded transition-colors flex items-center gap-1"
                       >
                         <Wand2 size={12} /> SCAN
                       </button>
@@ -2259,7 +2259,7 @@ const ContentEditorPanel = () => {
                         onClick={(e) => { e.preventDefault(); setShowCustomCopilot(!showCustomCopilot); }} 
                         title="Custom AI Instruction" 
                         disabled={!editor} 
-                        className={`text-xs font-bold px-1.5 py-1 rounded transition-colors ${showCustomCopilot ? 'bg-indigo-600 text-white' : 'text-indigo-700 hover:bg-indigo-100'}`}
+                        className={`text-sm font-bold px-1.5 py-1 rounded transition-colors ${showCustomCopilot ? 'bg-indigo-600 text-white' : 'text-indigo-700 hover:bg-indigo-100'}`}
                       >
                         CUSTOM
                       </button>
@@ -2273,7 +2273,7 @@ const ContentEditorPanel = () => {
                         placeholder="E.g. Make it funnier, simplify, etc." 
                         value={customCopilotInstruction}
                         onChange={(e) => setCustomCopilotInstruction(e.target.value)}
-                        className="h-7 text-xs border-indigo-200 focus:border-indigo-400 bg-white w-48"
+                        className="h-7 text-sm border-indigo-200 focus:border-indigo-400 bg-white w-48"
                         onKeyDown={(e) => {
                            if (e.key === 'Enter') {
                               e.preventDefault();
@@ -2353,7 +2353,7 @@ const ContentEditorPanel = () => {
           {/* Scheduling Section */}
           <Card className="mb-6 border-emerald-200 shadow-sm">
             <CardHeader className="bg-emerald-50/50 border-b border-emerald-100 py-3">
-              <CardTitle className="text-xs font-bold uppercase tracking-wider text-emerald-800 flex items-center justify-between">
+              <CardTitle className="text-sm font-bold uppercase tracking-wider text-emerald-800 flex items-center justify-between">
                 <span className="flex items-center gap-2">
                   <Calendar className="w-4 h-4" /> Publishing Schedule
                 </span>
@@ -2382,7 +2382,7 @@ const ContentEditorPanel = () => {
                 </div>
               ) : (
                 <div className="text-center py-2">
-                  <p className="text-xs text-stone-500 italic">No future schedule set.</p>
+                  <p className="text-sm text-stone-500 italic">No future schedule set.</p>
                   <p className="text-[10px] text-stone-400 mt-1">Post will be published immediately on Save/Publish.</p>
                 </div>
               )}
@@ -2397,7 +2397,7 @@ const ContentEditorPanel = () => {
             <CardContent className="space-y-6 pt-6">
               {/* Primary Image: Logo, Photo, or Featured Image */}
               <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-widest text-stone-400">
+                <label className="text-sm font-bold uppercase tracking-widest text-stone-400">
                   {type === 'directory' ? 'Business Logo' : 
                    type === 'entrepreneurs' ? 'Profile Photo' : 
                    'Featured Image'}
@@ -2428,7 +2428,7 @@ const ContentEditorPanel = () => {
               {/* Gender selector for Entrepreneurs (controls default avatar) */}
               {type === 'entrepreneurs' && !photo && !featuredImage && (
                 <div className="space-y-2 pt-2">
-                  <label className="text-xs font-bold uppercase tracking-widest text-stone-400">Default Avatar Gender</label>
+                  <label className="text-sm font-bold uppercase tracking-widest text-stone-400">Default Avatar Gender</label>
                   <div className="flex gap-3">
                     <button
                       type="button"
@@ -2452,7 +2452,7 @@ const ContentEditorPanel = () => {
               {/* Cover Background (Only for Directory/Entrepreneurs) */}
               {(type === 'directory' || type === 'entrepreneurs') && (
                 <div className="space-y-2 pt-4 border-t border-stone-100">
-                  <label className="text-xs font-bold uppercase tracking-widest text-stone-400">Cover Background</label>
+                  <label className="text-sm font-bold uppercase tracking-widest text-stone-400">Cover Background</label>
                   <ImageUploader 
                     value={coverImage}
                     onChange={(url, meta) => {
@@ -2508,7 +2508,7 @@ const ContentEditorPanel = () => {
               </div>
 
               <div className="space-y-2 pt-2 border-t border-stone-100">
-                <label className="text-xs font-bold uppercase tracking-wider text-stone-500">Social Media Image (OpenGraph)</label>
+                <label className="text-sm font-bold uppercase tracking-wider text-stone-500">Social Media Image (OpenGraph)</label>
                 <ImageUploader 
                   value={ogImage}
                   onChange={(url, meta) => {
@@ -2596,36 +2596,36 @@ const ContentEditorPanel = () => {
             </CardHeader>
             {showCustomCode && (
               <CardContent className="space-y-4">
-                <div className="p-2 bg-amber-50 border border-amber-200 rounded text-xs text-amber-800">
+                <div className="p-2 bg-amber-50 border border-amber-200 rounded text-sm text-amber-800">
                   ⚠️ Code here only loads on this specific post/page.
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-stone-500">Custom CSS</label>
+                  <label className="text-sm font-semibold text-stone-500">Custom CSS</label>
                   <textarea
                     value={customCss}
                     onChange={(e) => setCustomCss(e.target.value)}
                     placeholder=".post-content { ... }"
-                    className="w-full min-h-[80px] p-2 border rounded font-mono text-xs bg-stone-900 text-green-400 placeholder-stone-600 mt-1"
+                    className="w-full min-h-[80px] p-2 border rounded font-mono text-sm bg-stone-900 text-green-400 placeholder-stone-600 mt-1"
                     spellCheck={false}
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-stone-500">Custom JavaScript</label>
+                  <label className="text-sm font-semibold text-stone-500">Custom JavaScript</label>
                   <textarea
                     value={customJs}
                     onChange={(e) => setCustomJs(e.target.value)}
                     placeholder="document.addEventListener('DOMContentLoaded', () => { ... });"
-                    className="w-full min-h-[80px] p-2 border rounded font-mono text-xs bg-stone-900 text-green-400 placeholder-stone-600 mt-1"
+                    className="w-full min-h-[80px] p-2 border rounded font-mono text-sm bg-stone-900 text-green-400 placeholder-stone-600 mt-1"
                     spellCheck={false}
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-stone-500">Custom Head HTML</label>
+                  <label className="text-sm font-semibold text-stone-500">Custom Head HTML</label>
                   <textarea
                     value={customHeadHtml}
                     onChange={(e) => setCustomHeadHtml(e.target.value)}
                     placeholder='<meta property="article:tag" content="startup" />'
-                    className="w-full min-h-[60px] p-2 border rounded font-mono text-xs bg-stone-900 text-green-400 placeholder-stone-600 mt-1"
+                    className="w-full min-h-[60px] p-2 border rounded font-mono text-sm bg-stone-900 text-green-400 placeholder-stone-600 mt-1"
                     spellCheck={false}
                   />
                 </div>
@@ -2761,7 +2761,7 @@ const ContentEditorPanel = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="p-2 bg-amber-50 border border-amber-200 rounded text-xs text-amber-800">
+            <div className="p-2 bg-amber-50 border border-amber-200 rounded text-sm text-amber-800">
               ⚠️ Only add trusted HTML. Incorrect code may break your content layout.
             </div>
             <textarea
@@ -2774,7 +2774,7 @@ const ContentEditorPanel = () => {
             />
             {customHtmlInput.trim() && (
               <div>
-                <p className="text-xs font-semibold text-stone-500 mb-2">Preview:</p>
+                <p className="text-sm font-semibold text-stone-500 mb-2">Preview:</p>
                 <div 
                   className="p-4 border border-stone-200 rounded-lg bg-white max-h-[200px] overflow-auto prose prose-sm max-w-none"
                   dangerouslySetInnerHTML={{ __html: customHtmlInput }}

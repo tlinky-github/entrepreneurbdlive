@@ -229,7 +229,7 @@ const AdminEntrepreneurs = () => {
                         </div>
                         <div>
                           <p className="font-medium text-stone-900">{profile.name || profile.title || 'Untitled'}</p>
-                          <p className="text-xs text-stone-500">{profile.role_title || profile.designation || '-'}</p>
+                          <p className="text-sm text-stone-500">{profile.role_title || profile.designation || '-'}</p>
                         </div>
                       </div>
                     </TableCell>

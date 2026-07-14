@@ -65,7 +65,7 @@ const ShareModal = ({ isOpen, onClose, shareUrl, shareTitle, shareText }) => {
             <div className="w-14 h-14 rounded-2xl flex items-center justify-center bg-blue-50 text-blue-600 transition-all duration-300 transform group-hover:-translate-y-1 group-hover:bg-blue-600 group-hover:text-white group-hover:shadow-lg group-hover:shadow-blue-200">
               <Facebook className="w-6 h-6" />
             </div>
-            <span className="text-xs font-semibold text-stone-500 transition-colors duration-300 group-hover:text-stone-900">Facebook</span>
+            <span className="text-sm font-semibold text-stone-500 transition-colors duration-300 group-hover:text-stone-900">Facebook</span>
           </a>
 
           {/* X (formerly Twitter) */}
@@ -84,7 +84,7 @@ const ShareModal = ({ isOpen, onClose, shareUrl, shareTitle, shareText }) => {
                 <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
               </svg>
             </div>
-            <span className="text-xs font-semibold text-stone-500 transition-colors duration-300 group-hover:text-stone-900">X</span>
+            <span className="text-sm font-semibold text-stone-500 transition-colors duration-300 group-hover:text-stone-900">X</span>
           </a>
 
           {/* LinkedIn */}
@@ -97,13 +97,13 @@ const ShareModal = ({ isOpen, onClose, shareUrl, shareTitle, shareText }) => {
             <div className="w-14 h-14 rounded-2xl flex items-center justify-center bg-sky-50 text-sky-700 transition-all duration-300 transform group-hover:-translate-y-1 group-hover:bg-sky-700 group-hover:text-white group-hover:shadow-lg group-hover:shadow-sky-200">
               <Linkedin className="w-6 h-6" />
             </div>
-            <span className="text-xs font-semibold text-stone-500 transition-colors duration-300 group-hover:text-stone-900">LinkedIn</span>
+            <span className="text-sm font-semibold text-stone-500 transition-colors duration-300 group-hover:text-stone-900">LinkedIn</span>
           </a>
         </div>
 
         {/* Copy Link Input Field */}
         <div className="space-y-2">
-          <label className="text-xs font-bold uppercase tracking-widest text-stone-400">Or Copy Link</label>
+          <label className="text-sm font-bold uppercase tracking-widest text-stone-400">Or Copy Link</label>
           <div className="flex items-center gap-2 bg-stone-50 p-1.5 rounded-2xl border border-stone-200/60 focus-within:border-emerald-900 focus-within:ring-2 focus-within:ring-emerald-900/10 transition-all duration-200">
             <input 
               type="text" 
@@ -113,7 +113,7 @@ const ShareModal = ({ isOpen, onClose, shareUrl, shareTitle, shareText }) => {
             />
             <button 
               onClick={handleCopy}
-              className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 ${
+              className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold transition-all duration-200 ${
                 copied 
                   ? 'bg-emerald-950 text-emerald-300' 
                   : 'bg-emerald-900 hover:bg-emerald-800 text-white shadow-md shadow-emerald-900/10'

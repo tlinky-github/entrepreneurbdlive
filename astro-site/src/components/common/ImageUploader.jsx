@@ -587,7 +587,7 @@ const ImageUploader = ({
         <TabsContent value="gallery" className="mt-4">
           <div className="flex flex-col gap-3 mb-4">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-stone-400 uppercase tracking-wider">Your Library</span>
+              <span className="text-sm font-bold text-stone-400 uppercase tracking-wider">Your Library</span>
               <button 
                 onClick={syncGallery}
                 disabled={mediaLoading}
@@ -626,13 +626,13 @@ const ImageUploader = ({
                 <div className="flex flex-col gap-2 mt-4">
                   <button 
                     onClick={() => setActiveTab('upload')}
-                    className="text-xs text-emerald-600 font-bold hover:underline"
+                    className="text-sm text-emerald-600 font-bold hover:underline"
                   >
                     Upload your first image
                   </button>
                   <button 
                     onClick={syncGallery}
-                    className="text-xs text-stone-400 hover:text-emerald-600 transition-colors"
+                    className="text-sm text-stone-400 hover:text-emerald-600 transition-colors"
                   >
                     or Sync Existing Post Images
                   </button>
@@ -692,7 +692,7 @@ const ImageUploader = ({
                       variant="outline" 
                       size="sm" 
                       onClick={() => setVisibleCount(prev => prev + 15)}
-                      className="text-xs text-stone-500 border-stone-200 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200"
+                      className="text-sm text-stone-500 border-stone-200 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200"
                     >
                       Load More Images
                     </Button>
@@ -732,7 +732,7 @@ const ImageUploader = ({
                 </label>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <label className="text-xs font-semibold text-stone-500">Format</label>
+                    <label className="text-sm font-semibold text-stone-500">Format</label>
                     <select
                       value={format}
                       onChange={(e) => setFormat(e.target.value)}
@@ -745,7 +745,7 @@ const ImageUploader = ({
                     </select>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-xs font-semibold text-stone-500">Quality (%)</label>
+                    <label className="text-sm font-semibold text-stone-500">Quality (%)</label>
                     <div className="flex items-center gap-2">
                       <input
                         type="range"
@@ -761,7 +761,7 @@ const ImageUploader = ({
                 </div>
                 <div className="grid gap-3 sm:grid-cols-3">
                   <div className="space-y-2">
-                    <label className="text-xs font-semibold text-stone-500">Max Width</label>
+                    <label className="text-sm font-semibold text-stone-500">Max Width</label>
                     <Input
                       type="number"
                       value={width}
@@ -771,7 +771,7 @@ const ImageUploader = ({
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-xs font-semibold text-stone-500">Max Height</label>
+                    <label className="text-sm font-semibold text-stone-500">Max Height</label>
                     <Input
                       type="number"
                       value={height}
@@ -797,7 +797,7 @@ const ImageUploader = ({
                     type="button"
                     onClick={handlePreviewOptimize}
                     disabled={isOptimizingPreview || !previewUrl}
-                    className="text-xs bg-emerald-600 hover:bg-emerald-700 text-white"
+                    className="text-sm bg-emerald-600 hover:bg-emerald-700 text-white"
                   >
                     {isOptimizingPreview ? 'Optimizing...' : 'Optimize preview'}
                   </Button>
@@ -805,12 +805,12 @@ const ImageUploader = ({
                     type="button"
                     variant="outline"
                     onClick={handleEditImage}
-                    className="text-xs border-stone-200 hover:bg-stone-50"
+                    className="text-sm border-stone-200 hover:bg-stone-50"
                   >
                     Edit image
                   </Button>
                 </div>
-                <p className="text-xs text-stone-500">
+                <p className="text-sm text-stone-500">
                   Source size: {sourceSize != null ? formatBytes(sourceSize) : 'Unavailable'}
                   {optimizedSize != null
                     ? ` · Optimized size: ${formatBytes(optimizedSize)}`
@@ -867,18 +867,18 @@ const ImageUploader = ({
                 <p className="text-sm font-medium text-stone-600">
                   {isDragging ? 'Drop your image here!' : 'Drop image or click to browse'}
                 </p>
-                <p className="text-xs text-stone-400 mt-1">PNG, JPG, WebP up to 10MB</p>
+                <p className="text-sm text-stone-400 mt-1">PNG, JPG, WebP up to 10MB</p>
               </div>
             </div>
           ) : (
             <div className="bg-stone-50 rounded-xl p-4 border border-stone-100 space-y-4">
               <div className="flex items-center justify-between gap-3">
-                <span className="text-xs font-bold text-stone-400 uppercase">Selected Image</span>
+                <span className="text-sm font-bold text-stone-400 uppercase">Selected Image</span>
                 <div className="flex items-center gap-2">
                   <button 
                     type="button" 
                     onClick={() => setPreviewUrl('')} 
-                    className="text-xs text-red-500 hover:underline"
+                    className="text-sm text-red-500 hover:underline"
                   >
                     Change
                   </button>
@@ -892,7 +892,7 @@ const ImageUploader = ({
                           setSelectedDeleteItem(matchedItem);
                         }
                       }}
-                      className="text-xs text-white bg-red-600 hover:bg-red-700 px-3 py-1 rounded-full transition-all"
+                      className="text-sm text-white bg-red-600 hover:bg-red-700 px-3 py-1 rounded-full transition-all"
                     >
                       Delete
                     </button>
@@ -914,7 +914,7 @@ const ImageUploader = ({
                 </label>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <label className="text-xs font-semibold text-stone-500">Format</label>
+                    <label className="text-sm font-semibold text-stone-500">Format</label>
                     <select
                       value={format}
                       onChange={(e) => setFormat(e.target.value)}
@@ -927,7 +927,7 @@ const ImageUploader = ({
                     </select>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-xs font-semibold text-stone-500">Quality (%)</label>
+                    <label className="text-sm font-semibold text-stone-500">Quality (%)</label>
                     <div className="flex items-center gap-2">
                       <input
                         type="range"
@@ -943,7 +943,7 @@ const ImageUploader = ({
                 </div>
                 <div className="grid gap-3 sm:grid-cols-3">
                   <div className="space-y-2">
-                    <label className="text-xs font-semibold text-stone-500">Max Width</label>
+                    <label className="text-sm font-semibold text-stone-500">Max Width</label>
                     <Input
                       type="number"
                       value={width}
@@ -953,7 +953,7 @@ const ImageUploader = ({
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-xs font-semibold text-stone-500">Max Height</label>
+                    <label className="text-sm font-semibold text-stone-500">Max Height</label>
                     <Input
                       type="number"
                       value={height}
@@ -979,7 +979,7 @@ const ImageUploader = ({
                     type="button"
                     onClick={handlePreviewOptimize}
                     disabled={isOptimizingPreview || !previewUrl}
-                    className="text-xs bg-emerald-600 hover:bg-emerald-700 text-white"
+                    className="text-sm bg-emerald-600 hover:bg-emerald-700 text-white"
                   >
                     {isOptimizingPreview ? 'Optimizing...' : 'Optimize preview'}
                   </Button>
@@ -987,12 +987,12 @@ const ImageUploader = ({
                     type="button"
                     variant="outline"
                     onClick={handleEditImage}
-                    className="text-xs border-stone-200 hover:bg-stone-50"
+                    className="text-sm border-stone-200 hover:bg-stone-50"
                   >
                     Edit image
                   </Button>
                 </div>
-                <p className="text-xs text-stone-500">
+                <p className="text-sm text-stone-500">
                   Source size: {sourceSize != null ? formatBytes(sourceSize) : 'Unavailable'}
                   {optimizedSize != null
                     ? ` · Optimized size: ${formatBytes(optimizedSize)}`
@@ -1003,7 +1003,7 @@ const ImageUploader = ({
               </div>
               <div className="grid gap-3">
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-stone-500">Alt Text (Search Engines)</label>
+                  <label className="text-sm font-semibold text-stone-500">Alt Text (Search Engines)</label>
                   <Input 
                     value={alt} 
                     onChange={(e) => setAlt(e.target.value)}
@@ -1012,7 +1012,7 @@ const ImageUploader = ({
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-stone-500">Caption (Visible to Users)</label>
+                  <label className="text-sm font-semibold text-stone-500">Caption (Visible to Users)</label>
                   <Input 
                     value={caption} 
                     onChange={(e) => setCaption(e.target.value)}
@@ -1021,7 +1021,7 @@ const ImageUploader = ({
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-stone-500">Image Title (Tooltip on Hover)</label>
+                  <label className="text-sm font-semibold text-stone-500">Image Title (Tooltip on Hover)</label>
                   <Input 
                     value={title} 
                     onChange={(e) => setTitle(e.target.value)}

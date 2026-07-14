@@ -288,7 +288,7 @@ const iconMap = {
                         </p>
                       )}
                       {entrepreneur.industry && (
-                        <Badge variant="outline" className="mt-3 text-xs">
+                        <Badge variant="outline" className="mt-3 text-sm">
                           {entrepreneur.industry}
                         </Badge>
                       )}
@@ -353,7 +353,7 @@ const iconMap = {
                           {listing.listing_type_name || listing.industry || (listing.listing_type ? listing.listing_type.replace('_', ' ') : 'Business')}
                         </p>
                         {listing.city && (
-                          <p class="text-xs text-stone-400 mt-1 flex items-center gap-1">
+                          <p class="text-sm text-stone-400 mt-1 flex items-center gap-1">
                             <MapPin className="w-3 h-3" />
                             {listing.city}
                           </p>
@@ -409,7 +409,7 @@ const iconMap = {
                   </div>
                   <CardContent className="p-6">
                     {post.category_name && (
-                      <Badge variant="outline" className="mb-3 text-xs">
+                      <Badge variant="outline" className="mb-3 text-sm">
                         {post.category_name}
                       </Badge>
                     )}
@@ -419,7 +419,7 @@ const iconMap = {
                     {post.excerpt && (
                       <p class="text-sm text-stone-600 line-clamp-2 mb-4">{post.excerpt}</p>
                     )}
-                    <div class="flex items-center justify-between text-xs text-stone-500">
+                    <div class="flex items-center justify-between text-sm text-stone-500">
                       <span class="flex items-center gap-1">
                         <User className="w-3 h-3" />
                         {post.author_name || 'Entrepreneurs BD'}

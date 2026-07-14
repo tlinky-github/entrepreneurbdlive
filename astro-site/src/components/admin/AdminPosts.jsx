@@ -250,14 +250,14 @@ const AdminPosts = () => {
                         )}
                         <div>
                           <p className="font-medium text-stone-900 line-clamp-1">{post.title}</p>
-                          <p className="text-xs text-stone-500">/{post.slug}</p>
+                          <p className="text-sm text-stone-500">/{post.slug}</p>
                         </div>
                       </div>
                     </TableCell>
                     <TableCell>{getStatusBadge(post.status)}</TableCell>
                     <TableCell className="text-stone-600">{post.author_name}</TableCell>
                     <TableCell className="text-stone-600">
-                      <span className="font-mono bg-stone-100 px-2 py-0.5 rounded text-xs">
+                      <span className="font-mono bg-stone-100 px-2 py-0.5 rounded text-sm">
                         {(post.view_count || 0).toLocaleString()}
                       </span>
                     </TableCell>

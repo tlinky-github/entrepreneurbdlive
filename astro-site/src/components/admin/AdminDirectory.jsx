@@ -252,7 +252,7 @@ const AdminDirectory = () => {
                         </div>
                         <div>
                           <p className="font-medium text-stone-900">{listing.business_name || listing.title || 'Untitled'}</p>
-                          <p className="text-xs text-stone-500">{listing.city || listing.headquarters || '-'}</p>
+                          <p className="text-sm text-stone-500">{listing.city || listing.headquarters || '-'}</p>
                         </div>
                       </div>
                     </TableCell>
@@ -266,7 +266,7 @@ const AdminDirectory = () => {
                     <TableCell>
                       <div className="flex gap-1">
                         {listing.is_featured && <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />}
-                        {listing.is_verified && <Badge className="bg-blue-100 text-blue-700 text-xs">Verified</Badge>}
+                        {listing.is_verified && <Badge className="bg-blue-100 text-blue-700 text-sm">Verified</Badge>}
                       </div>
                     </TableCell>
                     <TableCell className="text-stone-600">{listing.view_count}</TableCell>

@@ -361,9 +361,9 @@ const TipTapEditor = ({ content, onChange, placeholder = 'Start writing your con
         {/* AI Copilot Toolbar */}
         <div className="flex items-center ml-auto">
           <div className="flex items-center bg-indigo-50 rounded pl-2 pr-1 py-0.5 border border-indigo-100 shadow-sm">
-            <span className="text-xs font-bold text-indigo-800 mr-2 flex items-center uppercase tracking-wider">AI Copilot</span>
+            <span className="text-sm font-bold text-indigo-800 mr-2 flex items-center uppercase tracking-wider">AI Copilot</span>
             {isCopilotLoading ? (
-              <span className="text-xs font-semibold text-indigo-600 px-2 py-1 flex items-center gap-1">
+              <span className="text-sm font-semibold text-indigo-600 px-2 py-1 flex items-center gap-1">
                 <Loader2 className="w-3.5 h-3.5 animate-spin" /> Thinking...
               </span>
             ) : (
@@ -374,10 +374,10 @@ const TipTapEditor = ({ content, onChange, placeholder = 'Start writing your con
                 <MenuButton onClick={() => handleCopilot('expand')} title="Expand Selected Text" className="hover:bg-indigo-100">
                   <Sparkles className="w-4 h-4 text-indigo-700" />
                 </MenuButton>
-                <button type="button" onClick={() => handleCopilot('summarize')} className="text-xs font-semibold text-indigo-700 hover:bg-indigo-100 px-2 py-1.5 rounded transition-colors" title="Summarize">
+                <button type="button" onClick={() => handleCopilot('summarize')} className="text-sm font-semibold text-indigo-700 hover:bg-indigo-100 px-2 py-1.5 rounded transition-colors" title="Summarize">
                   Sum
                 </button>
-                <button type="button" onClick={() => handleCopilot('grammar')} className="text-xs font-semibold text-indigo-700 hover:bg-indigo-100 px-2 py-1.5 rounded transition-colors" title="Fix Grammar">
+                <button type="button" onClick={() => handleCopilot('grammar')} className="text-sm font-semibold text-indigo-700 hover:bg-indigo-100 px-2 py-1.5 rounded transition-colors" title="Fix Grammar">
                   A+
                 </button>
               </div>

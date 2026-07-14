@@ -76,7 +76,7 @@ const Login = () => {
           </CardContent>
         </Card>
 
-        <p className="mt-8 text-center text-xs text-stone-500">
+        <p className="mt-8 text-center text-sm text-stone-500">
           By signing in, you agree to our{' '}
           <a href="/terms" className="text-emerald-900 hover:underline">Terms of Service</a>
           {' '}and{' '}

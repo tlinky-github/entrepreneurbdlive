@@ -19,7 +19,7 @@ const DirectoryCard = ({ listing, featured }) => (
             <div className="flex items-center gap-2 mb-1">
               <h3 className="font-semibold text-stone-900 truncate">{listing.business_name}</h3>
               {listing.is_verified && (
-                <Badge className="bg-blue-100 text-blue-700 text-xs">Verified</Badge>
+                <Badge className="bg-blue-100 text-blue-700 text-sm">Verified</Badge>
               )}
               {featured && (
                 <Star className="w-4 h-4 text-yellow-500 fill-yellow-500 flex-shrink-0" />
@@ -29,7 +29,7 @@ const DirectoryCard = ({ listing, featured }) => (
               {listing.listing_type_name || listing.listing_type?.replace('_', ' ') || '-'}
             </p>
             {listing.city && (
-              <p className="text-xs text-stone-400 flex items-center gap-1">
+              <p className="text-sm text-stone-400 flex items-center gap-1">
                 <MapPin className="w-3 h-3" />
                 {listing.city}{listing.country ? `, ${listing.country}` : ''}
               </p>
@@ -38,7 +38,7 @@ const DirectoryCard = ({ listing, featured }) => (
         </div>
 
         {listing.category_name && (
-          <Badge variant="outline" className="mt-4 text-xs">
+          <Badge variant="outline" className="mt-4 text-sm">
             {listing.category_name}
           </Badge>
         )}
@@ -49,7 +49,7 @@ const DirectoryCard = ({ listing, featured }) => (
           </p>
         )}
 
-        <div className="flex items-center gap-4 mt-4 pt-4 border-t border-stone-100 text-xs text-stone-400">
+        <div className="flex items-center gap-4 mt-4 pt-4 border-t border-stone-100 text-sm text-stone-400">
           {listing.website && (
             <span className="flex items-center gap-1">
               <Globe className="w-3 h-3" />

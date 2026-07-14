@@ -136,7 +136,7 @@ if (post.category_id) {
                 )}
                 <div>
                   <p class="font-medium text-stone-900 group-hover:text-emerald-900 transition-colors">{authorData.name}</p>
-                  <p class="text-xs">{authorData.designation || 'Author'}</p>
+                  <p class="text-sm">{authorData.designation || 'Author'}</p>
                 </div>
               </a>
             ) : (
@@ -146,7 +146,7 @@ if (post.category_id) {
                 </div>
                 <div>
                   <p class="font-medium text-stone-900">{decodeHtmlEntities(post.author_name || 'Entrepreneurs BD')}</p>
-                  <p class="text-xs">Author</p>
+                  <p class="text-sm">Author</p>
                 </div>
               </div>
             )}
@@ -260,7 +260,7 @@ if (post.category_id) {
                   </div>
                   <div class="p-5">
                     {rPost.category_name && (
-                      <Badge variant="outline" className="mb-2 text-xs">{rPost.category_name}</Badge>
+                      <Badge variant="outline" className="mb-2 text-sm">{rPost.category_name}</Badge>
                     )}
                     <h2 class="font-semibold text-stone-900 line-clamp-2 mb-2 group-hover:text-emerald-900 transition-colors">
                       {rPost.title}

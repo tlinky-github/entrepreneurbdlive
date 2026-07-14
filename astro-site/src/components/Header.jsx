@@ -144,7 +144,7 @@ function HeaderContent({ currentPath = '/' }) {
                 <DropdownMenuContent align="end" className="w-56 bg-white border border-stone-200 shadow-md">
                   <div className="px-2 py-1.5">
                     <p className="text-sm font-medium text-stone-900">{user?.name}</p>
-                    <p className="text-xs text-stone-500">{user?.email}</p>
+                    <p className="text-sm text-stone-500">{user?.email}</p>
                   </div>
                   <DropdownMenuSeparator className="bg-stone-200" />
                   {isAdmin && (

@@ -250,7 +250,7 @@ const PostEditor = () => {
                   maxLength={70}
                   className="mt-1"
                 />
-                <p className="text-xs text-stone-500 mt-1">{formData.seo_title.length}/70</p>
+                <p className="text-sm text-stone-500 mt-1">{formData.seo_title.length}/70</p>
               </div>
               <div>
                 <Label htmlFor="seo_description">Meta Description</Label>
@@ -263,7 +263,7 @@ const PostEditor = () => {
                   className="mt-1"
                   rows={3}
                 />
-                <p className="text-xs text-stone-500 mt-1">{formData.seo_description.length}/160</p>
+                <p className="text-sm text-stone-500 mt-1">{formData.seo_description.length}/160</p>
               </div>
               <div>
                 <Label htmlFor="seo_keywords">Keywords</Label>

@@ -36,20 +36,20 @@ const ProfileCard = ({ profile, featured, startupStages = [] }) => {
             )}
 
             {(profile.city || profile.headquarters) && (
-              <p className="text-xs text-stone-400 flex items-center justify-center gap-1 mb-3">
+              <p className="text-sm text-stone-400 flex items-center justify-center gap-1 mb-3">
                 <MapPin className="w-3 h-3" />
                 {profile.headquarters || `${profile.city}${profile.country ? `, ${profile.country}` : ''}`}
               </p>
             )}
 
             {profile.industry && (
-              <Badge variant="outline" className="text-xs mb-3">
+              <Badge variant="outline" className="text-sm mb-3">
                 {profile.industry}
               </Badge>
             )}
 
             {profile.startup_stage && (
-              <Badge className="bg-emerald-100 text-emerald-900 text-xs ml-2">
+              <Badge className="bg-emerald-100 text-emerald-900 text-sm ml-2">
                 {getStageName(profile.startup_stage)}
               </Badge>
             )}

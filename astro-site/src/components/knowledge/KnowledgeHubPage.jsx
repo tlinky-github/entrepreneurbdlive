@@ -98,7 +98,7 @@ const KnowledgeHubPage = ({ firestoreArticles = [] }) => {
                       {pillar.description}
                     </p>
                     <div className="flex items-center justify-between pt-4 border-t border-stone-100">
-                      <span className="text-xs text-stone-400">
+                      <span className="text-sm text-stone-400">
                         {pillar.content.sections.length} sections
                       </span>
                       <a
@@ -140,7 +140,7 @@ const KnowledgeHubPage = ({ firestoreArticles = [] }) => {
                     </CardHeader>
                     <CardContent className="flex flex-col flex-1">
                       <div className="flex items-center justify-between pt-4 border-t border-stone-100">
-                        <span className="text-xs text-stone-400">Article</span>
+                        <span className="text-sm text-stone-400">Article</span>
                         <a
                           href={`/knowledge/${article.slug}`}
                           className="inline-flex items-center text-sm font-medium text-emerald-900 hover:text-emerald-700 transition-colors"

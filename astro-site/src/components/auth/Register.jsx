@@ -67,7 +67,7 @@ const Register = () => {
                     <Users className="w-5 h-5 text-emerald-900" />
                     <div>
                       <div className="font-medium text-stone-900">User</div>
-                      <div className="text-xs text-stone-500">Reader & Community</div>
+                      <div className="text-sm text-stone-500">Reader & Community</div>
                     </div>
                   </Label>
                   <Label
@@ -81,7 +81,7 @@ const Register = () => {
                     <Building2 className="w-5 h-5 text-emerald-900" />
                     <div>
                       <div className="font-medium text-stone-900">Entrepreneur</div>
-                      <div className="text-xs text-stone-500">Profile & Listing</div>
+                      <div className="text-sm text-stone-500">Profile & Listing</div>
                     </div>
                   </Label>
                 </RadioGroup>
@@ -121,7 +121,7 @@ const Register = () => {
           </CardContent>
         </Card>
 
-        <p className="mt-8 text-center text-xs text-stone-500">
+        <p className="mt-8 text-center text-sm text-stone-500">
           By creating an account, you agree to our{' '}
           <a href="/terms" className="text-emerald-900 hover:underline">Terms of Service</a>
           {' '}and{' '}

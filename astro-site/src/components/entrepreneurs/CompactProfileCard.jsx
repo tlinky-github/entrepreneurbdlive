@@ -17,7 +17,7 @@ const CompactProfileCard = ({ profile }) => {
             {profile.name}
           </h4>
           {(profile.designation || profile.role_title) && (
-            <p className="text-xs font-bold text-stone-400 uppercase tracking-widest mt-1">
+            <p className="text-sm font-bold text-stone-400 uppercase tracking-widest mt-1">
               {profile.designation || profile.role_title}
               {profile.company_name && ` at ${profile.company_name}`}
             </p>

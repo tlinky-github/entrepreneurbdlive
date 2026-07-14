@@ -131,7 +131,7 @@ const AdminSubmissions = () => {
                           )}
                         </div>
                         <p className="text-sm text-stone-600 truncate">{p.designation} at <span className="font-semibold">{p.company_name}</span></p>
-                        <div className="flex items-center gap-4 mt-2 text-xs text-stone-400">
+                        <div className="flex items-center gap-4 mt-2 text-sm text-stone-400">
                           <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> Submitted {formatDate(p.created_at)}</span>
                           <span className="flex items-center gap-1"><ArrowUpRight className="w-3 h-3" /> {p.industry}</span>
                         </div>
@@ -195,7 +195,7 @@ const AdminSubmissions = () => {
                           )}
                         </div>
                         <p className="text-sm text-stone-600 truncate">{l.listing_type_name || l.listing_type} • {l.headquarters}</p>
-                        <div className="flex items-center gap-4 mt-2 text-xs text-stone-400">
+                        <div className="flex items-center gap-4 mt-2 text-sm text-stone-400">
                            <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> Submitted {formatDate(l.created_at)}</span>
                            {l.website && <span className="flex items-center gap-1"><Globe className="w-3 h-3" /> {l.website.replace(/^https?:\/\//, '')}</span>}
                         </div>

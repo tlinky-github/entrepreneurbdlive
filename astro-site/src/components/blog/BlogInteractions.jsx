@@ -218,7 +218,7 @@ export default function BlogInteractions({ postId, postTitle, postExcerpt, initi
           {parentId ? `Replying to ${replyName}` : 'Share your thoughts'}
         </span>
         {parentId && (
-          <button onClick={() => { setReplyTo(null); setActiveReplyId(null); }} className="text-xs text-stone-400 hover:text-stone-600">Cancel</button>
+          <button onClick={() => { setReplyTo(null); setActiveReplyId(null); }} className="text-sm text-stone-400 hover:text-stone-600">Cancel</button>
         )}
       </div>
       
@@ -231,8 +231,8 @@ export default function BlogInteractions({ postId, postTitle, postExcerpt, initi
             className="bg-white"
           />
           <div className="flex items-center gap-2">
-            <button onClick={() => setCommenterGender('male')} className={`px-3 py-1 text-xs rounded-full ${commenterGender === 'male' ? 'bg-blue-500 text-white' : 'bg-white border border-stone-200 text-stone-600'}`}>Male</button>
-            <button onClick={() => setCommenterGender('female')} className={`px-3 py-1 text-xs rounded-full ${commenterGender === 'female' ? 'bg-pink-500 text-white' : 'bg-white border border-stone-200 text-stone-600'}`}>Female</button>
+            <button onClick={() => setCommenterGender('male')} className={`px-3 py-1 text-sm rounded-full ${commenterGender === 'male' ? 'bg-blue-500 text-white' : 'bg-white border border-stone-200 text-stone-600'}`}>Male</button>
+            <button onClick={() => setCommenterGender('female')} className={`px-3 py-1 text-sm rounded-full ${commenterGender === 'female' ? 'bg-pink-500 text-white' : 'bg-white border border-stone-200 text-stone-600'}`}>Female</button>
           </div>
         </div>
       )}
@@ -290,7 +290,7 @@ export default function BlogInteractions({ postId, postTitle, postExcerpt, initi
                       Admin
                    </Badge>
                  )}
-                 <span className="text-xs text-stone-400 whitespace-nowrap">
+                 <span className="text-sm text-stone-400 whitespace-nowrap">
                    {formatRelativeDate(comment.created_at || comment.createdAt)}
                  </span>
               </div>
@@ -351,7 +351,7 @@ export default function BlogInteractions({ postId, postTitle, postExcerpt, initi
                     setActiveReplyId(activeReplyId === comment.id ? null : comment.id);
                     setReplyTo({ id: comment.id, name: comment.name });
                   }}
-                  className="mt-3 text-xs text-emerald-700 hover:text-emerald-800 font-semibold flex items-center gap-1.5 transition-colors"
+                  className="mt-3 text-sm text-emerald-700 hover:text-emerald-800 font-semibold flex items-center gap-1.5 transition-colors"
                 >
                   <Reply className="w-3.5 h-3.5" /> {activeReplyId === comment.id ? 'Cancel Reply' : 'Reply'}
                 </button>

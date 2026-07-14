@@ -184,7 +184,7 @@ const DirectoryDetail = ({ slug, initialListing, startupStages: initialStartupSt
                 </div>
               )}
             </div>
-            <p className="text-xs md:text-md text-stone-400 font-bold mt-2 uppercase tracking-[0.2em] opacity-80">
+            <p className="text-sm md:text-md text-stone-400 font-bold mt-2 uppercase tracking-[0.2em] opacity-80">
               {listing.listing_type_name || listing.listing_type?.replace('_', ' ') || 'Registered Business'}
             </p>
           </div>
@@ -386,7 +386,7 @@ const DirectoryDetail = ({ slug, initialListing, startupStages: initialStartupSt
             {/* Vital Statistics */}
             <Card className="border-stone-200 shadow-sm overflow-hidden rounded-2xl">
                <CardHeader className="bg-stone-50 border-b border-stone-100">
-                  <CardTitle className="text-xs font-black uppercase tracking-[0.2em] text-stone-600">Company Vitals</CardTitle>
+                  <CardTitle className="text-sm font-black uppercase tracking-[0.2em] text-stone-600">Company Vitals</CardTitle>
                </CardHeader>
                <CardContent className="p-8 space-y-6">
                   <div className="flex justify-between items-center group">
@@ -424,7 +424,7 @@ const DirectoryDetail = ({ slug, initialListing, startupStages: initialStartupSt
             {(listing.leadership_team || listing.founder_name || listing.ceo_name) && (
               <Card className="border-stone-200 shadow-sm rounded-2xl overflow-hidden">
                 <CardHeader className="bg-stone-50 border-b border-stone-100">
-                  <CardTitle className="text-xs font-black uppercase tracking-[0.2em] text-stone-600">Leadership Team</CardTitle>
+                  <CardTitle className="text-sm font-black uppercase tracking-[0.2em] text-stone-600">Leadership Team</CardTitle>
                 </CardHeader>
                 <CardContent className="p-8 space-y-6">
                   {/* Founder */}
@@ -447,7 +447,7 @@ const DirectoryDetail = ({ slug, initialListing, startupStages: initialStartupSt
                             {listing.leadership_team?.founder?.name || listing.founder_name}
                           </p>
                         )}
-                        <p className="text-xs text-stone-400 font-bold uppercase tracking-widest mt-0.5">Founder</p>
+                        <p className="text-sm text-stone-400 font-bold uppercase tracking-widest mt-0.5">Founder</p>
                       </div>
                     </div>
                   )}
@@ -472,7 +472,7 @@ const DirectoryDetail = ({ slug, initialListing, startupStages: initialStartupSt
                             {listing.leadership_team?.ceo?.name || listing.ceo_name}
                           </p>
                         )}
-                        <p className="text-xs text-stone-400 font-bold uppercase tracking-widest mt-0.5">Chief Executive</p>
+                        <p className="text-sm text-stone-400 font-bold uppercase tracking-widest mt-0.5">Chief Executive</p>
                       </div>
                     </div>
                   )}
@@ -518,7 +518,7 @@ const DirectoryDetail = ({ slug, initialListing, startupStages: initialStartupSt
                     {/* Social Media Section */}
                     {(listing.social_linkedin || listing.social_twitter || listing.social_facebook) && (
                       <div className="pt-4 border-t border-white/10">
-                        <p className="text-xs font-bold text-stone-400 mb-3">Follow Us</p>
+                        <p className="text-sm font-bold text-stone-400 mb-3">Follow Us</p>
                         <div className="flex items-center gap-3">
                           {listing.social_linkedin && (
                             <a href={ensureAbsoluteUrl(listing.social_linkedin)} target="_blank" rel="noopener noreferrer nofollow" className="p-2 bg-white/10 rounded-lg hover:bg-emerald-600 transition-colors group">

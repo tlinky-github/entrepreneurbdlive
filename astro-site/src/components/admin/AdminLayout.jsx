@@ -119,7 +119,7 @@ const AdminLayout = () => {
               </div>
               <div>
                 <span className="font-bold text-stone-900">Admin</span>
-                <p className="text-xs text-stone-500">entrepreneurs.bd</p>
+                <p className="text-sm text-stone-500">entrepreneurs.bd</p>
               </div>
             </Link>
           </div>
@@ -140,22 +140,22 @@ const AdminLayout = () => {
                 <item.icon className="w-5 h-5" />
                 <span>{item.label}</span>
                 {item.label === 'Entrepreneurs' && stats?.pending_profiles > 0 && (
-                  <Badge className="ml-auto bg-red-500 text-white text-xs mr-2">
+                  <Badge className="ml-auto bg-red-500 text-white text-sm mr-2">
                     {stats.pending_profiles}
                   </Badge>
                 )}
                 {item.label === 'Directory' && stats?.pending_listings > 0 && (
-                  <Badge className="ml-auto bg-red-500 text-white text-xs mr-2">
+                  <Badge className="ml-auto bg-red-500 text-white text-sm mr-2">
                     {stats.pending_listings}
                   </Badge>
                 )}
                 {item.label === 'Submissions' && (stats?.pending_public_submissions > 0) && (
-                  <Badge className="ml-auto bg-blue-500 text-white text-xs mr-2 animate-pulse">
+                  <Badge className="ml-auto bg-blue-500 text-white text-sm mr-2 animate-pulse">
                     {stats.pending_public_submissions}
                   </Badge>
                 )}
                 {item.label === 'Reports' && stats?.pending_reports > 0 && (
-                  <Badge className="ml-auto bg-orange-500 text-white text-xs mr-2 animate-pulse">
+                  <Badge className="ml-auto bg-orange-500 text-white text-sm mr-2 animate-pulse">
                     {stats.pending_reports}
                   </Badge>
                 )}
@@ -186,7 +186,7 @@ const AdminLayout = () => {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-stone-900 truncate">{user?.name}</p>
-                <p className="text-xs text-stone-500 capitalize">{user?.role?.replace('_', ' ')}</p>
+                <p className="text-sm text-stone-500 capitalize">{user?.role?.replace('_', ' ')}</p>
               </div>
             </div>
             <div className="flex gap-2">

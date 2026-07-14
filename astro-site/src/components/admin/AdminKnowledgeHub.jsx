@@ -92,7 +92,7 @@ const KnowledgeArticlesTab = ({ navigate }) => {
               <div key={article.id} className="flex items-center justify-between p-3 bg-stone-50 rounded-lg">
                 <div>
                   <p className="font-medium text-stone-900">{article.title}</p>
-                  <p className="text-xs text-stone-500">/{article.slug}</p>
+                  <p className="text-sm text-stone-500">/{article.slug}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge className={article.status === 'published' ? 'bg-green-500' : 'bg-yellow-500'}>{article.status || 'draft'}</Badge>
@@ -172,21 +172,21 @@ const GuidesTab = () => {
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-xs font-semibold text-stone-500">Title</label>
+              <label className="text-sm font-semibold text-stone-500">Title</label>
               <Input value={form.title} onChange={(e) => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Guide title" />
             </div>
             <div>
-              <label className="text-xs font-semibold text-stone-500">Icon (emoji)</label>
+              <label className="text-sm font-semibold text-stone-500">Icon (emoji)</label>
               <Input value={form.icon} onChange={(e) => setForm(f => ({ ...f, icon: e.target.value }))} placeholder="📘" className="w-20" />
             </div>
           </div>
           <div>
-            <label className="text-xs font-semibold text-stone-500">Description</label>
+            <label className="text-sm font-semibold text-stone-500">Description</label>
             <textarea value={form.description} onChange={(e) => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Brief description" className="w-full p-2 border rounded text-sm" rows={2} />
           </div>
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-xs font-bold uppercase text-stone-500">Steps</label>
+              <label className="text-sm font-bold uppercase text-stone-500">Steps</label>
               <Button size="sm" variant="outline" onClick={() => setForm(f => ({ ...f, steps: [...f.steps, { heading: '', text: '' }] }))}>
                 <Plus className="w-3 h-3 mr-1" /> Add Step
               </Button>
@@ -223,7 +223,7 @@ const GuidesTab = () => {
                 <div key={g.id} className="flex items-center justify-between p-3 bg-stone-50 rounded-lg">
                   <div>
                     <p className="font-medium">{g.icon} {g.title}</p>
-                    <p className="text-xs text-stone-500">{g.steps?.length || 0} steps</p>
+                    <p className="text-sm text-stone-500">{g.steps?.length || 0} steps</p>
                   </div>
                   <div className="flex gap-2">
                     <Button size="sm" variant="outline" onClick={() => { setEditId(g.id); setForm(g); }}><Edit2 className="w-3 h-3" /></Button>
@@ -293,17 +293,17 @@ const FAQsTab = () => {
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-xs font-semibold text-stone-500">Category Name</label>
+              <label className="text-sm font-semibold text-stone-500">Category Name</label>
               <Input value={form.name} onChange={(e) => setForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Getting Started" />
             </div>
             <div>
-              <label className="text-xs font-semibold text-stone-500">Icon (emoji)</label>
+              <label className="text-sm font-semibold text-stone-500">Icon (emoji)</label>
               <Input value={form.icon} onChange={(e) => setForm(f => ({ ...f, icon: e.target.value }))} placeholder="❓" className="w-20" />
             </div>
           </div>
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-xs font-bold uppercase text-stone-500">Questions</label>
+              <label className="text-sm font-bold uppercase text-stone-500">Questions</label>
               <Button size="sm" variant="outline" onClick={() => setForm(f => ({ ...f, questions: [...f.questions, { q: '', a: '' }] }))}>
                 <Plus className="w-3 h-3 mr-1" /> Add Q&A
               </Button>
@@ -311,7 +311,7 @@ const FAQsTab = () => {
             {form.questions.map((qa, i) => (
               <div key={i} className="mb-3 p-3 bg-stone-50 rounded-lg space-y-2">
                 <div className="flex gap-2 items-center">
-                  <span className="text-xs font-bold text-stone-400">Q{i + 1}</span>
+                  <span className="text-sm font-bold text-stone-400">Q{i + 1}</span>
                   <Input value={qa.q} onChange={(e) => { const qs = [...form.questions]; qs[i].q = e.target.value; setForm(f => ({ ...f, questions: qs })); }} placeholder="Question" className="flex-1" />
                   {form.questions.length > 1 && (
                     <Button size="sm" variant="ghost" onClick={() => setForm(f => ({ ...f, questions: f.questions.filter((_, idx) => idx !== i) }))} className="text-red-500"><X className="w-3 h-3" /></Button>
@@ -342,7 +342,7 @@ const FAQsTab = () => {
                 <div key={cat.id} className="flex items-center justify-between p-3 bg-stone-50 rounded-lg">
                   <div>
                     <p className="font-medium">{cat.icon} {cat.name}</p>
-                    <p className="text-xs text-stone-500">{cat.questions?.length || 0} questions</p>
+                    <p className="text-sm text-stone-500">{cat.questions?.length || 0} questions</p>
                   </div>
                   <div className="flex gap-2">
                     <Button size="sm" variant="outline" onClick={() => { setEditId(cat.id); setForm(cat); }}><Edit2 className="w-3 h-3" /></Button>
@@ -411,11 +411,11 @@ const GlossaryTab = () => {
         <CardHeader><CardTitle className="text-sm">{editId ? 'Edit Term' : 'Add Glossary Term'}</CardTitle></CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <label className="text-xs font-semibold text-stone-500">Term</label>
+            <label className="text-sm font-semibold text-stone-500">Term</label>
             <Input value={form.term} onChange={(e) => setForm(f => ({ ...f, term: e.target.value }))} placeholder="e.g. Venture Capital" />
           </div>
           <div>
-            <label className="text-xs font-semibold text-stone-500">Definition</label>
+            <label className="text-sm font-semibold text-stone-500">Definition</label>
             <textarea value={form.definition} onChange={(e) => setForm(f => ({ ...f, definition: e.target.value }))} placeholder="Clear, concise definition..." className="w-full p-2 border rounded text-sm" rows={3} />
           </div>
           <div className="flex gap-2">
@@ -439,7 +439,7 @@ const GlossaryTab = () => {
                 <div key={t.id} className="flex items-center justify-between p-3 bg-stone-50 rounded-lg">
                   <div className="flex-1 min-w-0 mr-4">
                     <p className="font-medium text-stone-900">{t.term}</p>
-                    <p className="text-xs text-stone-500 truncate">{t.definition}</p>
+                    <p className="text-sm text-stone-500 truncate">{t.definition}</p>
                   </div>
                   <div className="flex gap-2">
                     <Button size="sm" variant="outline" onClick={() => { setEditId(t.id); setForm(t); }}><Edit2 className="w-3 h-3" /></Button>

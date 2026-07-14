@@ -402,7 +402,7 @@ const AdminContentManager = () => {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <span className="font-mono bg-stone-100 px-2 py-0.5 rounded text-xs">
+                          <span className="font-mono bg-stone-100 px-2 py-0.5 rounded text-sm">
                             {(item.view_count || item.views || 0).toLocaleString()}
                           </span>
                         </TableCell>

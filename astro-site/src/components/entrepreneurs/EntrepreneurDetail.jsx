@@ -436,7 +436,7 @@ const EntrepreneurDetail = ({ slug, initialProfile, initialAuthorData, startupSt
                     <div className="mb-1">
                       <h4 className="font-bold text-stone-900 leading-none">Profile written by: {authorData.name}</h4>
                     </div>
-                    <p className="text-xs text-stone-500 mb-3 italic">
+                    <p className="text-sm text-stone-500 mb-3 italic">
                       {authorData.bio || "Verified Contributor at Entrepreneurs BD"}
                     </p>
                     <a href={`/author/${authorData.slug}`} className="text-[10px] font-black uppercase tracking-widest text-emerald-900 hover:underline">

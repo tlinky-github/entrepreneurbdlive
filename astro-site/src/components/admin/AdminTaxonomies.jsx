@@ -197,7 +197,7 @@ const AdminTaxonomies = () => {
                           <TableRow key={item.id} className="hover:bg-stone-50/50">
                             <TableCell className="font-medium text-stone-900">{item.name}</TableCell>
                             <TableCell>
-                              <code className="text-xs bg-stone-100 text-stone-500 px-1.5 py-0.5 rounded">
+                              <code className="text-sm bg-stone-100 text-stone-500 px-1.5 py-0.5 rounded">
                                 {item.slug}
                               </code>
                             </TableCell>

@@ -116,11 +116,11 @@ function buildPayload(type, frontmatter, body) {
 // ─── Status Badge ─────────────────────────────────────────────────────────────
 
 const StatusBadge = ({ status }) => {
-  if (status === 'pending') return <span className="inline-flex items-center gap-1 text-xs text-stone-400"><AlertCircle className="w-3 h-3" /> Pending</span>;
-  if (status === 'importing') return <span className="inline-flex items-center gap-1 text-xs text-blue-600"><Loader2 className="w-3 h-3 animate-spin" /> Importing…</span>;
-  if (status === 'done') return <span className="inline-flex items-center gap-1 text-xs text-emerald-600"><CheckCircle className="w-3 h-3" /> Imported</span>;
-  if (status === 'error') return <span className="inline-flex items-center gap-1 text-xs text-red-500"><XCircle className="w-3 h-3" /> Failed</span>;
-  if (status === 'skipped') return <span className="inline-flex items-center gap-1 text-xs text-yellow-600"><AlertCircle className="w-3 h-3" /> Skipped (exists)</span>;
+  if (status === 'pending') return <span className="inline-flex items-center gap-1 text-sm text-stone-400"><AlertCircle className="w-3 h-3" /> Pending</span>;
+  if (status === 'importing') return <span className="inline-flex items-center gap-1 text-sm text-blue-600"><Loader2 className="w-3 h-3 animate-spin" /> Importing…</span>;
+  if (status === 'done') return <span className="inline-flex items-center gap-1 text-sm text-emerald-600"><CheckCircle className="w-3 h-3" /> Imported</span>;
+  if (status === 'error') return <span className="inline-flex items-center gap-1 text-sm text-red-500"><XCircle className="w-3 h-3" /> Failed</span>;
+  if (status === 'skipped') return <span className="inline-flex items-center gap-1 text-sm text-yellow-600"><AlertCircle className="w-3 h-3" /> Skipped (exists)</span>;
   return null;
 };
 
@@ -231,11 +231,11 @@ const AdminImport = () => {
         <div>
           <h1 className="text-2xl font-bold text-stone-900">Import Content</h1>
           <p className="text-sm text-stone-500 mt-1">
-            Bulk import profiles and content from <code className="bg-stone-100 px-1 rounded text-xs">.md</code> markdown files with frontmatter
+            Bulk import profiles and content from <code className="bg-stone-100 px-1 rounded text-sm">.md</code> markdown files with frontmatter
           </p>
         </div>
         {files.length > 0 && (
-          <button onClick={clearAll} className="text-xs text-stone-400 hover:text-red-500 flex items-center gap-1 transition-colors">
+          <button onClick={clearAll} className="text-sm text-stone-400 hover:text-red-500 flex items-center gap-1 transition-colors">
             <Trash2 className="w-3 h-3" /> Clear all
           </button>
         )}
@@ -269,19 +269,19 @@ const AdminImport = () => {
 
       {/* Field Mapping Preview */}
       <div className="bg-stone-50 border border-stone-200 rounded-xl p-4">
-        <p className="text-xs font-semibold text-stone-500 uppercase tracking-widest mb-3">Expected frontmatter fields</p>
+        <p className="text-sm font-semibold text-stone-500 uppercase tracking-widest mb-3">Expected frontmatter fields</p>
         <div className="flex flex-wrap gap-2">
           {contentType === 'entrepreneurs' && ['full_name', 'slug', 'designation', 'company', 'city', 'stage', 'industry', 'linkedin', 'facebook', 'title_tag', 'meta_description'].map(f => (
-            <code key={f} className="text-xs bg-white border border-stone-200 rounded px-2 py-0.5 text-emerald-700">{f}</code>
+            <code key={f} className="text-sm bg-white border border-stone-200 rounded px-2 py-0.5 text-emerald-700">{f}</code>
           ))}
           {contentType === 'directory' && ['business_name', 'slug', 'city', 'industry', 'website', 'linkedin', 'title_tag', 'meta_description'].map(f => (
-            <code key={f} className="text-xs bg-white border border-stone-200 rounded px-2 py-0.5 text-emerald-700">{f}</code>
+            <code key={f} className="text-sm bg-white border border-stone-200 rounded px-2 py-0.5 text-emerald-700">{f}</code>
           ))}
           {(contentType === 'blog' || contentType === 'knowledge') && ['title', 'slug', 'excerpt', 'title_tag', 'meta_description'].map(f => (
-            <code key={f} className="text-xs bg-white border border-stone-200 rounded px-2 py-0.5 text-emerald-700">{f}</code>
+            <code key={f} className="text-sm bg-white border border-stone-200 rounded px-2 py-0.5 text-emerald-700">{f}</code>
           ))}
         </div>
-        <p className="text-xs text-stone-400 mt-3">
+        <p className="text-sm text-stone-400 mt-3">
           The markdown body (below <code>---</code>) will be converted to HTML and saved as content. All imports start as <strong>Draft</strong>.
         </p>
       </div>
@@ -341,14 +341,14 @@ const AdminImport = () => {
                     <StatusBadge status={file.status} />
                   </div>
                   {file.frontmatter && (
-                    <p className="text-xs text-stone-400 mt-0.5 truncate">
+                    <p className="text-sm text-stone-400 mt-0.5 truncate">
                       {file.frontmatter.full_name || file.frontmatter.business_name || file.frontmatter.title || '—'}
                       {file.frontmatter.designation && ` · ${file.frontmatter.designation}`}
                       {file.frontmatter.company && ` @ ${file.frontmatter.company}`}
                     </p>
                   )}
                   {file.error && (
-                    <p className="text-xs text-red-500 mt-0.5">{file.error}</p>
+                    <p className="text-sm text-red-500 mt-0.5">{file.error}</p>
                   )}
                 </div>
                 {file.status === 'pending' && (

@@ -303,7 +303,7 @@ export const GenerationHistory = () => {
                     <td className="px-4 py-3 text-right text-stone-600">
                       {log.metrics?.duration || '-'}
                     </td>
-                    <td className="px-4 py-3 text-xs text-stone-500 truncate max-w-xs">
+                    <td className="px-4 py-3 text-sm text-stone-500 truncate max-w-xs">
                       {log.message || log.error || '-'}
                     </td>
                   </tr>

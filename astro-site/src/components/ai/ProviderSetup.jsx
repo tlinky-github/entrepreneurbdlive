@@ -298,7 +298,7 @@ export const ProviderSetup = ({ refreshTrigger }) => {
               className="w-full px-3 py-2 border border-stone-300 rounded-lg"
               maxLength="50"
             />
-            <p className="text-xs text-stone-500 mt-1">
+            <p className="text-sm text-stone-500 mt-1">
               Give this configuration a memorable name to identify it later. You can have multiple profiles per provider.
             </p>
           </div>
@@ -323,7 +323,7 @@ export const ProviderSetup = ({ refreshTrigger }) => {
                 {showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
-            <p className="text-xs text-stone-500 mt-1">
+            <p className="text-sm text-stone-500 mt-1">
               Your key is encrypted and stored securely. Never shared.
             </p>
           </div>
@@ -363,7 +363,7 @@ export const ProviderSetup = ({ refreshTrigger }) => {
                 )}
               </button>
             </div>
-            <p className="text-xs text-stone-500 mt-1">
+            <p className="text-sm text-stone-500 mt-1">
               Click "Load Models" to see available models for this provider. You can change it later when generating posts.
             </p>
           </div>
@@ -405,12 +405,12 @@ export const ProviderSetup = ({ refreshTrigger }) => {
                   <div>
                     <p className="font-medium text-stone-900">{provider.label}</p>
                     {isEnabled ? (
-                      <p className="text-xs text-emerald-600 flex items-center gap-1">
+                      <p className="text-sm text-emerald-600 flex items-center gap-1">
                         <CheckCircle className="w-3 h-3" />
                         Configured • {models.length} models available
                       </p>
                     ) : (
-                      <p className="text-xs text-stone-500">Not configured</p>
+                      <p className="text-sm text-stone-500">Not configured</p>
                     )}
                   </div>
                 </div>
@@ -423,7 +423,7 @@ export const ProviderSetup = ({ refreshTrigger }) => {
                         variant="outline"
                         onClick={() => handleFetchModels(provider.name)}
                         disabled={fetchingModels === provider.name}
-                        className="text-xs"
+                        className="text-sm"
                         title="Refresh available models from provider"
                       >
                         {fetchingModels === provider.name ? (
@@ -443,7 +443,7 @@ export const ProviderSetup = ({ refreshTrigger }) => {
                         variant="outline"
                         onClick={() => handleTestProvider(provider.name)}
                         disabled={testingProvider === provider.name}
-                        className="text-xs"
+                        className="text-sm"
                       >
                         {testingProvider === provider.name ? (
                           <>
@@ -455,14 +455,14 @@ export const ProviderSetup = ({ refreshTrigger }) => {
                         )}
                       </Button>
                       <div
-                        className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded text-xs font-medium"
+                        className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded text-sm font-medium"
                       >
                         Active
                       </div>
                     </>
                   )}
                   {!isEnabled && (
-                    <div className="px-3 py-1 bg-stone-100 text-stone-600 rounded text-xs font-medium">
+                    <div className="px-3 py-1 bg-stone-100 text-stone-600 rounded text-sm font-medium">
                       Not Setup
                     </div>
                   )}
@@ -472,12 +472,12 @@ export const ProviderSetup = ({ refreshTrigger }) => {
               {/* Models List */}
               {isEnabled && models.length > 0 && (
                 <div className="mt-3 pt-3 border-t border-stone-100">
-                  <p className="text-xs font-medium text-stone-700 mb-2">Available Models:</p>
+                  <p className="text-sm font-medium text-stone-700 mb-2">Available Models:</p>
                   <div className="flex flex-wrap gap-1">
                     {models.map((model, idx) => (
                       <span
                         key={idx}
-                        className="text-xs bg-stone-100 text-stone-700 px-2 py-1 rounded"
+                        className="text-sm bg-stone-100 text-stone-700 px-2 py-1 rounded"
                         title={model}
                       >
                         {model.length > 20 ? model.substring(0, 20) + '...' : model}
@@ -517,7 +517,7 @@ export const ProviderSetup = ({ refreshTrigger }) => {
                       {PROVIDERS.find(p => p.name === profile.provider)?.icon}{' '}
                       {profile.profileName || profile.profile}
                     </p>
-                    <p className="text-xs text-stone-500">
+                    <p className="text-sm text-stone-500">
                       {PROVIDERS.find(p => p.name === profile.provider)?.label}
                     </p>
                   </div>
@@ -541,8 +541,8 @@ export const ProviderSetup = ({ refreshTrigger }) => {
 
                 {profile.selectedModel && (
                   <div className="mb-2 flex items-center gap-2">
-                    <span className="text-xs font-medium text-stone-600">Default Model:</span>
-                    <span className="text-xs bg-stone-100 text-stone-700 px-2 py-0.5 rounded">
+                    <span className="text-sm font-medium text-stone-600">Default Model:</span>
+                    <span className="text-sm bg-stone-100 text-stone-700 px-2 py-0.5 rounded">
                       {profile.selectedModel}
                     </span>
                   </div>
@@ -551,7 +551,7 @@ export const ProviderSetup = ({ refreshTrigger }) => {
                 {editingProfileId === profile.id && (
                   <form onSubmit={handleSaveEditProfile} className="mt-3 border-t border-emerald-200 pt-3 space-y-2">
                     <div>
-                      <label className="block text-xs font-medium text-stone-700 mb-1">
+                      <label className="block text-sm font-medium text-stone-700 mb-1">
                         Profile Name
                       </label>
                       <input
@@ -564,7 +564,7 @@ export const ProviderSetup = ({ refreshTrigger }) => {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-medium text-stone-700 mb-1">
+                      <label className="block text-sm font-medium text-stone-700 mb-1">
                         API Key (leave blank to keep current)
                       </label>
                       <div className="relative">
@@ -586,7 +586,7 @@ export const ProviderSetup = ({ refreshTrigger }) => {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-medium text-stone-700 mb-1">
+                      <label className="block text-sm font-medium text-stone-700 mb-1">
                         Default Model
                       </label>
                       <div className="flex gap-1">
@@ -655,7 +655,7 @@ export const ProviderSetup = ({ refreshTrigger }) => {
             href="https://platform.openai.com/api-keys"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-xs bg-white hover:bg-stone-50 text-stone-700 border border-stone-300 px-3 py-1 rounded transition"
+            className="text-sm bg-white hover:bg-stone-50 text-stone-700 border border-stone-300 px-3 py-1 rounded transition"
           >
             OpenAI Keys →
           </a>
@@ -663,7 +663,7 @@ export const ProviderSetup = ({ refreshTrigger }) => {
             href="https://makersuite.google.com/app/apikey"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-xs bg-white hover:bg-stone-50 text-stone-700 border border-stone-300 px-3 py-1 rounded transition"
+            className="text-sm bg-white hover:bg-stone-50 text-stone-700 border border-stone-300 px-3 py-1 rounded transition"
           >
             Google Gemini Keys →
           </a>
@@ -671,7 +671,7 @@ export const ProviderSetup = ({ refreshTrigger }) => {
             href="https://console.anthropic.com/account/keys"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-xs bg-white hover:bg-stone-50 text-stone-700 border border-stone-300 px-3 py-1 rounded transition"
+            className="text-sm bg-white hover:bg-stone-50 text-stone-700 border border-stone-300 px-3 py-1 rounded transition"
           >
             Anthropic Keys →
           </a>

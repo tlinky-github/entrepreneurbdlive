@@ -158,17 +158,17 @@ export const AIPostQueue = ({ refreshTrigger }) => {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-2">
                     <h4 className="font-medium text-stone-900 truncate">{post.title}</h4>
-                    <span className={`text-xs px-2 py-1 rounded-full ${getStatusBadge(post.status)}`}>
+                    <span className={`text-sm px-2 py-1 rounded-full ${getStatusBadge(post.status)}`}>
                       {post.status}
                     </span>
-                    <span className="text-xs text-stone-500 bg-stone-100 px-2 py-1 rounded">
+                    <span className="text-sm text-stone-500 bg-stone-100 px-2 py-1 rounded">
                       {post.provider} ({post.model})
                     </span>
                   </div>
 
                   <p className="text-sm text-stone-600 line-clamp-2 mb-2">{post.excerpt}</p>
 
-                  <div className="flex gap-4 text-xs text-stone-500">
+                  <div className="flex gap-4 text-sm text-stone-500">
                     <span>📝 {Math.ceil((post.content_html?.split(/\s+/)?.length || 0) / 200)} min read</span>
                     <span>🔤 {post.tokensUsed || post.tokens || 0} tokens</span>
                     <span>📅 {formatDate(post.createdAt)}</span>
@@ -188,7 +188,7 @@ export const AIPostQueue = ({ refreshTrigger }) => {
                   <Button
                     size="sm"
                     variant="outline"
-                    className="text-xs"
+                    className="text-sm"
                     onClick={() => {
                       setSelectedPost(post);
                       setShowPreview(true);
@@ -201,7 +201,7 @@ export const AIPostQueue = ({ refreshTrigger }) => {
                   <Button
                     size="sm"
                     variant="outline"
-                    className="text-xs"
+                    className="text-sm"
                     onClick={() => {
                       // Navigate to professional editor
                       const type = post.type || 'blog';
@@ -215,7 +215,7 @@ export const AIPostQueue = ({ refreshTrigger }) => {
                   <Button
                     size="sm"
                     variant="destructive"
-                    className="text-xs"
+                    className="text-sm"
                     onClick={() => {
                       setSelectedPost(post);
                       setShowDeleteConfirm(true);

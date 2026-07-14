@@ -99,7 +99,7 @@ const AdminReports = () => {
           {reports.map((report) => (
             <Card key={report.id} className="border-stone-200 overflow-hidden">
               <div className="bg-stone-50/50 px-6 py-3 border-b border-stone-100 flex items-center justify-between">
-                <div className="flex items-center gap-2 text-xs font-medium text-stone-500">
+                <div className="flex items-center gap-2 text-sm font-medium text-stone-500">
                   <Clock className="w-3.5 h-3.5" />
                   {formatRelativeDate(report.created_at)}
                 </div>
@@ -110,7 +110,7 @@ const AdminReports = () => {
               </div>
               <CardContent className="p-6">
                 <div className="mb-6">
-                  <h4 className="text-xs font-bold text-stone-400 uppercase tracking-wider mb-2">Reported Content</h4>
+                  <h4 className="text-sm font-bold text-stone-400 uppercase tracking-wider mb-2">Reported Content</h4>
                   {report.comment ? (
                     <div className="bg-white border border-stone-200 rounded-lg p-4">
                       <div className="flex items-center gap-2 mb-2">

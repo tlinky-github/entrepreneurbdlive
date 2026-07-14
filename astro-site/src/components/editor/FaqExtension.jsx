@@ -186,7 +186,7 @@ const FaqComponent = ({ node, updateAttributes, deleteNode, editor }) => {
               variant="outline" 
               size="sm" 
               onClick={convertToText}
-              className="text-xs h-7 text-stone-500 hover:text-emerald-700 bg-white"
+              className="text-sm h-7 text-stone-500 hover:text-emerald-700 bg-white"
               title="Convert this block back into normal text headings and paragraphs"
             >
               Convert to Text

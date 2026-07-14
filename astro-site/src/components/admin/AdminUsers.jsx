@@ -342,7 +342,7 @@ const AdminUsers = () => {
                           {isSuperAdmin && (
                             <>
                               <div className="border-t my-1" />
-                              <p className="px-2 py-1.5 text-xs text-stone-500 font-medium">Change Role</p>
+                              <p className="px-2 py-1.5 text-sm text-stone-500 font-medium">Change Role</p>
                               {roles.map((role) => (
                                 <DropdownMenuItem
                                   key={role.value}

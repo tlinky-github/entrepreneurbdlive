@@ -305,7 +305,7 @@ const AdminSettings = () => {
                   onChange={(e) => handleChange('seo_title', e.target.value)}
                   maxLength={70}
                 />
-                <p className="text-xs text-stone-500">{settings.seo_title?.length || 0}/70 characters</p>
+                <p className="text-sm text-stone-500">{settings.seo_title?.length || 0}/70 characters</p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="seo_description">Default Meta Description</Label>
@@ -316,7 +316,7 @@ const AdminSettings = () => {
                   maxLength={160}
                   rows={3}
                 />
-                <p className="text-xs text-stone-500">{settings.seo_description?.length || 0}/160 characters</p>
+                <p className="text-sm text-stone-500">{settings.seo_description?.length || 0}/160 characters</p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="google_analytics_id" className="flex items-center gap-2">
@@ -402,10 +402,10 @@ const AdminSettings = () => {
             <CardContent className="space-y-6">
               {/* Add New Snippet */}
               <div className="p-4 bg-stone-50 rounded-lg border border-stone-200 space-y-3">
-                <p className="text-xs font-bold uppercase tracking-wider text-stone-500">Add New Snippet</p>
+                <p className="text-sm font-bold uppercase tracking-wider text-stone-500">Add New Snippet</p>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <Label className="text-xs">Snippet Name</Label>
+                    <Label className="text-sm">Snippet Name</Label>
                     <Input
                       value={newSnippet.name}
                       onChange={(e) => setNewSnippet(s => ({ ...s, name: e.target.value }))}
@@ -413,7 +413,7 @@ const AdminSettings = () => {
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs">Target Pages (URL pattern)</Label>
+                    <Label className="text-sm">Target Pages (URL pattern)</Label>
                     <Input
                       value={newSnippet.target}
                       onChange={(e) => setNewSnippet(s => ({ ...s, target: e.target.value }))}
@@ -423,32 +423,32 @@ const AdminSettings = () => {
                   </div>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs">CSS</Label>
+                  <Label className="text-sm">CSS</Label>
                   <textarea
                     value={newSnippet.css}
                     onChange={(e) => setNewSnippet(s => ({ ...s, css: e.target.value }))}
                     placeholder=".custom-class { color: red; }"
-                    className="w-full min-h-[60px] p-2 border rounded font-mono text-xs bg-stone-900 text-green-400 placeholder-stone-600"
+                    className="w-full min-h-[60px] p-2 border rounded font-mono text-sm bg-stone-900 text-green-400 placeholder-stone-600"
                     spellCheck={false}
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs">JavaScript</Label>
+                  <Label className="text-sm">JavaScript</Label>
                   <textarea
                     value={newSnippet.js}
                     onChange={(e) => setNewSnippet(s => ({ ...s, js: e.target.value }))}
                     placeholder="console.log('snippet loaded');"
-                    className="w-full min-h-[60px] p-2 border rounded font-mono text-xs bg-stone-900 text-green-400 placeholder-stone-600"
+                    className="w-full min-h-[60px] p-2 border rounded font-mono text-sm bg-stone-900 text-green-400 placeholder-stone-600"
                     spellCheck={false}
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs">HTML</Label>
+                  <Label className="text-sm">HTML</Label>
                   <textarea
                     value={newSnippet.html}
                     onChange={(e) => setNewSnippet(s => ({ ...s, html: e.target.value }))}
                     placeholder='<script type="application/ld+json">{...}</script>'
-                    className="w-full min-h-[60px] p-2 border rounded font-mono text-xs bg-stone-900 text-green-400 placeholder-stone-600"
+                    className="w-full min-h-[60px] p-2 border rounded font-mono text-sm bg-stone-900 text-green-400 placeholder-stone-600"
                     spellCheck={false}
                   />
                 </div>
@@ -485,9 +485,9 @@ const AdminSettings = () => {
                             <Input value={editSnippet.name || ''} onChange={(e) => setEditSnippet(s => ({ ...s, name: e.target.value }))} placeholder="Name" />
                             <Input value={editSnippet.target || ''} onChange={(e) => setEditSnippet(s => ({ ...s, target: e.target.value }))} placeholder="Target" className="font-mono text-sm" />
                           </div>
-                          <textarea value={editSnippet.css || ''} onChange={(e) => setEditSnippet(s => ({ ...s, css: e.target.value }))} placeholder="CSS" className="w-full min-h-[50px] p-2 border rounded font-mono text-xs bg-stone-900 text-green-400" spellCheck={false} />
-                          <textarea value={editSnippet.js || ''} onChange={(e) => setEditSnippet(s => ({ ...s, js: e.target.value }))} placeholder="JS" className="w-full min-h-[50px] p-2 border rounded font-mono text-xs bg-stone-900 text-green-400" spellCheck={false} />
-                          <textarea value={editSnippet.html || ''} onChange={(e) => setEditSnippet(s => ({ ...s, html: e.target.value }))} placeholder="HTML" className="w-full min-h-[50px] p-2 border rounded font-mono text-xs bg-stone-900 text-green-400" spellCheck={false} />
+                          <textarea value={editSnippet.css || ''} onChange={(e) => setEditSnippet(s => ({ ...s, css: e.target.value }))} placeholder="CSS" className="w-full min-h-[50px] p-2 border rounded font-mono text-sm bg-stone-900 text-green-400" spellCheck={false} />
+                          <textarea value={editSnippet.js || ''} onChange={(e) => setEditSnippet(s => ({ ...s, js: e.target.value }))} placeholder="JS" className="w-full min-h-[50px] p-2 border rounded font-mono text-sm bg-stone-900 text-green-400" spellCheck={false} />
+                          <textarea value={editSnippet.html || ''} onChange={(e) => setEditSnippet(s => ({ ...s, html: e.target.value }))} placeholder="HTML" className="w-full min-h-[50px] p-2 border rounded font-mono text-sm bg-stone-900 text-green-400" spellCheck={false} />
                           <div className="flex gap-2">
                             <Button size="sm" onClick={async () => {
                               try {
@@ -504,7 +504,7 @@ const AdminSettings = () => {
                         <div className="flex items-center justify-between">
                           <div>
                             <p className="font-medium text-stone-900">{snippet.name}</p>
-                            <p className="text-xs text-stone-500 font-mono">Target: {snippet.target || '*'}</p>
+                            <p className="text-sm text-stone-500 font-mono">Target: {snippet.target || '*'}</p>
                             <div className="flex gap-3 mt-1">
                               {snippet.css && <span className="text-[10px] px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded">CSS</span>}
                               {snippet.js && <span className="text-[10px] px-1.5 py-0.5 bg-yellow-100 text-yellow-700 rounded">JS</span>}

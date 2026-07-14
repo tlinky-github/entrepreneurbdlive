@@ -186,11 +186,11 @@ function downloadTemplate(type) {
 // ─── Status Badge ─────────────────────────────────────────────────────────────
 
 const StatusBadge = ({ status }) => {
-  if (status === 'pending')   return <span className="inline-flex items-center gap-1 text-xs text-stone-400"><AlertCircle className="w-3 h-3" /> Pending</span>;
-  if (status === 'importing') return <span className="inline-flex items-center gap-1 text-xs text-blue-600"><Loader2 className="w-3 h-3 animate-spin" /> Importing…</span>;
-  if (status === 'done')      return <span className="inline-flex items-center gap-1 text-xs text-emerald-600"><CheckCircle className="w-3 h-3" /> Imported</span>;
-  if (status === 'error')     return <span className="inline-flex items-center gap-1 text-xs text-red-500"><XCircle className="w-3 h-3" /> Failed</span>;
-  if (status === 'skipped')   return <span className="inline-flex items-center gap-1 text-xs text-yellow-600"><AlertCircle className="w-3 h-3" /> Skipped</span>;
+  if (status === 'pending')   return <span className="inline-flex items-center gap-1 text-sm text-stone-400"><AlertCircle className="w-3 h-3" /> Pending</span>;
+  if (status === 'importing') return <span className="inline-flex items-center gap-1 text-sm text-blue-600"><Loader2 className="w-3 h-3 animate-spin" /> Importing…</span>;
+  if (status === 'done')      return <span className="inline-flex items-center gap-1 text-sm text-emerald-600"><CheckCircle className="w-3 h-3" /> Imported</span>;
+  if (status === 'error')     return <span className="inline-flex items-center gap-1 text-sm text-red-500"><XCircle className="w-3 h-3" /> Failed</span>;
+  if (status === 'skipped')   return <span className="inline-flex items-center gap-1 text-sm text-yellow-600"><AlertCircle className="w-3 h-3" /> Skipped</span>;
   return null;
 };
 
@@ -294,12 +294,12 @@ const ImportDrawer = ({ contentType, onImported }) => {
         <div className="flex items-center justify-between px-6 py-4 border-b border-stone-100">
           <div>
             <h2 className="text-lg font-bold text-stone-900">Import {labelMap[contentType]}s</h2>
-            <p className="text-xs text-stone-400 mt-0.5">Drag & drop <code>.md</code> files — all saved as Draft</p>
+            <p className="text-sm text-stone-400 mt-0.5">Drag & drop <code>.md</code> files — all saved as Draft</p>
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={() => downloadTemplate(contentType)}
-              className="inline-flex items-center gap-1.5 text-xs text-stone-500 hover:text-emerald-700 transition-colors px-2 py-1 rounded border border-stone-200 hover:border-emerald-300"
+              className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-emerald-700 transition-colors px-2 py-1 rounded border border-stone-200 hover:border-emerald-300"
             >
               <Download className="w-3 h-3" />
               Sample template
@@ -322,7 +322,7 @@ const ImportDrawer = ({ contentType, onImported }) => {
         >
           <Upload className={`w-8 h-8 mx-auto mb-2 ${dragging ? 'text-emerald-500' : 'text-stone-300'}`} />
           <p className="text-sm font-semibold text-stone-500">Drop <code>.md</code> files here or click to browse</p>
-          <p className="text-xs text-stone-400 mt-1">Multiple files supported</p>
+          <p className="text-sm text-stone-400 mt-1">Multiple files supported</p>
           <input ref={inputRef} type="file" accept=".md,.markdown" multiple onChange={(e) => { processFiles(Array.from(e.target.files)); e.target.value = ''; }} className="hidden" />
         </div>
 
@@ -337,7 +337,7 @@ const ImportDrawer = ({ contentType, onImported }) => {
                     <span className="text-sm font-medium text-stone-700 truncate">{file.name}</span>
                     <StatusBadge status={file.status} />
                   </div>
-                  <p className="text-xs text-stone-400 truncate">
+                  <p className="text-sm text-stone-400 truncate">
                     {file.frontmatter?.full_name || file.frontmatter?.business_name || file.frontmatter?.title || '(no title in frontmatter)'}
                     {file.error && <span className="text-red-400 ml-1">— {file.error}</span>}
                   </p>
@@ -357,7 +357,7 @@ const ImportDrawer = ({ contentType, onImported }) => {
           <button
             onClick={() => setFiles([])}
             disabled={importing}
-            className="text-xs text-stone-400 hover:text-stone-600 transition-colors"
+            className="text-sm text-stone-400 hover:text-stone-600 transition-colors"
           >
             Clear all
           </button>

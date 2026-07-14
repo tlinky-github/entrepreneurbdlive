@@ -402,7 +402,7 @@ export const AIGenerateForm = ({ onPostGenerated, onClose }) => {
               onClick={handleFetchModels}
               disabled={fetchingModels === formData.provider}
               variant="outline"
-              className="text-xs px-3"
+              className="text-sm px-3"
               title="Refresh available models from provider"
             >
               {fetchingModels === formData.provider ? (
@@ -557,7 +557,7 @@ export const AIGenerateForm = ({ onPostGenerated, onClose }) => {
             placeholder={"Topic 1 | Keywords...\nTopic 2\nTopic 3 | SEO, Marketing"}
             className="w-full h-32 px-3 py-2 border border-stone-300 rounded-lg font-mono text-sm"
           />
-          <p className="text-xs text-stone-500 mt-1">
+          <p className="text-sm text-stone-500 mt-1">
              Format: <strong>Topic | Keyword1, Keyword2</strong> (Keywords are optional)
           </p>
         </div>
@@ -583,7 +583,7 @@ export const AIGenerateForm = ({ onPostGenerated, onClose }) => {
               type="button"
               onClick={addTopic}
               variant="outline"
-              className="text-xs"
+              className="text-sm"
             >
               <Plus className="w-4 h-4 mr-1" />
               Add
@@ -657,7 +657,7 @@ export const AIGenerateForm = ({ onPostGenerated, onClose }) => {
               />
             </div>
           )}
-          <p className="text-xs text-stone-500 mt-1">
+          <p className="text-sm text-stone-500 mt-1">
             {formData.targetLength === 'custom' ? 'Specify your desired word count.' : 'Long-form posts are generated in multiple batches.'}
           </p>
         </div>
@@ -685,7 +685,7 @@ export const AIGenerateForm = ({ onPostGenerated, onClose }) => {
             type="button"
             onClick={addKeyword}
             variant="outline"
-            className="text-xs"
+            className="text-sm"
           >
             <Plus className="w-4 h-4 mr-1" />
             Add
@@ -744,7 +744,7 @@ export const AIGenerateForm = ({ onPostGenerated, onClose }) => {
                <code key={tag} className="text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded border border-amber-200">{tag}</code>
              ))}
           </div>
-          <p className="text-xs text-amber-700/80 mt-2 font-medium leading-relaxed">
+          <p className="text-sm text-amber-700/80 mt-2 font-medium leading-relaxed">
             If provided, this prompt will <strong>completely ignore</strong> Topics, Tone, Length, and Keywords. It speaks directly directly to the AI model using exactly your wording. Your custom prompt will run <strong>once</strong>.
           </p>
         </div>
@@ -821,7 +821,7 @@ export const AIGenerateForm = ({ onPostGenerated, onClose }) => {
           </label>
         </div>
         {!formData.isBulk && (
-          <p className="text-xs text-stone-500 italic">Individual settings can be adjusted in Advanced Settings below.</p>
+          <p className="text-sm text-stone-500 italic">Individual settings can be adjusted in Advanced Settings below.</p>
         )}
       </div>
 
@@ -844,7 +844,7 @@ export const AIGenerateForm = ({ onPostGenerated, onClose }) => {
               onChange={(e) => setFormData({ ...formData, temperature: e.target.value })}
               className="w-full"
             />
-            <p className="text-xs text-stone-500 mt-1">
+            <p className="text-sm text-stone-500 mt-1">
               Lower = more consistent, Higher = more creative
             </p>
           </div>
@@ -862,7 +862,7 @@ export const AIGenerateForm = ({ onPostGenerated, onClose }) => {
               <option value="max_tokens">Legacy (max_tokens)</option>
               <option value="max_completion_tokens">Reasoning (max_completion_tokens)</option>
             </select>
-            <p className="text-xs text-stone-500 mt-1">
+            <p className="text-sm text-stone-500 mt-1">
               "Auto" detects reasoning models like o1/o3. 
               <br/>
               <span className="text-amber-600 font-medium">⚠️ If you see a "max_tokens" error, switch this manually to "Reasoning".</span>
@@ -907,7 +907,7 @@ export const AIGenerateForm = ({ onPostGenerated, onClose }) => {
           
           <div className="max-h-40 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
             {bulkProgress.logs.map((log, i) => (
-              <div key={i} className="flex items-center justify-between text-xs p-2 bg-white rounded border border-stone-100 shadow-sm animate-in fade-in slide-in-from-bottom-1">
+              <div key={i} className="flex items-center justify-between text-sm p-2 bg-white rounded border border-stone-100 shadow-sm animate-in fade-in slide-in-from-bottom-1">
                 <span className="truncate font-medium text-stone-700 max-w-[70%]">
                   {i + 1}. {log.topic}
                 </span>
