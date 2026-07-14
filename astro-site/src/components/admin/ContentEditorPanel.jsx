@@ -1113,6 +1113,13 @@ const ContentEditorPanel = () => {
         updated_at: new Date()
       };
 
+      // Strip any undefined fields to prevent Firestore crashes
+      Object.keys(payload).forEach(key => {
+        if (payload[key] === undefined) {
+          delete payload[key];
+        }
+      });
+
       console.log('Saving content to database:', payload);
 
       let response;
