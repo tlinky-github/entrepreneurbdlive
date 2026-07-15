@@ -2,6 +2,7 @@
 import PublicLayout from '../../layouts/PublicLayout.astro';
 import EntrepreneurDetail from '../../components/entrepreneurs/EntrepreneurDetail.jsx';
 import { profileAPI, authorAPI, taxonomyAPI } from '../../lib/serverApi';
+import { getPersonSchema, buildSchema, interpolateSEOVariables, getRobotsMetaString } from '../../lib/schema';
 
 const { slug } = Astro.params;
 
@@ -45,17 +46,41 @@ try {
   console.error('[Entrepreneur Detail] Profile fetch failed:', e.message);
 }
 
+// Handle redirects if configured in RankMath advanced settings
+if (profile && profile.redirection && profile.redirection.enable && profile.redirection.url) {
+  const redirectStatus = parseInt(profile.redirection.type) || 301;
+  return Astro.redirect(profile.redirection.url, redirectStatus);
+}
+
 const profileImg = profile?.og_image || profile?.featured_image || profile?.photo || '';
 
-// SEO metadata
-const title = profile?.name ? `${profile.name} | Entrepreneur BD Profile` : 'Entrepreneur Profile | Entrepreneur BD';
-const description = profile?.short_bio || 'View the profile and journey of this entrepreneur on Entrepreneur BD.';
+// SEO metadata with RankMath support
+const rawTitleTemplate = profile?.seo_title || profile?.seoTitle || "%title% %sep% %sitename%";
+const rawDescTemplate = profile?.seo_description || profile?.seoDescription || "%excerpt%";
+
+const siteTitleVal = profile?.name || 'Entrepreneur Profile';
+const siteExcerptVal = profile?.short_bio || profile?.details || '';
+
+const title = profile ? interpolateSEOVariables(rawTitleTemplate, siteTitleVal, siteExcerptVal) : 'Entrepreneur Profile | Entrepreneurs BD';
+const description = profile ? interpolateSEOVariables(rawDescTemplate, siteTitleVal, siteExcerptVal) : 'View the profile and journey of this entrepreneur on Entrepreneurs BD.';
+
+const canonical = profile?.canonical_url || profile?.canonicalUrl || undefined;
+const robotsMeta = profile ? getRobotsMetaString(profile.robots_meta) : undefined;
+const socialMeta = profile?.social_meta || undefined;
+
+// Generate Schema
+const defaultSchema = profile ? getPersonSchema(profile) : null;
+const pageSchema = buildSchema(profile?.custom_schema, defaultSchema);
 ---
 
 <PublicLayout
   title={title}
   description={description}
   image={profileImg || undefined}
+  schema={pageSchema}
+  canonical={canonical}
+  robotsMeta={robotsMeta}
+  socialMeta={socialMeta}
 >
   <EntrepreneurDetail client:load slug={slug} initialProfile={profile} initialAuthorData={authorData} startupStages={startupStages} />
 </PublicLayout>

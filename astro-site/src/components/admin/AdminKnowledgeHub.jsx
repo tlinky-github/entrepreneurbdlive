@@ -10,12 +10,21 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/ta
 import { toast } from 'sonner';
 import {
   Plus, Trash2, Edit2, Save, X, BookOpen, HelpCircle, FileText, BookA,
-  ChevronDown, ChevronUp, Loader2
+  ChevronDown, ChevronUp, Loader2, Search, MoreVertical, Eye, Pencil, Filter
 } from 'lucide-react';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '../../components/ui/alert-dialog';
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue
+} from '../../components/ui/select';
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow
+} from '../../components/ui/table';
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
+} from '../../components/ui/dropdown-menu';
 import { contentAPI, guidesAPI, faqCategoriesAPI, glossaryAPI } from '../../lib/api';
 import { useOutletContext } from 'react-router-dom';
 import ImportDrawer from './ImportDrawer';
@@ -55,57 +64,370 @@ const AdminKnowledgeHub = () => {
 const KnowledgeArticlesTab = ({ navigate }) => {
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [bulkAction, setBulkAction] = useState('all');
+  const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
+  const [bulkProcessing, setBulkProcessing] = useState(false);
+  const [deleteId, setDeleteId] = useState(null);
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const res = await contentAPI.list('knowledge');
-        setArticles(res.data || []);
-      } catch (err) {
-        console.error('Error loading articles:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
+  const loadArticles = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await contentAPI.list('knowledge');
+      setArticles(res.data || []);
+    } catch (err) {
+      console.error('Error loading articles:', err);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
+  useEffect(() => {
+    loadArticles();
+  }, [loadArticles]);
+
+  // Reset page and selection when search changes
+  useEffect(() => {
+    setCurrentPage(1);
+    setSelectedIds([]);
+  }, [search]);
+
+  const handleDelete = async () => {
+    if (!deleteId) return;
+    try {
+      await contentAPI.delete('knowledge', deleteId);
+      toast.success('Article deleted');
+      loadArticles();
+    } catch (error) {
+      toast.error('Failed to delete article');
+    } finally {
+      setDeleteId(null);
+    }
+  };
+
+  const handleBulkAction = async () => {
+    if (bulkAction !== 'delete') return;
+    if (selectedIds.length === 0) {
+      toast.error('No items selected');
+      return;
+    }
+    setBulkProcessing(true);
+    try {
+      await Promise.all(selectedIds.map(id => contentAPI.delete('knowledge', id)));
+      toast.success(`Successfully deleted ${selectedIds.length} articles`);
+      setSelectedIds([]);
+      loadArticles();
+    } catch (error) {
+      toast.error('Failed to delete some articles');
+    } finally {
+      setBulkProcessing(false);
+      setBulkDialogOpen(false);
+    }
+  };
+
+  // Filter articles based on search
+  const filteredArticles = articles.filter(article => 
+    article.title?.toLowerCase().includes(search.toLowerCase()) || 
+    article.slug?.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const totalItems = filteredArticles.length;
+  const totalPages = Math.ceil(totalItems / pageSize) || 1;
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const paginatedArticles = filteredArticles.slice(startIndex, endIndex);
+
+  const getPageNumbers = () => {
+    const pages = [];
+    const range = 1;
+    for (let i = 1; i <= totalPages; i++) {
+      if (i === 1 || i === totalPages || (i >= currentPage - range && i <= currentPage + range)) {
+        pages.push(i);
+      } else if (i === 2 && currentPage - range > 2) {
+        pages.push('...');
+      } else if (i === totalPages - 1 && currentPage + range < totalPages - 1) {
+        pages.push('...');
+      }
+    }
+    return pages.filter((item, index) => pages.indexOf(item) === index);
+  };
+
+  const pageIds = paginatedArticles.map(a => a.id);
+  const isAllSelected = pageIds.length > 0 && pageIds.every(id => selectedIds.includes(id));
+  
+  const handleSelectAll = () => {
+    if (isAllSelected) {
+      setSelectedIds(prev => prev.filter(id => !pageIds.includes(id)));
+    } else {
+      setSelectedIds(prev => [...new Set([...prev, ...pageIds])]);
+    }
+  };
+
+  const handleSelectRow = (id) => {
+    setSelectedIds(prev => 
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    );
+  };
+
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Knowledge Articles</CardTitle>
-        <div className="flex items-center gap-2">
-          <ImportDrawer contentType="knowledge" onImported={() => { setLoading(true); contentAPI.list('knowledge').then(r => setArticles(r.data || [])).finally(() => setLoading(false)); }} />
-          <Button className="bg-emerald-900 text-white hover:bg-emerald-800" onClick={() => navigate('/admin/content-editor?type=knowledge')}>
-            <Plus className="w-4 h-4 mr-2" /> New Article
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent>
-        {loading ? (
-          <div className="space-y-3">{[...Array(3)].map((_, i) => <Skeleton key={i} className="h-12" />)}</div>
-        ) : articles.length === 0 ? (
-          <p className="text-center text-stone-500 py-8">No knowledge articles yet. Create one using the Content Editor.</p>
-        ) : (
-          <div className="space-y-2">
-            {articles.map(article => (
-              <div key={article.id} className="flex items-center justify-between p-3 bg-stone-50 rounded-lg">
-                <div>
-                  <p className="font-medium text-stone-900">{article.title}</p>
-                  <p className="text-sm text-stone-500">/{article.slug}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge className={article.status === 'published' ? 'bg-green-500' : 'bg-yellow-500'}>{article.status || 'draft'}</Badge>
-                  <Button size="sm" variant="outline" onClick={() => navigate(`/admin/content-editor?type=knowledge&id=${article.id}`)}>
-                    <Edit2 className="w-3 h-3" />
-                  </Button>
-                </div>
-              </div>
-            ))}
+    <div>
+      {/* Search Input Card */}
+      <Card className="mb-6 border-stone-200">
+        <CardContent className="p-4">
+          <div className="relative max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-400" />
+            <Input
+              placeholder="Search articles..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-10"
+            />
           </div>
-        )}
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+
+      {/* Bulk Actions & Pagination controls */}
+      {!loading && filteredArticles.length > 0 && (
+        <div className="flex flex-col sm:flex-row gap-4 justify-between items-center mb-4">
+          <div className="flex items-center gap-2">
+            <Select value={bulkAction} onValueChange={setBulkAction}>
+              <SelectTrigger className="w-[160px] bg-white">
+                <SelectValue placeholder="Bulk Actions" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Bulk Actions</SelectItem>
+                <SelectItem value="delete" className="text-red-600">Delete Selected</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                if (bulkAction === 'delete') {
+                  if (selectedIds.length === 0) {
+                    toast.error('Please select items to delete');
+                  } else {
+                    setBulkDialogOpen(true);
+                  }
+                }
+              }}
+              disabled={bulkAction === 'all' || selectedIds.length === 0}
+              className="border-stone-200 bg-white"
+            >
+              Apply
+            </Button>
+            {selectedIds.length > 0 && (
+              <span className="text-sm text-stone-500 font-medium">
+                {selectedIds.length} selected
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-stone-500">Show:</span>
+            <Select value={String(pageSize)} onValueChange={(val) => { setPageSize(Number(val)); setCurrentPage(1); }}>
+              <SelectTrigger className="w-[80px] bg-white">
+                <SelectValue placeholder="20" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="10">10</SelectItem>
+                <SelectItem value="20">20</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+                <SelectItem value="100">100</SelectItem>
+              </SelectContent>
+            </Select>
+            <span className="text-sm text-stone-500">per page</span>
+          </div>
+        </div>
+      )}
+
+      {/* Table Card */}
+      <Card className="border-stone-200">
+        <CardHeader className="flex flex-row items-center justify-between border-b border-stone-200 bg-stone-50/50">
+          <CardTitle className="text-lg">Knowledge Articles</CardTitle>
+          <div className="flex items-center gap-2">
+            <ImportDrawer contentType="knowledge" onImported={loadArticles} />
+            <Button className="bg-emerald-900 text-white hover:bg-emerald-800" onClick={() => navigate('/admin/content-editor?type=knowledge')}>
+              <Plus className="w-4 h-4 mr-2" /> New Article
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          {loading ? (
+            <div className="p-6 space-y-4">
+              {[...Array(5)].map((_, i) => (
+                <Skeleton key={i} className="h-12" />
+              ))}
+            </div>
+          ) : filteredArticles.length === 0 ? (
+            <div className="text-center py-16">
+              <BookOpen className="w-16 h-16 text-stone-300 mx-auto mb-4" />
+              <p className="text-lg text-stone-500">No knowledge articles found</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-12 px-4">
+                      <input 
+                        type="checkbox" 
+                        checked={isAllSelected} 
+                        onChange={handleSelectAll}
+                        className="rounded border-stone-300 text-emerald-900 focus:ring-emerald-800 h-4 w-4 cursor-pointer"
+                      />
+                    </TableHead>
+                    <TableHead>Article Title</TableHead>
+                    <TableHead>Slug</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="w-12"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {paginatedArticles.map((article) => (
+                    <TableRow key={article.id}>
+                      <TableCell className="px-4">
+                        <input 
+                          type="checkbox" 
+                          checked={selectedIds.includes(article.id)} 
+                          onChange={() => handleSelectRow(article.id)}
+                          className="rounded border-stone-300 text-emerald-900 focus:ring-emerald-800 h-4 w-4 cursor-pointer"
+                        />
+                      </TableCell>
+                      <TableCell className="font-medium text-stone-900">
+                        {article.title}
+                      </TableCell>
+                      <TableCell className="text-stone-600">
+                        /{article.slug}
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={article.status === 'published' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}>
+                          {article.status || 'draft'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <MoreVertical className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => navigate(`/admin/content-editor?type=knowledge&id=${article.id}`)} className="flex items-center gap-2">
+                              <Pencil className="w-4 h-4" />
+                              Edit Article
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => window.open(`/knowledge/${article.slug}`, '_blank')} className="flex items-center gap-2">
+                              <Eye className="w-4 h-4" />
+                              View Public
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setDeleteId(article.id)} className="text-red-600">
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+
+              {/* Pagination Footer */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between px-6 py-4 bg-stone-50/50 border-t border-stone-200">
+                  <div className="text-sm text-stone-500">
+                    Showing <span className="font-semibold text-stone-700">{startIndex + 1}</span> to{' '}
+                    <span className="font-semibold text-stone-700">{Math.min(endIndex, totalItems)}</span> of{' '}
+                    <span className="font-semibold text-stone-700">{totalItems}</span> articles
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                      disabled={currentPage === 1}
+                      className="border-stone-200 bg-white"
+                    >
+                      Previous
+                    </Button>
+                    
+                    {getPageNumbers().map((page, idx) => {
+                      if (page === '...') {
+                        return <span key={`ellipsis-${idx}`} className="px-2 text-stone-400">...</span>;
+                      }
+                      const isActive = page === currentPage;
+                      return (
+                        <Button
+                          key={page}
+                          variant={isActive ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => setCurrentPage(page)}
+                          className={isActive ? 'bg-emerald-900 text-white hover:bg-emerald-800' : 'border-stone-200 bg-white text-stone-700 hover:bg-stone-100'}
+                        >
+                          {page}
+                        </Button>
+                      );
+                    })}
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                      disabled={currentPage === totalPages}
+                      className="border-stone-200 bg-white"
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Article?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the knowledge article.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bulk Delete Confirmation */}
+      <AlertDialog open={bulkDialogOpen} onOpenChange={setBulkDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Multiple Articles?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to permanently delete the {selectedIds.length} selected knowledge articles? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBulkAction}
+              disabled={bulkProcessing}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {bulkProcessing ? 'Deleting...' : 'Delete Selected'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
   );
 };
 

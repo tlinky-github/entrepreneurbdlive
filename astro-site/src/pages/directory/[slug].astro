@@ -2,6 +2,7 @@
 import PublicLayout from '../../layouts/PublicLayout.astro';
 import DirectoryDetail from '../../components/directory/DirectoryDetail.jsx';
 import { listingAPI, taxonomyAPI } from '../../lib/serverApi';
+import { getBusinessSchema, buildSchema, interpolateSEOVariables, getRobotsMetaString } from '../../lib/schema';
 
 const { slug } = Astro.params;
 
@@ -35,17 +36,41 @@ try {
   console.error('[Directory Detail] Fetch failed:', e.message);
 }
 
+// Handle redirects if configured in RankMath advanced settings
+if (listing && listing.redirection && listing.redirection.enable && listing.redirection.url) {
+  const redirectStatus = parseInt(listing.redirection.type) || 301;
+  return Astro.redirect(listing.redirection.url, redirectStatus);
+}
+
 const coverImg = listing?.og_image || listing?.cover_image || listing?.logo || '';
 
-// SEO metadata
-const title = listing?.business_name ? `${listing.business_name} | Entrepreneur BD Directory` : 'Business Detail | Entrepreneur BD';
-const description = listing?.short_description || 'View detailed information about this business on Entrepreneur BD.';
+// SEO metadata with RankMath support
+const rawTitleTemplate = listing?.seo_title || listing?.seoTitle || "%title% %sep% %sitename%";
+const rawDescTemplate = listing?.seo_description || listing?.seoDescription || "%excerpt%";
+
+const siteTitleVal = listing?.business_name || 'Business Detail';
+const siteExcerptVal = listing?.short_description || listing?.details || '';
+
+const title = listing ? interpolateSEOVariables(rawTitleTemplate, siteTitleVal, siteExcerptVal) : 'Business Detail | Entrepreneurs BD';
+const description = listing ? interpolateSEOVariables(rawDescTemplate, siteTitleVal, siteExcerptVal) : 'View detailed information about this business on Entrepreneurs BD.';
+
+const canonical = listing?.canonical_url || listing?.canonicalUrl || undefined;
+const robotsMeta = listing ? getRobotsMetaString(listing.robots_meta) : undefined;
+const socialMeta = listing?.social_meta || undefined;
+
+// Generate Schema
+const defaultSchema = listing ? getBusinessSchema(listing) : null;
+const pageSchema = buildSchema(listing?.custom_schema, defaultSchema);
 ---
 
 <PublicLayout
   title={title}
   description={description}
   image={coverImg || undefined}
+  schema={pageSchema}
+  canonical={canonical}
+  robotsMeta={robotsMeta}
+  socialMeta={socialMeta}
 >
   <DirectoryDetail client:load slug={slug} initialListing={listing} startupStages={startupStages} />
 </PublicLayout>

@@ -29,6 +29,7 @@ import aiAPI from '../../lib/aiApi';
 import ImageUploader from '../../components/common/ImageUploader';
 import LinkDialog from '../../components/admin/LinkDialog';
 import ImageEditorDialog from '../../components/admin/ImageEditorDialog';
+import SEOModal from './SEOModal';
 import { Label } from '../../components/ui/label';
 import {
   Dialog,
@@ -211,6 +212,41 @@ const ContentEditorPanel = () => {
   const [seoKeywords, setSeoKeywords] = useState('');
   const [ogImage, setOgImage] = useState('');
   const [ogImageAlt, setOgImageAlt] = useState('');
+  const [customSchema, setCustomSchema] = useState('');
+  const [isGeneratingSchema, setIsGeneratingSchema] = useState(false);
+
+  // RankMath states
+  const [isSEOModalOpen, setIsSEOModalOpen] = useState(false);
+  const [focusKeyword, setFocusKeyword] = useState('');
+  const [isPillarContent, setIsPillarContent] = useState(false);
+  const [canonicalUrl, setCanonicalUrl] = useState('');
+  const [breadcrumbTitle, setBreadcrumbTitle] = useState('');
+  const [robotsMeta, setRobotsMeta] = useState({
+    noindex: false,
+    nofollow: false,
+    noarchive: false,
+    noimageindex: false,
+    nosnippet: false
+  });
+  const [advancedRobots, setAdvancedRobots] = useState({
+    maxSnippet: -1,
+    maxVideo: -1,
+    maxImage: 'large'
+  });
+  const [redirection, setRedirection] = useState({
+    enable: false,
+    type: '301',
+    url: ''
+  });
+  const [socialMeta, setSocialMeta] = useState({
+    ogTitle: '',
+    ogDescription: '',
+    ogImage: '',
+    twitterTitle: '',
+    twitterDescription: '',
+    twitterImage: '',
+    twitterCard: 'summary_large_image'
+  });
 
   // Specialized Fields
   const [designation, setDesignation] = useState('');
@@ -632,7 +668,10 @@ const ContentEditorPanel = () => {
     if (contentLoaded) {
       setIsDirty(true);
     }
-  }, [title, slug, excerpt, category, featuredImage, seoTitle, seoDescription, seoKeywords, faqs, isFeatured, status, contentLoaded]);
+  }, [
+    title, slug, excerpt, category, featuredImage, seoTitle, seoDescription, seoKeywords, faqs, isFeatured, status, contentLoaded,
+    focusKeyword, isPillarContent, canonicalUrl, breadcrumbTitle, robotsMeta, advancedRobots, redirection, socialMeta
+  ]);
 
   // Debug editor state
   useEffect(() => {
@@ -681,6 +720,38 @@ const ContentEditorPanel = () => {
             setFeaturedImageAlt(data.featured_image_alt || '');
             setOgImage(data.og_image || '');
             setOgImageAlt(data.og_image_alt || '');
+
+            // Load RankMath Fields
+            setFocusKeyword(data.focus_keyword || '');
+            setIsPillarContent(!!data.is_pillar_content);
+            setCanonicalUrl(data.canonical_url || '');
+            setBreadcrumbTitle(data.breadcrumb_title || '');
+            setRobotsMeta(data.robots_meta || {
+              noindex: false,
+              nofollow: false,
+              noarchive: false,
+              noimageindex: false,
+              nosnippet: false
+            });
+            setAdvancedRobots(data.advanced_robots || {
+              maxSnippet: -1,
+              maxVideo: -1,
+              maxImage: 'large'
+            });
+            setRedirection(data.redirection || {
+              enable: false,
+              type: '301',
+              url: ''
+            });
+            setSocialMeta(data.social_meta || {
+              ogTitle: '',
+              ogDescription: '',
+              ogImage: '',
+              twitterTitle: '',
+              twitterDescription: '',
+              twitterImage: '',
+              twitterCard: 'summary_large_image'
+            });
             setLogo(data.logo || '');
             setLogoAlt(data.logo_alt || '');
             setPhoto(data.photo || '');
@@ -723,6 +794,7 @@ const ContentEditorPanel = () => {
             setCustomCss(data.custom_css || '');
             setCustomJs(data.custom_js || '');
             setCustomHeadHtml(data.custom_head_html || '');
+            setCustomSchema(data.custom_schema || '');
             setWebsiteLinkSettings(data.website_link_settings || { target: '_blank', rel: 'nofollow noopener noreferrer' });
             
             // Set Linked Business (for entrepreneurs)
@@ -1055,6 +1127,14 @@ const ContentEditorPanel = () => {
         seo_keywords: seoKeywords,
         og_image: ogImage,
         og_image_alt: ogImageAlt,
+        focus_keyword: focusKeyword,
+        is_pillar_content: isPillarContent,
+        canonical_url: canonicalUrl,
+        breadcrumb_title: breadcrumbTitle,
+        robots_meta: robotsMeta,
+        advanced_robots: advancedRobots,
+        redirection: redirection,
+        social_meta: socialMeta,
         faqs: extractedFaqs, // Keep array in sync for SEO component
         // Include all specialized fields in payload
         designation,
@@ -1109,6 +1189,7 @@ const ContentEditorPanel = () => {
         custom_css: customCss,
         custom_js: customJs,
         custom_head_html: customHeadHtml,
+        custom_schema: customSchema,
         // Standardized timestamps
         updated_at: new Date()
       };
@@ -1147,6 +1228,43 @@ const ContentEditorPanel = () => {
     } finally {
       setSaving(false);
       isSubmittingRef.current = false;
+    }
+  };
+
+  const handleGenerateSchema = async () => {
+    setIsGeneratingSchema(true);
+    try {
+      const prompt = `Generate a standard, 100% compliant Schema.org JSON-LD snippet for a ${type} page.
+Title: ${title}
+Description: ${excerpt || seoDescription}
+${companyName ? `Company: ${companyName}` : ''}
+${founderName ? `Founder: ${founderName}` : ''}
+Only output the raw JSON object, nothing else. Do not use markdown wrapping (\`\`\`json). Start exactly with { and end with }.`;
+
+      const res = await aiAPI.copilotAction({
+        action: 'custom',
+        prompt: prompt,
+        text: excerpt || title || 'Post'
+      });
+      
+      let schemaStr = res.result.trim();
+      if (schemaStr.startsWith('```json')) schemaStr = schemaStr.replace(/```json/i, '').replace(/```/g, '').trim();
+      else if (schemaStr.startsWith('```')) schemaStr = schemaStr.replace(/```/g, '').trim();
+      
+      // Format it beautifully
+      try {
+        const parsed = JSON.parse(schemaStr);
+        schemaStr = JSON.stringify(parsed, null, 2);
+      } catch(e) {}
+      
+      setCustomSchema(schemaStr);
+      toast.success('Schema generated successfully!');
+      setIsDirty(true);
+    } catch (err) {
+      toast.error('Failed to generate schema with AI.');
+      console.error(err);
+    } finally {
+      setIsGeneratingSchema(false);
     }
   };
 
@@ -2475,92 +2593,60 @@ const ContentEditorPanel = () => {
             </CardContent>
           </Card>
 
-          {/* SEO Section */}
-          <Card>
-            <CardHeader>
-              <CardTitle>SEO Settings</CardTitle>
+          {/* SEO Section (SEO modal trigger) */}
+          <Card className="border-emerald-200">
+            <CardHeader className="bg-emerald-50/50 border-b border-emerald-100 py-3">
+              <CardTitle className="text-sm font-bold uppercase tracking-wider text-emerald-800 flex items-center justify-between">
+                <span>SEO Suite</span>
+                {focusKeyword && (
+                  <Badge className="bg-emerald-700 text-white border-none">
+                    Score: {(() => {
+                      const rawContentText = editor?.getText() || '';
+                      const contentWordCount = rawContentText.split(/\s+/).filter(Boolean).length;
+                      const activeKeyword = focusKeyword.trim().toLowerCase();
+                      const finalTitle = seoTitle || title;
+                      const finalDesc = seoDescription || excerpt;
+                      let score = 0;
+                      const checks = {
+                        keywordInTitle: activeKeyword ? finalTitle.toLowerCase().includes(activeKeyword) : false,
+                        keywordInDescription: activeKeyword ? finalDesc.toLowerCase().includes(activeKeyword) : false,
+                        keywordInContentBeginning: rawContentText.toLowerCase().slice(0, 500).includes(activeKeyword),
+                        keywordInContent: rawContentText.toLowerCase().includes(activeKeyword)
+                      };
+                      if (checks.keywordInTitle) score += 25;
+                      if (checks.keywordInDescription) score += 25;
+                      if (checks.keywordInContentBeginning) score += 20;
+                      if (checks.keywordInContent) score += 15;
+                      if (contentWordCount >= 600) score += 15;
+                      return score;
+                    })()}/100
+                  </Badge>
+                )}
+              </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <label>SEO Title</label>
-                <Input
-                  value={seoTitle}
-                  onChange={(e) => setSeoTitle(e.target.value)}
-                  maxLength="70"
-                  placeholder="Max 70 characters"
-                />
-                <small className="char-count">{seoTitle.length}/70</small>
-              </div>
-
-              <div>
-                <label>Meta Description</label>
-                <textarea
-                  value={seoDescription}
-                  onChange={(e) => setSeoDescription(e.target.value)}
-                  maxLength="160"
-                  placeholder="Max 160 characters"
-                  className="textarea-small"
-                />
-                <small className="char-count">{seoDescription.length}/160</small>
-              </div>
-
-              <div>
-                <label>Keywords</label>
-                <textarea
-                  value={seoKeywords}
-                  onChange={(e) => setSeoKeywords(e.target.value)}
-                  placeholder="Comma-separated keywords"
-                  className="textarea-small"
-                />
-              </div>
-
-              <div className="space-y-2 pt-2 border-t border-stone-100">
-                <label className="text-sm font-bold uppercase tracking-wider text-stone-500">Social Media Image (OpenGraph)</label>
-                <ImageUploader 
-                  value={ogImage}
-                  onChange={(url, meta) => {
-                    setOgImage(url);
-                    if (meta && meta.alt) setOgImageAlt(meta.alt);
-                  }}
-                  entityType="seo"
-                  placeholder="Custom image for social sharing"
-                />
-                <p className="text-[10px] text-stone-400">Controls how your link appears on Facebook, Twitter, and LinkedIn.</p>
-              </div>
-
-              <div className="seo-preview">
-                <h4>Search Preview</h4>
-                <div className="preview-item">
-                  <div className="preview-title text-blue-700 text-lg hover:underline cursor-pointer">
-                    {seoTitle || title || 'Your Title'}
-                  </div>
-                  <div className="preview-url flex items-center space-x-1 text-green-700 text-sm mt-1">
-                    <span>yoursite.com/</span>
-                    {isEditingSlug ? (
-                      <Input 
-                        value={slug} 
-                        onChange={(e) => {
-                          setSlug(e.target.value.toLowerCase().replace(/\s+/g, '-'));
-                          setManualSlugSet(true);
-                        }}
-                        onBlur={() => setIsEditingSlug(false)}
-                        onKeyDown={(e) => e.key === 'Enter' && setIsEditingSlug(false)}
-                        className="border-b border-green-600 outline-none bg-transparent"
-                        autoFocus
-                      />
-                    ) : (
-                      <span 
-                        className="cursor-pointer hover:underline flex items-center"
-                        onClick={() => setIsEditingSlug(true)}
-                      >
-                        {slug || 'url'} <Pencil size={12} className="ml-1 opacity-40" />
-                      </span>
-                    )}
-                  </div>
-                  <div className="preview-description text-slate-600 text-sm mt-1">
-                    {seoDescription || 'Your meta description will appear here on Google search results...'}
-                  </div>
+            <CardContent className="space-y-4 pt-4">
+              <Button 
+                type="button" 
+                onClick={() => setIsSEOModalOpen(true)} 
+                className="w-full bg-emerald-950 hover:bg-emerald-900 text-white font-bold flex items-center justify-center gap-2 h-11 rounded-xl shadow-md transition-all transform hover:-translate-y-0.5"
+              >
+                <Sparkles className="w-4 h-4" /> Edit SEO & Schema
+              </Button>
+              <div className="text-stone-500 text-xs space-y-1 bg-stone-50 p-3 rounded-lg border border-stone-150">
+                <div className="flex justify-between">
+                  <span>Focus Keyword:</span>
+                  <strong className="text-stone-700">{focusKeyword || 'None set'}</strong>
                 </div>
+                <div className="flex justify-between">
+                  <span>Pillar Content:</span>
+                  <strong className="text-stone-700">{isPillarContent ? 'Yes' : 'No'}</strong>
+                </div>
+                {canonicalUrl && (
+                  <div className="flex justify-between truncate">
+                    <span>Canonical:</span>
+                    <strong className="text-stone-700 truncate max-w-[120px]">{canonicalUrl}</strong>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -2808,6 +2894,47 @@ const ContentEditorPanel = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <SEOModal 
+        isOpen={isSEOModalOpen} 
+        onClose={() => setIsSEOModalOpen(false)} 
+        seoData={{
+          seo_title: seoTitle,
+          seo_description: seoDescription,
+          seo_keywords: seoKeywords,
+          focus_keyword: focusKeyword,
+          is_pillar_content: isPillarContent,
+          canonical_url: canonicalUrl,
+          breadcrumb_title: breadcrumbTitle,
+          custom_schema: customSchema,
+          robots_meta: robotsMeta,
+          advanced_robots: advancedRobots,
+          redirection: redirection,
+          social_meta: socialMeta
+        }}
+        onChange={(newData) => {
+          setSeoTitle(newData.seo_title || '');
+          setSeoDescription(newData.seo_description || '');
+          setSeoKeywords(newData.seo_keywords || '');
+          setFocusKeyword(newData.focus_keyword || '');
+          setIsPillarContent(!!newData.is_pillar_content);
+          setCanonicalUrl(newData.canonical_url || '');
+          setBreadcrumbTitle(newData.breadcrumb_title || '');
+          setCustomSchema(newData.custom_schema || '');
+          if (newData.robots_meta) setRobotsMeta(newData.robots_meta);
+          if (newData.advanced_robots) setAdvancedRobots(newData.advanced_robots);
+          if (newData.redirection) setRedirection(newData.redirection);
+          if (newData.social_meta) {
+            setSocialMeta(newData.social_meta);
+            setOgImage(newData.social_meta.ogImage || '');
+          }
+        }}
+        documentContent={editor?.getHTML() || ''}
+        documentTitle={title}
+        documentExcerpt={excerpt}
+        contentType={type}
+        defaultShareImage={featuredImage || logo || photo}
+      />
       </div>
     </div>
   );

@@ -11,6 +11,9 @@ interface Props {
   type?: string;
   canonical?: string;
   noIndex?: boolean;
+  schema?: any;
+  robotsMeta?: string;
+  socialMeta?: any;
 }
 
 const {
@@ -20,6 +23,9 @@ const {
   type = 'website',
   canonical,
   noIndex = false,
+  schema,
+  robotsMeta,
+  socialMeta,
 } = Astro.props;
 
 const siteUrl = 'https://entrepreneurs.bd';
@@ -41,38 +47,37 @@ const ogImage = image.startsWith('http') ? image : `${siteUrl}${image}`;
   <title>{title}</title>
   <meta name="description" content={description} />
   <link rel="canonical" href={currentUrl} />
-  {noIndex && <meta name="robots" content="noindex, nofollow" />}
+  {robotsMeta ? (
+    <meta name="robots" content={robotsMeta} />
+  ) : (
+    noIndex && <meta name="robots" content="noindex, nofollow" />
+  )}
 
   <!-- Open Graph -->
   <meta property="og:site_name" content="Entrepreneurs BD" />
   <meta property="og:type" content={type} />
-  <meta property="og:title" content={title} />
-  <meta property="og:description" content={description} />
-  <meta property="og:image" content={ogImage} />
+  <meta property="og:title" content={socialMeta?.ogTitle || title} />
+  <meta property="og:description" content={socialMeta?.ogDescription || description} />
+  <meta property="og:image" content={socialMeta?.ogImage || ogImage} />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
   <meta property="og:url" content={currentUrl} />
 
   <!-- Twitter -->
-  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:card" content={socialMeta?.twitterCard || "summary_large_image"} />
   <meta name="twitter:site" content="@entrepreneursbd" />
-  <meta name="twitter:title" content={title} />
-  <meta name="twitter:description" content={description} />
-  <meta name="twitter:image" content={ogImage} />
+  <meta name="twitter:title" content={socialMeta?.twitterTitle || socialMeta?.ogTitle || title} />
+  <meta name="twitter:description" content={socialMeta?.twitterDescription || socialMeta?.ogDescription || description} />
+  <meta name="twitter:image" content={socialMeta?.twitterImage || socialMeta?.ogImage || ogImage} />
 
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 
   <!-- Structured Data -->
-  <script type="application/ld+json" set:html={JSON.stringify({
-    "@context": "https://schema.org",
-    "@type": "Organization",
-    "name": "Entrepreneurs BD",
-    "url": siteUrl,
-    "logo": `${siteUrl}/logo.png`,
-    "sameAs": ["https://www.facebook.com/entrepreneursbd.official/"]
-  })} />
+  {schema && (
+    <script type="application/ld+json" set:html={JSON.stringify(schema)} />
+  )}
 
   <slot name="head" />
 </head>

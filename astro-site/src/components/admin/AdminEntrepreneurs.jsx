@@ -60,10 +60,18 @@ const AdminEntrepreneurs = () => {
   const [deleteId, setDeleteId] = useState(null);
   const [actionLoading, setActionLoading] = useState(null);
 
+  // Pagination & Bulk Selection States
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [bulkAction, setBulkAction] = useState('all');
+  const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
+  const [bulkProcessing, setBulkProcessing] = useState(false);
+
   const loadProfiles = useCallback(async () => {
     setLoading(true);
     try {
-      const params = { limit: 50, isAdmin: true };
+      const params = { limit: 500, isAdmin: true };
       if (search) params.search = search;
       if (statusFilter !== 'all') params.status = statusFilter;
 
@@ -79,6 +87,12 @@ const AdminEntrepreneurs = () => {
   useEffect(() => {
     loadProfiles();
   }, [loadProfiles]);
+
+  // Reset page and selection when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+    setSelectedIds([]);
+  }, [search, statusFilter]);
 
   const handleApprove = async (id) => {
     setActionLoading(id);
@@ -132,6 +146,27 @@ const AdminEntrepreneurs = () => {
     }
   };
 
+  const handleBulkAction = async () => {
+    if (bulkAction !== 'delete') return;
+    if (selectedIds.length === 0) {
+      toast.error('No items selected');
+      return;
+    }
+    setBulkProcessing(true);
+    try {
+      await Promise.all(selectedIds.map(id => profileAPI.delete(id)));
+      toast.success(`Successfully deleted ${selectedIds.length} profiles`);
+      setSelectedIds([]);
+      if (refreshStats) refreshStats();
+      loadProfiles();
+    } catch (error) {
+      toast.error('Failed to delete some profiles');
+    } finally {
+      setBulkProcessing(false);
+      setBulkDialogOpen(false);
+    }
+  };
+
   const getStatusBadge = (status) => {
     const styles = {
       published: 'bg-green-100 text-green-700',
@@ -139,6 +174,44 @@ const AdminEntrepreneurs = () => {
       rejected: 'bg-red-100 text-red-700',
     };
     return <Badge className={styles[status] || 'bg-stone-100 text-stone-700'}>{status}</Badge>;
+  };
+
+  const totalItems = profiles.length;
+  const totalPages = Math.ceil(totalItems / pageSize) || 1;
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const paginatedProfiles = profiles.slice(startIndex, endIndex);
+
+  const getPageNumbers = () => {
+    const pages = [];
+    const range = 1;
+    for (let i = 1; i <= totalPages; i++) {
+      if (i === 1 || i === totalPages || (i >= currentPage - range && i <= currentPage + range)) {
+        pages.push(i);
+      } else if (i === 2 && currentPage - range > 2) {
+        pages.push('...');
+      } else if (i === totalPages - 1 && currentPage + range < totalPages - 1) {
+        pages.push('...');
+      }
+    }
+    return pages.filter((item, index) => pages.indexOf(item) === index);
+  };
+
+  const pageIds = paginatedProfiles.map(p => p.id);
+  const isAllSelected = pageIds.length > 0 && pageIds.every(id => selectedIds.includes(id));
+  
+  const handleSelectAll = () => {
+    if (isAllSelected) {
+      setSelectedIds(prev => prev.filter(id => !pageIds.includes(id)));
+    } else {
+      setSelectedIds(prev => [...new Set([...prev, ...pageIds])]);
+    }
+  };
+
+  const handleSelectRow = (id) => {
+    setSelectedIds(prev => 
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    );
   };
 
   return (
@@ -188,6 +261,60 @@ const AdminEntrepreneurs = () => {
         </CardContent>
       </Card>
 
+      {/* Bulk Actions & Pagination controls */}
+      {!loading && profiles.length > 0 && (
+        <div className="flex flex-col sm:flex-row gap-4 justify-between items-center mb-4">
+          <div className="flex items-center gap-2">
+            <Select value={bulkAction} onValueChange={setBulkAction}>
+              <SelectTrigger className="w-[160px] bg-white">
+                <SelectValue placeholder="Bulk Actions" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Bulk Actions</SelectItem>
+                <SelectItem value="delete" className="text-red-600">Delete Selected</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                if (bulkAction === 'delete') {
+                  if (selectedIds.length === 0) {
+                    toast.error('Please select items to delete');
+                  } else {
+                    setBulkDialogOpen(true);
+                  }
+                }
+              }}
+              disabled={bulkAction === 'all' || selectedIds.length === 0}
+              className="border-stone-200 bg-white"
+            >
+              Apply
+            </Button>
+            {selectedIds.length > 0 && (
+              <span className="text-sm text-stone-500 font-medium">
+                {selectedIds.length} selected
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-stone-500">Show:</span>
+            <Select value={String(pageSize)} onValueChange={(val) => { setPageSize(Number(val)); setCurrentPage(1); }}>
+              <SelectTrigger className="w-[80px] bg-white">
+                <SelectValue placeholder="20" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="10">10</SelectItem>
+                <SelectItem value="20">20</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+                <SelectItem value="100">100</SelectItem>
+              </SelectContent>
+            </Select>
+            <span className="text-sm text-stone-500">per page</span>
+          </div>
+        </div>
+      )}
+
       {/* Profiles Table */}
       <Card className="border-stone-200">
         <CardContent className="p-0">
@@ -203,89 +330,157 @@ const AdminEntrepreneurs = () => {
               <p className="text-lg text-stone-500">No profiles found</p>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Profile</TableHead>
-                  <TableHead>Company</TableHead>
-                  <TableHead>Industry</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Featured</TableHead>
-                  <TableHead>Followers</TableHead>
-                  <TableHead className="w-12"></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {profiles.map((profile) => (
-                  <TableRow key={profile.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center">
-                          {profile.photo ? (
-                            <img src={profile.photo} alt="" className="w-full h-full rounded-full object-cover" />
-                          ) : (
-                            <span className="text-emerald-900 font-medium">{profile.name?.charAt(0)}</span>
-                          )}
-                        </div>
-                        <div>
-                          <p className="font-medium text-stone-900">{profile.name || profile.title || 'Untitled'}</p>
-                          <p className="text-sm text-stone-500">{profile.role_title || profile.designation || '-'}</p>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-stone-600">{profile.company_name || '-'}</TableCell>
-                    <TableCell className="text-stone-600">{profile.industry_name || profile.industry || '-'}</TableCell>
-                    <TableCell>{getStatusBadge(profile.status)}</TableCell>
-                    <TableCell>
-                      {profile.is_featured && <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />}
-                    </TableCell>
-                    <TableCell className="text-stone-600">{profile.follower_count}</TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm" disabled={actionLoading === profile.id}>
-                            <MoreVertical className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem asChild>
-                            <Link to={`/admin/content-editor?type=entrepreneurs&id=${profile.id}`} className="flex items-center gap-2">
-                              <Pencil className="w-4 h-4" />
-                              Edit Profile
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem asChild>
-                            <Link to={`/entrepreneurs/${profile.slug}`} target="_blank" className="flex items-center gap-2">
-                              <Eye className="w-4 h-4" />
-                              View Public
-                            </Link>
-                          </DropdownMenuItem>
-                          {profile.status === 'pending' && (
-                            <>
-                              <DropdownMenuItem onClick={() => handleApprove(profile.id)} className="text-green-600">
-                                <CheckCircle className="w-4 h-4 mr-2" />
-                                Approve
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleReject(profile.id)} className="text-red-600">
-                                <XCircle className="w-4 h-4 mr-2" />
-                                Reject
-                              </DropdownMenuItem>
-                            </>
-                          )}
-                          <DropdownMenuItem onClick={() => handleToggleFeatured(profile)}>
-                            <Star className="w-4 h-4 mr-2" />
-                            {profile.is_featured ? 'Remove Featured' : 'Make Featured'}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => setDeleteId(profile.id)} className="text-red-600">
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-12 px-4">
+                      <input 
+                        type="checkbox" 
+                        checked={isAllSelected} 
+                        onChange={handleSelectAll}
+                        className="rounded border-stone-300 text-emerald-900 focus:ring-emerald-800 h-4 w-4 cursor-pointer"
+                      />
+                    </TableHead>
+                    <TableHead>Profile</TableHead>
+                    <TableHead>Company</TableHead>
+                    <TableHead>Industry</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Featured</TableHead>
+                    <TableHead>Followers</TableHead>
+                    <TableHead className="w-12"></TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {paginatedProfiles.map((profile) => (
+                    <TableRow key={profile.id}>
+                      <TableCell className="px-4">
+                        <input 
+                          type="checkbox" 
+                          checked={selectedIds.includes(profile.id)} 
+                          onChange={() => handleSelectRow(profile.id)}
+                          className="rounded border-stone-300 text-emerald-900 focus:ring-emerald-800 h-4 w-4 cursor-pointer"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center">
+                            {profile.photo ? (
+                              <img src={profile.photo} alt="" className="w-full h-full rounded-full object-cover" />
+                            ) : (
+                              <span className="text-emerald-900 font-medium">{profile.name?.charAt(0)}</span>
+                            )}
+                          </div>
+                          <div>
+                            <p className="font-medium text-stone-900">{profile.name || profile.title || 'Untitled'}</p>
+                            <p className="text-sm text-stone-500">{profile.role_title || profile.designation || '-'}</p>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-stone-600">{profile.company_name || '-'}</TableCell>
+                      <TableCell className="text-stone-600">{profile.industry_name || profile.industry || '-'}</TableCell>
+                      <TableCell>{getStatusBadge(profile.status)}</TableCell>
+                      <TableCell>
+                        {profile.is_featured && <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />}
+                      </TableCell>
+                      <TableCell className="text-stone-600">{profile.follower_count}</TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" disabled={actionLoading === profile.id}>
+                              <MoreVertical className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem asChild>
+                              <Link to={`/admin/content-editor?type=entrepreneurs&id=${profile.id}`} className="flex items-center gap-2">
+                                <Pencil className="w-4 h-4" />
+                                Edit Profile
+                              </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                              <Link to={`/entrepreneurs/${profile.slug}`} target="_blank" className="flex items-center gap-2">
+                                <Eye className="w-4 h-4" />
+                                View Public
+                              </Link>
+                            </DropdownMenuItem>
+                            {profile.status === 'pending' && (
+                              <>
+                                <DropdownMenuItem onClick={() => handleApprove(profile.id)} className="text-green-600">
+                                  <CheckCircle className="w-4 h-4 mr-2" />
+                                  Approve
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleReject(profile.id)} className="text-red-600">
+                                  <XCircle className="w-4 h-4 mr-2" />
+                                  Reject
+                                </DropdownMenuItem>
+                              </>
+                            )}
+                            <DropdownMenuItem onClick={() => handleToggleFeatured(profile)}>
+                              <Star className="w-4 h-4 mr-2" />
+                              {profile.is_featured ? 'Remove Featured' : 'Make Featured'}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setDeleteId(profile.id)} className="text-red-600">
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+
+              {/* Pagination Footer */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between px-6 py-4 bg-stone-50/50 border-t border-stone-200">
+                  <div className="text-sm text-stone-500">
+                    Showing <span className="font-semibold text-stone-700">{startIndex + 1}</span> to{' '}
+                    <span className="font-semibold text-stone-700">{Math.min(endIndex, totalItems)}</span> of{' '}
+                    <span className="font-semibold text-stone-700">{totalItems}</span> profiles
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                      disabled={currentPage === 1}
+                      className="border-stone-200 bg-white"
+                    >
+                      Previous
+                    </Button>
+                    
+                    {getPageNumbers().map((page, idx) => {
+                      if (page === '...') {
+                        return <span key={`ellipsis-${idx}`} className="px-2 text-stone-400">...</span>;
+                      }
+                      const isActive = page === currentPage;
+                      return (
+                        <Button
+                          key={page}
+                          variant={isActive ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => setCurrentPage(page)}
+                          className={isActive ? 'bg-emerald-900 text-white hover:bg-emerald-800' : 'border-stone-200 bg-white text-stone-700 hover:bg-stone-100'}
+                        >
+                          {page}
+                        </Button>
+                      );
+                    })}
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                      disabled={currentPage === totalPages}
+                      className="border-stone-200 bg-white"
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
           )}
         </CardContent>
       </Card>
@@ -303,6 +498,28 @@ const AdminEntrepreneurs = () => {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">
               Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bulk Delete Confirmation */}
+      <AlertDialog open={bulkDialogOpen} onOpenChange={setBulkDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Multiple Profiles?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to permanently delete the {selectedIds.length} selected entrepreneur profiles? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBulkAction}
+              disabled={bulkProcessing}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {bulkProcessing ? 'Deleting...' : 'Delete Selected'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

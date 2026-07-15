@@ -2,6 +2,7 @@
 import PublicLayout from '../../layouts/PublicLayout.astro';
 import { getDocBySlug, stripHtml, authorAPI, postAPI } from '../../lib/serverApi';
 import { processHtmlContent, decodeHtmlEntities } from '../../lib/smartDesign';
+import { getArticleSchema, buildSchema, interpolateSEOVariables, getRobotsMetaString } from '../../lib/schema';
 import { Badge } from '../../components/ui/badge.jsx';
 import { Calendar, Clock, ArrowLeft, Globe, Linkedin, Twitter, Facebook } from 'lucide-react';
 import BlogInteractionsWrapper from '../../components/blog/BlogInteractionsWrapper.jsx';
@@ -15,6 +16,12 @@ const post = await getDocBySlug('posts', slug as string);
 // If no post is found, return 404
 if (!post) {
   return new Response('Post not found', { status: 404 });
+}
+
+// Handle redirects if configured in RankMath advanced settings
+if (post.redirection && post.redirection.enable && post.redirection.url) {
+  const redirectStatus = parseInt(post.redirection.type) || 301;
+  return Astro.redirect(post.redirection.url, redirectStatus);
 }
 
 if (post && post.id) {
@@ -33,11 +40,20 @@ if (post && post.id) {
   }
 }
 
-// Generate SEO metadata and decode entities
-const rawTitle = post.seoTitle || post.title || 'Blog Post';
-const title = decodeHtmlEntities(rawTitle);
-const description = decodeHtmlEntities(post.metaDescription || stripHtml(post.excerpt || post.content_html).substring(0, 160));
+// Generate SEO metadata and decode entities with RankMath support
+const rawTitleTemplate = post.seo_title || post.seoTitle || "%title% %sep% %sitename%";
+const rawDescTemplate = post.seo_description || post.seoDescription || post.metaDescription || "%excerpt%";
+
+const siteTitleVal = decodeHtmlEntities(post.title || '');
+const siteExcerptVal = decodeHtmlEntities(stripHtml(post.excerpt || post.content_html || '').substring(0, 160));
+
+const title = decodeHtmlEntities(interpolateSEOVariables(rawTitleTemplate, siteTitleVal, siteExcerptVal));
+const description = decodeHtmlEntities(interpolateSEOVariables(rawDescTemplate, siteTitleVal, siteExcerptVal));
 const image = post.og_image || post.featured_image || '';
+
+const canonical = post.canonical_url || post.canonicalUrl || undefined;
+const robotsMeta = getRobotsMetaString(post.robots_meta);
+const socialMeta = post.social_meta || undefined;
 
 // Format Date safely
 let publishedDate = '';
@@ -92,13 +108,23 @@ if (post.category_id) {
     console.error('Error loading related posts:', err);
   }
 }
+
+// Generate Schema
+const authorName = authorData?.name || '';
+const authorUrl = authorData?.slug ? `https://entrepreneurs.bd/author/${authorData.slug}` : '';
+const defaultSchema = getArticleSchema(post, authorName, authorUrl);
+const pageSchema = buildSchema(post.custom_schema, defaultSchema);
 ---
 
 <PublicLayout 
-  title={`${title} | Entrepreneurs BD`}
+  title={title}
   description={description}
   image={image || undefined}
+  schema={pageSchema}
   type="article"
+  canonical={canonical}
+  robotsMeta={robotsMeta}
+  socialMeta={socialMeta}
 >
   <div class="bg-stone-50 min-h-screen" data-testid="blog-detail-page" data-content-id={post.id} data-content-type="post">
     

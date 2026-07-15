@@ -1,6 +1,7 @@
 ---
 import PublicLayout from '../layouts/PublicLayout.astro';
 import { getRecentPosts, getFeaturedDocs, getPublicStats } from '../lib/serverApi';
+import { getWebSiteSchema, getOrganizationSchema } from '../lib/schema';
 import { Badge } from '../components/ui/badge.jsx';
 import { Button } from '../components/ui/button.jsx';
 import { Card, CardContent } from '../components/ui/card.jsx';
@@ -57,11 +58,13 @@ const iconMap = {
   TrendingUp: TrendingUp,
   Rocket: Rocket,
 };
+const pageSchema = [getWebSiteSchema(), getOrganizationSchema()];
 ---
 
-<PublicLayout
-  title="Entrepreneur BD | Empowering Bangladesh's Startup Ecosystem"
-  description="Bangladesh's premier growth hub for startups and visionaries. Connect, discover, and scale your business."
+<PublicLayout 
+  title="Entrepreneurs BD - Bangladesh's Premier Growth Hub"
+  description="The premier platform for startup founders, business owners, and visionaries in Bangladesh. Connect, discover, and scale your business."
+  schema={pageSchema}
 >
   <div class="bg-stone-50" data-testid="home-page">
     {/* Hero Section */}

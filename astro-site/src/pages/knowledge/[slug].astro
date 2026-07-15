@@ -3,6 +3,7 @@ import PublicLayout from '../../layouts/PublicLayout.astro';
 import KnowledgeArticlePage from '../../components/knowledge/KnowledgeArticlePage.jsx';
 import { getDocBySlug } from '../../lib/serverApi';
 import { pillarPages, pillarPagesPart2 } from '../../data/mock';
+import { buildSchema, interpolateSEOVariables, getRobotsMetaString } from '../../lib/schema';
 
 const { slug } = Astro.params;
 
@@ -42,16 +43,39 @@ if (!article) {
   article = allPillarPages.find(p => p.id === slug);
 }
 
-// SEO metadata
-const title = article?.title || 'Knowledge Hub Article';
-const description = article?.description || article?.subtitle || 'Read this business knowledge article on Entrepreneur BD.';
+// Handle redirects if configured in RankMath advanced settings
+if (article && article.redirection && article.redirection.enable && article.redirection.url) {
+  const redirectStatus = parseInt(article.redirection.type) || 301;
+  return Astro.redirect(article.redirection.url, redirectStatus);
+}
+
+// SEO metadata with RankMath support
+const rawTitleTemplate = article?.seo_title || article?.seoTitle || "%title% %sep% %sitename%";
+const rawDescTemplate = article?.seo_description || article?.seoDescription || "%excerpt%";
+
+const siteTitleVal = article?.title || 'Knowledge Hub Article';
+const siteExcerptVal = article?.description || article?.subtitle || '';
+
+const title = article ? interpolateSEOVariables(rawTitleTemplate, siteTitleVal, siteExcerptVal) : 'Knowledge Hub Article | Entrepreneurs BD';
+const description = article ? interpolateSEOVariables(rawDescTemplate, siteTitleVal, siteExcerptVal) : 'Read this business knowledge article on Entrepreneurs BD.';
+
 const image = article?.og_image || article?.featured_image || '';
+const canonical = article?.canonical_url || article?.canonicalUrl || undefined;
+const robotsMeta = article ? getRobotsMetaString(article.robots_meta) : undefined;
+const socialMeta = article?.social_meta || undefined;
+
+// Generate Schema
+const pageSchema = buildSchema(article?.custom_schema, null);
 ---
 
 <PublicLayout
-  title={`${title} | Entrepreneur BD`}
+  title={title}
   description={description}
   image={image || undefined}
+  schema={pageSchema}
+  canonical={canonical}
+  robotsMeta={robotsMeta}
+  socialMeta={socialMeta}
 >
   <KnowledgeArticlePage client:load slug={slug} article={article} isFirestore={isFirestore} />
 </PublicLayout>
