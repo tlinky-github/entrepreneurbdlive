@@ -32,22 +32,34 @@ const getAdminFirestore = (app) => {
   if (typeof getFirestore === 'function') {
     return app ? getFirestore(app) : getFirestore();
   }
+  if (getFirestore && typeof getFirestore.default === 'function') {
+    return app ? getFirestore.default(app) : getFirestore.default();
+  }
   const adm = getAdmin();
   if (typeof adm.firestore === 'function') {
     return app ? adm.firestore(app) : adm.firestore();
   }
-  throw new Error('firebase-admin: getFirestore not found');
+  if (adm && adm.default && typeof adm.default.firestore === 'function') {
+    return app ? adm.default.firestore(app) : adm.default.firestore();
+  }
+  throw new Error(`firebase-admin: getFirestore not found. getFirestore type: ${typeof getFirestore}, adm.firestore type: ${adm ? typeof adm.firestore : 'undefined'}`);
 };
 
 const getAdminAuth = (app) => {
   if (typeof getAuth === 'function') {
     return app ? getAuth(app) : getAuth();
   }
+  if (getAuth && typeof getAuth.default === 'function') {
+    return app ? getAuth.default(app) : getAuth.default();
+  }
   const adm = getAdmin();
   if (typeof adm.auth === 'function') {
     return app ? adm.auth(app) : adm.auth();
   }
-  throw new Error('firebase-admin: getAuth not found');
+  if (adm && adm.default && typeof adm.default.auth === 'function') {
+    return app ? adm.default.auth(app) : adm.default.auth();
+  }
+  throw new Error(`firebase-admin: getAuth not found. getAuth type: ${typeof getAuth}`);
 };
 let clientDb = null;
 let clientFirestore = null;
