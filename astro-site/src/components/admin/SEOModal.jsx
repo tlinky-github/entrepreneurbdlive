@@ -326,7 +326,17 @@ const SEOModal = ({
   });
 
   const [customSchema, setCustomSchema] = useState('');
+  const [activeEditingSchemaIndex, setActiveEditingSchemaIndex] = useState(null);
 
+  const getParsedCustomSchemas = () => {
+    if (!customSchema.trim()) return [];
+    try {
+      const parsed = JSON.parse(customSchema);
+      return Array.isArray(parsed) ? parsed : [parsed];
+    } catch (e) {
+      return [];
+    }
+  };
   const displayOgImage = socialMeta.ogImage || defaultShareImage;
   const displayTwitterImage = socialMeta.twitterImage || socialMeta.ogImage || defaultShareImage;
 
@@ -1201,56 +1211,51 @@ Return ONLY a valid raw JSON object. Do not include markdown styling or block fo
                             {/* Schema in Use */}
                             <div className="space-y-2">
                               <h5 className="font-bold text-stone-700 text-xs uppercase tracking-wider">Schema in Use</h5>
-                              {customSchema.trim() ? (
-                                <div className="flex items-center justify-between p-3.5 bg-emerald-50/30 border border-emerald-250 rounded-xl">
-                                  <div className="flex items-center gap-2.5">
-                                    <span className="text-xl">⚡</span>
-                                    <div>
-                                      <span className="font-bold text-stone-800 text-sm">
-                                        {(() => {
-                                          try {
-                                            const p = JSON.parse(customSchema);
-                                            return p['@type'] || 'Custom';
-                                          } catch (e) {
-                                            return 'Custom Override';
-                                          }
-                                        })()}
-                                      </span>
-                                      <p className="text-[10px] text-stone-400 font-semibold">Custom Schema Override (Active)</p>
+                              {getParsedCustomSchemas().length > 0 ? (
+                                <div className="space-y-3">
+                                  {getParsedCustomSchemas().map((schema, index) => (
+                                    <div key={index} className="flex items-center justify-between p-3.5 bg-emerald-50/30 border border-emerald-250 rounded-xl">
+                                      <div className="flex items-center gap-2.5">
+                                        <span className="text-xl">⚡</span>
+                                        <div>
+                                          <span className="font-bold text-stone-800 text-sm">
+                                            {schema['@type'] || 'Custom'}
+                                          </span>
+                                          <p className="text-[10px] text-stone-400 font-semibold">Custom Schema Override (Active)</p>
+                                        </div>
+                                      </div>
+                                      <div className="flex gap-2">
+                                        <Button 
+                                          type="button" 
+                                          size="sm" 
+                                          variant="outline" 
+                                          onClick={() => {
+                                            setActiveEditingSchemaIndex(index);
+                                            setActiveBuilderSchema(schemaObjToTree(schema));
+                                            setBuilderTab('edit');
+                                            setIsBuilderOpen(true);
+                                          }}
+                                          className="text-xs h-8 border-stone-200 bg-white hover:bg-stone-50"
+                                        >
+                                          Edit
+                                        </Button>
+                                        <Button 
+                                          type="button" 
+                                          size="sm" 
+                                          variant="outline"
+                                          onClick={() => {
+                                            const activeSchemas = getParsedCustomSchemas();
+                                            const updated = activeSchemas.filter((_, i) => i !== index);
+                                            setCustomSchema(updated.length > 0 ? JSON.stringify(updated, null, 2) : '');
+                                            toast.success('Schema removed');
+                                          }}
+                                          className="text-xs h-8 text-red-650 hover:text-red-700 border-stone-200 bg-white"
+                                        >
+                                          Delete
+                                        </Button>
+                                      </div>
                                     </div>
-                                  </div>
-                                  <div className="flex gap-2">
-                                    <Button 
-                                      type="button" 
-                                      size="sm" 
-                                      variant="outline" 
-                                      onClick={() => {
-                                        try {
-                                          const parsed = JSON.parse(customSchema);
-                                          setActiveBuilderSchema(schemaObjToTree(parsed));
-                                          setBuilderTab('edit');
-                                          setIsBuilderOpen(true);
-                                        } catch (e) {
-                                          toast.error('Could not parse schema into builder: invalid JSON');
-                                        }
-                                      }}
-                                      className="text-xs h-8 border-stone-200 bg-white hover:bg-stone-50"
-                                    >
-                                      Edit
-                                    </Button>
-                                    <Button 
-                                      type="button" 
-                                      size="sm" 
-                                      variant="outline"
-                                      onClick={() => {
-                                        setCustomSchema('');
-                                        toast.success('Custom schema override removed');
-                                      }}
-                                      className="text-xs h-8 text-red-650 hover:text-red-700 border-stone-200 bg-white"
-                                    >
-                                      Delete
-                                    </Button>
-                                  </div>
+                                  ))}
                                 </div>
                               ) : (
                                 <div className="flex items-center justify-between p-3.5 bg-stone-50 border border-stone-200 rounded-xl">
@@ -1271,6 +1276,7 @@ Return ONLY a valid raw JSON object. Do not include markdown styling or block fo
                                       onClick={() => {
                                         const prefilledType = contentType === 'blog' || contentType === 'knowledge' ? 'Article' : contentType === 'entrepreneurs' ? 'Person' : 'LocalBusiness';
                                         const prefilled = getPrefilledTemplate(prefilledType, documentTitle, documentExcerpt, contentType, defaultShareImage);
+                                        setActiveEditingSchemaIndex(null);
                                         setActiveBuilderSchema(schemaObjToTree(prefilled));
                                         setBuilderTab('edit');
                                         setIsBuilderOpen(true);
@@ -1360,6 +1366,7 @@ Return ONLY a valid raw JSON object. Do not include markdown styling or block fo
                                         size="sm"
                                         onClick={() => {
                                           const prefilled = getPrefilledTemplate(item.type, documentTitle, documentExcerpt, contentType, defaultShareImage);
+                                          setActiveEditingSchemaIndex(null);
                                           setActiveBuilderSchema(schemaObjToTree(prefilled));
                                           setBuilderTab('edit');
                                           setIsBuilderOpen(true);
@@ -1410,6 +1417,7 @@ Return ONLY a valid raw JSON object. Do not include markdown styling or block fo
                                               variant="outline" 
                                               size="sm"
                                               onClick={() => {
+                                                setActiveEditingSchemaIndex(null);
                                                 setActiveBuilderSchema(item.tree);
                                                 setBuilderTab('edit');
                                                 setIsBuilderOpen(true);
@@ -1452,6 +1460,7 @@ Return ONLY a valid raw JSON object. Do not include markdown styling or block fo
                                 }
                                 try {
                                   const parsed = JSON.parse(val);
+                                  setActiveEditingSchemaIndex(null);
                                   const tree = schemaObjToTree(parsed);
                                   setActiveBuilderSchema(tree);
                                   setBuilderTab('edit');
@@ -1689,7 +1698,7 @@ Return ONLY a valid raw JSON object. Do not include markdown styling or block fo
                                       <Copy size={10} /> Copy Code
                                     </button>
                                   </div>
-                                  <pre className="p-4 bg-stone-900 rounded-xl text-emerald-450 font-mono text-xs overflow-auto max-h-[50vh]">
+                                  <pre className="p-4 bg-stone-900 rounded-xl text-emerald-400 font-mono text-xs overflow-auto max-h-[50vh]">
                                     {JSON.stringify(treeToSchemaObj(activeBuilderSchema), null, 2)}
                                   </pre>
                                 </div>
@@ -1774,8 +1783,16 @@ Return ONLY a valid raw JSON object. Do not include markdown styling or block fo
                                   type="button"
                                   size="sm"
                                   onClick={() => {
-                                    const compiled = JSON.stringify(treeToSchemaObj(activeBuilderSchema), null, 2);
-                                    setCustomSchema(compiled);
+                                    const compiled = treeToSchemaObj(activeBuilderSchema);
+                                    const activeSchemas = getParsedCustomSchemas();
+                                    
+                                    if (activeEditingSchemaIndex !== null) {
+                                      activeSchemas[activeEditingSchemaIndex] = compiled;
+                                    } else {
+                                      activeSchemas.push(compiled);
+                                    }
+                                    
+                                    setCustomSchema(JSON.stringify(activeSchemas, null, 2));
                                     setIsBuilderOpen(false);
                                     toast.success('Custom schema updated for this post!');
                                   }}
