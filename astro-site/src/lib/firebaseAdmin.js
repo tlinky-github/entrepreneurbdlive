@@ -1,10 +1,12 @@
 import { createRequire } from 'node:module';
 import { createVerify } from 'node:crypto';
 
-// Static imports to force Vercel NFT to trace and include sub-packages in production
-import 'firebase-admin';
-import 'firebase-admin/firestore';
-import 'firebase-admin/auth';
+// Trick Vercel NFT into tracing these modules without executing them at top-level
+if (process.env.NODE_ENV === 'vercel_nft_hack') {
+  require('firebase-admin');
+  require('firebase-admin/firestore');
+  require('firebase-admin/auth');
+}
 
 // Use createRequire so the firebase-admin CJS module is loaded at runtime,
 // bypassing Vite's ESM interop transform which breaks .credential/.initializeApp.
