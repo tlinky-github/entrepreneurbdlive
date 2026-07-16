@@ -55,6 +55,7 @@ function buildPayload(type, frontmatter, body) {
     content: contentHtml,
     content_html: contentHtml,
     status: 'draft',
+    focus_keyword: frontmatter.keyword || '',
   };
 
   if (type === 'entrepreneurs') {
@@ -65,12 +66,15 @@ function buildPayload(type, frontmatter, body) {
       designation: frontmatter.designation || '',
       company_name: frontmatter.company || '',
       city: frontmatter.city || '',
-      startup_stage: frontmatter.stage || '',
+      startup_stage: frontmatter.stage ? frontmatter.stage.toLowerCase().replace(/[^a-z0-9]+/g, '-') : '',
       industry: frontmatter.industry || '',
       social_linkedin: frontmatter.linkedin || '',
       social_facebook: frontmatter.facebook || '',
       social_twitter: frontmatter.twitter || '',
       website: frontmatter.website || '',
+      founded_year: frontmatter.founded || '',
+      expertise: frontmatter.expertise || '',
+      education: frontmatter.education || '',
     };
   }
   if (type === 'directory') {

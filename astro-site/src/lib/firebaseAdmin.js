@@ -1,102 +1,51 @@
-import { createRequire } from 'node:module';
+import admin from 'firebase-admin';
+import { getFirestore } from 'firebase-admin/firestore';
+import { getAuth } from 'firebase-admin/auth';
 import { createVerify } from 'node:crypto';
-
-// Trick Vercel NFT into tracing these modules without executing them at top-level
-if (process.env.NODE_ENV === 'vercel_nft_hack') {
-  require('firebase-admin');
-  require('firebase-admin/firestore');
-  require('firebase-admin/auth');
-}
-
-// Use createRequire so the firebase-admin CJS module is loaded at runtime,
-// bypassing Vite's ESM interop transform which breaks .credential/.initializeApp.
-const _require = createRequire(import.meta.url);
 
 let _adminCache = null;
 const getAdmin = () => {
   if (!_adminCache) {
-    const mod = _require('firebase-admin');
-    // firebase-admin v12+ changed the API: credential.cert() is gone, cert() is now a direct export.
-    // We normalize to always expose a `.credential.cert` shim for backward compat.
-    let admin = mod;
-    if (mod && mod.default && typeof mod.default.initializeApp === 'function') {
-      admin = mod.default;
-    } else if (mod && mod.__esModule && mod.default) {
-      admin = mod.default;
+    let resolvedAdmin = admin;
+    if (admin && admin.default && typeof admin.default.initializeApp === 'function') {
+      resolvedAdmin = admin.default;
     }
 
     // Build a credential shim if not present (firebase-admin v12+)
-    if (admin && !admin.credential) {
-      const certFn = admin.cert || mod.cert;
+    if (resolvedAdmin && !resolvedAdmin.credential) {
+      const certFn = resolvedAdmin.cert || admin.cert;
       if (certFn) {
-        admin = Object.assign(Object.create(null), admin, {
+        resolvedAdmin = Object.assign(Object.create(null), resolvedAdmin, {
           credential: { cert: certFn.bind(null) },
         });
       }
     }
 
-    _adminCache = admin;
+    _adminCache = resolvedAdmin;
   }
   return _adminCache;
 };
 
 const getApps = () => getAdmin().apps || [];
 
-// firebase-admin v12+: getFirestore is now from 'firebase-admin/firestore', not admin.firestore()
-let _adminFirestoreFn = null;
-const getAdminFirestoreFn = () => {
-  if (!_adminFirestoreFn) {
-    // 1. Try the dedicated sub-package (firebase-admin v12+)
-    try {
-      const fsModule = _require('firebase-admin/firestore');
-      // Handle named export, .default, or any shape that exposes getFirestore
-      const candidate =
-        (fsModule && typeof fsModule.getFirestore === 'function' && fsModule.getFirestore) ||
-        (fsModule && fsModule.default && typeof fsModule.default.getFirestore === 'function' && fsModule.default.getFirestore);
-      if (candidate) {
-        _adminFirestoreFn = candidate;
-        return _adminFirestoreFn;
-      }
-    } catch (e) { /* sub-package not available, fall through */ }
-
-    // 2. Try the root firebase-admin module's .firestore() method (v11 and some v12 builds)
-    try {
-      const admin = getAdmin();
-      if (typeof admin.firestore === 'function') {
-        _adminFirestoreFn = (app) => app ? admin.firestore(app) : admin.firestore();
-        return _adminFirestoreFn;
-      }
-      // v12 root may expose getFirestore directly
-      if (typeof admin.getFirestore === 'function') {
-        _adminFirestoreFn = (app) => app ? admin.getFirestore(app) : admin.getFirestore();
-        return _adminFirestoreFn;
-      }
-    } catch (e) { /* ignore */ }
-
-    // 3. Nothing worked — throw a clear error
-    _adminFirestoreFn = () => { throw new Error('firebase-admin: getFirestore not found'); };
-  }
-  return _adminFirestoreFn;
-};
-
 const getAdminFirestore = (app) => {
-  const fn = getAdminFirestoreFn();
-  return app ? fn(app) : fn();
-};
-const getAdminAuth = (app) => {
-  try {
-    const authModule = _require('firebase-admin/auth');
-    if (authModule && typeof authModule.getAuth === 'function') {
-      return app ? authModule.getAuth(app) : authModule.getAuth();
-    }
-  } catch (e) { /* ignore */ }
-  
-  const admin = getAdmin();
-  if (typeof admin.auth === 'function') {
-    return app ? admin.auth(app) : admin.auth();
+  if (typeof getFirestore === 'function') {
+    return app ? getFirestore(app) : getFirestore();
   }
-  if (typeof admin.getAuth === 'function') {
-    return app ? admin.getAuth(app) : admin.getAuth();
+  const adm = getAdmin();
+  if (typeof adm.firestore === 'function') {
+    return app ? adm.firestore(app) : adm.firestore();
+  }
+  throw new Error('firebase-admin: getFirestore not found');
+};
+
+const getAdminAuth = (app) => {
+  if (typeof getAuth === 'function') {
+    return app ? getAuth(app) : getAuth();
+  }
+  const adm = getAdmin();
+  if (typeof adm.auth === 'function') {
+    return app ? adm.auth(app) : adm.auth();
   }
   throw new Error('firebase-admin: getAuth not found');
 };

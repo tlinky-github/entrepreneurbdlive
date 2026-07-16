@@ -286,7 +286,7 @@ const SEOModal = ({
   contentType = 'blog',
   defaultShareImage = ''
 }) => {
-  // Local states representing RankMath fields
+  // Local states representing SEO fields
   const [seoTitle, setSeoTitle] = useState('');
   const [seoDescription, setSeoDescription] = useState('');
   const [seoKeywords, setSeoKeywords] = useState('');
@@ -355,6 +355,7 @@ const SEOModal = ({
   const [schemaSearchQuery, setSchemaSearchQuery] = useState('');
   const [templateName, setTemplateName] = useState('');
   const [isNamingTemplate, setIsNamingTemplate] = useState(false);
+  const [importSchemaInput, setImportSchemaInput] = useState('');
 
   // AI Profile Selection states for Schema Generation
   const [providers, setProviders] = useState({});
@@ -1211,53 +1212,9 @@ Return ONLY a valid raw JSON object. Do not include markdown styling or block fo
                             {/* Schema in Use */}
                             <div className="space-y-2">
                               <h5 className="font-bold text-stone-700 text-xs uppercase tracking-wider">Schema in Use</h5>
-                              {getParsedCustomSchemas().length > 0 ? (
-                                <div className="space-y-3">
-                                  {getParsedCustomSchemas().map((schema, index) => (
-                                    <div key={index} className="flex items-center justify-between p-3.5 bg-emerald-50/30 border border-emerald-250 rounded-xl">
-                                      <div className="flex items-center gap-2.5">
-                                        <span className="text-xl">⚡</span>
-                                        <div>
-                                          <span className="font-bold text-stone-800 text-sm">
-                                            {schema['@type'] || 'Custom'}
-                                          </span>
-                                          <p className="text-[10px] text-stone-400 font-semibold">Custom Schema Override (Active)</p>
-                                        </div>
-                                      </div>
-                                      <div className="flex gap-2">
-                                        <Button 
-                                          type="button" 
-                                          size="sm" 
-                                          variant="outline" 
-                                          onClick={() => {
-                                            setActiveEditingSchemaIndex(index);
-                                            setActiveBuilderSchema(schemaObjToTree(schema));
-                                            setBuilderTab('edit');
-                                            setIsBuilderOpen(true);
-                                          }}
-                                          className="text-xs h-8 border-stone-200 bg-white hover:bg-stone-50"
-                                        >
-                                          Edit
-                                        </Button>
-                                        <Button 
-                                          type="button" 
-                                          size="sm" 
-                                          variant="outline"
-                                          onClick={() => {
-                                            const activeSchemas = getParsedCustomSchemas();
-                                            const updated = activeSchemas.filter((_, i) => i !== index);
-                                            setCustomSchema(updated.length > 0 ? JSON.stringify(updated, null, 2) : '');
-                                            toast.success('Schema removed');
-                                          }}
-                                          className="text-xs h-8 text-red-650 hover:text-red-700 border-stone-200 bg-white"
-                                        >
-                                          Delete
-                                        </Button>
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              ) : (
+                              
+                              <div className="space-y-3">
+                                {/* Always show default schema */}
                                 <div className="flex items-center justify-between p-3.5 bg-stone-50 border border-stone-200 rounded-xl">
                                   <div className="flex items-center gap-2.5">
                                     <span className="text-xl">⚙️</span>
@@ -1287,7 +1244,52 @@ Return ONLY a valid raw JSON object. Do not include markdown styling or block fo
                                     </Button>
                                   </div>
                                 </div>
-                              )}
+
+                                {/* Show custom appended schemas */}
+                                {getParsedCustomSchemas().map((schema, index) => (
+                                  <div key={index} className="flex items-center justify-between p-3.5 bg-emerald-50/30 border border-emerald-250 rounded-xl">
+                                    <div className="flex items-center gap-2.5">
+                                      <span className="text-xl">⚡</span>
+                                      <div>
+                                        <span className="font-bold text-stone-800 text-sm">
+                                          {schema['@type'] || 'Custom'}
+                                        </span>
+                                        <p className="text-[10px] text-stone-400 font-semibold">Custom Schema Override (Active)</p>
+                                      </div>
+                                    </div>
+                                    <div className="flex gap-2">
+                                      <Button 
+                                        type="button" 
+                                        size="sm" 
+                                        variant="outline" 
+                                        onClick={() => {
+                                          setActiveEditingSchemaIndex(index);
+                                          setActiveBuilderSchema(schemaObjToTree(schema));
+                                          setBuilderTab('edit');
+                                          setIsBuilderOpen(true);
+                                        }}
+                                        className="text-xs h-8 border-stone-200 bg-white hover:bg-stone-50"
+                                      >
+                                        Edit
+                                      </Button>
+                                      <Button 
+                                        type="button" 
+                                        size="sm" 
+                                        variant="outline"
+                                        onClick={() => {
+                                          const activeSchemas = getParsedCustomSchemas();
+                                          const updated = activeSchemas.filter((_, i) => i !== index);
+                                          setCustomSchema(updated.length > 0 ? JSON.stringify(updated, null, 2) : '');
+                                          toast.success('Schema removed');
+                                        }}
+                                        className="text-xs h-8 text-red-650 hover:text-red-700 border-stone-200 bg-white"
+                                      >
+                                        Delete
+                                      </Button>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
                             </div>
 
                             {/* Available Schema Types */}
@@ -1440,20 +1442,38 @@ Return ONLY a valid raw JSON object. Do not include markdown styling or block fo
                         {/* TAB 2: IMPORT */}
                         {activeSchemaTab === 'import' && (
                           <div className="space-y-4">
-                            <div className="space-y-1.5">
+                            {(() => {
+                              let isImportValid = true;
+                              if (importSchemaInput.trim()) {
+                                try {
+                                  JSON.parse(importSchemaInput);
+                                } catch (e) {
+                                  isImportValid = false;
+                                }
+                              }
+                              return (
+                                <>
+                                  <div className="space-y-1.5">
                               <Label className="text-stone-700 font-bold">Import JSON-LD Schema Code</Label>
                               <p className="text-[10px] text-stone-400">Paste your structured data payload below. We will parse it and load it into the Schema Builder.</p>
                               <textarea 
+                                value={importSchemaInput}
+                                onChange={(e) => setImportSchemaInput(e.target.value)}
                                 placeholder={'{\n  "@context": "https://schema.org",\n  "@type": "Article",\n  "headline": "Example Title"\n}'}
                                 rows={10}
                                 id="schema-import-area"
-                                className="w-full p-3 font-mono text-xs border rounded-lg bg-stone-900 text-emerald-450 focus:outline-none focus:ring-1 focus:ring-emerald-800 border-stone-200"
+                                className={`w-full p-3 font-mono text-xs border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-emerald-800 ${isImportValid ? 'text-stone-900 border-stone-300' : 'text-red-600 border-red-500'}`}
                               />
+                              {!isImportValid && (
+                                <p className="text-[10px] text-red-650 flex items-center gap-1 font-semibold">
+                                  <AlertTriangle size={12} /> Invalid JSON payload format. Please inspect braces and quotes.
+                                </p>
+                              )}
                             </div>
                             <Button 
                               type="button"
                               onClick={() => {
-                                const val = document.getElementById('schema-import-area')?.value;
+                                const val = importSchemaInput;
                                 if (!val || !val.trim()) {
                                   toast.error('Please paste valid schema code first');
                                   return;
@@ -1466,14 +1486,18 @@ Return ONLY a valid raw JSON object. Do not include markdown styling or block fo
                                   setBuilderTab('edit');
                                   setIsBuilderOpen(true);
                                   toast.success('Schema successfully imported into builder!');
+                                  setImportSchemaInput('');
                                 } catch (e) {
                                   toast.error('JSON parsing failed. Please verify syntax structure.');
                                 }
                               }}
-                              className="w-full bg-emerald-805 hover:bg-emerald-950 text-white font-bold text-xs"
+                              className="w-full bg-emerald-800 hover:bg-emerald-950 text-white font-bold text-xs"
                             >
                               Import Schema into Builder
                             </Button>
+                                </>
+                              );
+                            })()}
                           </div>
                         )}
 

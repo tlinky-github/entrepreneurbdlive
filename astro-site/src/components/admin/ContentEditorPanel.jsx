@@ -215,7 +215,7 @@ const ContentEditorPanel = () => {
   const [customSchema, setCustomSchema] = useState('');
   const [isGeneratingSchema, setIsGeneratingSchema] = useState(false);
 
-  // RankMath states
+  // SEO Modal states
   const [isSEOModalOpen, setIsSEOModalOpen] = useState(false);
   const [focusKeyword, setFocusKeyword] = useState('');
   const [isPillarContent, setIsPillarContent] = useState(false);
@@ -253,6 +253,9 @@ const ContentEditorPanel = () => {
   const [companyName, setCompanyName] = useState('');
   const [founderName, setFounderName] = useState('');
   const [ceoName, setCeoName] = useState('');
+  const [foundedYear, setFoundedYear] = useState('');
+  const [expertise, setExpertise] = useState('');
+  const [education, setEducation] = useState('');
   const [headquarters, setHeadquarters] = useState('');
   const [employeeSize, setEmployeeSize] = useState('');
   const [companyPageUrl, setCompanyPageUrl] = useState('');
@@ -721,7 +724,7 @@ const ContentEditorPanel = () => {
             setOgImage(data.og_image || '');
             setOgImageAlt(data.og_image_alt || '');
 
-            // Load RankMath Fields
+            // Load SEO Fields
             setFocusKeyword(data.focus_keyword || '');
             setIsPillarContent(!!data.is_pillar_content);
             setCanonicalUrl(data.canonical_url || '');
@@ -775,6 +778,9 @@ const ContentEditorPanel = () => {
             setEmail(data.email || '');
             setPhone(data.phone || '');
             setWebsite(data.website || '');
+            setFoundedYear(data.founded_year || '');
+            setExpertise(data.expertise || '');
+            setEducation(data.education || '');
 
             const fullContent = data.content_html || data.content;
             if (fullContent) {
@@ -1064,7 +1070,7 @@ const ContentEditorPanel = () => {
       // (directory logo, entrepreneur photo are optional — fallback avatars shown)
 
     // Category is recommended but not blocking for blog
-    if (!category && type !== 'blog' && type !== 'knowledge') {
+    if (!category && type !== 'blog' && type !== 'knowledge' && type !== 'entrepreneurs') {
       toast.error('Category is required');
       isSubmittingRef.current = false;
       return false;
@@ -1150,6 +1156,9 @@ const ContentEditorPanel = () => {
         contact_email: contactEmail,
         contact_phone: contactPhone,
         source: source,
+        founded_year: foundedYear,
+        expertise,
+        education,
         website,
         is_featured: isFeatured,
         listing_type: listingType,
@@ -1544,6 +1553,30 @@ Only output the raw JSON object, nothing else. Do not use markdown wrapping (\`\
                        taxType="industry"
                        placeholder="Select Industry"
                      />
+                     <div>
+                       <label>Expertise</label>
+                       <Input
+                         value={expertise}
+                         onChange={(e) => setExpertise(e.target.value)}
+                         placeholder="e.g. Technology, Finance, Health"
+                       />
+                     </div>
+                     <div>
+                       <label>Education</label>
+                       <Input
+                         value={education}
+                         onChange={(e) => setEducation(e.target.value)}
+                         placeholder="e.g. BS Computer Science, Stanford"
+                       />
+                     </div>
+                     <div>
+                       <label>Founded Year</label>
+                       <Input
+                         value={foundedYear}
+                         onChange={(e) => setFoundedYear(e.target.value)}
+                         placeholder="e.g. 2021"
+                       />
+                     </div>
                      {submittedIndustry && (
                        <p className="text-[10px] text-emerald-600 font-bold px-1 uppercase leading-tight mt-1">
                          User Submitted: {submittedIndustry}
