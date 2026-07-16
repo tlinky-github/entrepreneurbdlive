@@ -1,5 +1,5 @@
 import admin from 'firebase-admin';
-import { getFirestore } from 'firebase-admin/firestore';
+import { getFirestore as _getAdminFirestoreInstance } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import { createVerify } from 'node:crypto';
 
@@ -29,11 +29,11 @@ const getAdmin = () => {
 const getApps = () => getAdmin().apps || [];
 
 const getAdminFirestore = (app) => {
-  if (typeof getFirestore === 'function') {
-    return app ? getFirestore(app) : getFirestore();
+  if (typeof _getAdminFirestoreInstance === 'function') {
+    return app ? _getAdminFirestoreInstance(app) : _getAdminFirestoreInstance();
   }
-  if (getFirestore && typeof getFirestore.default === 'function') {
-    return app ? getFirestore.default(app) : getFirestore.default();
+  if (_getAdminFirestoreInstance && typeof _getAdminFirestoreInstance.default === 'function') {
+    return app ? _getAdminFirestoreInstance.default(app) : _getAdminFirestoreInstance.default();
   }
   const adm = getAdmin();
   if (typeof adm.firestore === 'function') {
@@ -42,7 +42,7 @@ const getAdminFirestore = (app) => {
   if (adm && adm.default && typeof adm.default.firestore === 'function') {
     return app ? adm.default.firestore(app) : adm.default.firestore();
   }
-  throw new Error(`firebase-admin: getFirestore not found. getFirestore type: ${typeof getFirestore}, adm.firestore type: ${adm ? typeof adm.firestore : 'undefined'}`);
+  throw new Error(`firebase-admin: getFirestore not found. _getAdminFirestoreInstance type: ${typeof _getAdminFirestoreInstance}, adm.firestore type: ${adm ? typeof adm.firestore : 'undefined'}`);
 };
 
 const getAdminAuth = (app) => {
