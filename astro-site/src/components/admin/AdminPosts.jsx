@@ -8,6 +8,7 @@ import { Input } from '../../components/ui/input';
 import { Badge } from '../../components/ui/badge';
 import { Skeleton } from '../../components/ui/skeleton';
 import { toast } from 'sonner';
+import BulkEditModal from './BulkEditModal';
 import {
   Plus,
   Search,
@@ -72,9 +73,7 @@ const AdminPosts = () => {
   const [selectedIds, setSelectedIds] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
-  const [bulkAction, setBulkAction] = useState('all');
-  const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
-  const [bulkProcessing, setBulkProcessing] = useState(false);
+  const [bulkEditOpen, setBulkEditOpen] = useState(false);
 
   const loadPosts = useCallback(async () => {
     setLoading(true);
@@ -123,25 +122,12 @@ const AdminPosts = () => {
     }
   };
 
-  const handleBulkAction = async () => {
-    if (bulkAction !== 'delete') return;
+  const openBulkEdit = () => {
     if (selectedIds.length === 0) {
-      toast.error('No items selected');
+      toast.error('Please select at least one post first');
       return;
     }
-    setBulkProcessing(true);
-    try {
-      await Promise.all(selectedIds.map(id => postAPI.delete(id)));
-      toast.success(`Successfully deleted ${selectedIds.length} posts`);
-      setSelectedIds([]);
-      if (refreshStats) refreshStats();
-      loadPosts();
-    } catch (error) {
-      toast.error('Failed to delete some posts');
-    } finally {
-      setBulkProcessing(false);
-      setBulkDialogOpen(false);
-    }
+    setBulkEditOpen(true);
   };
 
   const getStatusBadge = (status) => {
@@ -270,34 +256,18 @@ const AdminPosts = () => {
         </CardContent>
       </Card>
 
-      {/* Bulk Actions & Pagination controls */}
+      {/* Bulk Actions bar */}
       {!loading && posts.length > 0 && (
         <div className="flex flex-col sm:flex-row gap-4 justify-between items-center mb-4">
           <div className="flex items-center gap-2">
-            <Select value={bulkAction} onValueChange={setBulkAction}>
-              <SelectTrigger className="w-[160px] bg-white">
-                <SelectValue placeholder="Bulk Actions" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Bulk Actions</SelectItem>
-                <SelectItem value="delete" className="text-red-600">Delete Selected</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                if (bulkAction === 'delete') {
-                  if (selectedIds.length === 0) {
-                    toast.error('Please select items to delete');
-                  } else {
-                    setBulkDialogOpen(true);
-                  }
-                }
-              }}
-              disabled={bulkAction === 'all' || selectedIds.length === 0}
-              className="border-stone-200 bg-white"
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={openBulkEdit}
+              disabled={selectedIds.length === 0}
+              className="border-stone-200 bg-white text-sm font-semibold"
             >
-              Apply
+              Bulk Edit{selectedIds.length > 0 ? ` (${selectedIds.length})` : ''}
             </Button>
             {selectedIds.length > 0 && (
               <span className="text-sm text-stone-500 font-medium">
@@ -519,27 +489,17 @@ const AdminPosts = () => {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Bulk Delete Confirmation */}
-      <AlertDialog open={bulkDialogOpen} onOpenChange={setBulkDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Multiple Posts?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to permanently delete the {selectedIds.length} selected blog posts? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleBulkAction}
-              disabled={bulkProcessing}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              {bulkProcessing ? 'Deleting...' : 'Delete Selected'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <BulkEditModal
+        isOpen={bulkEditOpen}
+        onClose={() => setBulkEditOpen(false)}
+        selectedIds={selectedIds}
+        contentType="blog"
+        onSuccess={() => {
+          setSelectedIds([]);
+          if (refreshStats) refreshStats();
+          loadPosts();
+        }}
+      />
     </div>
   );
 };

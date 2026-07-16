@@ -1,6 +1,11 @@
 import { createRequire } from 'node:module';
 import { createVerify } from 'node:crypto';
 
+// Static imports to force Vercel NFT to trace and include sub-packages in production
+import 'firebase-admin';
+import 'firebase-admin/firestore';
+import 'firebase-admin/auth';
+
 // Use createRequire so the firebase-admin CJS module is loaded at runtime,
 // bypassing Vite's ESM interop transform which breaks .credential/.initializeApp.
 const _require = createRequire(import.meta.url);
@@ -76,8 +81,23 @@ const getAdminFirestore = (app) => {
   const fn = getAdminFirestoreFn();
   return app ? fn(app) : fn();
 };
-const getAdminAuth = (app) => getAdmin().auth(app);
-
+const getAdminAuth = (app) => {
+  try {
+    const authModule = _require('firebase-admin/auth');
+    if (authModule && typeof authModule.getAuth === 'function') {
+      return app ? authModule.getAuth(app) : authModule.getAuth();
+    }
+  } catch (e) { /* ignore */ }
+  
+  const admin = getAdmin();
+  if (typeof admin.auth === 'function') {
+    return app ? admin.auth(app) : admin.auth();
+  }
+  if (typeof admin.getAuth === 'function') {
+    return app ? admin.getAuth(app) : admin.getAuth();
+  }
+  throw new Error('firebase-admin: getAuth not found');
+};
 let clientDb = null;
 let clientFirestore = null;
 

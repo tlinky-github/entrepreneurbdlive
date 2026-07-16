@@ -60,7 +60,7 @@ const socialMeta = listing?.social_meta || undefined;
 
 // Generate Schema
 const defaultSchema = listing ? getBusinessSchema(listing) : null;
-const pageSchema = buildSchema(listing?.custom_schema, defaultSchema);
+const pageSchema = buildSchema(listing?.custom_schema, defaultSchema, null, listing?.content_html || listing?.content || listing?.details);
 ---
 
 <PublicLayout

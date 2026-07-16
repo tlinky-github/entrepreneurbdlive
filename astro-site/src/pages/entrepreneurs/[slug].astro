@@ -70,7 +70,7 @@ const socialMeta = profile?.social_meta || undefined;
 
 // Generate Schema
 const defaultSchema = profile ? getPersonSchema(profile) : null;
-const pageSchema = buildSchema(profile?.custom_schema, defaultSchema);
+const pageSchema = buildSchema(profile?.custom_schema, defaultSchema, authorData, profile?.content_html || profile?.content || profile?.details);
 ---
 
 <PublicLayout

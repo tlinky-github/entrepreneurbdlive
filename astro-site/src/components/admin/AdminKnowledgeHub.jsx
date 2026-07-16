@@ -28,6 +28,7 @@ import {
 import { contentAPI, guidesAPI, faqCategoriesAPI, glossaryAPI } from '../../lib/api';
 import { useOutletContext } from 'react-router-dom';
 import ImportDrawer from './ImportDrawer';
+import BulkEditModal from './BulkEditModal';
 
 const AdminKnowledgeHub = () => {
   const navigate = useNavigate();
@@ -68,9 +69,7 @@ const KnowledgeArticlesTab = ({ navigate }) => {
   const [selectedIds, setSelectedIds] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
-  const [bulkAction, setBulkAction] = useState('all');
-  const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
-  const [bulkProcessing, setBulkProcessing] = useState(false);
+  const [bulkEditOpen, setBulkEditOpen] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
 
   const loadArticles = useCallback(async () => {
@@ -108,24 +107,12 @@ const KnowledgeArticlesTab = ({ navigate }) => {
     }
   };
 
-  const handleBulkAction = async () => {
-    if (bulkAction !== 'delete') return;
+  const openBulkEdit = () => {
     if (selectedIds.length === 0) {
-      toast.error('No items selected');
+      toast.error('Please select at least one article first');
       return;
     }
-    setBulkProcessing(true);
-    try {
-      await Promise.all(selectedIds.map(id => contentAPI.delete('knowledge', id)));
-      toast.success(`Successfully deleted ${selectedIds.length} articles`);
-      setSelectedIds([]);
-      loadArticles();
-    } catch (error) {
-      toast.error('Failed to delete some articles');
-    } finally {
-      setBulkProcessing(false);
-      setBulkDialogOpen(false);
-    }
+    setBulkEditOpen(true);
   };
 
   // Filter articles based on search
@@ -193,30 +180,14 @@ const KnowledgeArticlesTab = ({ navigate }) => {
       {!loading && filteredArticles.length > 0 && (
         <div className="flex flex-col sm:flex-row gap-4 justify-between items-center mb-4">
           <div className="flex items-center gap-2">
-            <Select value={bulkAction} onValueChange={setBulkAction}>
-              <SelectTrigger className="w-[160px] bg-white">
-                <SelectValue placeholder="Bulk Actions" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Bulk Actions</SelectItem>
-                <SelectItem value="delete" className="text-red-600">Delete Selected</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                if (bulkAction === 'delete') {
-                  if (selectedIds.length === 0) {
-                    toast.error('Please select items to delete');
-                  } else {
-                    setBulkDialogOpen(true);
-                  }
-                }
-              }}
-              disabled={bulkAction === 'all' || selectedIds.length === 0}
-              className="border-stone-200 bg-white"
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={openBulkEdit}
+              disabled={selectedIds.length === 0}
+              className="border-stone-200 bg-white text-sm font-semibold"
             >
-              Apply
+              Bulk Edit{selectedIds.length > 0 ? ` (${selectedIds.length})` : ''}
             </Button>
             {selectedIds.length > 0 && (
               <span className="text-sm text-stone-500 font-medium">
@@ -406,27 +377,16 @@ const KnowledgeArticlesTab = ({ navigate }) => {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Bulk Delete Confirmation */}
-      <AlertDialog open={bulkDialogOpen} onOpenChange={setBulkDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Multiple Articles?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to permanently delete the {selectedIds.length} selected knowledge articles? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleBulkAction}
-              disabled={bulkProcessing}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              {bulkProcessing ? 'Deleting...' : 'Delete Selected'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <BulkEditModal
+        isOpen={bulkEditOpen}
+        onClose={() => setBulkEditOpen(false)}
+        selectedIds={selectedIds}
+        contentType="knowledge"
+        onSuccess={() => {
+          setSelectedIds([]);
+          loadArticles();
+        }}
+      />
     </div>
   );
 };

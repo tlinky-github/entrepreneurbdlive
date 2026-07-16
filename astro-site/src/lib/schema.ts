@@ -60,28 +60,56 @@ export const getArticleSchema = (post: any, authorName: string, authorUrl: strin
 export const getPersonSchema = (profile: any) => {
   return {
     "@context": "https://schema.org",
-    "@type": "Person",
-    "name": profile.name,
-    "description": profile.short_bio,
-    "jobTitle": profile.designation || profile.role_title,
-    "worksFor": {
-      "@type": "Organization",
-      "name": profile.company_name
-    },
-    "image": profile.photo ? (profile.photo.startsWith('http') ? profile.photo : `${SITE_URL}${profile.photo}`) : undefined,
+    "@type": "ProfilePage",
+    "@id": `${SITE_URL}/entrepreneurs/${profile.slug}#profile`,
     "url": `${SITE_URL}/entrepreneurs/${profile.slug}`,
-    "sameAs": [
-      profile.linkedin,
-      profile.twitter,
-      profile.website
-    ].filter(Boolean)
+    "name": profile.name,
+    "dateCreated": profile.created_at || new Date().toISOString(),
+    "dateModified": profile.updated_at || profile.created_at || new Date().toISOString(),
+    "mainEntity": {
+      "@type": "Person",
+      "@id": `${SITE_URL}/entrepreneurs/${profile.slug}#person`,
+      "name": profile.name,
+      "url": `${SITE_URL}/entrepreneurs/${profile.slug}`,
+      "jobTitle": profile.designation || profile.role_title || "Entrepreneur",
+      "description": profile.short_bio,
+      "image": profile.photo ? (profile.photo.startsWith('http') ? profile.photo : `${SITE_URL}${profile.photo}`) : undefined,
+      "sameAs": [
+        profile.linkedin,
+        profile.twitter,
+        profile.facebook,
+        profile.website,
+        profile.social_linkedin,
+        profile.social_twitter,
+        profile.social_facebook
+      ].filter(Boolean),
+      "worksFor": profile.company_name ? {
+        "@type": "Organization",
+        "name": profile.company_name,
+        "url": profile.website || undefined
+      } : undefined,
+      "address": profile.city ? {
+        "@type": "PostalAddress",
+        "addressLocality": profile.city,
+        "addressCountry": "Bangladesh"
+      } : undefined
+    },
+    "isPartOf": {
+      "@type": "WebSite",
+      "name": SITE_NAME,
+      "url": SITE_URL
+    }
   };
 };
 
 export const getBusinessSchema = (listing: any) => {
   return {
     "@context": "https://schema.org",
-    "@type": "Organization", // or "LocalBusiness" depending on your needs, Organization is safer for online businesses
+    "@type": "LocalBusiness",
+    "mainEntityOfPage": {
+      "@type": "WebPage",
+      "@id": `${SITE_URL}/directory/${listing.slug}`
+    },
     "name": listing.business_name,
     "description": listing.short_description || listing.details,
     "url": listing.website || `${SITE_URL}/directory/${listing.slug}`,
@@ -99,21 +127,82 @@ export const getBusinessSchema = (listing: any) => {
   };
 };
 
+export const extractFAQSchema = (htmlContent: string) => {
+  if (!htmlContent) return null;
+  const faqMatch = htmlContent.match(/<faq-section[^>]*data-faqs=["'](.*?)["']/);
+  if (!faqMatch || !faqMatch[1]) return null;
+  
+  try {
+    const rawFaqs = faqMatch[1].replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&#x22;/g, '"');
+    const faqs = JSON.parse(rawFaqs);
+    if (faqs && Array.isArray(faqs) && faqs.length > 0) {
+      return {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": faqs.map(faq => ({
+          "@type": "Question",
+          "name": faq.q,
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": faq.a
+          }
+        }))
+      };
+    }
+  } catch (e) {
+    console.error('Failed to parse embedded FAQs for schema', e);
+  }
+  return null;
+};
+
 /**
  * Helper to combine custom schema with auto-generated schema
  */
-export const buildSchema = (customSchemaStr: string | null | undefined, defaultSchema: any) => {
+export const buildSchema = (customSchemaStr: string | null | undefined, defaultSchema: any, authorData?: any, htmlContent?: string) => {
+  const schemas: any[] = [];
+  
+  // 1. Always include Organization Schema
+  schemas.push(getOrganizationSchema());
+
+  // 2. Author Schema
+  if (authorData) {
+    schemas.push({
+      "@context": "https://schema.org",
+      "@type": "Person",
+      "@id": `${SITE_URL}/author/${authorData.slug}#person`,
+      "name": authorData.name || SITE_NAME,
+      "url": authorData.slug ? `${SITE_URL}/author/${authorData.slug}` : SITE_URL,
+      "image": authorData.photo || undefined,
+      "jobTitle": authorData.designation || undefined
+    });
+  }
+
+  // 3. Auto FAQ Schema
+  if (htmlContent) {
+    const faqSchema = extractFAQSchema(htmlContent);
+    if (faqSchema) schemas.push(faqSchema);
+  }
+
+  // 4. Default Main Schema
+  if (defaultSchema) {
+    schemas.push(defaultSchema);
+  }
+
+  // 5. Custom Schema
   if (customSchemaStr) {
     try {
-      // If the user provided a custom schema string, parse it
-      return JSON.parse(customSchemaStr);
+      const parsed = JSON.parse(customSchemaStr);
+      if (Array.isArray(parsed)) {
+        schemas.push(...parsed);
+      } else {
+        schemas.push(parsed);
+      }
     } catch (e) {
       console.error('Failed to parse custom schema JSON:', e);
-      // Fallback to default if invalid
-      return defaultSchema;
     }
   }
-  return defaultSchema;
+  
+  return schemas;
 };
 
 /**

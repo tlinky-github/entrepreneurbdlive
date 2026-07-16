@@ -95,6 +95,10 @@ export const getPrefilledTemplate = (type, docTitle = '', docExcerpt = '', conte
     case 'Article':
       return {
         ...baseSchema,
+        "mainEntityOfPage": {
+          "@type": "WebPage",
+          "@id": baseUrl
+        },
         "headline": docTitle || "Post Headline Title",
         "description": docExcerpt || "Brief description of the post...",
         "image": shareImg,
@@ -114,6 +118,10 @@ export const getPrefilledTemplate = (type, docTitle = '', docExcerpt = '', conte
     case 'Person':
       return {
         ...baseSchema,
+        "mainEntityOfPage": {
+          "@type": "ProfilePage",
+          "@id": baseUrl
+        },
         "name": docTitle || "Entrepreneur Name",
         "jobTitle": "Founder",
         "worksFor": {
@@ -126,6 +134,10 @@ export const getPrefilledTemplate = (type, docTitle = '', docExcerpt = '', conte
     case 'LocalBusiness':
       return {
         ...baseSchema,
+        "mainEntityOfPage": {
+          "@type": "WebPage",
+          "@id": baseUrl
+        },
         "name": docTitle || "Business Name",
         "description": docExcerpt || "Brief business description...",
         "image": shareImg,
@@ -137,6 +149,18 @@ export const getPrefilledTemplate = (type, docTitle = '', docExcerpt = '', conte
         },
         "telephone": "+8801700000055",
         "url": baseUrl
+      };
+    case 'Organization':
+      return {
+        ...baseSchema,
+        "mainEntityOfPage": {
+          "@type": "WebPage",
+          "@id": baseUrl
+        },
+        "name": docTitle || "Organization Name",
+        "url": baseUrl,
+        "logo": shareImg,
+        "sameAs": []
       };
     default:
       return baseSchema;
@@ -1312,9 +1336,11 @@ Return ONLY a valid raw JSON object. Do not include markdown styling or block fo
                                     { type: 'FactCheck', name: '🔍 Fact Check', desc: 'Fact-checking claim reviews' },
                                     { type: 'HowTo', name: '🛠️ HowTo', desc: 'Step-by-step instructions, Guides' },
                                     { type: 'Job Posting', name: '💼 Job Posting', desc: 'Hiring announcements, Job posts' },
+                                    { type: 'LocalBusiness', name: '🏢 LocalBusiness', desc: 'Directory listings, physical places' },
                                     { type: 'Movie', name: '🎬 Movie', desc: 'Films, TV shows, Media works' },
                                     { type: 'Music', name: '🎵 Music', desc: 'Playlists, Albums, Songs' },
-                                    { type: 'Person', name: '👤 Person', desc: 'Bios, Entrepreneurs, Influencers' },
+                                    { type: 'Organization', name: '🏢 Organization', desc: 'Companies, Brands, NGOs' },
+                                    { type: 'Person', name: '👤 Person', desc: 'Author, Entrepreneurs, Influencers' },
                                     { type: 'Product', name: '🛒 Product', desc: 'E-commerce items, Store listings' },
                                     { type: 'Recipe', name: '🍳 Recipe', desc: 'Food recipes, Cooking instructions' }
                                   ]
@@ -1452,7 +1478,7 @@ Return ONLY a valid raw JSON object. Do not include markdown styling or block fo
                                 onChange={(e) => setCustomSchema(e.target.value)} 
                                 placeholder={'{\n  "@context": "https://schema.org",\n  "@type": "Article",\n  "headline": "..."\n}'}
                                 rows={8}
-                                className={`w-full p-3 font-mono text-xs border rounded-lg bg-stone-900 focus:outline-none focus:ring-2 focus:ring-emerald-800 ${isSchemaValid ? 'text-emerald-400 border-stone-850' : 'text-red-400 border-red-500'}`}
+                                className={`w-full p-3 font-mono text-xs border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-emerald-800 ${isSchemaValid ? 'text-stone-900 border-stone-300' : 'text-red-600 border-red-500'}`}
                               />
                               {!isSchemaValid && (
                                 <p className="text-[10px] text-red-650 flex items-center gap-1 font-semibold">

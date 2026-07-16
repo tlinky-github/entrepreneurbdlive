@@ -65,7 +65,7 @@ const robotsMeta = article ? getRobotsMetaString(article.robots_meta) : undefine
 const socialMeta = article?.social_meta || undefined;
 
 // Generate Schema
-const pageSchema = buildSchema(article?.custom_schema, null);
+const pageSchema = buildSchema(article?.custom_schema, null, authorData, article?.content_html || article?.content);
 ---
 
 <PublicLayout

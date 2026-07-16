@@ -1948,20 +1948,23 @@ Only output the raw JSON object, nothing else. Do not use markdown wrapping (\`\
                 </>
               )}
 
-               <QuickSelector
-                label="Category *"
-                value={category}
-                onChange={setCategory}
-                options={categories}
-                taxType="category"
-                placeholder="Select a category"
-              />
-              {submittedCategory && (
-                <p className="text-[10px] text-emerald-600 font-bold px-1 uppercase leading-tight mt-1">
-                  User Submitted: {submittedCategory}
-                </p>
+              {type !== 'entrepreneurs' && (
+                <>
+                  <QuickSelector
+                    label="Category *"
+                    value={category}
+                    onChange={setCategory}
+                    options={categories}
+                    taxType="category"
+                    placeholder="Select a category"
+                  />
+                  {submittedCategory && (
+                    <p className="text-[10px] text-emerald-600 font-bold px-1 uppercase leading-tight mt-1">
+                      User Submitted: {submittedCategory}
+                    </p>
+                  )}
+                </>
               )}
-
               <div>
                 <label>Status</label>
                 <div className="status-buttons gap-2 flex">

@@ -277,6 +277,14 @@ export const listingAPI = {
     }
     await deleteDoc(doc(db, 'listings', id));
     return { success: true };
+  },
+  bulkUpdate: async (ids: string[], fields: Record<string, any>) => {
+    await Promise.all(
+      ids.map(id =>
+        updateDoc(doc(db, 'listings', id), { ...fields, updated_at: serverTimestamp() })
+      )
+    );
+    return { success: true };
   }
 };
 
@@ -361,6 +369,14 @@ export const profileAPI = {
       console.warn('Server-side profile delete failed, trying client-side...', e);
     }
     await deleteDoc(doc(db, 'profiles', id));
+    return { success: true };
+  },
+  bulkUpdate: async (ids: string[], fields: Record<string, any>) => {
+    await Promise.all(
+      ids.map(id =>
+        updateDoc(doc(db, 'profiles', id), { ...fields, updated_at: serverTimestamp() })
+      )
+    );
     return { success: true };
   }
 };
@@ -825,6 +841,14 @@ export const postAPI = {
     }
     await deleteDoc(doc(db, 'posts', id));
     return { success: true };
+  },
+  bulkUpdate: async (ids: string[], fields: Record<string, any>) => {
+    await Promise.all(
+      ids.map(id =>
+        updateDoc(doc(db, 'posts', id), { ...fields, updated_at: serverTimestamp() })
+      )
+    );
+    return { success: true };
   }
 };
 
@@ -1103,6 +1127,21 @@ export const contentAPI = {
     };
     const colName = collectionMap[type] || type;
     await deleteDoc(doc(db, colName, id));
+    return { success: true };
+  },
+  bulkUpdate: async (type: string, ids: string[], fields: Record<string, any>) => {
+    const collectionMap: any = {
+      blog: 'posts',
+      entrepreneurs: 'profiles',
+      directory: 'listings',
+      knowledge: 'resources'
+    };
+    const colName = collectionMap[type] || type;
+    await Promise.all(
+      ids.map(id =>
+        updateDoc(doc(db, colName, id), { ...fields, updated_at: serverTimestamp() })
+      )
+    );
     return { success: true };
   }
 };
