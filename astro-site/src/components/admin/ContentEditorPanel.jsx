@@ -1440,6 +1440,47 @@ Only output the raw JSON object, nothing else. Do not use markdown wrapping (\`\
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder={type === 'entrepreneurs' ? 'Enter name' : 'Enter title'}
                 />
+                
+                {slug && (
+                  <div className="mt-2 flex items-center text-sm text-stone-500 bg-stone-50 py-1.5 px-3 rounded-md border border-stone-100 inline-flex">
+                    <span className="font-medium">URL: </span>
+                    <span className="ml-1 text-stone-400">https://entrepreneurs.bd/{type === 'blog' ? '' : type + '/' }</span>
+                    {isEditingSlug ? (
+                      <div className="flex items-center gap-2 ml-1">
+                        <Input 
+                          value={slug}
+                          onChange={(e) => {
+                            setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-'));
+                            setManualSlugSet(true);
+                          }}
+                          className="h-6 text-xs py-0 px-1.5 w-40 border-emerald-500 focus-visible:ring-1 focus-visible:ring-emerald-500 rounded-sm"
+                          autoFocus
+                          onBlur={() => setIsEditingSlug(false)}
+                          onKeyDown={(e) => e.key === 'Enter' && setIsEditingSlug(false)}
+                        />
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          className="h-6 px-2 text-xs font-bold text-emerald-700 hover:text-emerald-800 hover:bg-emerald-100/50 rounded-sm"
+                          onClick={() => setIsEditingSlug(false)}
+                        >
+                          Save
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center ml-1">
+                        <span className="text-stone-700 font-medium">{slug}</span>
+                        <button 
+                          type="button"
+                          className="h-5 px-2 ml-2 text-[11px] font-bold tracking-wide uppercase bg-stone-200 text-stone-600 hover:bg-stone-300 rounded transition-colors"
+                          onClick={() => setIsEditingSlug(true)}
+                        >
+                          Edit
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {type === 'entrepreneurs' && (
