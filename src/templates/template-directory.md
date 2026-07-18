@@ -8,11 +8,14 @@ country: Bangladesh
 industry: FinTech
 founder: Your Founder Name
 ceo: Your CEO Name
+startup_stage: Growth-stage
+stage: Growth-stage
 founded_year: 2020
 founded: 2020
 employee_size: 11-50
 category: Software Company
 expertise: "Software Development, B2B SaaS, Digital Services"
+focus_keyword: "Your Business Name"
 website: https://yourbusiness.com
 linkedin: https://linkedin.com/company/yourbusiness
 facebook: https://facebook.com/yourbusiness

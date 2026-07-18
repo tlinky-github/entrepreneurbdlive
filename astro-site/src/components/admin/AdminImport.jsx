@@ -7,27 +7,70 @@ import { serverTimestamp } from 'firebase/firestore';
 // ─── Markdown Parser ─────────────────────────────────────────────────────────
 
 function parseFrontmatter(text) {
-  const match = text.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
-  if (!match) return { frontmatter: {}, body: text };
+  const normalizedText = text.replace(/\r\n/g, '\n');
+  const match = normalizedText.match(/^---\s*\n([\s\S]*?)\n---\s*\n?([\s\S]*)$/);
+  if (match) {
+    const frontmatterRaw = match[1];
+    const body = match[2].trim();
+    const frontmatter = {};
 
-  const frontmatterRaw = match[1];
-  const body = match[2].trim();
+    frontmatterRaw.split('\n').forEach(line => {
+      const trimmed = line.trim();
+      if (!trimmed) return;
+      const parsed = trimmed.match(/^([A-Za-z0-9_\-]+):\s*(.*)$/);
+      if (!parsed) return;
+      let value = parsed[2].trim();
+      // Strip surrounding quotes
+      if ((value.startsWith('"') && value.endsWith('"')) ||
+          (value.startsWith("'") && value.endsWith("'"))) {
+        value = value.slice(1, -1);
+      }
+      frontmatter[parsed[1]] = value;
+    });
+
+    return { frontmatter, body };
+  }
+
+  const lines = normalizedText.split('\n');
+  const frontmatterLines = [];
+  let bodyStartIndex = 0;
+
+  for (let i = 0; i < lines.length; i += 1) {
+    const trimmed = lines[i].trim();
+    if (!trimmed) {
+      if (frontmatterLines.length > 0) {
+        bodyStartIndex = i + 1;
+        break;
+      }
+      continue;
+    }
+
+    const parsed = trimmed.match(/^([A-Za-z0-9_\-]+):\s*(.*)$/);
+    if (!parsed) {
+      if (frontmatterLines.length > 0) {
+        bodyStartIndex = i;
+      }
+      break;
+    }
+
+    frontmatterLines.push(lines[i]);
+  }
+
   const frontmatter = {};
-
-  frontmatterRaw.split('\n').forEach(line => {
-    const colonIdx = line.indexOf(':');
-    if (colonIdx === -1) return;
-    const key = line.slice(0, colonIdx).trim();
-    let value = line.slice(colonIdx + 1).trim();
-    // Strip surrounding quotes
+  frontmatterLines.forEach(line => {
+    const trimmed = line.trim();
+    if (!trimmed) return;
+    const parsed = trimmed.match(/^([A-Za-z0-9_\-]+):\s*(.*)$/);
+    if (!parsed) return;
+    let value = parsed[2].trim();
     if ((value.startsWith('"') && value.endsWith('"')) ||
         (value.startsWith("'") && value.endsWith("'"))) {
       value = value.slice(1, -1);
     }
-    frontmatter[key] = value;
+    frontmatter[parsed[1]] = value;
   });
 
-  return { frontmatter, body };
+  return { frontmatter, body: lines.slice(bodyStartIndex).join('\n').trim() };
 }
 
 // Convert markdown to basic HTML (headings, bold, links, paragraphs)
@@ -50,9 +93,26 @@ function markdownToHtml(md) {
     .join('\n');
 }
 
+function getFrontmatterValue(frontmatter, aliases) {
+  for (const alias of aliases) {
+    const value = frontmatter[alias];
+    if (value !== undefined && value !== null && String(value).trim() !== '') {
+      return String(value).trim();
+    }
+  }
+  return '';
+}
+
+function normalizeStartupStage(value) {
+  if (!value) return '';
+  return String(value).trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
+
 // Map markdown frontmatter to Firestore payload based on content type
 function buildPayload(type, frontmatter, body) {
   const contentHtml = markdownToHtml(body);
+  const focusKeyword = getFrontmatterValue(frontmatter, ['focus_keyword', 'focus-keyword', 'focusKeyword', 'keyword', 'seo_keyword', 'seoKeyword']);
+  const startupStage = normalizeStartupStage(getFrontmatterValue(frontmatter, ['startup_stage', 'startup-stage', 'startupStage', 'stage', 'stage_name']));
 
   if (type === 'entrepreneurs') {
     return {
@@ -61,9 +121,9 @@ function buildPayload(type, frontmatter, body) {
       name: frontmatter.full_name || '',
       slug: frontmatter.slug || frontmatter.full_name?.toLowerCase().replace(/[^a-z0-9]+/g, '-') || '',
       designation: frontmatter.designation || '',
-      company_name: frontmatter.company || '',
+      company_name: getFrontmatterValue(frontmatter, ['company_name', 'company', 'business_name']),
       city: frontmatter.city || '',
-      startup_stage: frontmatter.stage || '',
+      startup_stage: startupStage,
       industry: frontmatter.industry || '',
       social_linkedin: frontmatter.linkedin || '',
       social_facebook: frontmatter.facebook || '',
@@ -74,15 +134,16 @@ function buildPayload(type, frontmatter, body) {
       content_html: contentHtml,
       status: 'draft',
       category: frontmatter.industry || '',
+      focus_keyword: focusKeyword,
     };
   }
 
   if (type === 'directory') {
     return {
       type,
-      title: frontmatter.business_name || frontmatter.company || frontmatter.full_name || '',
-      business_name: frontmatter.business_name || frontmatter.company || '',
-      slug: frontmatter.slug || (frontmatter.business_name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-') || '',
+      title: getFrontmatterValue(frontmatter, ['business_name', 'company_name', 'company', 'full_name']) || '',
+      business_name: getFrontmatterValue(frontmatter, ['business_name', 'company_name', 'company']) || '',
+      slug: frontmatter.slug || (getFrontmatterValue(frontmatter, ['business_name', 'company_name', 'company']) || '').toLowerCase().replace(/[^a-z0-9]+/g, '-') || '',
       designation: frontmatter.designation || '',
       city: frontmatter.city || '',
       industry: frontmatter.industry || '',
@@ -96,6 +157,8 @@ function buildPayload(type, frontmatter, body) {
       content: contentHtml,
       content_html: contentHtml,
       status: 'draft',
+      startup_stage: startupStage,
+      focus_keyword: focusKeyword,
     };
   }
 
@@ -110,6 +173,7 @@ function buildPayload(type, frontmatter, body) {
     content: contentHtml,
     content_html: contentHtml,
     status: 'draft',
+    focus_keyword: focusKeyword,
   };
 }
 

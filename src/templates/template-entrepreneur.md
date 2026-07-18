@@ -5,8 +5,10 @@ designation: Co-Founder & CEO
 company: YourCompany
 company_name: YourCompany
 city: Dhaka
+startup_stage: Growth-stage
 stage: Growth-stage
 industry: EdTech
+focus_keyword: "Jane Doe"
 founded: 2020
 founded_year: 2020
 expertise: "EdTech, Product Strategy, Growth"
