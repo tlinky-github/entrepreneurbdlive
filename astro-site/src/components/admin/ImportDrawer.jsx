@@ -161,6 +161,7 @@ function buildPayload(type, frontmatter, body) {
       listing_type: frontmatter.listing_type || 'startup',
       excerpt: frontmatter.company_overview || frontmatter.short_description || frontmatter.short_bio || frontmatter.excerpt || '',
       short_description: frontmatter.company_overview || frontmatter.short_description || '',
+      life_at_company: frontmatter.life_at_company || frontmatter.lifeAtCompany || body || '',
       category: frontmatter.category || '',
       leadership_team: {
         founder: { type: 'manual', name: frontmatter.founder || '', id: '', photo: '' },
@@ -243,6 +244,7 @@ meta_description: "ExampleCo Ltd is a Dhaka-based fintech startup building digit
 keyword: "ExampleCo"
 short_description: "ExampleCo Ltd is a fintech company founded in 2015 that builds digital payment infrastructure and mobile banking tools for SMEs across Bangladesh."
 company_overview: "ExampleCo Ltd is a fintech company founded in 2015 that builds digital payment infrastructure and mobile banking tools for SMEs across Bangladesh."
+life_at_company: "Ollyo offers a modern and collaborative workplace in Dhaka, designed to support both productivity and employee well-being.\n\n**Employee Benefits:**\n\n- Free lunch, snacks, and coffee from an in-house barista\n- Fully equipped gym and indoor games area\n- Basketball court and sports facilities\n- Free shuttle service and on-site parking\n- Friendly and collaborative work environment\n\nAccording to employee reviews on Glassdoor, Ollyo has an overall culture rating of around **3.9/5**, with many employees recommending it as a good place to work."
 ---
 
 ## About ExampleCo
