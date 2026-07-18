@@ -258,6 +258,7 @@ const ContentEditorPanel = () => {
   const [education, setEducation] = useState('');
   const [headquarters, setHeadquarters] = useState('');
   const [employeeSize, setEmployeeSize] = useState('');
+  const [country, setCountry] = useState('');
   const [companyPageUrl, setCompanyPageUrl] = useState('');
   const [lifeAtCompany, setLifeAtCompany] = useState('');
   const [socialLinkedin, setSocialLinkedin] = useState('');
@@ -781,6 +782,7 @@ const ContentEditorPanel = () => {
             setFoundedYear(data.founded_year || '');
             setExpertise(data.expertise || '');
             setEducation(data.education || '');
+            setCountry(data.country || '');
 
             const fullContent = data.content_html || data.content;
             if (fullContent) {
@@ -1165,6 +1167,7 @@ const ContentEditorPanel = () => {
         startup_stage: startupStage,
         industry,
         city,
+        country,
         authorId,
         author_name: selectedAuthor?.name || '',
         author_slug: selectedAuthor?.slug || '',
@@ -1855,6 +1858,14 @@ Only output the raw JSON object, nothing else. Do not use markdown wrapping (\`\
                       placeholder="Select City"
                     />
                     <div>
+                      <label>Country</label>
+                      <Input
+                        value={country}
+                        onChange={(e) => setCountry(e.target.value)}
+                        placeholder="e.g. Bangladesh"
+                      />
+                    </div>
+                    <div>
                       <label>Employee Size</label>
                       <select
                         value={employeeSize}
@@ -1869,20 +1880,13 @@ Only output the raw JSON object, nothing else. Do not use markdown wrapping (\`\
                         <option value="500+">500+</option>
                       </select>
                     </div>
-                    <div className="space-y-4">
-                      <QuickSelector
-                        label="City"
-                        value={city}
-                        onChange={setCity}
-                        options={cities}
-                        taxType="city"
-                        placeholder="Select City"
+                    <div>
+                      <label>Founded Year</label>
+                      <Input
+                        value={foundedYear}
+                        onChange={(e) => setFoundedYear(e.target.value)}
+                        placeholder="e.g. 2010"
                       />
-                      {submittedCity && (
-                        <p className="text-[10px] text-emerald-600 font-bold px-1 uppercase leading-tight mt-1">
-                          User Submitted: {submittedCity}
-                        </p>
-                      )}
                     </div>
                     <QuickSelector
                       label="Listing Type"
@@ -1905,6 +1909,15 @@ Only output the raw JSON object, nothing else. Do not use markdown wrapping (\`\
                         User Submitted: {submittedIndustry}
                       </p>
                     )}
+                    
+                    <div className="col-span-2">
+                      <label>Expertise / Products</label>
+                      <Input
+                        value={expertise}
+                        onChange={(e) => setExpertise(e.target.value)}
+                        placeholder="e.g. WordPress, SaaS, AI Tools"
+                      />
+                    </div>
                   </div>
                   <div className="relative">
                     <Input

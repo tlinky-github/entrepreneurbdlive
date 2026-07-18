@@ -82,13 +82,29 @@ function buildPayload(type, frontmatter, body) {
       ...base,
       title: frontmatter.business_name || frontmatter.company || '',
       business_name: frontmatter.business_name || frontmatter.company || '',
+      name: frontmatter.business_name || frontmatter.company || '',
       city: frontmatter.city || '',
+      country: frontmatter.country || '',
       industry: frontmatter.industry || '',
       website: frontmatter.website || '',
       social_linkedin: frontmatter.linkedin || '',
+      social_twitter: frontmatter.twitter || '',
       social_facebook: frontmatter.facebook || '',
-      short_description: frontmatter.meta_description || '',
+      email: frontmatter.email || '',
+      phone: frontmatter.phone || '',
+      founded_year: frontmatter.founded_year || frontmatter.founded || '',
+      employee_size: frontmatter.employee_size || '',
+      expertise: frontmatter.expertise || '',
       listing_type: frontmatter.listing_type || 'startup',
+      excerpt: frontmatter.company_overview || frontmatter.short_description || frontmatter.excerpt || '',
+      short_description: frontmatter.company_overview || frontmatter.short_description || '',
+      category: frontmatter.category || '',
+      leadership_team: {
+        founder: { type: 'manual', name: frontmatter.founder || '', id: '', photo: '' },
+        ceo: { type: 'manual', name: frontmatter.ceo || '', id: '', photo: '' },
+      },
+      founder_name: frontmatter.founder || '',
+      ceo_name: frontmatter.ceo || '',
     };
   }
   if (type === 'blog' || type === 'knowledge') {
@@ -127,21 +143,31 @@ More about Jane and her journey...
   directory: `---
 business_name: ExampleCo Ltd
 slug: exampleco-ltd
-listing_type: startup
+founder: Jane Doe
+ceo: Jane Doe
 city: Dhaka
+country: Bangladesh
+founded_year: 2015
+employee_size: 11-50
+category: Software Company
 industry: FinTech
+expertise: Payments, Mobile Banking, SME Lending
+listing_type: startup
 website: https://exampleco.com
 linkedin: https://linkedin.com/company/exampleco
+twitter: https://x.com/exampleco
 facebook: https://facebook.com/exampleco
+email: hello@exampleco.com
+phone: +880 17 0000 0000
 title_tag: "ExampleCo Ltd | FinTech Startup | Entrepreneur BD Directory"
 meta_description: "ExampleCo Ltd is a Dhaka-based fintech startup..."
-short_description: "ExampleCo Ltd is a fintech company focused on..."
+keyword: "ExampleCo"
+company_overview: "ExampleCo Ltd is a fintech company focused on..."
 ---
 
-## Services
+## About ExampleCo
 
-- Digital payments
-- SME lending
+More about ExampleCo's story and products...
 `,
   blog: `---
 title: "My Blog Post Title"
