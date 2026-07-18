@@ -3,9 +3,14 @@ full_name: Your Full Name
 slug: your-full-name
 designation: Co-Founder & CEO
 company: YourCompany
+company_name: YourCompany
 city: Dhaka
 stage: Growth-stage
 industry: EdTech
+founded: 2020
+founded_year: 2020
+expertise: "EdTech, Product Strategy, Growth"
+education: "Bachelor of Science in Computer Science"
 linkedin: https://linkedin.com/in/yourprofile
 facebook: https://facebook.com/yourprofile
 twitter: https://twitter.com/yourprofile

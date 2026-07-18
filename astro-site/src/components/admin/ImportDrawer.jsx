@@ -64,7 +64,7 @@ function buildPayload(type, frontmatter, body) {
       title: frontmatter.full_name || '',
       name: frontmatter.full_name || '',
       designation: frontmatter.designation || '',
-      company_name: frontmatter.company || frontmatter.company_name || '',
+      company_name: frontmatter.company_name || frontmatter.company || '',
       city: frontmatter.city || '',
       startup_stage: frontmatter.stage ? frontmatter.stage.toLowerCase().replace(/[^a-z0-9]+/g, '-') : '',
       industry: frontmatter.industry || '',
@@ -81,9 +81,9 @@ function buildPayload(type, frontmatter, body) {
   if (type === 'directory') {
     return {
       ...base,
-      title: frontmatter.business_name || frontmatter.company || '',
-      business_name: frontmatter.business_name || frontmatter.company || '',
-      name: frontmatter.business_name || frontmatter.company || '',
+      title: frontmatter.business_name || frontmatter.company_name || frontmatter.company || '',
+      business_name: frontmatter.business_name || frontmatter.company_name || frontmatter.company || '',
+      name: frontmatter.business_name || frontmatter.company_name || frontmatter.company || '',
       city: frontmatter.city || '',
       country: frontmatter.country || '',
       industry: frontmatter.industry || '',
@@ -97,7 +97,7 @@ function buildPayload(type, frontmatter, body) {
       employee_size: frontmatter.employee_size || '',
       expertise: frontmatter.expertise || '',
       listing_type: frontmatter.listing_type || 'startup',
-      excerpt: frontmatter.company_overview || frontmatter.short_description || frontmatter.excerpt || '',
+      excerpt: frontmatter.company_overview || frontmatter.short_description || frontmatter.short_bio || frontmatter.excerpt || '',
       short_description: frontmatter.company_overview || frontmatter.short_description || '',
       category: frontmatter.category || '',
       leadership_team: {
@@ -125,10 +125,12 @@ full_name: Jane Doe
 slug: jane-doe
 designation: Co-Founder & CEO
 company: ExampleCo
+company_name: ExampleCo
 city: Dhaka
 stage: Growth-stage
 industry: FinTech
 founded: 2018
+founded_year: 2018
 expertise: "FinTech, Digital Payments, SME Lending"
 education: "Bangladesh University of Engineering and Technology"
 linkedin: https://linkedin.com/in/janedoe
@@ -155,12 +157,14 @@ ExampleCo started with a small team of five engineers and has grown to over 100 
 `,
   directory: `---
 business_name: ExampleCo Ltd
+company_name: ExampleCo Ltd
 slug: exampleco-ltd
 founder: Jane Doe
 ceo: Jane Doe
 city: Dhaka
 country: Bangladesh
 founded_year: 2015
+founded: 2015
 employee_size: 51-200
 category: Software Company
 industry: FinTech
@@ -175,6 +179,7 @@ phone: +880 17 0000 0000
 title_tag: "ExampleCo Ltd | FinTech Startup | Entrepreneur BD Directory"
 meta_description: "ExampleCo Ltd is a Dhaka-based fintech startup building digital payment infrastructure for SMEs in Bangladesh."
 keyword: "ExampleCo"
+short_description: "ExampleCo Ltd is a fintech company founded in 2015 that builds digital payment infrastructure and mobile banking tools for SMEs across Bangladesh."
 company_overview: "ExampleCo Ltd is a fintech company founded in 2015 that builds digital payment infrastructure and mobile banking tools for SMEs across Bangladesh."
 ---
 
