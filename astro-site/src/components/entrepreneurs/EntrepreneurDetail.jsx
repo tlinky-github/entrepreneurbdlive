@@ -307,6 +307,32 @@ const EntrepreneurDetail = ({ slug, initialProfile, initialAuthorData, startupSt
               </div>
             )}
 
+            {(profile.founded_year || profile.founded || profile.expertise || profile.education) && (
+              <div className="mt-8 pt-8 border-t border-stone-200">
+                <h2 className="text-lg font-semibold text-stone-900 mb-4">Profile Details</h2>
+                <div className="grid gap-4 md:grid-cols-3">
+                  {(profile.founded_year || profile.founded) && (
+                    <div className="rounded-xl border border-stone-200 bg-stone-50 p-4">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-500">Founded Year</p>
+                      <p className="mt-2 text-sm font-semibold text-stone-800">{profile.founded_year || profile.founded}</p>
+                    </div>
+                  )}
+                  {profile.expertise && (
+                    <div className="rounded-xl border border-stone-200 bg-stone-50 p-4">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-500">Expertise</p>
+                      <p className="mt-2 text-sm font-semibold text-stone-800">{profile.expertise}</p>
+                    </div>
+                  )}
+                  {profile.education && (
+                    <div className="rounded-xl border border-stone-200 bg-stone-50 p-4">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-500">Education</p>
+                      <p className="mt-2 text-sm font-semibold text-stone-800">{profile.education}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Full Story / Content */}
             {profile.content && (
               <div className="mt-8 pt-8 border-t border-stone-200">

@@ -239,6 +239,38 @@ const DirectoryDetail = ({ slug, initialListing, startupStages: initialStartupSt
                    </div>
                 </div>
 
+                {(listing.country || listing.founded_year || listing.founded || listing.listing_type || listing.expertise) && (
+                  <div className="mt-8 pt-8 border-t border-stone-100">
+                    <h2 className="text-lg font-semibold text-stone-900 mb-4">Company Details</h2>
+                    <div className="grid gap-4 md:grid-cols-4">
+                      {listing.country && (
+                        <div className="rounded-xl border border-stone-200 bg-stone-50 p-4">
+                          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-500">Country</p>
+                          <p className="mt-2 text-sm font-semibold text-stone-800">{listing.country}</p>
+                        </div>
+                      )}
+                      {(listing.founded_year || listing.founded) && (
+                        <div className="rounded-xl border border-stone-200 bg-stone-50 p-4">
+                          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-500">Founded Year</p>
+                          <p className="mt-2 text-sm font-semibold text-stone-800">{listing.founded_year || listing.founded}</p>
+                        </div>
+                      )}
+                      {listing.listing_type && (
+                        <div className="rounded-xl border border-stone-200 bg-stone-50 p-4">
+                          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-500">Listing Type</p>
+                          <p className="mt-2 text-sm font-semibold text-stone-800">{listing.listing_type}</p>
+                        </div>
+                      )}
+                      {listing.expertise && (
+                        <div className="rounded-xl border border-stone-200 bg-stone-50 p-4">
+                          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-500">Expertise / Products</p>
+                          <p className="mt-2 text-sm font-semibold text-stone-800">{listing.expertise}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {/* Rich Content & FAQs */}
                 {listing.content && (
                   <div className="mt-12 pt-12 border-t border-stone-100 tiptap-content">
@@ -438,15 +470,9 @@ const DirectoryDetail = ({ slug, initialListing, startupStages: initialStartupSt
                         )}
                       </div>
                       <div>
-                        {listing.leadership_team?.founder?.type === 'linked' ? (
-                          <a href={`/entrepreneurs/${listing.leadership_team.founder.slug || listing.leadership_team.founder.id}`} className="font-black text-stone-900 group-hover:text-emerald-900 transition-colors hover:underline">
-                            {listing.leadership_team.founder.name}
-                          </a>
-                        ) : (
-                          <p className="font-black text-stone-900 group-hover:text-emerald-900 transition-colors">
-                            {listing.leadership_team?.founder?.name || listing.founder_name}
-                          </p>
-                        )}
+                        <p className="font-black text-stone-900 group-hover:text-emerald-900 transition-colors">
+                          {listing.leadership_team?.founder?.name || listing.founder_name}
+                        </p>
                         <p className="text-sm text-stone-400 font-bold uppercase tracking-widest mt-0.5">Founder</p>
                       </div>
                     </div>
@@ -463,15 +489,9 @@ const DirectoryDetail = ({ slug, initialListing, startupStages: initialStartupSt
                         )}
                       </div>
                       <div>
-                        {listing.leadership_team?.ceo?.type === 'linked' ? (
-                          <a href={`/entrepreneurs/${listing.leadership_team.ceo.slug || listing.leadership_team.ceo.id}`} className="font-black text-stone-900 group-hover:text-emerald-900 transition-colors hover:underline">
-                            {listing.leadership_team.ceo.name}
-                          </a>
-                        ) : (
-                          <p className="font-black text-stone-900 group-hover:text-emerald-900 transition-colors">
-                            {listing.leadership_team?.ceo?.name || listing.ceo_name}
-                          </p>
-                        )}
+                        <p className="font-black text-stone-900 group-hover:text-emerald-900 transition-colors">
+                          {listing.leadership_team?.ceo?.name || listing.ceo_name}
+                        </p>
                         <p className="text-sm text-stone-400 font-bold uppercase tracking-widest mt-0.5">Chief Executive</p>
                       </div>
                     </div>
