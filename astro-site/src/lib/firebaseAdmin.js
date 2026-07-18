@@ -1,7 +1,18 @@
 import admin from 'firebase-admin';
-import { getFirestore as _getAdminFirestoreInstance } from 'firebase-admin/firestore';
-import { getAuth } from 'firebase-admin/auth';
+import { createRequire } from 'node:module';
 import { createVerify } from 'node:crypto';
+
+const _require = createRequire(import.meta.url);
+
+let _getAdminFirestoreInstance = null;
+let _getAdminAuthInstance = null;
+try {
+  _getAdminFirestoreInstance = _require('firebase-admin/firestore').getFirestore;
+} catch (e) {}
+
+try {
+  _getAdminAuthInstance = _require('firebase-admin/auth').getAuth;
+} catch (e) {}
 
 let _adminCache = null;
 const getAdmin = () => {
@@ -46,11 +57,11 @@ const getAdminFirestore = (app) => {
 };
 
 const getAdminAuth = (app) => {
-  if (typeof getAuth === 'function') {
-    return app ? getAuth(app) : getAuth();
+  if (typeof _getAdminAuthInstance === 'function') {
+    return app ? _getAdminAuthInstance(app) : _getAdminAuthInstance();
   }
-  if (getAuth && typeof getAuth.default === 'function') {
-    return app ? getAuth.default(app) : getAuth.default();
+  if (_getAdminAuthInstance && typeof _getAdminAuthInstance.default === 'function') {
+    return app ? _getAdminAuthInstance.default(app) : _getAdminAuthInstance.default();
   }
   const adm = getAdmin();
   if (typeof adm.auth === 'function') {
@@ -59,7 +70,7 @@ const getAdminAuth = (app) => {
   if (adm && adm.default && typeof adm.default.auth === 'function') {
     return app ? adm.default.auth(app) : adm.default.auth();
   }
-  throw new Error(`firebase-admin: getAuth not found. getAuth type: ${typeof getAuth}`);
+  throw new Error(`firebase-admin: getAuth not found. _getAdminAuthInstance type: ${typeof _getAdminAuthInstance}`);
 };
 let clientDb = null;
 let clientFirestore = null;
