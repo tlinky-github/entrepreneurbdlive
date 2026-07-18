@@ -289,11 +289,11 @@ life_at_company: |
 
 ExampleCo has been building financial technology for Bangladeshi businesses since 2015, starting with a small payments API and growing into a full-stack banking platform.
 
-### Products
+## Products
 
 Through its flagship product, ExamplePay, the company serves over 10,000 SMEs across Dhaka and Chittagong...
 
-### Life at ExampleCo
+## Life at ExampleCo
 
 The team works out of a modern office in Gulshan with flexible hours, free lunch, and regular hackathons...
 `,
