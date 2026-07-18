@@ -7,64 +7,90 @@ import { contentAPI } from '../../lib/api';
 
 function parseFrontmatter(text) {
   const normalizedText = text.replace(/\r\n/g, '\n');
-  const match = normalizedText.match(/^---\s*\n([\s\S]*?)\n---\s*\n?([\s\S]*)$/);
-  if (match) {
-    const frontmatterRaw = match[1];
-    const body = match[2].trim();
-    const frontmatter = {};
-    frontmatterRaw.split('\n').forEach(line => {
-      const trimmed = line.trim();
-      if (!trimmed) return;
-      const parsed = trimmed.match(/^([A-Za-z0-9_\-]+):\s*(.*)$/);
-      if (!parsed) return;
-      let value = parsed[2].trim();
-      if ((value.startsWith('"') && value.endsWith('"')) ||
-          (value.startsWith("'") && value.endsWith("'"))) {
-        value = value.slice(1, -1);
-      }
-      frontmatter[parsed[1]] = value;
-    });
-    return { frontmatter, body };
-  }
-
   const lines = normalizedText.split('\n');
   const frontmatterLines = [];
   let bodyStartIndex = 0;
 
-  for (let i = 0; i < lines.length; i += 1) {
-    const trimmed = lines[i].trim();
-    if (!trimmed) {
-      if (frontmatterLines.length > 0) {
+  if (lines[0]?.trim() === '---') {
+    for (let i = 1; i < lines.length; i += 1) {
+      if (lines[i].trim() === '---') {
         bodyStartIndex = i + 1;
         break;
       }
+      frontmatterLines.push(lines[i]);
+    }
+  } else {
+    let sawFrontmatter = false;
+    for (let i = 0; i < lines.length; i += 1) {
+      const trimmed = lines[i].trim();
+      if (!trimmed) {
+        if (sawFrontmatter) {
+          bodyStartIndex = i + 1;
+          break;
+        }
+        continue;
+      }
+
+      const parsed = trimmed.match(/^([A-Za-z0-9_\-]+):\s*(.*)$/);
+      if (!parsed) {
+        if (sawFrontmatter) {
+          bodyStartIndex = i;
+        }
+        break;
+      }
+
+      sawFrontmatter = true;
+      frontmatterLines.push(lines[i]);
+    }
+  }
+
+  const frontmatter = {};
+  let i = 0;
+  while (i < frontmatterLines.length) {
+    const line = frontmatterLines[i];
+    const trimmed = line.trim();
+    if (!trimmed) {
+      i += 1;
+      continue;
+    }
+
+    const blockParsed = trimmed.match(/^([A-Za-z0-9_\-]+):\s*(\||>)(?:\s*(.*))?$/);
+    if (blockParsed) {
+      const [, key] = blockParsed;
+      const blockLines = [];
+      i += 1;
+      while (i < frontmatterLines.length) {
+        const nextLine = frontmatterLines[i];
+        const nextTrimmed = nextLine.trim();
+        if (!nextTrimmed) {
+          blockLines.push('');
+          i += 1;
+          continue;
+        }
+        if (!nextLine.startsWith(' ') && !nextLine.startsWith('\t')) {
+          break;
+        }
+        blockLines.push(nextLine.replace(/^\s{2}/, '').replace(/^\t/, ''));
+        i += 1;
+      }
+      frontmatter[key] = blockLines.join('\n').trim();
       continue;
     }
 
     const parsed = trimmed.match(/^([A-Za-z0-9_\-]+):\s*(.*)$/);
     if (!parsed) {
-      if (frontmatterLines.length > 0) {
-        bodyStartIndex = i;
-      }
-      break;
+      i += 1;
+      continue;
     }
 
-    frontmatterLines.push(lines[i]);
-  }
-
-  const frontmatter = {};
-  frontmatterLines.forEach(line => {
-    const trimmed = line.trim();
-    if (!trimmed) return;
-    const parsed = trimmed.match(/^([A-Za-z0-9_\-]+):\s*(.*)$/);
-    if (!parsed) return;
     let value = parsed[2].trim();
     if ((value.startsWith('"') && value.endsWith('"')) ||
         (value.startsWith("'") && value.endsWith("'"))) {
       value = value.slice(1, -1);
     }
     frontmatter[parsed[1]] = value;
-  });
+    i += 1;
+  }
 
   return { frontmatter, body: lines.slice(bodyStartIndex).join('\n').trim() };
 }
@@ -105,6 +131,7 @@ function normalizeStartupStage(value) {
 
 function buildPayload(type, frontmatter, body) {
   const contentHtml = markdownToHtml(body);
+  const lifeAtCompanyMarkdown = getFrontmatterValue(frontmatter, ['life_at_company', 'lifeAtCompany']) || body;
   const focusKeyword = getFrontmatterValue(frontmatter, ['focus_keyword', 'focus-keyword', 'focusKeyword', 'keyword', 'seo_keyword', 'seoKeyword']);
   const startupStage = normalizeStartupStage(getFrontmatterValue(frontmatter, ['startup_stage', 'startup-stage', 'startupStage', 'stage', 'stage_name']));
   const base = {
@@ -161,7 +188,7 @@ function buildPayload(type, frontmatter, body) {
       listing_type: frontmatter.listing_type || 'startup',
       excerpt: frontmatter.company_overview || frontmatter.short_description || frontmatter.short_bio || frontmatter.excerpt || '',
       short_description: frontmatter.company_overview || frontmatter.short_description || '',
-      life_at_company: frontmatter.life_at_company || frontmatter.lifeAtCompany || body || '',
+      life_at_company: lifeAtCompanyMarkdown,
       category: frontmatter.category || '',
       leadership_team: {
         founder: { type: 'manual', name: frontmatter.founder || '', id: '', photo: '' },
@@ -244,7 +271,18 @@ meta_description: "ExampleCo Ltd is a Dhaka-based fintech startup building digit
 keyword: "ExampleCo"
 short_description: "ExampleCo Ltd is a fintech company founded in 2015 that builds digital payment infrastructure and mobile banking tools for SMEs across Bangladesh."
 company_overview: "ExampleCo Ltd is a fintech company founded in 2015 that builds digital payment infrastructure and mobile banking tools for SMEs across Bangladesh."
-life_at_company: "Ollyo offers a modern and collaborative workplace in Dhaka, designed to support both productivity and employee well-being.\n\n**Employee Benefits:**\n\n- Free lunch, snacks, and coffee from an in-house barista\n- Fully equipped gym and indoor games area\n- Basketball court and sports facilities\n- Free shuttle service and on-site parking\n- Friendly and collaborative work environment\n\nAccording to employee reviews on Glassdoor, Ollyo has an overall culture rating of around **3.9/5**, with many employees recommending it as a good place to work."
+life_at_company: |
+  ExampleCo offers a modern and collaborative workplace in Dhaka, designed to support both productivity and employee well-being.
+
+  **Employee Benefits:**
+
+  - Free lunch, snacks, and coffee from an in-house barista
+  - Fully equipped gym and indoor games area
+  - Basketball court and sports facilities
+  - Free shuttle service and on-site parking
+  - Friendly and collaborative work environment
+
+  According to employee reviews on Glassdoor, ExampleCo has an overall culture rating of around **3.9/5**, with many employees recommending it as a good place to work.
 ---
 
 ## About ExampleCo
