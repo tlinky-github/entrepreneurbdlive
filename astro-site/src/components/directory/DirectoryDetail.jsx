@@ -241,30 +241,43 @@ const DirectoryDetail = ({ slug, initialListing, startupStages: initialStartupSt
 
                 {(listing.country || listing.founded_year || listing.founded || listing.listing_type || listing.expertise) && (
                   <div className="mt-8 pt-8 border-t border-stone-100">
-                    <h2 className="text-lg font-semibold text-stone-900 mb-4">Company Details</h2>
-                    <div className="grid gap-4 md:grid-cols-4">
-                      {listing.country && (
-                        <div className="rounded-xl border border-stone-200 bg-stone-50 p-4">
-                          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-500">Country</p>
-                          <p className="mt-2 text-sm font-semibold text-stone-800">{listing.country}</p>
+                    <h2 className="text-lg font-semibold text-stone-900 mb-4">Company & Business Details</h2>
+                    <div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr] lg:items-start">
+                      <div className="min-w-0 rounded-2xl border border-stone-200 bg-stone-50 p-5 lg:self-start">
+                        <div className="flex items-center gap-2 mb-4">
+                          <Building2 className="w-4 h-4 text-emerald-700" />
+                          <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-stone-700">Company Details</h3>
                         </div>
-                      )}
-                      {(listing.founded_year || listing.founded) && (
-                        <div className="rounded-xl border border-stone-200 bg-stone-50 p-4">
-                          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-500">Founded Year</p>
-                          <p className="mt-2 text-sm font-semibold text-stone-800">{listing.founded_year || listing.founded}</p>
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          {listing.country && (
+                            <div className="rounded-xl border border-stone-200 bg-white p-3">
+                              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-500">Country</p>
+                              <p className="mt-2 text-sm font-semibold text-stone-800">{listing.country}</p>
+                            </div>
+                          )}
+                          {(listing.founded_year || listing.founded) && (
+                            <div className="rounded-xl border border-stone-200 bg-white p-3">
+                              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-500">Founded Year</p>
+                              <p className="mt-2 text-sm font-semibold text-stone-800">{listing.founded_year || listing.founded}</p>
+                            </div>
+                          )}
+                          {listing.listing_type && (
+                            <div className="rounded-xl border border-stone-200 bg-white p-3">
+                              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-500">Listing Type</p>
+                              <p className="mt-2 text-sm font-semibold text-stone-800">{listing.listing_type}</p>
+                            </div>
+                          )}
                         </div>
-                      )}
-                      {listing.listing_type && (
-                        <div className="rounded-xl border border-stone-200 bg-stone-50 p-4">
-                          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-500">Listing Type</p>
-                          <p className="mt-2 text-sm font-semibold text-stone-800">{listing.listing_type}</p>
-                        </div>
-                      )}
+                      </div>
                       {listing.expertise && (
-                        <div className="rounded-xl border border-stone-200 bg-stone-50 p-4">
-                          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-500">Expertise / Products</p>
-                          <p className="mt-2 text-sm font-semibold text-stone-800">{listing.expertise}</p>
+                        <div className="min-w-0 rounded-2xl border border-stone-200 bg-white p-5 lg:self-start">
+                          <div className="flex items-center gap-2 mb-4">
+                            <Star className="w-4 h-4 text-emerald-700" />
+                            <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-stone-700">Expertise / Products</h3>
+                          </div>
+                          <div className="rounded-xl border border-stone-200 bg-stone-50 p-3">
+                            <p className="text-sm font-semibold text-stone-800">{listing.expertise}</p>
+                          </div>
                         </div>
                       )}
                     </div>

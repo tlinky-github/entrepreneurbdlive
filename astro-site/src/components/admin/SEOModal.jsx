@@ -477,15 +477,18 @@ const SEOModal = ({
     const rawContentText = stripHtml(documentContent);
     const contentWordCount = rawContentText.split(/\s+/).filter(Boolean).length;
     const activeKeyword = focusKeyword.trim().toLowerCase();
+    const normalizeForComparison = (value) => (value || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
 
     const finalTitle = seoTitle || documentTitle;
     const finalDesc = seoDescription || documentExcerpt;
     const finalSlug = (seoTitle || documentTitle).toLowerCase().replace(/\s+/g, '-'); // Mock slug matching logic
+    const normalizedKeyword = normalizeForComparison(activeKeyword);
+    const normalizedSlug = normalizeForComparison(finalSlug);
 
     const checks = {
       keywordInTitle: activeKeyword ? finalTitle.toLowerCase().includes(activeKeyword) : false,
       keywordInDescription: activeKeyword ? finalDesc.toLowerCase().includes(activeKeyword) : false,
-      keywordInSlug: activeKeyword ? finalSlug.toLowerCase().includes(activeKeyword) : false,
+      keywordInSlug: activeKeyword ? normalizedSlug.includes(normalizedKeyword) : false,
       keywordInContentBeginning: false,
       keywordInContent: activeKeyword ? rawContentText.toLowerCase().includes(activeKeyword) : false,
       keywordInHeadings: false,

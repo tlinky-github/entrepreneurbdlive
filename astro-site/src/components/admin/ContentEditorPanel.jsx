@@ -974,6 +974,31 @@ const ContentEditorPanel = () => {
     }
   };
 
+  const normalizeSelectValue = (input) => String(input || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+
+  const getOptionValue = (option, currentTaxType) => {
+    if (typeof option === 'string') return option;
+    if (currentTaxType === 'stage') return option?.slug || option?.id || option?.name || '';
+    if (currentTaxType === 'city' || currentTaxType === 'industry') return option?.name || option?.slug || option?.id || '';
+    return option?.id || option?.slug || option?.name || '';
+  };
+
+  const getOptionLabel = (option) => {
+    if (typeof option === 'string') return option;
+    return option?.name || option?.slug || option?.id || '';
+  };
+
+  const getResolvedSelectValue = (currentValue, currentOptions, currentTaxType) => {
+    if (!currentValue) return '';
+    const normalizedValue = normalizeSelectValue(currentValue);
+    const match = currentOptions.find((option) => {
+      const optionValue = getOptionValue(option, currentTaxType);
+      const optionLabel = getOptionLabel(option);
+      return normalizeSelectValue(optionValue) === normalizedValue || normalizeSelectValue(optionLabel) === normalizedValue;
+    });
+    return match ? String(getOptionValue(match, currentTaxType)) : '';
+  };
+
   const QuickSelector = ({ label, value, onChange, options, taxType, placeholder = "Select..." }) => (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
@@ -1010,7 +1035,7 @@ const ContentEditorPanel = () => {
         </div>
       ) : (
         <select
-          value={value}
+          value={getResolvedSelectValue(value, options, taxType) || value || ''}
           onChange={(e) => onChange(e.target.value)}
           className="input-select w-full"
         >
@@ -1018,9 +1043,9 @@ const ContentEditorPanel = () => {
           {options.map(opt => (
             <option 
               key={opt.id || opt.slug || opt} 
-              value={(taxType === 'city' || taxType === 'industry') ? (opt.name || opt) : (opt.id || opt.slug || opt)}
+              value={getOptionValue(opt, taxType)}
             >
-              {opt.name || opt}
+              {getOptionLabel(opt)}
             </option>
           ))}
         </select>

@@ -249,38 +249,6 @@ const EntrepreneurDetail = ({ slug, initialProfile, initialAuthorData, startupSt
                   </div>
                 </div>
 
-                {/* Snapshot Stats - Removed Border */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6 pt-6">
-                  {profile.startup_stage && (
-                    <div className="flex flex-col">
-                      <span className="text-[10px] uppercase font-bold text-stone-600">Stage</span>
-                      <span className="text-sm font-semibold text-stone-700">
-                        {(() => {
-                          const match = startupStages.find(s => s.id === profile.startup_stage || s.slug === profile.startup_stage || s.name?.toLowerCase() === profile.startup_stage.toLowerCase());
-                          return match ? match.name : profile.startup_stage;
-                        })()}
-                      </span>
-                    </div>
-                  )}
-                  {profile.industry && (
-                    <div className="flex flex-col">
-                      <span className="text-[10px] uppercase font-bold text-stone-600">Industry</span>
-                      <span className="text-sm font-semibold text-stone-700">{profile.industry}</span>
-                    </div>
-                  )}
-                  {profile.employee_size && (
-                    <div className="flex flex-col">
-                      <span className="text-[10px] uppercase font-bold text-stone-600">Team Size</span>
-                      <span className="text-sm font-semibold text-stone-700">{profile.employee_size} members</span>
-                    </div>
-                  )}
-                  {(profile.founder_name || profile.ceo_name) && (
-                    <div className="flex flex-col">
-                      <span className="text-[10px] uppercase font-bold text-stone-600">Leadership</span>
-                      <span className="text-sm font-semibold text-stone-700 truncate">{profile.ceo_name || profile.founder_name}</span>
-                    </div>
-                  )}
-                </div>
               </div>
             </div>
 
@@ -307,26 +275,63 @@ const EntrepreneurDetail = ({ slug, initialProfile, initialAuthorData, startupSt
               </div>
             )}
 
-            {(profile.founded_year || profile.founded || profile.expertise || profile.education) && (
+            {(profile.startup_stage || profile.industry || profile.founded_year || profile.founded || profile.expertise || profile.education) && (
               <div className="mt-8 pt-8 border-t border-stone-200">
-                <h2 className="text-lg font-semibold text-stone-900 mb-4">Profile Details</h2>
-                <div className="grid gap-4 md:grid-cols-3">
-                  {(profile.founded_year || profile.founded) && (
-                    <div className="rounded-xl border border-stone-200 bg-stone-50 p-4">
-                      <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-500">Founded Year</p>
-                      <p className="mt-2 text-sm font-semibold text-stone-800">{profile.founded_year || profile.founded}</p>
+                <h2 className="text-lg font-semibold text-stone-900 mb-4">Company & Background</h2>
+                <div className="grid gap-4 lg:grid-cols-[0.95fr_1.25fr] lg:items-start">
+                  {(profile.expertise || profile.education) && (
+                    <div className="min-w-0 rounded-2xl border border-stone-200 bg-white p-5 lg:self-start">
+                      <div className="flex items-center gap-2 mb-4">
+                        <UserPlus className="w-4 h-4 text-emerald-700" />
+                        <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-stone-700">Personal Details</h3>
+                      </div>
+                      <div className="space-y-3">
+                        {profile.expertise && (
+                          <div className="rounded-xl border border-stone-200 bg-stone-50 p-3">
+                            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-500">Expertise</p>
+                            <p className="mt-2 text-sm font-semibold text-stone-800">{profile.expertise}</p>
+                          </div>
+                        )}
+                        {profile.education && (
+                          <div className="rounded-xl border border-stone-200 bg-stone-50 p-3">
+                            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-500">Education</p>
+                            <p className="mt-2 text-sm font-semibold text-stone-800">{profile.education}</p>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
-                  {profile.expertise && (
-                    <div className="rounded-xl border border-stone-200 bg-stone-50 p-4">
-                      <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-500">Expertise</p>
-                      <p className="mt-2 text-sm font-semibold text-stone-800">{profile.expertise}</p>
-                    </div>
-                  )}
-                  {profile.education && (
-                    <div className="rounded-xl border border-stone-200 bg-stone-50 p-4">
-                      <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-500">Education</p>
-                      <p className="mt-2 text-sm font-semibold text-stone-800">{profile.education}</p>
+                  {(profile.startup_stage || profile.industry || profile.founded_year || profile.founded) && (
+                    <div className="min-w-0 rounded-2xl border border-stone-200 bg-stone-50 p-5 lg:self-start">
+                      <div className="flex items-center gap-2 mb-4">
+                        <Building2 className="w-4 h-4 text-emerald-700" />
+                        <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-stone-700">Company Details</h3>
+                      </div>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        {profile.startup_stage && (
+                          <div className="rounded-xl border border-stone-200 bg-white p-3">
+                            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-500">Stage</p>
+                            <p className="mt-2 text-sm font-semibold text-stone-800">
+                              {(() => {
+                                const match = startupStages.find(s => s.id === profile.startup_stage || s.slug === profile.startup_stage || s.name?.toLowerCase() === profile.startup_stage.toLowerCase());
+                                return match ? match.name : profile.startup_stage;
+                              })()}
+                            </p>
+                          </div>
+                        )}
+                        {profile.industry && (
+                          <div className="rounded-xl border border-stone-200 bg-white p-3">
+                            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-500">Industry</p>
+                            <p className="mt-2 text-sm font-semibold text-stone-800">{profile.industry}</p>
+                          </div>
+                        )}
+                        {(profile.founded_year || profile.founded) && (
+                          <div className="rounded-xl border border-stone-200 bg-white p-3">
+                            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-500">Founded Year</p>
+                            <p className="mt-2 text-sm font-semibold text-stone-800">{profile.founded_year || profile.founded}</p>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
