@@ -15,7 +15,7 @@ linkedin: https://linkedin.com/in/yourprofile
 facebook: https://facebook.com/yourprofile
 twitter: https://twitter.com/yourprofile
 website: https://yourcompany.com
-title_tag: "Your Name | YourCompany Co-Founder & CEO | Entrepreneur BD Profile"
+title_tag: "Your Name | YourCompany Co-Founder & CEO | Entrepreneurs BD Profile"
 meta_description: "Brief 155-char description for search engines about this entrepreneur and what they do."
 short_bio: "One paragraph intro about who this person is and what they built."
 ---

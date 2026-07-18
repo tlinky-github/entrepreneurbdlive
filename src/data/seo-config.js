@@ -1,7 +1,7 @@
 export const SEO_CONFIG = {
     // Default values used if a page doesn't specify its own
     default: {
-        title: "Entrepreneur BD | Empowering Bangladesh's Startup Ecosystem",
+        title: "Entrepreneurs BD | Empowering Bangladesh's Startup Ecosystem",
         description: "The ultimate platform for entrepreneurs in Bangladesh. Connect with founders, discover businesses, and access growth resources.",
         keywords: ["entrepreneur", "bangladesh", "startup", "business", "sme", "investment", "fundraising"],
         type: "website",
@@ -10,12 +10,12 @@ export const SEO_CONFIG = {
 
     // Specific page configurations
     home: {
-        title: "Entrepreneur BD | Empowering Bangladesh's Startup Ecosystem",
+        title: "Entrepreneurs BD | Empowering Bangladesh's Startup Ecosystem",
         description: "Join the largest community of entrepreneurs in Bangladesh. Find investors, partners, and resources to scale your business.",
         keywords: ["bangladesh startups", "dhaka business", "entrepreneur community", "startup ecosystem"],
     },
     blog: {
-        title: "Insights & Stories | Entrepreneur BD Blog",
+        title: "Insights & Stories | Entrepreneurs BD Blog",
         description: "Read the latest business trends, startup stories, and expert guides from Bangladesh's entrepreneurial community.",
         keywords: ["business blog", "startup stories", "market trends", "expert advice"],
     },
@@ -30,7 +30,7 @@ export const SEO_CONFIG = {
         keywords: ["business guides", "startup templates", "legal documents", "growth frameworks"],
     },
     resources: {
-        title: "Resources & Tools | Entrepreneur BD",
+        title: "Resources & Tools | Entrepreneurs BD",
         description: "Free guides, templates, checklists, and tools to help you build and grow your business.",
         keywords: ["business tools", "startup checklists", "free templates", "entrepreneur resources"],
     },
@@ -40,42 +40,42 @@ export const SEO_CONFIG = {
         keywords: ["founder profiles", "bangladeshi entrepreneurs", "success stories"],
     },
     about: {
-        title: "About Us | Entrepreneur BD",
+        title: "About Us | Entrepreneurs BD",
         description: "Learn about our mission to empower 1 million entrepreneurs in Bangladesh by 2030.",
         keywords: ["mission", "vision", "team", "entrepreneurship development"],
     },
     contact: {
-        title: "Contact Us | Entrepreneur BD",
-        description: "Get in touch with the Entrepreneur BD team for partnerships, support, or inquiries.",
+        title: "Contact Us | Entrepreneurs BD",
+        description: "Get in touch with the Entrepreneurs BD team for partnerships, support, or inquiries.",
         keywords: ["contact", "support", "partnership"],
     },
     login: {
-        title: "Login | Entrepreneur BD",
+        title: "Login | Entrepreneurs BD",
         description: "Sign in to your account to manage your profile and connect with others.",
         keywords: ["login", "signin", "member access"],
     },
     register: {
-        title: "Join the Community | Entrepreneur BD",
+        title: "Join the Community | Entrepreneurs BD",
         description: "Create your free account today and start your entrepreneurial journey.",
         keywords: ["signup", "register", "join community"],
     },
     privacy: {
-        title: "Privacy Policy | Entrepreneur BD",
+        title: "Privacy Policy | Entrepreneurs BD",
         description: "Our commitment to protecting your privacy and personal data.",
         keywords: ["privacy policy", "data protection", "gdpr"],
     },
     disclaimer: {
-        title: "Disclaimer | Entrepreneur BD",
+        title: "Disclaimer | Entrepreneurs BD",
         description: "Important legal disclaimers and terms of use for our platform.",
         keywords: ["disclaimer", "legal", "terms"],
     },
     editorial: {
-        title: "Editorial Policy | Entrepreneur BD",
+        title: "Editorial Policy | Entrepreneurs BD",
         description: "Our editorial principles, fact-checking process, and content guidelines.",
         keywords: ["editorial policy", "content guidelines", "journalism ethics"],
     },
     faqs: {
-        title: "Frequently Asked Questions | Entrepreneur BD",
+        title: "Frequently Asked Questions | Entrepreneurs BD",
         description: "Find answers to common questions about using our platform and resources.",
         keywords: ["faq", "help", "support questions"],
     },
@@ -85,12 +85,12 @@ export const SEO_CONFIG = {
         keywords: ["business glossary", "startup terms", "definitions"],
     },
     guides: {
-        title: "Practical Business Guides | Entrepreneur BD",
+        title: "Practical Business Guides | Entrepreneurs BD",
         description: "Step-by-step guides and frameworks for every stage of your business journey.",
         keywords: ["business guides", "how-to", "tutorials"],
     },
     terms: {
-        title: "Terms of Service | Entrepreneur BD",
+        title: "Terms of Service | Entrepreneurs BD",
         description: "Read the terms and conditions governing your use of the entrepreneurs.bd platform.",
         keywords: ["terms of service", "terms and conditions", "user agreement", "legal"],
     }

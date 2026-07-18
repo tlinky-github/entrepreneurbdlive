@@ -129,7 +129,7 @@ const EntrepreneurDetail = () => {
         image={profile.featured_image || profile.photo}
         ogImage={profile.og_image}
         type="profile"
-        author={authorData?.name || "Entrepreneur BD"}
+        author={authorData?.name || "Entrepreneurs BD"}
         faqs={profile.faqs}
         profileData={{
           name: profile.name,

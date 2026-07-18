@@ -8,7 +8,7 @@ stage: Growth-stage
 industry: EdTech
 linkedin: https://bd.linkedin.com/in/almusabbir
 facebook: https://www.facebook.com/abdullahal.musabbir/
-title_tag: "Abdullah Al Musabbir | Ostad Co-Founder & CEO | Entrepreneur BD Profile"
+title_tag: "Abdullah Al Musabbir | Ostad Co-Founder & CEO | Entrepreneurs BD Profile"
 meta_description: "Abdullah Al Musabbir co-founded Ostad in 2020, a live-streaming skills platform for job seekers and freelancers, featured by Prothom Alo."
 ---
 

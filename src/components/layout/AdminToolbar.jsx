@@ -75,7 +75,7 @@ const AdminToolbar = () => {
        <div className="flex items-center gap-5 w-full">
          <div className="flex items-center gap-2 pr-4 border-r border-emerald-800 h-8">
            <img src="/logo192.png" alt="" className="w-3.5 h-3.5 invert opacity-90" />
-           <Link to="/admin" className="hover:text-white transition-colors font-bold tracking-tight">Entrepreneur BD</Link>
+           <Link to="/admin" className="hover:text-white transition-colors font-bold tracking-tight">Entrepreneurs BD</Link>
          </div>
 
          <div className="flex items-center gap-1 h-8">

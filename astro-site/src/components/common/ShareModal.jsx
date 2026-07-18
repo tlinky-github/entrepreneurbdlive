@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 const ShareModal = ({ isOpen, onClose, shareUrl, shareTitle, shareText }) => {
   const [copied, setCopied] = useState(false);
   const url = shareUrl || (typeof window !== 'undefined' ? window.location.href : '');
-  const title = shareTitle || 'Entrepreneur BD';
+  const title = shareTitle || 'Entrepreneurs BD';
   const text = shareText || '';
 
   // Reset copy state when modal closes/opens

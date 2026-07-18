@@ -137,7 +137,7 @@ linkedin: https://linkedin.com/in/janedoe
 facebook: https://facebook.com/janedoe
 twitter: https://twitter.com/janedoe
 website: https://exampleco.com
-title_tag: "Jane Doe | ExampleCo Co-Founder & CEO | Entrepreneur BD Profile"
+title_tag: "Jane Doe | ExampleCo Co-Founder & CEO | Entrepreneurs BD Profile"
 meta_description: "Jane Doe co-founded ExampleCo in 2018, a Dhaka-based fintech startup focused on digital payments."
 keyword: "Jane Doe"
 short_bio: "Jane Doe is a fintech entrepreneur based in Dhaka who co-founded ExampleCo in 2018."
@@ -176,7 +176,7 @@ twitter: https://x.com/exampleco
 facebook: https://facebook.com/exampleco
 email: hello@exampleco.com
 phone: +880 17 0000 0000
-title_tag: "ExampleCo Ltd | FinTech Startup | Entrepreneur BD Directory"
+title_tag: "ExampleCo Ltd | FinTech Startup | Entrepreneurs BD Directory"
 meta_description: "ExampleCo Ltd is a Dhaka-based fintech startup building digital payment infrastructure for SMEs in Bangladesh."
 keyword: "ExampleCo"
 short_description: "ExampleCo Ltd is a fintech company founded in 2015 that builds digital payment infrastructure and mobile banking tools for SMEs across Bangladesh."
@@ -198,7 +198,7 @@ The team works out of a modern office in Gulshan with flexible hours, free lunch
   blog: `---
 title: "My Blog Post Title"
 slug: my-blog-post-title
-title_tag: "My Blog Post Title | Entrepreneur BD"
+title_tag: "My Blog Post Title | Entrepreneurs BD"
 meta_description: "A concise summary of this blog post for search engines..."
 ---
 
@@ -213,7 +213,7 @@ Content goes here...
   knowledge: `---
 title: "Knowledge Article Title"
 slug: knowledge-article-title
-title_tag: "Knowledge Article Title | Entrepreneur BD"
+title_tag: "Knowledge Article Title | Entrepreneurs BD"
 meta_description: "A summary of this knowledge article..."
 ---
 

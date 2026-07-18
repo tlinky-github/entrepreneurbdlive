@@ -97,7 +97,7 @@ const ResourceDetail = () => {
         description={resource.seo_description || resource.excerpt}
         image={resource.featured_image || '/images/resource-placeholder.jpg'}
         type="article"
-        author={authorData?.name || "Entrepreneur BD"}
+        author={authorData?.name || "Entrepreneurs BD"}
         publishedTime={resource.created_at?.toISOString ? resource.created_at.toISOString() : resource.created_at}
         faqs={resource.faqs}
         breadcrumbs={[
