@@ -64,7 +64,7 @@ function buildPayload(type, frontmatter, body) {
       title: frontmatter.full_name || '',
       name: frontmatter.full_name || '',
       designation: frontmatter.designation || '',
-      company_name: frontmatter.company || '',
+      company_name: frontmatter.company || frontmatter.company_name || '',
       city: frontmatter.city || '',
       startup_stage: frontmatter.stage ? frontmatter.stage.toLowerCase().replace(/[^a-z0-9]+/g, '-') : '',
       industry: frontmatter.industry || '',
@@ -72,9 +72,10 @@ function buildPayload(type, frontmatter, body) {
       social_facebook: frontmatter.facebook || '',
       social_twitter: frontmatter.twitter || '',
       website: frontmatter.website || '',
-      founded_year: frontmatter.founded || '',
+      founded_year: frontmatter.founded_year || frontmatter.founded || '',
       expertise: frontmatter.expertise || '',
       education: frontmatter.education || '',
+      excerpt: frontmatter.short_bio || frontmatter.short_description || frontmatter.excerpt || '',
     };
   }
   if (type === 'directory') {
@@ -127,18 +128,30 @@ company: ExampleCo
 city: Dhaka
 stage: Growth-stage
 industry: FinTech
+founded: 2018
+expertise: "FinTech, Digital Payments, SME Lending"
+education: "Bangladesh University of Engineering and Technology"
 linkedin: https://linkedin.com/in/janedoe
 facebook: https://facebook.com/janedoe
 twitter: https://twitter.com/janedoe
 website: https://exampleco.com
-title_tag: "Jane Doe | ExampleCo Co-Founder & CEO | Entrepreneur BD"
-meta_description: "Jane Doe co-founded ExampleCo, a fintech startup..."
-short_bio: "Jane Doe is a fintech entrepreneur based in Dhaka..."
+title_tag: "Jane Doe | ExampleCo Co-Founder & CEO | Entrepreneur BD Profile"
+meta_description: "Jane Doe co-founded ExampleCo in 2018, a Dhaka-based fintech startup focused on digital payments."
+keyword: "Jane Doe"
+short_bio: "Jane Doe is a fintech entrepreneur based in Dhaka who co-founded ExampleCo in 2018."
 ---
 
 ## About Jane Doe
 
-More about Jane and her journey...
+Jane Doe is the co-founder and CEO of ExampleCo, a Dhaka-based fintech company she built from the ground up in 2018.
+
+### Early Career
+
+Her journey began after graduating from BUET with a focus on financial technology...
+
+### Building ExampleCo
+
+ExampleCo started with a small team of five engineers and has grown to over 100 employees...
 `,
   directory: `---
 business_name: ExampleCo Ltd
@@ -148,10 +161,10 @@ ceo: Jane Doe
 city: Dhaka
 country: Bangladesh
 founded_year: 2015
-employee_size: 11-50
+employee_size: 51-200
 category: Software Company
 industry: FinTech
-expertise: Payments, Mobile Banking, SME Lending
+expertise: "Payments, Mobile Banking, SME Lending"
 listing_type: startup
 website: https://exampleco.com
 linkedin: https://linkedin.com/company/exampleco
@@ -160,14 +173,22 @@ facebook: https://facebook.com/exampleco
 email: hello@exampleco.com
 phone: +880 17 0000 0000
 title_tag: "ExampleCo Ltd | FinTech Startup | Entrepreneur BD Directory"
-meta_description: "ExampleCo Ltd is a Dhaka-based fintech startup..."
+meta_description: "ExampleCo Ltd is a Dhaka-based fintech startup building digital payment infrastructure for SMEs in Bangladesh."
 keyword: "ExampleCo"
-company_overview: "ExampleCo Ltd is a fintech company focused on..."
+company_overview: "ExampleCo Ltd is a fintech company founded in 2015 that builds digital payment infrastructure and mobile banking tools for SMEs across Bangladesh."
 ---
 
 ## About ExampleCo
 
-More about ExampleCo's story and products...
+ExampleCo has been building financial technology for Bangladeshi businesses since 2015, starting with a small payments API and growing into a full-stack banking platform.
+
+### Products
+
+Through its flagship product, ExamplePay, the company serves over 10,000 SMEs across Dhaka and Chittagong...
+
+### Life at ExampleCo
+
+The team works out of a modern office in Gulshan with flexible hours, free lunch, and regular hackathons...
 `,
   blog: `---
 title: "My Blog Post Title"
