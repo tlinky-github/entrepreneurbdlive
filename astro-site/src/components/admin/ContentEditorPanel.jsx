@@ -714,7 +714,9 @@ const ContentEditorPanel = () => {
             setSource(data.source || '');
 
             setExcerpt(data.excerpt || '');
-            setCategory(data.category_id || '');
+            const initialCategoryValue = data.category_id || data.category || data.category_name || '';
+            const resolvedCategoryValue = getResolvedSelectValue(initialCategoryValue, categories, 'category');
+            setCategory(resolvedCategoryValue || initialCategoryValue || '');
             setStatus(data.status || 'draft');
             setFeaturedImage(data.featured_image || '');
             setSeoTitle(data.seo_title || '');
