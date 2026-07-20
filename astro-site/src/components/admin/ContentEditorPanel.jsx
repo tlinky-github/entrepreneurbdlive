@@ -31,6 +31,7 @@ import LinkDialog from '../../components/admin/LinkDialog';
 import ImageEditorDialog from '../../components/admin/ImageEditorDialog';
 import SEOModal from './SEOModal';
 import { Label } from '../../components/ui/label';
+import { normalizeSeoTitleValue } from '../../lib/seoTitle.js';
 import {
   Dialog,
   DialogContent,
@@ -184,6 +185,47 @@ const upgradeLegacyFaqs = (html) => {
   }
 };
 
+const formatDatetimeLocalValue = (value) => {
+  if (!value) return '';
+  const sourceDate = value?.toDate ? value.toDate() : new Date(value);
+  if (Number.isNaN(sourceDate.getTime())) return '';
+  const pad = (num) => String(num).padStart(2, '0');
+  return `${sourceDate.getFullYear()}-${pad(sourceDate.getMonth() + 1)}-${pad(sourceDate.getDate())}T${pad(sourceDate.getHours())}:${pad(sourceDate.getMinutes())}`;
+};
+
+const getCurrentDatetimeLocalValue = () => {
+  const now = new Date();
+  now.setMinutes(now.getMinutes() + 5);
+  now.setSeconds(0, 0);
+  const pad = (num) => String(num).padStart(2, '0');
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+};
+
+const isPastDatetimeLocalValue = (value) => {
+  const parsed = parseDatetimeLocalValue(value);
+  return !!parsed && parsed.getTime() < Date.now();
+};
+
+const formatScheduleDisplay = (value) => {
+  if (!value) return '';
+  const date = value?.toDate ? value.toDate() : new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return new Intl.DateTimeFormat('en-US', {
+    dateStyle: 'medium',
+    timeStyle: 'short'
+  }).format(date);
+};
+
+const parseDatetimeLocalValue = (value) => {
+  if (!value) return null;
+  const [datePart, timePart] = value.split('T');
+  if (!datePart || !timePart) return null;
+  const [year, month, day] = datePart.split('-').map(Number);
+  const [hour, minute] = timePart.split(':').map(Number);
+  if ([year, month, day, hour, minute].some(Number.isNaN)) return null;
+  return new Date(year, month - 1, day, hour, minute, 0, 0);
+};
+
 const ContentEditorPanel = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -205,6 +247,7 @@ const ContentEditorPanel = () => {
   const [isFeatured, setIsFeatured] = useState(false);
   const [scheduledAt, setScheduledAt] = useState('');
   const [isScheduled, setIsScheduled] = useState(false);
+  const [publishPreviewOpen, setPublishPreviewOpen] = useState(false);
 
   // SEO Fields
   const [seoTitle, setSeoTitle] = useState('');
@@ -829,10 +872,7 @@ const ContentEditorPanel = () => {
             const scheduledDateVal = data.scheduled_at || data.scheduledAt;
             if (scheduledDateVal) {
               setIsScheduled(true);
-              // Format for datetime-local input
-              const date = new Date(scheduledDateVal);
-              const formatted = date.toISOString().slice(0, 16);
-              setScheduledAt(formatted);
+              setScheduledAt(formatDatetimeLocalValue(scheduledDateVal));
             }
             
             setContentLoaded(true);
@@ -1145,6 +1185,22 @@ const ContentEditorPanel = () => {
       const selectedCategory = categories.find(cat => cat.id == category);
       const selectedAuthor = authorsList.find(auth => auth.id == authorId);
 
+      const scheduledAtDateValue = isScheduled ? parseDatetimeLocalValue(scheduledAt) : null;
+      if (isScheduled) {
+        if (!scheduledAt) {
+          toast.error('Please choose a future schedule time');
+          setSaving(false);
+          isSubmittingRef.current = false;
+          return false;
+        }
+        if (!scheduledAtDateValue || scheduledAtDateValue.getTime() < Date.now()) {
+          toast.error('Schedule time cannot be in the past');
+          setSaving(false);
+          isSubmittingRef.current = false;
+          return false;
+        }
+      }
+
       const payload = {
         type,
         title,
@@ -1154,7 +1210,7 @@ const ContentEditorPanel = () => {
         category_id: category, // Keep as string Firestore ID
         // Priority: overrideStatus > current state status
         status: isScheduled ? 'scheduled' : (overrideStatus || status),
-        scheduled_at: isScheduled ? scheduledAt : null,
+        scheduled_at: scheduledAtDateValue,
         featured_image: featuredImage,
         featured_image_alt: featuredImageAlt,
         seo_title: seoTitle,
@@ -1252,7 +1308,8 @@ const ContentEditorPanel = () => {
       }
 
 
-      toast.success(`Content ${status === 'published' ? 'published' : 'saved'} successfully!`);
+      const finalStatus = isScheduled ? 'scheduled' : (overrideStatus || status);
+      toast.success(`Content ${finalStatus === 'published' ? 'published' : finalStatus === 'scheduled' ? 'scheduled' : 'saved'} successfully!`);
       setIsDirty(false); // Reset dirty state on successful save
 
       if (!itemId && response?.id) {
@@ -1308,11 +1365,32 @@ Only output the raw JSON object, nothing else. Do not use markdown wrapping (\`\
   };
 
   const handlePublish = async () => {
+    setPublishPreviewOpen(true);
+  };
+
+  const confirmPublish = async () => {
+    setPublishPreviewOpen(false);
     setPublishing(true);
-    setStatus('published');
-    // Pass 'published' directly to handleSave to avoid state update race condition
-    await handleSave('published');
+    if (!isScheduled) {
+      setStatus('published');
+    }
+    await handleSave(isScheduled ? 'scheduled' : 'published');
     setPublishing(false);
+  };
+
+  const scheduleMinValue = getCurrentDatetimeLocalValue();
+  const scheduledAtDate = parseDatetimeLocalValue(scheduledAt);
+  const scheduleDisplayValue = scheduledAtDate || scheduledAt;
+  const scheduleHasPastValue = isScheduled && isPastDatetimeLocalValue(scheduledAt);
+
+  const handleScheduleToggle = () => {
+    setIsScheduled(prev => {
+      const next = !prev;
+      if (next && (!scheduledAt || isPastDatetimeLocalValue(scheduledAt))) {
+        setScheduledAt(scheduleMinValue);
+      }
+      return next;
+    });
   };
 
   // Generate preview URL based on content type
@@ -2601,7 +2679,7 @@ Only output the raw JSON object, nothing else. Do not use markdown wrapping (\`\
                 </span>
                 <button
                   type="button"
-                  onClick={() => setIsScheduled(!isScheduled)}
+                  onClick={handleScheduleToggle}
                   className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${isScheduled ? 'bg-emerald-600' : 'bg-stone-300'}`}
                 >
                   <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${isScheduled ? 'translate-x-5' : 'translate-x-1'}`} />
@@ -2614,13 +2692,23 @@ Only output the raw JSON object, nothing else. Do not use markdown wrapping (\`\
                   <Input
                     type="datetime-local"
                     value={scheduledAt}
+                    min={scheduleMinValue}
+                    step={300}
                     onChange={(e) => setScheduledAt(e.target.value)}
                     className="border-emerald-200 focus:ring-emerald-500"
                   />
                   <div className="flex items-center gap-2 text-[10px] text-emerald-700 bg-emerald-50 p-2 rounded border border-emerald-100">
                     <Check className="w-3 h-3" />
-                    <span>This post will be marked as <strong>Scheduled</strong> when saved.</span>
+                    <span>This post will be marked as <strong>Scheduled</strong> when saved. Past dates are blocked.</span>
                   </div>
+                  {scheduledAt && (
+                    <p className="text-xs text-stone-500">
+                      Last schedule time: <span className="font-semibold text-stone-700">{formatScheduleDisplay(scheduleDisplayValue)}</span>
+                    </p>
+                  )}
+                  {scheduleHasPastValue && (
+                    <p className="text-xs text-amber-700">Current value is in the past. It will be replaced with the next valid time when you re-enable scheduling.</p>
+                  )}
                 </div>
               ) : (
                 <div className="text-center py-2">
@@ -2721,7 +2809,7 @@ Only output the raw JSON object, nothing else. Do not use markdown wrapping (\`\
                       const rawContentText = editor?.getText() || '';
                       const contentWordCount = rawContentText.split(/\s+/).filter(Boolean).length;
                       const activeKeyword = focusKeyword.trim().toLowerCase();
-                      const finalTitle = seoTitle || title;
+                      const finalTitle = normalizeSeoTitleValue(seoTitle || title);
                       const finalDesc = seoDescription || excerpt;
                       let score = 0;
                       const checks = {
@@ -2888,6 +2976,59 @@ Only output the raw JSON object, nothing else. Do not use markdown wrapping (\`\
           }
         }}
       />
+
+      <Dialog open={publishPreviewOpen} onOpenChange={setPublishPreviewOpen}>
+        <DialogContent className="sm:max-w-lg bg-white border border-stone-200 shadow-2xl rounded-3xl p-6">
+          <DialogHeader>
+            <DialogTitle>{isScheduled ? 'Confirm Schedule' : 'Confirm Publish'}</DialogTitle>
+            <DialogDescription>
+              Review the preview and warning before sending this content live or into the queue.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="rounded-2xl border border-stone-200 bg-stone-50 p-4 space-y-3">
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-stone-400">Preview</p>
+                <h3 className="text-lg font-bold text-stone-900 mt-1">{title || 'Untitled content'}</h3>
+                <p className="text-sm text-stone-600 mt-1 line-clamp-3">{excerpt || 'No excerpt set yet.'}</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="rounded-xl bg-white border border-stone-200 p-3">
+                  <p className="text-[10px] uppercase tracking-wider text-stone-400 font-bold">Action</p>
+                  <p className="font-semibold text-stone-800 mt-1">{isScheduled ? 'Schedule for later' : 'Publish immediately'}</p>
+                </div>
+                <div className="rounded-xl bg-white border border-stone-200 p-3">
+                  <p className="text-[10px] uppercase tracking-wider text-stone-400 font-bold">Status</p>
+                  <p className="font-semibold text-stone-800 mt-1">{isScheduled ? 'Scheduled' : 'Published'}</p>
+                </div>
+                <div className="rounded-xl bg-white border border-stone-200 p-3 col-span-2">
+                  <p className="text-[10px] uppercase tracking-wider text-stone-400 font-bold">URL preview</p>
+                  <p className="font-mono text-xs text-stone-700 mt-1 break-all">{typeof window !== 'undefined' ? window.location.origin : ''}{getPreviewUrl()}</p>
+                </div>
+                {isScheduled && scheduledAt && (
+                  <div className="rounded-xl bg-white border border-stone-200 p-3 col-span-2">
+                    <p className="text-[10px] uppercase tracking-wider text-stone-400 font-bold">Scheduled time</p>
+                    <p className="font-semibold text-stone-800 mt-1">{scheduledAt.replace('T', ' ')}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+              <strong>Warning:</strong> {isScheduled ? 'The content will be queued and marked scheduled.' : 'This will make the content live immediately.'}
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPublishPreviewOpen(false)}>Cancel</Button>
+            <Button className="bg-emerald-900 hover:bg-emerald-800" onClick={confirmPublish} disabled={saving || publishing}>
+              {isScheduled ? 'Confirm Schedule' : 'Confirm Publish'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={buttonDialogOpen} onOpenChange={setButtonDialogOpen}>
         <DialogContent className="sm:max-w-md bg-white border border-stone-200 shadow-2xl rounded-3xl p-6">

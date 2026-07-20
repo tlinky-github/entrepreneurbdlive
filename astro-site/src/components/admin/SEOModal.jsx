@@ -16,17 +16,11 @@ import { ScrollArea } from '../ui/scroll-area';
 import aiAPI from '../../lib/aiApi';
 import { toast } from 'sonner';
 import ImageUploader from '../common/ImageUploader';
+import { interpolateSeoVariables, normalizeSeoTitleValue } from '../../lib/seoTitle.js';
 
 // Helper to interpolate title/description variables
 export const interpolateVariables = (template, titleVal, excerptVal, siteName = "Entrepreneurs BD") => {
-  if (!template) return '';
-  const currentYear = new Date().getFullYear().toString();
-  return template
-    .replace(/%title%/g, titleVal || '')
-    .replace(/%excerpt%/g, excerptVal || '')
-    .replace(/%sitename%/g, siteName)
-    .replace(/%sep%/g, '|')
-    .replace(/%currentyear%/g, currentYear);
+  return interpolateSeoVariables(template, titleVal, excerptVal, siteName);
 };
 
 // Helper to convert a tree representation back to a standard schema object
@@ -555,7 +549,7 @@ const SEOModal = ({
 
   // Pre-compiled variable title & description
   const interpolatedTitle = useMemo(() => {
-    const defaultTemplate = seoTitle || "%title% %sep% %sitename%";
+    const defaultTemplate = normalizeSeoTitleValue(seoTitle || "%title% %sep% %sitename%");
     return interpolateVariables(defaultTemplate, documentTitle, documentExcerpt);
   }, [seoTitle, documentTitle, documentExcerpt]);
 
@@ -702,7 +696,7 @@ Return ONLY a valid raw JSON object. Do not include markdown styling or block fo
   // Submit all modified SEO configurations
   const handleSave = () => {
     onChange({
-      seo_title: seoTitle,
+      seo_title: normalizeSeoTitleValue(seoTitle),
       seo_description: seoDescription,
       seo_keywords: seoKeywords,
       focus_keyword: focusKeyword,

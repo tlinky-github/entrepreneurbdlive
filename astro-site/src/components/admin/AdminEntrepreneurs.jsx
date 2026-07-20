@@ -162,6 +162,16 @@ const AdminEntrepreneurs = () => {
     return <Badge className={styles[status] || 'bg-stone-100 text-stone-700'}>{status}</Badge>;
   };
 
+  const formatScheduleTime = (value) => {
+    if (!value) return '-';
+    const date = value?.toDate ? value.toDate() : new Date(value);
+    if (Number.isNaN(date.getTime())) return '-';
+    return new Intl.DateTimeFormat('en-US', {
+      dateStyle: 'medium',
+      timeStyle: 'short'
+    }).format(date);
+  };
+
   const totalItems = profiles.length;
   const totalPages = Math.ceil(totalItems / pageSize) || 1;
   const startIndex = (currentPage - 1) * pageSize;
@@ -317,7 +327,7 @@ const AdminEntrepreneurs = () => {
                     <TableHead>Industry</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Featured</TableHead>
-                    <TableHead>Followers</TableHead>
+                    <TableHead>Schedule Time</TableHead>
                     <TableHead className="w-12"></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -353,7 +363,7 @@ const AdminEntrepreneurs = () => {
                       <TableCell>
                         {profile.is_featured && <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />}
                       </TableCell>
-                      <TableCell className="text-stone-600">{profile.follower_count}</TableCell>
+                      <TableCell className="text-stone-600">{formatScheduleTime(profile.scheduled_at || profile.scheduledAt)}</TableCell>
                       <TableCell>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>

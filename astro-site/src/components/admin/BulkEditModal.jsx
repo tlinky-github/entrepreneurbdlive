@@ -80,6 +80,24 @@ const apiForType = (contentType) => {
   return postAPI;
 };
 
+const parseDatetimeLocalValue = (value) => {
+  if (!value) return null;
+  const [datePart, timePart] = value.split('T');
+  if (!datePart || !timePart) return null;
+  const [year, month, day] = datePart.split('-').map(Number);
+  const [hour, minute] = timePart.split(':').map(Number);
+  if ([year, month, day, hour, minute].some(Number.isNaN)) return null;
+  return new Date(year, month - 1, day, hour, minute, 0, 0);
+};
+
+const getCurrentDatetimeLocalValue = () => {
+  const now = new Date();
+  now.setMinutes(now.getMinutes() + 5);
+  now.setSeconds(0, 0);
+  const pad = (num) => String(num).padStart(2, '0');
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+};
+
 /**
  * BulkEditModal
  *
@@ -138,7 +156,14 @@ const BulkEditModal = ({ isOpen, onClose, selectedIds, contentType, onSuccess, o
   }, [isOpen, contentType]);
 
   const setFieldActive = (key, active) =>
-    setFields(prev => ({ ...prev, [key]: { ...prev[key], active } }));
+    setFields(prev => ({
+      ...prev,
+      [key]: {
+        ...prev[key],
+        active,
+        ...(key === 'scheduledAt' && active && !prev[key].value ? { value: getCurrentDatetimeLocalValue() } : {})
+      }
+    }));
 
   const setFieldValue = (key, patch) =>
     setFields(prev => ({ ...prev, [key]: { ...prev[key], ...patch } }));
@@ -181,7 +206,8 @@ const BulkEditModal = ({ isOpen, onClose, selectedIds, contentType, onSuccess, o
       payload.startup_stage = fields.startupStage.value;
 
     if (fields.scheduledAt.active && fields.scheduledAt.value) {
-      payload.scheduled_at = fields.scheduledAt.value;
+      const scheduledAtDate = parseDatetimeLocalValue(fields.scheduledAt.value);
+      payload.scheduled_at = scheduledAtDate;
       // If scheduling, ensure status is 'scheduled' unless user also changed status
       if (!fields.status.active)
         payload.status = 'scheduled';
@@ -199,6 +225,13 @@ const BulkEditModal = ({ isOpen, onClose, selectedIds, contentType, onSuccess, o
     if (Object.keys(payload).length === 0) {
       toast.error('Please enable and fill at least one field to update');
       return;
+    }
+    if (fields.scheduledAt.active) {
+      const scheduledAtDate = parseDatetimeLocalValue(fields.scheduledAt.value);
+      if (!scheduledAtDate || scheduledAtDate.getTime() < Date.now()) {
+        toast.error('Publish schedule cannot be in the past');
+        return;
+      }
     }
     setProcessing(true);
     try {
@@ -407,6 +440,8 @@ const BulkEditModal = ({ isOpen, onClose, selectedIds, contentType, onSuccess, o
                     type="datetime-local"
                     value={fields.scheduledAt.value}
                     onChange={e => setFieldValue('scheduledAt', { value: e.target.value })}
+                    min={getCurrentDatetimeLocalValue()}
+                    step={300}
                     className="w-full text-xs h-8 border border-stone-200 rounded bg-white px-2 focus:outline-none focus:ring-1 focus:ring-emerald-800 font-medium"
                     disabled={!fields.scheduledAt.active}
                   />

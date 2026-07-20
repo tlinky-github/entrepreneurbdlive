@@ -17,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../../components/ui/select';
+import { normalizeSeoTitleValue } from '../../lib/seoTitle.js';
 
 const PostEditor = () => {
   const navigate = useNavigate();
@@ -117,6 +118,7 @@ const PostEditor = () => {
       const payload = {
         ...formData,
         status,
+        seo_title: normalizeSeoTitleValue(formData.seo_title),
         tags: formData.tags.split(',').map(t => t.trim()).filter(Boolean),
         category_id: formData.category_id || null,
       };

@@ -1,5 +1,7 @@
 // Schema.org JSON-LD Generators
 
+import { interpolateSeoVariables } from './seoTitle.js';
+
 export const SITE_URL = 'https://entrepreneurs.bd';
 export const SITE_NAME = 'Entrepreneurs BD';
 export const LOGO_URL = `${SITE_URL}/logo.png`;
@@ -209,14 +211,7 @@ export const buildSchema = (customSchemaStr: string | null | undefined, defaultS
  * Interpolate SEO variable tokens
  */
 export const interpolateSEOVariables = (template: string | null | undefined, titleVal: string, excerptVal: string, siteName = "Entrepreneurs BD") => {
-  if (!template) return '';
-  const currentYear = new Date().getFullYear().toString();
-  return template
-    .replace(/%title%/g, titleVal || '')
-    .replace(/%excerpt%/g, excerptVal || '')
-    .replace(/%sitename%/g, siteName)
-    .replace(/%sep%/g, '|')
-    .replace(/%currentyear%/g, currentYear);
+  return interpolateSeoVariables(template, titleVal, excerptVal, siteName);
 };
 
 /**

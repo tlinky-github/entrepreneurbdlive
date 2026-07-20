@@ -1,9 +1,33 @@
-import { getFirestore, verifyFirebaseIdToken, getAdminInitError } from '../../../lib/firebaseAdmin.js';
+import { getFirestore, verifyFirebaseIdToken, getAdminInitError, env } from '../../../lib/firebaseAdmin.js';
 import postGeneratorService from '../../../lib/services/postGeneratorService.js';
 import { encrypt, decrypt } from '../../../lib/services/encryptionService.js';
 import openaiService from '../../../lib/services/aiProviders/openaiService.js';
 import geminiService from '../../../lib/services/aiProviders/geminiService.js';
 import claudeService from '../../../lib/services/aiProviders/claudeService.js';
+
+const COLLECTIONS = [
+  { name: 'posts', route: 'blog' },
+  { name: 'profiles', route: 'entrepreneurs' },
+  { name: 'listings', route: 'directory' },
+  { name: 'resources', route: 'knowledge' }
+];
+
+const toDate = (value) => {
+  if (!value) return null;
+  if (typeof value.toDate === 'function') return value.toDate();
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+const isCronRequest = (request, url) => {
+  const cronHeader = request.headers.get('x-vercel-cron');
+  if (cronHeader === '1' || cronHeader === 'true') return true;
+
+  const cronSecret = env('CRON_SECRET');
+  if (!cronSecret) return false;
+
+  return url.searchParams.get('secret') === cronSecret;
+};
 
 const getProviderService = (provider) => {
   const services = {
@@ -43,6 +67,44 @@ export const ALL = async ({ request, url }) => {
 
   try {
     const db = getFirestore();
+
+    if (request.method === 'GET' && isCronRequest(request, url)) {
+      const now = new Date();
+      const published = [];
+      const skipped = [];
+
+      for (const collectionInfo of COLLECTIONS) {
+        const snapshot = await db.collection(collectionInfo.name)
+          .where('status', '==', 'scheduled')
+          .get();
+
+        for (const docSnap of snapshot.docs) {
+          const data = docSnap.data();
+          const scheduledAt = toDate(data.scheduled_at || data.scheduledAt);
+
+          if (!scheduledAt || scheduledAt > now) {
+            skipped.push({ collection: collectionInfo.name, id: docSnap.id });
+            continue;
+          }
+
+          await db.collection(collectionInfo.name).doc(docSnap.id).update({
+            status: 'published',
+            published_at: now,
+            updated_at: now
+          });
+
+          published.push({ collection: collectionInfo.name, id: docSnap.id, route: collectionInfo.route });
+        }
+      }
+
+      return successResponse({
+        checkedAt: now.toISOString(),
+        publishedCount: published.length,
+        skippedCount: skipped.length,
+        published,
+        skipped
+      });
+    }
     
     // Auth check
     const authHeader = request.headers.get('authorization');

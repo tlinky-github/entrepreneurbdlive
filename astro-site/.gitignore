@@ -28,3 +28,6 @@ pnpm-debug.log*
 
 # Scratch/temporary scripts
 scratch/
+
+# Local regression tests not meant for commit
+/src/lib/seoTitle.test.js
