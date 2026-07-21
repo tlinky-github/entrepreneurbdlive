@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/ca
 import { Skeleton } from '../../components/ui/skeleton';
 import { toast } from 'sonner';
 import { ensureAbsoluteUrl, sanitizeHtml } from '../../lib/utils';
+import { resolveListingTypeLabel } from '../../lib/listingTypes.js';
 import {
   ArrowLeft,
   MapPin,
@@ -36,6 +37,7 @@ const DirectoryDetail = ({ slug, initialListing, startupStages: initialStartupSt
   const [loading, setLoading] = useState(!initialListing);
   const [openFaqIndex, setOpenFaqIndex] = useState(null);
   const [startupStages, setStartupStages] = useState(initialStartupStages);
+  const [listingTypes, setListingTypes] = useState([]);
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [relatedListings, setRelatedListings] = useState([]);
 
@@ -51,6 +53,18 @@ const DirectoryDetail = ({ slug, initialListing, startupStages: initialStartupSt
       }
     };
     loadStartupStages();
+  }, []);
+
+  useEffect(() => {
+    const loadListingTypes = async () => {
+      try {
+        const res = await taxonomyAPI.list('listing_types');
+        if (res.data) setListingTypes(res.data);
+      } catch (error) {
+        console.error('Error loading listing types:', error);
+      }
+    };
+    loadListingTypes();
   }, []);
 
   useEffect(() => {
@@ -185,7 +199,7 @@ const DirectoryDetail = ({ slug, initialListing, startupStages: initialStartupSt
               )}
             </div>
             <p className="text-sm md:text-md text-stone-400 font-bold mt-2 uppercase tracking-[0.2em] opacity-80">
-              {listing.listing_type_name || listing.listing_type?.replace('_', ' ') || 'Registered Business'}
+              {resolveListingTypeLabel(listing.listing_type, listing.listing_type_name, listingTypes) || 'Registered Business'}
             </p>
           </div>
         </div>
@@ -264,7 +278,7 @@ const DirectoryDetail = ({ slug, initialListing, startupStages: initialStartupSt
                           {listing.listing_type && (
                             <div className="rounded-xl border border-stone-200 bg-white p-3">
                               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-500">Listing Type</p>
-                              <p className="mt-2 text-sm font-semibold text-stone-800">{listing.listing_type}</p>
+                              <p className="mt-2 text-sm font-semibold text-stone-800">{resolveListingTypeLabel(listing.listing_type, listing.listing_type_name, listingTypes)}</p>
                             </div>
                           )}
                         </div>

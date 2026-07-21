@@ -96,7 +96,6 @@ const DirectoryList = () => {
         setLoading(false);
       }
     };
-
     loadListings();
   }, [search, listingType, category]);
 
@@ -251,7 +250,7 @@ const DirectoryList = () => {
                 </h2>
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
                   {featuredListings.map((listing) => (
-                    <DirectoryCard key={listing.id} listing={listing} featured />
+                    <DirectoryCard key={listing.id} listing={listing} featured listingTypes={listingTypes} />
                   ))}
                 </div>
               </div>
@@ -260,7 +259,7 @@ const DirectoryList = () => {
             {/* All Listings */}
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {paginatedListings.map((listing) => (
-                <DirectoryCard key={listing.id} listing={listing} />
+                <DirectoryCard key={listing.id} listing={listing} listingTypes={listingTypes} />
               ))}
             </div>
 

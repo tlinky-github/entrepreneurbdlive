@@ -2,8 +2,9 @@ import React from 'react';
 import { Card, CardContent } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
 import { Building2, MapPin, Globe, Mail, Phone, Star } from 'lucide-react';
+import { resolveListingTypeLabel } from '../../lib/listingTypes.js';
 
-const DirectoryCard = ({ listing, featured }) => (
+const DirectoryCard = ({ listing, featured, listingTypes = [] }) => (
   <a href={`/directory/${listing.slug}`} className="block h-full">
     <Card className={`h-full border-stone-200 hover:border-emerald-900/20 hover:shadow-lg transition-all duration-200 rounded-2xl ${featured ? 'ring-2 ring-yellow-200' : ''}`}>
       <CardContent className="p-6">
@@ -26,7 +27,7 @@ const DirectoryCard = ({ listing, featured }) => (
               )}
             </div>
             <p className="text-sm text-stone-500 capitalize mb-2">
-              {listing.listing_type_name || listing.listing_type?.replace('_', ' ') || '-'}
+              {resolveListingTypeLabel(listing.listing_type, listing.listing_type_name, listingTypes)}
             </p>
             {listing.city && (
               <p className="text-sm text-stone-400 flex items-center gap-1">

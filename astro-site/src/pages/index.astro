@@ -1,7 +1,8 @@
 ---
 import PublicLayout from '../layouts/PublicLayout.astro';
-import { getRecentPosts, getFeaturedDocs, getPublicStats } from '../lib/serverApi';
+import { getRecentPosts, getFeaturedDocs, getPublicStats, taxonomyAPI } from '../lib/serverApi';
 import { getWebSiteSchema, getOrganizationSchema } from '../lib/schema';
+import { resolveListingTypeLabel } from '../lib/listingTypes.js';
 import { Badge } from '../components/ui/badge.jsx';
 import { Button } from '../components/ui/button.jsx';
 import { Card, CardContent } from '../components/ui/card.jsx';
@@ -14,6 +15,7 @@ import {
 let featuredPosts = [];
 let featuredEntrepreneurs = [];
 let featuredListings = [];
+let listingTypes = [];
 let knowledgeItems = [];
 let stats = {};
 
@@ -32,6 +34,10 @@ try {
 try {
   featuredListings = await getFeaturedDocs('listings', 4);
 } catch (e) { console.error('[Home] Listings fetch failed:', e.message); }
+
+try {
+  listingTypes = await taxonomyAPI.getByCollection('listing_types');
+} catch (e) { console.error('[Home] Listing types fetch failed:', e.message); }
 
 try {
   knowledgeItems = await getRecentPosts(6); // Wait, resource API list
@@ -353,7 +359,7 @@ const pageSchema = [getWebSiteSchema(), getOrganizationSchema()];
                           )}
                         </div>
                         <p class="text-sm text-stone-500 capitalize">
-                          {listing.listing_type_name || listing.industry || (listing.listing_type ? listing.listing_type.replace('_', ' ') : 'Business')}
+                          {resolveListingTypeLabel(listing.listing_type, listing.listing_type_name, listingTypes) || listing.industry || 'Business'}
                         </p>
                         {listing.city && (
                           <p class="text-sm text-stone-400 mt-1 flex items-center gap-1">
