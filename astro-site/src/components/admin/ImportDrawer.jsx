@@ -96,22 +96,69 @@ function parseFrontmatter(text) {
 }
 
 function markdownToHtml(md) {
-  return md
-    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
-    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
-    .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+  const lines = String(md || '').replace(/\r\n/g, '\n').split('\n');
+  const blocks = [];
+  let paragraph = [];
+  let listType = null;
+  let listItems = [];
+
+  const formatInline = (text) => String(text || '')
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     .replace(/\*(.+?)\*/g, '<em>$1</em>')
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
-    .split(/\n\n+/)
-    .map(block => {
-      const trimmed = block.trim();
-      if (!trimmed) return '';
-      if (/^<h[1-6]>/.test(trimmed)) return trimmed;
-      return `<p>${trimmed.replace(/\n/g, ' ')}</p>`;
-    })
-    .filter(Boolean)
-    .join('\n');
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+
+  const flushParagraph = () => {
+    if (!paragraph.length) return;
+    const text = paragraph.join(' ').trim();
+    if (text) blocks.push(`<p>${text}</p>`);
+    paragraph = [];
+  };
+
+  const flushList = () => {
+    if (!listType || !listItems.length) return;
+    const tag = listType === 'ol' ? 'ol' : 'ul';
+    blocks.push(`<${tag}>${listItems.map(item => `<li>${item}</li>`).join('')}</${tag}>`);
+    listType = null;
+    listItems = [];
+  };
+
+  lines.forEach((line) => {
+    const trimmed = line.trim();
+
+    if (!trimmed) {
+      flushParagraph();
+      flushList();
+      return;
+    }
+
+    const headingMatch = trimmed.match(/^(#{1,3})\s+(.+)$/);
+    const unorderedMatch = trimmed.match(/^[-*+]\s+(.+)$/);
+    const orderedMatch = trimmed.match(/^\d+\.\s+(.+)$/);
+
+    if (headingMatch) {
+      flushParagraph();
+      flushList();
+      const level = headingMatch[1].length;
+      blocks.push(`<h${level}>${formatInline(headingMatch[2])}</h${level}>`);
+      return;
+    }
+
+    if (unorderedMatch || orderedMatch) {
+      flushParagraph();
+      const nextType = unorderedMatch ? 'ul' : 'ol';
+      if (listType && listType !== nextType) flushList();
+      listType = nextType;
+      listItems.push(formatInline((unorderedMatch || orderedMatch)[1]));
+      return;
+    }
+
+    flushList();
+    paragraph.push(formatInline(trimmed));
+  });
+
+  flushParagraph();
+  flushList();
+  return blocks.join('\n');
 }
 
 function getFrontmatterValue(frontmatter, aliases) {
@@ -131,7 +178,7 @@ function normalizeStartupStage(value) {
 
 function buildPayload(type, frontmatter, body) {
   const contentHtml = markdownToHtml(body);
-  const lifeAtCompanyMarkdown = getFrontmatterValue(frontmatter, ['life_at_company', 'lifeAtCompany']) || body;
+  const lifeAtCompanyHtml = markdownToHtml(getFrontmatterValue(frontmatter, ['life_at_company', 'lifeAtCompany']) || body);
   const focusKeyword = getFrontmatterValue(frontmatter, ['focus_keyword', 'focus-keyword', 'focusKeyword', 'keyword', 'seo_keyword', 'seoKeyword']);
   const startupStage = normalizeStartupStage(getFrontmatterValue(frontmatter, ['startup_stage', 'startup-stage', 'startupStage', 'stage', 'stage_name']));
   const base = {
@@ -188,7 +235,7 @@ function buildPayload(type, frontmatter, body) {
       listing_type: frontmatter.listing_type || 'startup',
       excerpt: frontmatter.company_overview || frontmatter.short_description || frontmatter.short_bio || frontmatter.excerpt || '',
       short_description: frontmatter.company_overview || frontmatter.short_description || '',
-      life_at_company: lifeAtCompanyMarkdown,
+      life_at_company: lifeAtCompanyHtml,
       category: frontmatter.category || '',
       leadership_team: {
         founder: { type: 'manual', name: frontmatter.founder || '', id: '', photo: '' },
