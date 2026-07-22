@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "astro dev --host",
     "build": "astro build",
+    "build:node": "astro build --config astro.config.node.mjs",
     "preview": "astro preview --host",
     "astro": "astro"
   },

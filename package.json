@@ -93,12 +93,15 @@
     "start:react": "craco start",
     "dev:astro": "npm --prefix astro-site run dev",
     "build:astro": "npm --prefix astro-site run build",
+    "build:node": "npm --prefix astro-site run build:node",
     "bridge": "node scripts/local-bridge.js",
-    "build": "craco build",
+    "build": "npm run build:node",
+    "build:react": "craco build",
     "test": "craco test",
     "generate-sitemap": "node scripts/generate-sitemap.js",
     "sitemap": "node scripts/generate-sitemap.js",
-    "watch:sitemap": "node scripts/generate-sitemap.js --watch"
+    "watch:sitemap": "node scripts/generate-sitemap.js --watch",
+    "postinstall": "npm --prefix astro-site install"
   },
   "browserslist": {
     "production": [

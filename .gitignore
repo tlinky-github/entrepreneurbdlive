@@ -53,6 +53,7 @@ DISABLED_FEATURES.md
 /backend/.env.example
 VERCEL_ENV_VARS.txt
 FIREBASE_CREDENTIALS_JSON.txt
+production_env_vars.txt
 
 # ==================== BUILD & DIST ====================
 /build
@@ -121,3 +122,4 @@ tmp/
 /scratch
 
 
+.vercel
