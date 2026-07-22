@@ -92,7 +92,7 @@
     "start": "npm run dev:astro",
     "start:react": "craco start",
     "dev:astro": "npm --prefix astro-site run dev",
-    "build:astro": "npm --prefix astro-site run build",
+    "build:astro": "npm --prefix astro-site run build:node",
     "build:node": "npm --prefix astro-site run build:node",
     "bridge": "node scripts/local-bridge.js",
     "build": "npm run build:node",
