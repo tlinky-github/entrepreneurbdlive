@@ -9,9 +9,9 @@ const DirectoryCard = ({ listing, featured, listingTypes = [] }) => (
     <Card className={`h-full border-stone-200 hover:border-emerald-900/20 hover:shadow-lg transition-all duration-200 rounded-2xl ${featured ? 'ring-2 ring-yellow-200' : ''}`}>
       <CardContent className="p-6">
         <div className="flex items-start gap-4">
-          <div className="w-16 h-16 bg-stone-100 rounded-2xl flex items-center justify-center flex-shrink-0 overflow-hidden">
+          <div className="w-16 h-16 bg-stone-100 rounded-2xl flex items-center justify-center flex-shrink-0 overflow-hidden p-2">
             {listing.logo ? (
-              <img src={listing.logo} alt={listing.logo_alt || listing.business_name} className="w-full h-full object-cover" />
+              <img src={listing.logo} alt={listing.logo_alt || listing.business_name} className="w-full h-full object-contain" />
             ) : (
               <Building2 className="w-8 h-8 text-stone-400" />
             )}
