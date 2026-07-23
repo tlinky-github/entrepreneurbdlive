@@ -357,7 +357,7 @@ const AdminDirectory = () => {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-stone-100 rounded-lg flex items-center justify-center overflow-hidden p-1">
+                          <div className="w-10 h-10 bg-white border border-stone-200 rounded-lg flex items-center justify-center overflow-hidden p-1">
                             {listing.logo ? (
                               <img src={listing.logo} alt="" className="w-full h-full rounded-lg object-contain" />
                             ) : (

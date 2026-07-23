@@ -219,11 +219,13 @@ export function processHtmlContent(html: string | null | undefined, featuredImag
 
 export function decodeHtmlEntities(text: string | null | undefined): string {
   if (!text) return '';
-  let decoded = text;
+  let decoded = text.replace(/\\"/g, '"').replace(/\\'/g, "'");
   // Run up to 3 times to resolve double-escaped entities
   for (let i = 0; i < 3; i++) {
     const previous = decoded;
     decoded = decoded
+      .replace(/\\"/g, '"')
+      .replace(/\\'/g, "'")
       .replace(/&amp;/g, '&')
       .replace(/&lt;/g, '<')
       .replace(/&gt;/g, '>')

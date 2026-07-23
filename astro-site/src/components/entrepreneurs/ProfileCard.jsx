@@ -14,9 +14,9 @@ const ProfileCard = ({ profile, featured, startupStages = [] }) => {
   return (
     <a href={`/entrepreneurs/${profile.slug}`} className="block h-full">
       <Card className={`h-full border-stone-200 hover:border-emerald-900/20 hover:shadow-lg transition-all duration-200 rounded-2xl ${featured ? 'ring-2 ring-yellow-200' : ''}`}>
-        <CardContent className="p-6">
-          <div className="text-center">
-            <div className="w-20 h-20 bg-emerald-100 rounded-full mx-auto mb-4 flex items-center justify-center overflow-hidden">
+        <CardContent className="p-6 flex flex-col h-full">
+          <div className="text-center flex-1 flex flex-col items-center">
+            <div className="w-20 h-20 bg-emerald-100 rounded-full mx-auto mb-4 flex items-center justify-center overflow-hidden flex-shrink-0">
               {(profile.featured_image || profile.photo) ? (
                 <img src={profile.featured_image || profile.photo} alt={profile.name} className="w-full h-full object-cover" />
               ) : (
@@ -29,11 +29,13 @@ const ProfileCard = ({ profile, featured, startupStages = [] }) => {
               {featured && <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />}
             </div>
 
-            {(profile.designation || profile.role_title) && profile.company_name && (
-              <p className="text-sm text-stone-500 mb-2">
-                {profile.designation || profile.role_title} at {profile.company_name}
-              </p>
-            )}
+            <div className="min-h-[2.5rem] flex items-center justify-center mb-1">
+              {(profile.designation || profile.role_title) && profile.company_name && (
+                <p className="text-sm text-stone-500 line-clamp-2">
+                  {profile.designation || profile.role_title} at {profile.company_name}
+                </p>
+              )}
+            </div>
 
             {(profile.city || profile.headquarters) && (
               <p className="text-sm text-stone-400 flex items-center justify-center gap-1 mb-3">
@@ -42,35 +44,37 @@ const ProfileCard = ({ profile, featured, startupStages = [] }) => {
               </p>
             )}
 
-            {profile.industry && (
-              <Badge variant="outline" className="text-sm mb-3">
-                {profile.industry}
-              </Badge>
-            )}
+            <div className="min-h-[2.25rem] flex flex-wrap items-center justify-center gap-2 mb-3">
+              {profile.industry && (
+                <Badge variant="outline" className="text-sm">
+                  {profile.industry}
+                </Badge>
+              )}
 
-            {profile.startup_stage && (
-              <Badge className="bg-emerald-100 text-emerald-900 text-sm ml-2">
-                {getStageName(profile.startup_stage)}
-              </Badge>
-            )}
+              {profile.startup_stage && (
+                <Badge className="bg-emerald-100 text-emerald-900 text-sm">
+                  {getStageName(profile.startup_stage)}
+                </Badge>
+              )}
+            </div>
 
             {(profile.details || profile.short_bio) && (
-              <p className="text-sm text-stone-600 mt-3 line-clamp-3">
+              <p className="text-sm text-stone-600 mt-1 line-clamp-6 flex-1 overflow-hidden">
                 {profile.details || profile.short_bio}
               </p>
             )}
+          </div>
 
-            <div className="flex justify-center gap-3 mt-4">
-              {(profile.company_page_url || profile.website) && (
-                <Globe className="w-4 h-4 text-stone-400 hover:text-emerald-900" />
-              )}
-              {profile.linkedin && (
-                <Linkedin className="w-4 h-4 text-stone-400 hover:text-emerald-900" />
-              )}
-              {profile.twitter && (
-                <Twitter className="w-4 h-4 text-stone-400 hover:text-emerald-900" />
-              )}
-            </div>
+          <div className="flex justify-center gap-4 mt-auto pt-4 border-t border-stone-100/80">
+            {(profile.company_page_url || profile.website) && (
+              <Globe className="w-4 h-4 text-stone-400 hover:text-emerald-900 transition-colors" />
+            )}
+            {profile.linkedin && (
+              <Linkedin className="w-4 h-4 text-stone-400 hover:text-emerald-900 transition-colors" />
+            )}
+            {profile.twitter && (
+              <Twitter className="w-4 h-4 text-stone-400 hover:text-emerald-900 transition-colors" />
+            )}
           </div>
         </CardContent>
       </Card>

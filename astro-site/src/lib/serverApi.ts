@@ -13,6 +13,9 @@ const _require = createRequire(import.meta.url);
 
 // Recursively convert Admin SDK Timestamps and plain objects to serializable types
 function convertTimestamps(data: any): any {
+  if (typeof data === 'string') {
+    return data.replace(/\\"/g, '"').replace(/\\'/g, "'");
+  }
   if (!data || typeof data !== 'object') return data;
   if (Array.isArray(data)) return data.map(convertTimestamps);
 
@@ -22,6 +25,8 @@ function convertTimestamps(data: any): any {
       out[k] = (v as any).toDate().toISOString();
     } else if (v && typeof v === 'object') {
       out[k] = convertTimestamps(v);
+    } else if (typeof v === 'string') {
+      out[k] = v.replace(/\\"/g, '"').replace(/\\'/g, "'");
     } else {
       out[k] = v;
     }

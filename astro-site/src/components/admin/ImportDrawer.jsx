@@ -88,6 +88,7 @@ function parseFrontmatter(text) {
         (value.startsWith("'") && value.endsWith("'"))) {
       value = value.slice(1, -1);
     }
+    value = value.replace(/\\"/g, '"').replace(/\\'/g, "'");
     frontmatter[parsed[1]] = value;
     i += 1;
   }

@@ -27,6 +27,9 @@ const docToData = (doc: any) => {
 
 // Recursively convert Firestore Timestamps to JS Dates
 const convertTimestamps = (data: any): any => {
+  if (typeof data === 'string') {
+    return data.replace(/\\"/g, '"').replace(/\\'/g, "'");
+  }
   if (!data || typeof data !== 'object') return data;
   
   const converted = Array.isArray(data) ? [...data] : { ...data };
@@ -37,6 +40,8 @@ const convertTimestamps = (data: any): any => {
       converted[key] = value.toDate();
     } else if (value && typeof value === 'object') {
       converted[key] = convertTimestamps(value);
+    } else if (typeof value === 'string') {
+      converted[key] = value.replace(/\\"/g, '"').replace(/\\'/g, "'");
     }
   }
   return converted;
