@@ -139,6 +139,45 @@ const UserDashboard = () => {
           </div>
         </div>
 
+        {/* BIG FUNNY NOTICE BOARD */}
+        <div className="relative bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 rounded-3xl p-1 shadow-xl hover:shadow-2xl transition-all overflow-hidden group">
+          <div className="bg-stone-900 rounded-[22px] p-6 sm:p-10 relative overflow-hidden text-center flex flex-col items-center justify-center gap-6">
+            
+            {/* Background Glow & Pattern */}
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+
+            <div className="space-y-4 max-w-3xl relative z-10 mx-auto text-center flex flex-col items-center">
+              <div className="inline-flex items-center gap-2 bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-black uppercase tracking-widest py-1.5 px-4 rounded-full shadow-inner">
+                <span className="animate-pulse">📢</span>
+                <span>জরুরী অবগতির জন্য জানানো যাচ্ছে</span>
+              </div>
+
+              <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black text-white leading-tight tracking-tight text-center">
+                আজ আপনার কোনো কাজ নাই, <br className="hidden sm:inline" />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400">
+                  পকেটে টাকা থাকলে ঘুরে আসুন! 🌴✈️
+                </span>
+              </h2>
+
+              <p className="text-stone-300 text-sm sm:text-base leading-relaxed max-w-2xl text-center">
+                আজকে কাজের সব চাপ স্থগিত ঘোষণা করা হলো। পকেটের ব্যালেন্স চেক করুন, এক কাপ গরম কফি খান আর কক্সবাজার বা বান্দরবান ঘুরতে চলে যান! ☕💸
+              </p>
+            </div>
+
+            <div className="relative z-10 flex flex-col items-center justify-center gap-2 shrink-0 text-center">
+              <div className="inline-flex flex-col items-center gap-1 bg-amber-400/20 border border-amber-400/30 text-amber-300 font-extrabold py-3.5 px-7 rounded-2xl text-sm sm:text-base shadow-inner">
+                <div className="flex items-center gap-2">
+                  <span>🎒</span>
+                  <span>ঘুরতে বের হওয়ার আদর্শ সময়</span>
+                </div>
+                <span className="text-xs text-amber-200/80 font-normal tracking-wide mt-0.5">
+                  * সিইও কর্তৃক অনুমোদিত নোটিশ 🤫
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Quick Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           <div className="bg-white rounded-2xl border border-stone-200 p-5 shadow-sm">
