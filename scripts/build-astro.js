@@ -18,8 +18,6 @@ if (!fs.existsSync(packageJsonPath)) {
   process.exit(1);
 }
 
-console.log(`✓ Found package.json at ${packageJsonPath}`);
-
 // Verify astro-site exists
 const astroSitePath = path.join(projectRoot, 'astro-site');
 if (!fs.existsSync(astroSitePath)) {
@@ -27,13 +25,9 @@ if (!fs.existsSync(astroSitePath)) {
   process.exit(1);
 }
 
-console.log(`✓ Found astro-site at ${astroSitePath}`);
-
-// Define directories to clean/create
 const outputDirs = ['dist', 'build'];
 const sourceDir = path.join(astroSitePath, 'dist');
 
-// Check if source directory exists after build
 if (!fs.existsSync(sourceDir)) {
   console.error(`ERROR: astro-site/dist not created. Build may have failed.`);
   process.exit(1);
@@ -48,14 +42,44 @@ outputDirs.forEach(dir => {
     console.log(`Removing existing ${dir} directory...`);
     fs.rmSync(fullPath, { recursive: true, force: true });
   }
+  fs.mkdirSync(fullPath, { recursive: true });
 });
 
-// Copy astro-site/dist to both dist and build
+// Copy files into dist and build
 outputDirs.forEach(dir => {
   const targetPath = path.join(projectRoot, dir);
-  console.log(`Copying astro-site/dist to ${dir}...`);
+  console.log(`Structuring ${dir} directory for Hostinger deployment...`);
+
+  // Copy everything in sourceDir
   fs.cpSync(sourceDir, targetPath, { recursive: true });
-  console.log(`✓ Successfully copied to ${dir}`);
+
+  // If sourceDir has client/, copy client contents directly to target root
+  const clientDir = path.join(sourceDir, 'client');
+  if (fs.existsSync(clientDir)) {
+    fs.cpSync(clientDir, targetPath, { recursive: true });
+  }
+
+  // Ensure root .htaccess exists in target dir
+  const htaccessPath = path.join(targetPath, '.htaccess');
+  const htaccessContent = `# Hostinger Apache / LiteSpeed Web Server Configuration
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # Serve existing static files directly
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # Fallback routing
+  RewriteRule ^ index.html [L]
+</IfModule>
+
+Options -Indexes
+`;
+  fs.writeFileSync(htaccessPath, htaccessContent);
+  console.log(`✓ Successfully configured ${dir}`);
 });
 
 console.log('✓ Build process completed successfully!');
+
