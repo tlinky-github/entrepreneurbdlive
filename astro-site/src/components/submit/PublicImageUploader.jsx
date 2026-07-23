@@ -1,9 +1,9 @@
 import { useState, useRef } from 'react';
-import { Button } from '../../components/ui/button';
-import { Progress } from '../../components/ui/progress';
+import { Button } from '../ui/button.jsx';
+import { Progress } from '../ui/progress.jsx';
 import { toast } from 'sonner';
 import { Upload, X, ImageIcon, Loader2 } from 'lucide-react';
-import publicAPI from '../../lib/publicApi';
+import publicAPI from '../../lib/publicApi.js';
 
 const PublicImageUploader = ({ onUploadComplete, value, label, turnstileToken, type }) => {
   const [uploading, setUploading] = useState(false);

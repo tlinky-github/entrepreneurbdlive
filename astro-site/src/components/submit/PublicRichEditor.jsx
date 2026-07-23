@@ -16,7 +16,7 @@ import {
   Heading2,
   Heading3
 } from 'lucide-react';
-import LinkDialog from '../admin/LinkDialog';
+import LinkDialog from '../admin/LinkDialog.jsx';
 
 const PublicRichEditor = ({ value, onChange, placeholder = 'Write your story here...' }) => {
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);

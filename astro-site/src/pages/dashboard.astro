@@ -1,11 +1,8 @@
 ---
 import PublicLayout from '../layouts/PublicLayout.astro';
-import UserDashboard from '../components/auth/UserDashboard.jsx';
-import { AuthProvider } from '../lib/auth.jsx';
+import UserDashboardWrapper from '../components/auth/UserDashboardWrapper.jsx';
 ---
 
 <PublicLayout title="Dashboard | Entrepreneurs BD">
-  <AuthProvider client:only="react">
-    <UserDashboard client:only="react" />
-  </AuthProvider>
+  <UserDashboardWrapper client:only="react" />
 </PublicLayout>

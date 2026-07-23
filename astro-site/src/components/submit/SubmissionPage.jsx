@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 
-import { Card, CardContent } from '../../components/ui/card';
-import { Button } from '../../components/ui/button';
-import { Input } from '../../components/ui/input';
-import { Badge } from '../../components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
+import { Card, CardContent } from '../ui/card.jsx';
+import { Button } from '../ui/button.jsx';
+import { Input } from '../ui/input.jsx';
+import { Badge } from '../ui/badge.jsx';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs.jsx';
 import { toast } from 'sonner';
 import { 
   User, 
@@ -30,9 +30,9 @@ import {
   Image as ImageIcon
 } from 'lucide-react';
 
-import PublicRichEditor from '../../components/submit/PublicRichEditor';
-import Turnstile from '../../components/submit/Turnstile';
-import publicAPI from '../../lib/publicApi';
+import PublicRichEditor from './PublicRichEditor.jsx';
+import Turnstile from './Turnstile.jsx';
+import publicAPI from '../../lib/publicApi.js';
 
 const TURNSTILE_SITE_KEY = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY || import.meta.env.REACT_APP_TURNSTILE_SITE_KEY || '1x00000000000000000000AA';
 
