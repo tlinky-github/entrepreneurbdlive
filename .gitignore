@@ -59,6 +59,7 @@ production_env_vars.txt
 /build
 /dist
 /out
+/.builds
 
 # ==================== TESTING ====================
 /coverage

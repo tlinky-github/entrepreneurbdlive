@@ -1,0 +1,19 @@
+# Hostinger Apache / LiteSpeed Web Server Configuration
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # Secure hidden dotfiles and sensitive directories
+  RewriteRule "(^|/)\." - [F]
+
+  # Serve existing static files directly
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # Fallback to index.html for Astro client routing
+  RewriteRule ^ index.html [L]
+</IfModule>
+
+# Disable directory browsing for security
+Options -Indexes
