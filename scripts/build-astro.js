@@ -1,90 +1,190 @@
 #!/usr/bin/env node
 
-const fs = require('fs');
+/**
+ * Build script for Hostinger Node.js SSR deployment.
+ *
+ * What it does:
+ *  1. Verifies astro-site/dist exists (from `astro build`)
+ *  2. Clears and rebuilds the root `dist/` and `build/` directories
+ *  3. Copies client static files to the root of dist/ (Apache serves these directly)
+ *  4. Copies the server bundle into dist/server/
+ *  5. PATCHES dist/server/entry.mjs to replace hardcoded absolute Windows paths
+ *     with relative import.meta.url-based paths (critical for Linux deployment)
+ *  6. Writes a dist/server.js entry point that Passenger/Node starts
+ *  7. Writes a correct .htaccess for Hostinger Apache/LiteSpeed
+ *
+ * On Hostinger hPanel, set:
+ *   App Root     = <your_project>/dist/
+ *   Document Root= <your_project>/dist/
+ *   Startup File = server.js
+ *   Node version = 18.x or 20.x
+ */
+
+const fs   = require('fs');
 const path = require('path');
 
 console.log('Starting Astro build process...');
 
-// Ensure we're in the correct directory
 const projectRoot = path.resolve(__dirname, '..');
 process.chdir(projectRoot);
-
 console.log(`Working directory: ${process.cwd()}`);
 
-// Verify package.json exists
+// ── Verify prerequisites ──────────────────────────────────────────────────────
+
 const packageJsonPath = path.join(projectRoot, 'package.json');
 if (!fs.existsSync(packageJsonPath)) {
-  console.error(`ERROR: package.json file not found at ${packageJsonPath}`);
+  console.error(`ERROR: package.json not found at ${packageJsonPath}`);
   process.exit(1);
 }
 
-// Verify astro-site exists
 const astroSitePath = path.join(projectRoot, 'astro-site');
 if (!fs.existsSync(astroSitePath)) {
-  console.error(`ERROR: astro-site directory not found at ${astroSitePath}`);
+  console.error(`ERROR: astro-site directory not found`);
   process.exit(1);
 }
+
+const sourceDir = path.join(astroSitePath, 'dist');
+if (!fs.existsSync(sourceDir)) {
+  console.error(`ERROR: astro-site/dist not found — did astro build succeed?`);
+  process.exit(1);
+}
+
+const sourceClientDir = path.join(sourceDir, 'client');
+const sourceServerDir = path.join(sourceDir, 'server');
+
+if (!fs.existsSync(sourceClientDir)) {
+  console.error(`ERROR: astro-site/dist/client not found`);
+  process.exit(1);
+}
+if (!fs.existsSync(sourceServerDir)) {
+  console.error(`ERROR: astro-site/dist/server not found`);
+  process.exit(1);
+}
+
+console.log('✓ Found astro-site/dist/client and dist/server');
+
+// ── Build into both dist/ and build/ ─────────────────────────────────────────
 
 const outputDirs = ['dist', 'build'];
-const sourceDir = path.join(astroSitePath, 'dist');
 
-if (!fs.existsSync(sourceDir)) {
-  console.error(`ERROR: astro-site/dist not created. Build may have failed.`);
-  process.exit(1);
-}
-
-console.log(`✓ Found astro-site/dist source directory`);
-
-// Remove existing output directories
-outputDirs.forEach(dir => {
-  const fullPath = path.join(projectRoot, dir);
-  if (fs.existsSync(fullPath)) {
-    console.log(`Removing existing ${dir} directory...`);
-    fs.rmSync(fullPath, { recursive: true, force: true });
-  }
-  fs.mkdirSync(fullPath, { recursive: true });
-});
-
-// Copy files into dist and build
 outputDirs.forEach(dir => {
   const targetPath = path.join(projectRoot, dir);
-  console.log(`Structuring ${dir} directory for Hostinger deployment...`);
 
-  // Copy everything in sourceDir
-  fs.cpSync(sourceDir, targetPath, { recursive: true });
+  // Wipe and recreate
+  if (fs.existsSync(targetPath)) {
+    console.log(`Removing existing ${dir}/ ...`);
+    fs.rmSync(targetPath, { recursive: true, force: true });
+  }
+  fs.mkdirSync(targetPath, { recursive: true });
 
-  // If sourceDir has client/, copy client contents directly to target root
-  const clientDir = path.join(sourceDir, 'client');
-  if (fs.existsSync(clientDir)) {
-    fs.cpSync(clientDir, targetPath, { recursive: true });
+  // 1. Copy ALL client static files to the root of the target dir
+  //    Apache/LiteSpeed will serve these directly (CSS, JS, images, etc.)
+  console.log(`Copying client static files → ${dir}/`);
+  fs.cpSync(sourceClientDir, targetPath, { recursive: true });
+
+  // 2. Copy server bundle into target/server/
+  //    This keeps it out of the web-accessible root path
+  const targetServerDir = path.join(targetPath, 'server');
+  console.log(`Copying server bundle → ${dir}/server/`);
+  fs.cpSync(sourceServerDir, targetServerDir, { recursive: true });
+
+  // 3. PATCH entry.mjs — replace hardcoded absolute Windows paths with
+  //    relative import.meta.url-based paths so they work on any OS/server
+  const entryMjsPath = path.join(targetServerDir, 'entry.mjs');
+  if (fs.existsSync(entryMjsPath)) {
+    let content = fs.readFileSync(entryMjsPath, 'utf8');
+
+    // Replace "client": "file:///absolute/path/to/client/"
+    content = content.replace(
+      /"client"\s*:\s*"file:\/\/[^"]*"/,
+      '"client": new URL(\'../\', import.meta.url).href'
+    );
+
+    // Replace "server": "file:///absolute/path/to/server/"
+    content = content.replace(
+      /"server"\s*:\s*"file:\/\/[^"]*"/,
+      '"server": new URL(\'./\', import.meta.url).href'
+    );
+
+    fs.writeFileSync(entryMjsPath, content, 'utf8');
+    console.log(`✓ Patched ${dir}/server/entry.mjs (removed hardcoded absolute paths)`);
+  } else {
+    console.warn(`WARN: ${dir}/server/entry.mjs not found — skipping patch`);
   }
 
-  // Ensure root .htaccess exists in target dir for Hostinger Node SSR deployment
-  const htaccessPath = path.join(targetPath, '.htaccess');
-  const htaccessContent = `# Hostinger Apache / LiteSpeed Web Server Configuration for Astro Node SSR
-<IfModule mod_rewrite.c>
-  RewriteEngine On
-  RewriteBase /
+  // 4. Write a dist/server.js entry point for Passenger / Node.js
+  //    Uses __dirname so the path is always correct regardless of CWD
+  const serverJsContent = `// Hostinger Node.js Application Entry Point
+// Auto-generated by scripts/build-astro.js — do not edit manually.
+// Passenger starts this file; it launches the Astro SSR server.
+'use strict';
 
-  # 1. Serve existing static assets directly (_astro, images, css, js)
-  RewriteCond %{REQUEST_FILENAME} -f [OR]
-  RewriteCond %{REQUEST_FILENAME} -d
-  RewriteRule ^ - [L]
+const path = require('path');
+const { pathToFileURL } = require('url');
 
-  # 2. Proxy dynamic requests to local Node server process
-  RewriteRule ^(.*)$ http://127.0.0.1:3000/$1 [P,L]
-</IfModule>
+process.env.HOST = process.env.HOST || '0.0.0.0';
+process.env.PORT = process.env.PORT || process.env.APP_PORT || '3000';
 
-# Passenger / LiteSpeed Node.js Application Startup Configuration
+const entryFile = path.join(__dirname, 'server', 'entry.mjs');
+const entryUrl  = pathToFileURL(entryFile).href;
+
+import(entryUrl).catch((err) => {
+  console.error('[server.js] Failed to start Astro server:', err);
+  process.exit(1);
+});
+`;
+  fs.writeFileSync(path.join(targetPath, 'server.js'), serverJsContent, 'utf8');
+  console.log(`✓ Written ${dir}/server.js`);
+
+  // 5. Write .htaccess for Hostinger Apache / LiteSpeed
+  //    - PassengerEnabled tells LiteSpeed to launch server.js via Node
+  //    - Static files are served directly by Apache before the proxy rule
+  //    - /server/ sub-path is blocked from direct web access for security
+  const htaccessContent = `# Hostinger Apache / LiteSpeed — Astro Node.js SSR
+# Auto-generated by scripts/build-astro.js
+
+# ── Passenger / LiteSpeed Node.js App ────────────────────────────────────────
 PassengerEnabled on
 PassengerAppType node
 PassengerStartupFile server.js
 
+# ── Rewrite rules ─────────────────────────────────────────────────────────────
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # Block direct access to server-side bundle (security)
+  RewriteRule ^server(/|$) - [F,L]
+
+  # Serve existing static files and directories directly (CSS, JS, images…)
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # Proxy all other requests to the local Node.js / Astro server
+  RewriteRule ^(.*)$ http://127.0.0.1:%{ENV:PORT}/$1 [P,L]
+</IfModule>
+
+# ── Security ──────────────────────────────────────────────────────────────────
 Options -Indexes
+
+# Block hidden dot-files (e.g. .env)
+<FilesMatch "^\\.">
+  Order allow,deny
+  Deny from all
+</FilesMatch>
 `;
-  fs.writeFileSync(htaccessPath, htaccessContent);
-  console.log(`✓ Successfully configured ${dir}`);
+  fs.writeFileSync(path.join(targetPath, '.htaccess'), htaccessContent, 'utf8');
+  console.log(`✓ Written ${dir}/.htaccess`);
+
+  console.log(`✓ ${dir}/ ready for Hostinger deployment`);
 });
 
-console.log('✓ Build process completed successfully!');
-
+console.log('');
+console.log('✅ Build complete!');
+console.log('');
+console.log('Hostinger hPanel settings:');
+console.log('  App Root      → dist/');
+console.log('  Document Root → dist/');
+console.log('  Startup File  → server.js');
+console.log('  Node version  → 18.x or 20.x');
