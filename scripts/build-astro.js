@@ -59,21 +59,26 @@ outputDirs.forEach(dir => {
     fs.cpSync(clientDir, targetPath, { recursive: true });
   }
 
-  // Ensure root .htaccess exists in target dir
+  // Ensure root .htaccess exists in target dir for Hostinger Node SSR deployment
   const htaccessPath = path.join(targetPath, '.htaccess');
-  const htaccessContent = `# Hostinger Apache / LiteSpeed Web Server Configuration
+  const htaccessContent = `# Hostinger Apache / LiteSpeed Web Server Configuration for Astro Node SSR
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
 
-  # Serve existing static files directly
+  # 1. Serve existing static assets directly (_astro, images, css, js)
   RewriteCond %{REQUEST_FILENAME} -f [OR]
   RewriteCond %{REQUEST_FILENAME} -d
   RewriteRule ^ - [L]
 
-  # Fallback routing
-  RewriteRule ^ index.html [L]
+  # 2. Proxy dynamic requests to local Node server process
+  RewriteRule ^(.*)$ http://127.0.0.1:3000/$1 [P,L]
 </IfModule>
+
+# Passenger / LiteSpeed Node.js Application Startup Configuration
+PassengerEnabled on
+PassengerAppType node
+PassengerStartupFile server.js
 
 Options -Indexes
 `;
