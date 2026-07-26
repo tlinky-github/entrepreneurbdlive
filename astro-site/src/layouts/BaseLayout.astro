@@ -26,6 +26,7 @@ try {
 
 const siteName = siteSettings?.site_name || 'Entrepreneur BD';
 const siteTagline = siteSettings?.site_tagline || 'Bangladesh Entrepreneur Ecosystem';
+const footerTagline = siteSettings?.footer_tagline || 'Bangladesh Entrepreneur Ecosystem';
 const logoUrl = siteSettings?.logo_url || '';
 const faviconUrl = siteSettings?.favicon_url || '';
 const footerText = siteSettings?.footer_text || `© ${new Date().getFullYear()} ${siteName}. All rights reserved.`;
@@ -193,7 +194,7 @@ const ogImage = image.startsWith('http') ? image : `${siteUrl}${image}`;
             )}
           </a>
           <p class="text-stone-400 mb-6 max-w-sm">
-            {siteTagline}
+            {footerTagline}
           </p>
           <div class="flex gap-4">
             {facebookUrl && (

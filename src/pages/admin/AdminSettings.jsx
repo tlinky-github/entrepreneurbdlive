@@ -15,6 +15,7 @@ const AdminSettings = () => {
   const [settings, setSettings] = useState({
     site_name: 'entrepreneurs.bd',
     site_tagline: 'Bangladesh Entrepreneur Ecosystem',
+    footer_tagline: 'Bangladesh Entrepreneur Ecosystem',
     logo_url: '',
     favicon_url: '',
     footer_text: '© 2024 entrepreneurs.bd. All rights reserved.',
@@ -168,7 +169,16 @@ const AdminSettings = () => {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="footer_text">Footer Text</Label>
+                <Label htmlFor="footer_tagline">Footer Tagline</Label>
+                <Input
+                  id="footer_tagline"
+                  value={settings.footer_tagline || ''}
+                  onChange={(e) => handleChange('footer_tagline', e.target.value)}
+                  placeholder="e.g. Bangladesh Entrepreneur Ecosystem"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="footer_text">Footer Copyright Text</Label>
                 <Input
                   id="footer_text"
                   value={settings.footer_text}
