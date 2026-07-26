@@ -1,15 +1,30 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  ArrowRight, BookOpen, ChevronRight, Lightbulb, Rocket, Target, 
-  Briefcase, Award, Zap, Compass, TrendingUp, HelpCircle, FileText, CheckCircle 
-} from 'lucide-react';
+import * as LucideIcons from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { Skeleton } from '../../components/ui/skeleton';
 import { guidesAPI } from '../../lib/api';
 
-const iconMap = {
-  BookOpen, Lightbulb, Rocket, Target, Briefcase, Award, Zap, Compass, TrendingUp, HelpCircle, FileText, CheckCircle
+const BookOpen = LucideIcons.BookOpen;
+
+const resolveLucideIcon = (name) => {
+  if (!name || typeof name !== 'string') return null;
+  const clean = name.trim();
+  if (LucideIcons[clean] && typeof LucideIcons[clean] !== 'string') return LucideIcons[clean];
+
+  // Convert kebab-case or space-case to PascalCase (e.g. "building-2" -> "Building2", "book-open" -> "BookOpen")
+  const pascal = clean
+    .split(/[-_ ]+/)
+    .map(p => p.charAt(0).toUpperCase() + p.slice(1))
+    .join('');
+  if (LucideIcons[pascal] && typeof LucideIcons[pascal] !== 'string') return LucideIcons[pascal];
+
+  // Case-insensitive match against LucideIcons keys
+  const lower = clean.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const key = Object.keys(LucideIcons).find(k => k.toLowerCase() === lower);
+  if (key && LucideIcons[key] && typeof LucideIcons[key] !== 'string') return LucideIcons[key];
+
+  return null;
 };
 
 const GuidesPage = ({ initialGuides = [] }) => {
@@ -21,8 +36,13 @@ const GuidesPage = ({ initialGuides = [] }) => {
       try {
         const res = await guidesAPI.list();
         const published = (res.data || []).filter(g => g.status === 'published');
-        if (published.length > 0 || !initialGuides || initialGuides.length === 0) {
-          setFirestoreGuides(published);
+        const mapped = published.map((g, idx) => ({
+          ...g,
+          order: Number(g.order ?? g.position ?? (idx + 1))
+        }));
+        mapped.sort((a, b) => a.order - b.order);
+        if (mapped.length > 0 || !initialGuides || initialGuides.length === 0) {
+          setFirestoreGuides(mapped);
         }
       } catch (err) {
         console.error('Failed to load guides from Firestore:', err);
@@ -79,10 +99,11 @@ const GuidesPage = ({ initialGuides = [] }) => {
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 rounded-xl bg-emerald-900 flex items-center justify-center flex-shrink-0 text-xl">
                         {(() => {
-                          const IconComp = iconMap[guide.icon];
+                          const IconComp = resolveLucideIcon(guide.icon);
+                          const DefaultIcon = LucideIcons.BookOpen;
                           if (IconComp) return <IconComp className="w-6 h-6 text-emerald-100" />;
                           if (guide.icon) return <span>{guide.icon}</span>;
-                          return <BookOpen className="w-6 h-6 text-emerald-100" />;
+                          return DefaultIcon ? <DefaultIcon className="w-6 h-6 text-emerald-100" /> : null;
                         })()}
                       </div>
                       <div>

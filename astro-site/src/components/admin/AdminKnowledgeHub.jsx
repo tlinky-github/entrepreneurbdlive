@@ -398,14 +398,19 @@ const GuidesTab = () => {
   const [loading, setLoading] = useState(true);
   const [editId, setEditId] = useState(null);
   const [deleteId, setDeleteId] = useState(null);
-  const [form, setForm] = useState({ title: '', description: '', icon: '📘', steps: [{ heading: '', text: '' }], status: 'published' });
+  const [form, setForm] = useState({ title: '', description: '', icon: '📘', order: 1, steps: [{ heading: '', text: '' }], status: 'published' });
   const [saving, setSaving] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
       const res = await guidesAPI.list();
-      setGuides(res.data || []);
+      const items = (res.data || []).map((g, idx) => ({
+        ...g,
+        order: Number(g.order ?? g.position ?? (idx + 1))
+      }));
+      items.sort((a, b) => a.order - b.order);
+      setGuides(items);
     } catch (err) { console.error('Guides error:', err); }
     finally { setLoading(false); }
   }, []);
@@ -413,7 +418,7 @@ const GuidesTab = () => {
   useEffect(() => { load(); }, [load]);
 
   const resetForm = () => {
-    setForm({ title: '', description: '', icon: '📘', steps: [{ heading: '', text: '' }], status: 'published' });
+    setForm({ title: '', description: '', icon: '📘', order: guides.length + 1, steps: [{ heading: '', text: '' }], status: 'published' });
     setEditId(null);
   };
 
@@ -421,11 +426,15 @@ const GuidesTab = () => {
     if (!form.title.trim()) { toast.error('Title required'); return; }
     setSaving(true);
     try {
+      const payload = {
+        ...form,
+        order: Number(form.order || (editId ? 1 : guides.length + 1))
+      };
       if (editId) {
-        await guidesAPI.update(editId, form);
+        await guidesAPI.update(editId, payload);
         toast.success('Guide updated');
       } else {
-        await guidesAPI.create(form);
+        await guidesAPI.create(payload);
         toast.success('Guide created');
       }
       resetForm();
@@ -439,10 +448,37 @@ const GuidesTab = () => {
     try {
       await guidesAPI.delete(deleteId);
       toast.success('Guide deleted');
-      if (refreshStats) refreshStats();
       load();
     } catch (err) { toast.error('Failed to delete'); }
     finally { setDeleteId(null); }
+  };
+
+  const moveGuide = async (index, direction) => {
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= guides.length) return;
+
+    const g1 = guides[index];
+    const g2 = guides[targetIndex];
+    const order1 = Number(g1.order || (index + 1));
+    const order2 = Number(g2.order || (targetIndex + 1));
+
+    try {
+      await guidesAPI.update(g1.id, { order: order2 });
+      await guidesAPI.update(g2.id, { order: order1 });
+      toast.success('Guide position updated');
+      load();
+    } catch (err) {
+      toast.error('Failed to update position');
+    }
+  };
+
+  const moveStep = (index, direction) => {
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= form.steps.length) return;
+    const newSteps = [...form.steps];
+    const [moved] = newSteps.splice(index, 1);
+    newSteps.splice(targetIndex, 0, moved);
+    setForm(f => ({ ...f, steps: newSteps }));
   };
 
   return (
@@ -453,32 +489,23 @@ const GuidesTab = () => {
           <CardTitle className="text-sm">{editId ? 'Edit Guide' : 'Add New Guide'}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+            <div className="sm:col-span-2">
               <label className="text-sm font-semibold text-stone-500">Title</label>
               <Input value={form.title} onChange={(e) => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Guide title" />
             </div>
             <div>
-              <label className="text-sm font-semibold text-stone-500">Icon (Emoji or Lucide Icon Name)</label>
+              <label className="text-sm font-semibold text-stone-500">Icon (Emoji or Lucide)</label>
               <Input 
                 value={form.icon} 
                 onChange={(e) => setForm(f => ({ ...f, icon: e.target.value }))} 
-                placeholder="e.g. 📘, 💡, 🚀 or Lightbulb, Rocket" 
+                placeholder="e.g. 📘 or Lightbulb" 
                 className="text-sm" 
               />
-              <div className="flex items-center gap-1.5 mt-1.5 text-xs text-stone-400">
-                <span>Quick select:</span>
-                {['📘', '💡', '🚀', '🎯', '📊', '💼', '🏆', 'Lightbulb', 'BookOpen', 'Rocket'].map(ic => (
-                  <button 
-                    key={ic} 
-                    type="button" 
-                    onClick={() => setForm(f => ({ ...f, icon: ic }))}
-                    className="px-1.5 py-0.5 rounded bg-stone-100 hover:bg-emerald-100 hover:text-emerald-900 font-mono text-[11px] transition-colors"
-                  >
-                    {ic}
-                  </button>
-                ))}
-              </div>
+            </div>
+            <div>
+              <label className="text-sm font-semibold text-stone-500">Position / Order</label>
+              <Input type="number" min="1" value={form.order || 1} onChange={(e) => setForm(f => ({ ...f, order: parseInt(e.target.value) || 1 }))} className="w-full" />
             </div>
           </div>
           <div>
@@ -487,17 +514,28 @@ const GuidesTab = () => {
           </div>
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-bold uppercase text-stone-500">Steps</label>
+              <label className="text-sm font-bold uppercase text-stone-500">Steps (In Order)</label>
               <Button size="sm" variant="outline" onClick={() => setForm(f => ({ ...f, steps: [...f.steps, { heading: '', text: '' }] }))}>
                 <Plus className="w-3 h-3 mr-1" /> Add Step
               </Button>
             </div>
             {form.steps.map((step, i) => (
-              <div key={i} className="flex gap-2 mb-2">
+              <div key={i} className="flex gap-2 mb-2 items-center">
+                <span className="text-xs font-bold text-stone-400 min-w-[20px]">{i + 1}</span>
                 <Input value={step.heading} onChange={(e) => { const s = [...form.steps]; s[i].heading = e.target.value; setForm(f => ({ ...f, steps: s })); }} placeholder={`Step ${i + 1} heading`} className="flex-1" />
                 <Input value={step.text} onChange={(e) => { const s = [...form.steps]; s[i].text = e.target.value; setForm(f => ({ ...f, steps: s })); }} placeholder="Details..." className="flex-[2]" />
+                
+                <div className="flex items-center gap-0.5">
+                  <Button size="sm" type="button" variant="ghost" disabled={i === 0} onClick={() => moveStep(i, -1)} className="h-7 w-7 p-0">
+                    <ChevronUp className="w-3.5 h-3.5" />
+                  </Button>
+                  <Button size="sm" type="button" variant="ghost" disabled={i === form.steps.length - 1} onClick={() => moveStep(i, 1)} className="h-7 w-7 p-0">
+                    <ChevronDown className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+
                 {form.steps.length > 1 && (
-                  <Button size="sm" variant="ghost" onClick={() => setForm(f => ({ ...f, steps: f.steps.filter((_, idx) => idx !== i) }))} className="text-red-500"><X className="w-3 h-3" /></Button>
+                  <Button size="sm" type="button" variant="ghost" onClick={() => setForm(f => ({ ...f, steps: f.steps.filter((_, idx) => idx !== i) }))} className="text-red-500 h-7 w-7 p-0"><X className="w-3.5 h-3.5" /></Button>
                 )}
               </div>
             ))}
@@ -520,14 +558,27 @@ const GuidesTab = () => {
             <p className="text-center text-stone-500 py-8">No guides yet</p>
           ) : (
             <div className="space-y-2">
-              {guides.map(g => (
-                <div key={g.id} className="flex items-center justify-between p-3 bg-stone-50 rounded-lg">
-                  <div>
-                    <p className="font-medium">{g.icon} {g.title}</p>
-                    <p className="text-sm text-stone-500">{g.steps?.length || 0} steps</p>
+              {guides.map((g, idx) => (
+                <div key={g.id} className="flex items-center justify-between p-3 bg-stone-50 rounded-lg border border-stone-100 hover:border-stone-300 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs font-bold font-mono bg-emerald-100 text-emerald-900 px-2 py-0.5 rounded-full">
+                      #{g.order || (idx + 1)}
+                    </span>
+                    <div>
+                      <p className="font-medium text-stone-900">{g.icon} {g.title}</p>
+                      <p className="text-xs text-stone-500">{(g.steps?.length || g.content?.length || 0)} steps</p>
+                    </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline" onClick={() => { setEditId(g.id); setForm(g); }}><Edit2 className="w-3 h-3" /></Button>
+                  <div className="flex items-center gap-1.5">
+                    <div className="flex items-center mr-2 bg-white rounded border border-stone-200">
+                      <Button size="sm" type="button" variant="ghost" disabled={idx === 0} onClick={() => moveGuide(idx, -1)} className="h-7 w-7 p-0" title="Move Up">
+                        <ChevronUp className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button size="sm" type="button" variant="ghost" disabled={idx === guides.length - 1} onClick={() => moveGuide(idx, 1)} className="h-7 w-7 p-0" title="Move Down">
+                        <ChevronDown className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                    <Button size="sm" variant="outline" onClick={() => { setEditId(g.id); setForm({ ...g, order: g.order || (idx + 1) }); }}><Edit2 className="w-3 h-3" /></Button>
                     <Button size="sm" variant="ghost" className="text-red-500" onClick={() => setDeleteId(g.id)}><Trash2 className="w-3 h-3" /></Button>
                   </div>
                 </div>

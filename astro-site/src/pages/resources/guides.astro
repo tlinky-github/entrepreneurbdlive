@@ -5,7 +5,13 @@ import { getPublishedDocs } from '../../lib/serverApi';
 
 let initialGuides: any[] = [];
 try {
-  initialGuides = await getPublishedDocs('guides', 500);
+  const raw = await getPublishedDocs('guides', 500);
+  const published = (raw || []).map((g: any, idx: number) => ({
+    ...g,
+    order: Number(g.order ?? g.position ?? (idx + 1))
+  }));
+  published.sort((a: any, b: any) => a.order - b.order);
+  initialGuides = published;
 } catch (e) {
   console.error('[Guides Page] Server fetch failed:', e);
 }
