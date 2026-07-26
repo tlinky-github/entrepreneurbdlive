@@ -1,28 +1,34 @@
 import React, { useState, useEffect } from 'react';
-import { Book, Search, ChevronRight, ArrowRight } from 'lucide-react';
+import { Book, Search, ChevronRight, ArrowRight, ExternalLink } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent } from '../../components/ui/card';
 import { Input } from '../../components/ui/input';
-import { glossaryTerms as mockGlossary } from '../../data/mock';
+import { Skeleton } from '../../components/ui/skeleton';
 import { glossaryAPI } from '../../lib/api';
 
-const GlossaryPage = () => {
+const GlossaryPage = ({ initialTerms = [] }) => {
   const [searchTerm, setSearchTerm] = React.useState('');
-  const [firestoreTerms, setFirestoreTerms] = useState([]);
+  const [firestoreTerms, setFirestoreTerms] = useState(initialTerms || []);
+  const [loading, setLoading] = useState(!initialTerms || initialTerms.length === 0);
 
   useEffect(() => {
     const load = async () => {
       try {
         const res = await glossaryAPI.list();
-        setFirestoreTerms((res.data || []).filter(t => t.status === 'published'));
+        const published = (res.data || []).filter(t => t.status === 'published');
+        if (published.length > 0 || !initialTerms || initialTerms.length === 0) {
+          setFirestoreTerms(published);
+        }
       } catch (err) {
         console.error('Failed to load glossary from Firestore:', err);
+      } finally {
+        setLoading(false);
       }
     };
     load();
   }, []);
 
-  const allTerms = [...firestoreTerms, ...mockGlossary];
+  const allTerms = firestoreTerms;
 
   const searchTermLower = searchTerm.toLowerCase();
   const filteredTerms = allTerms.filter(item => {
@@ -98,12 +104,22 @@ const GlossaryPage = () => {
       <section className="py-20 lg:py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl mx-auto">
-            {filteredTerms.length === 0 ? (
+            {loading ? (
+              <div className="space-y-4">
+                {[...Array(4)].map((_, i) => (
+                  <Skeleton key={i} className="h-28 w-full rounded-xl bg-stone-100" />
+                ))}
+              </div>
+            ) : filteredTerms.length === 0 ? (
               <div className="text-center py-12">
-                <p className="text-stone-500 mb-4">No terms found matching "{searchTerm}"</p>
-                <Button variant="outline" onClick={() => setSearchTerm('')}>
-                  Clear search
-                </Button>
+                <p className="text-stone-500 mb-4">
+                  {searchTerm ? `No terms found matching "${searchTerm}"` : 'No glossary terms published yet.'}
+                </p>
+                {searchTerm && (
+                  <Button variant="outline" onClick={() => setSearchTerm('')}>
+                    Clear search
+                  </Button>
+                )}
               </div>
             ) : (
               <div className="space-y-12">
@@ -117,8 +133,20 @@ const GlossaryPage = () => {
                         <Card key={index} className="group border-stone-200">
                           <CardContent className="p-6">
                             <dt className="text-lg font-semibold text-stone-900 mb-2">
-                              {item.term || 'Untitled'}
-                            </dt>
+                                {(item.url || item.link_url || item.href || item.link) ? (
+                                  <a 
+                                    href={item.url || item.link_url || item.href || item.link}
+                                    target={item.target || "_blank"}
+                                    rel={item.rel || "noopener noreferrer"}
+                                    className="text-emerald-900 hover:text-emerald-700 hover:underline inline-flex items-center gap-1.5 group/link"
+                                  >
+                                    <span>{item.term || 'Untitled'}</span>
+                                    <ExternalLink className="w-4 h-4 text-emerald-600 group-hover/link:text-emerald-800 transition-colors inline-block" />
+                                  </a>
+                                ) : (
+                                  <span>{item.term || 'Untitled'}</span>
+                                )}
+                              </dt>
                             <dd className="text-stone-600 leading-relaxed pl-4 border-l-2 border-emerald-200 group-hover:border-emerald-500 transition-colors">
                               {item.definition || 'No definition available.'}
                             </dd>

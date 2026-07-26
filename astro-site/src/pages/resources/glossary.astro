@@ -1,8 +1,16 @@
 ---
 import PublicLayout from '../../layouts/PublicLayout.astro';
 import GlossaryPage from '../../components/resources/GlossaryPage.jsx';
+import { getPublishedDocs } from '../../lib/serverApi';
+
+let initialTerms: any[] = [];
+try {
+  initialTerms = await getPublishedDocs('glossary', 500);
+} catch (e) {
+  console.error('[Glossary Page] Server fetch failed:', e);
+}
 ---
 
 <PublicLayout title="Business Glossary | Entrepreneurs BD">
-  <GlossaryPage client:load />
+  <GlossaryPage client:load initialTerms={initialTerms} />
 </PublicLayout>

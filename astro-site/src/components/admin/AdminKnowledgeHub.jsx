@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/ta
 import { toast } from 'sonner';
 import {
   Plus, Trash2, Edit2, Save, X, BookOpen, HelpCircle, FileText, BookA,
-  ChevronDown, ChevronUp, Loader2, Search, MoreVertical, Eye, Pencil, Filter
+  ChevronDown, ChevronUp, Loader2, Search, MoreVertical, Eye, Pencil, Filter, Link as LinkIcon, ExternalLink
 } from 'lucide-react';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -29,6 +29,7 @@ import { contentAPI, guidesAPI, faqCategoriesAPI, glossaryAPI } from '../../lib/
 import { useOutletContext } from 'react-router-dom';
 import ImportDrawer from './ImportDrawer';
 import BulkEditModal from './BulkEditModal';
+import LinkDialog from './LinkDialog';
 
 const AdminKnowledgeHub = () => {
   const navigate = useNavigate();
@@ -653,7 +654,8 @@ const GlossaryTab = () => {
   const [loading, setLoading] = useState(true);
   const [editId, setEditId] = useState(null);
   const [deleteId, setDeleteId] = useState(null);
-  const [form, setForm] = useState({ term: '', definition: '', status: 'published' });
+  const [linkDialogOpen, setLinkDialogOpen] = useState(false);
+  const [form, setForm] = useState({ term: '', definition: '', url: '', target: '', rel: '', status: 'published' });
   const [saving, setSaving] = useState(false);
 
   const load = useCallback(async () => {
@@ -667,14 +669,18 @@ const GlossaryTab = () => {
 
   useEffect(() => { load(); }, [load]);
 
-  const resetForm = () => { setForm({ term: '', definition: '', status: 'published' }); setEditId(null); };
+  const resetForm = () => { setForm({ term: '', definition: '', url: '', target: '', rel: '', status: 'published' }); setEditId(null); };
 
   const handleSave = async () => {
     if (!form.term.trim()) { toast.error('Term required'); return; }
     setSaving(true);
     try {
-      if (editId) { await glossaryAPI.update(editId, form); toast.success('Term updated'); }
-      else { await glossaryAPI.create(form); toast.success('Term created'); }
+      const payload = {
+        ...form,
+        link_url: form.url || form.link_url || ''
+      };
+      if (editId) { await glossaryAPI.update(editId, payload); toast.success('Term updated'); }
+      else { await glossaryAPI.create(payload); toast.success('Term created'); }
       resetForm(); load();
     } catch (err) { toast.error('Failed to save'); }
     finally { setSaving(false); }
@@ -682,7 +688,7 @@ const GlossaryTab = () => {
 
   const handleDelete = async () => {
     if (!deleteId) return;
-    try { await glossaryAPI.delete(deleteId); toast.success('Deleted'); if (refreshStats) refreshStats(); load(); }
+    try { await glossaryAPI.delete(deleteId); toast.success('Deleted'); load(); }
     catch (err) { toast.error('Failed to delete'); }
     finally { setDeleteId(null); }
   };
@@ -693,8 +699,25 @@ const GlossaryTab = () => {
         <CardHeader><CardTitle className="text-sm">{editId ? 'Edit Term' : 'Add Glossary Term'}</CardTitle></CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <label className="text-sm font-semibold text-stone-500">Term</label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-sm font-semibold text-stone-500">Term</label>
+              <Button type="button" variant="outline" size="sm" onClick={() => setLinkDialogOpen(true)} className="h-7 text-xs border-stone-200">
+                <LinkIcon className="w-3 h-3 mr-1 text-emerald-700" />
+                {form.url ? 'Edit Link' : 'Add Link'}
+              </Button>
+            </div>
             <Input value={form.term} onChange={(e) => setForm(f => ({ ...f, term: e.target.value }))} placeholder="e.g. Venture Capital" />
+            {form.url && (
+              <div className="mt-2 flex items-center gap-2">
+                <span className="text-xs bg-emerald-50 text-emerald-800 px-2.5 py-1 rounded-full border border-emerald-200 flex items-center gap-1 font-medium">
+                  <ExternalLink className="w-3 h-3 text-emerald-600" />
+                  {form.url}
+                  <button type="button" onClick={() => setForm(f => ({ ...f, url: '', link_url: '', target: '', rel: '' }))} className="ml-1 text-emerald-600 hover:text-emerald-900">
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              </div>
+            )}
           </div>
           <div>
             <label className="text-sm font-semibold text-stone-500">Definition</label>
@@ -720,11 +743,19 @@ const GlossaryTab = () => {
               {terms.map(t => (
                 <div key={t.id} className="flex items-center justify-between p-3 bg-stone-50 rounded-lg">
                   <div className="flex-1 min-w-0 mr-4">
-                    <p className="font-medium text-stone-900">{t.term}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium text-stone-900">{t.term}</p>
+                      {(t.url || t.link_url || t.href) && (
+                        <span className="text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded font-mono flex items-center gap-1">
+                          <ExternalLink className="w-2.5 h-2.5" />
+                          link
+                        </span>
+                      )}
+                    </div>
                     <p className="text-sm text-stone-500 truncate">{t.definition}</p>
                   </div>
                   <div className="flex gap-2">
-                    <Button size="sm" variant="outline" onClick={() => { setEditId(t.id); setForm(t); }}><Edit2 className="w-3 h-3" /></Button>
+                    <Button size="sm" variant="outline" onClick={() => { setEditId(t.id); setForm({ ...t, url: t.url || t.link_url || t.href || '' }); }}><Edit2 className="w-3 h-3" /></Button>
                     <Button size="sm" variant="ghost" className="text-red-500" onClick={() => setDeleteId(t.id)}><Trash2 className="w-3 h-3" /></Button>
                   </div>
                 </div>
@@ -733,6 +764,15 @@ const GlossaryTab = () => {
           )}
         </CardContent>
       </Card>
+
+      <LinkDialog
+        open={linkDialogOpen}
+        onOpenChange={setLinkDialogOpen}
+        initialData={{ href: form.url || form.link_url || '', target: form.target, rel: form.rel }}
+        onApply={({ href, target, rel }) => {
+          setForm(f => ({ ...f, url: href, link_url: href, target: target || '_blank', rel: rel || 'noopener noreferrer' }));
+        }}
+      />
 
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
