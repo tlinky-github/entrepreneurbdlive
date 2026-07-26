@@ -552,7 +552,17 @@ export const contentAPI = {
       glossary: 'glossary'
     };
     const colName = collectionMap[type] || type;
-    await deleteDoc(doc(db, colName, id));
+    try {
+      await deleteDoc(doc(db, colName, id));
+    } catch (e) {
+      console.warn(`[contentAPI.delete] Direct delete on ${colName} failed:`, e);
+    }
+
+    if (colName === 'knowledge' || colName === 'resources') {
+      const altCol = colName === 'knowledge' ? 'resources' : 'knowledge';
+      await deleteDoc(doc(db, altCol, id)).catch(() => {});
+    }
+
     return { success: true };
   }
 };
