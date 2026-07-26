@@ -95,7 +95,7 @@
     "build:astro": "npm --prefix astro-site run build:node && node scripts/build-astro.js",
     "build:node": "npm --prefix astro-site run build:node && node scripts/build-astro.js",
     "bridge": "node scripts/local-bridge.js",
-    "build": "npm run build:node",
+    "build": "node scripts/vercel-build.js",
     "build:react": "craco build",
     "test": "craco test",
     "generate-sitemap": "node scripts/generate-sitemap.js",

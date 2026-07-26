@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { listingAPI, taxonomyAPI } from '../../lib/api';
+import { listingAPI, taxonomyAPI, profileAPI } from '../../lib/api';
 import CustomCodeInjector from '../../components/common/CustomCodeInjector';
 import NotFound from '../../components/common/NotFound';
 import { Button } from '../../components/ui/button';
@@ -40,6 +40,44 @@ const DirectoryDetail = ({ slug, initialListing, startupStages: initialStartupSt
   const [listingTypes, setListingTypes] = useState([]);
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [relatedListings, setRelatedListings] = useState([]);
+  const [profilesList, setProfilesList] = useState([]);
+
+  useEffect(() => {
+    const loadProfiles = async () => {
+      try {
+        const res = await profileAPI.list({ status: 'published' });
+        if (res.data) setProfilesList(res.data);
+      } catch (err) {
+        console.error('Failed to load entrepreneur profiles for auto-linking:', err);
+      }
+    };
+    loadProfiles();
+  }, []);
+
+  const resolveEntrepreneurUrl = (personObj, fallbackName) => {
+    if (!personObj && !fallbackName) return null;
+
+    // 1. Direct ID/Slug if saved on personObj
+    const targetIdOrSlug = personObj?.slug || personObj?.id;
+    if (targetIdOrSlug) {
+      const matchedProfile = profilesList.find(p => p.id === targetIdOrSlug || p.slug === targetIdOrSlug);
+      if (matchedProfile) {
+        return `/entrepreneurs/${matchedProfile.slug || matchedProfile.id}`;
+      }
+      return `/entrepreneurs/${targetIdOrSlug}`;
+    }
+
+    // 2. Match by name in profilesList
+    const nameToMatch = (personObj?.name || fallbackName || '').trim().toLowerCase();
+    if (nameToMatch) {
+      const matchedProfile = profilesList.find(p => p.name?.trim().toLowerCase() === nameToMatch);
+      if (matchedProfile) {
+        return `/entrepreneurs/${matchedProfile.slug || matchedProfile.id}`;
+      }
+    }
+
+    return null;
+  };
 
   useEffect(() => {
     const loadStartupStages = async () => {
@@ -487,42 +525,78 @@ const DirectoryDetail = ({ slug, initialListing, startupStages: initialStartupSt
                 </CardHeader>
                 <CardContent className="p-8 space-y-6">
                   {/* Founder */}
-                  {(listing.leadership_team?.founder?.name || listing.founder_name) && (
-                    <div className="flex items-center gap-4 group">
-                      <div className="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-900 font-black text-xl shadow-inner group-hover:bg-emerald-100 transition-colors overflow-hidden">
-                        {(listing.leadership_team?.founder?.photo || listing.founder_photo) ? (
-                          <img src={listing.leadership_team?.founder?.photo || listing.founder_photo} alt="" className="w-full h-full object-cover" />
-                        ) : (
-                          (listing.leadership_team?.founder?.name || listing.founder_name).charAt(0)
-                        )}
+                  {(() => {
+                    const founderName = listing.leadership_team?.founder?.name || listing.founder_name;
+                    if (!founderName) return null;
+
+                    const founderUrl = resolveEntrepreneurUrl(listing.leadership_team?.founder, listing.founder_name);
+
+                    const content = (
+                      <>
+                        <div className="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-900 font-black text-xl shadow-inner group-hover:bg-emerald-100 transition-colors overflow-hidden flex-shrink-0">
+                          {(listing.leadership_team?.founder?.photo || listing.founder_photo) ? (
+                            <img src={listing.leadership_team?.founder?.photo || listing.founder_photo} alt={founderName} className="w-full h-full object-cover" />
+                          ) : (
+                            founderName.charAt(0)
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-black text-stone-900 group-hover:text-emerald-900 transition-colors flex items-center justify-between gap-1.5">
+                            <span className="truncate">{founderName}</span>
+                            {founderUrl && <ExternalLink className="w-3.5 h-3.5 text-emerald-600 opacity-60 group-hover:opacity-100 transition-opacity flex-shrink-0" />}
+                          </p>
+                          <p className="text-sm text-stone-400 font-bold uppercase tracking-widest mt-0.5">Founder</p>
+                        </div>
+                      </>
+                    );
+
+                    return founderUrl ? (
+                      <a href={founderUrl} className="flex items-center gap-4 group cursor-pointer hover:bg-emerald-50/70 p-2.5 -mx-2.5 rounded-2xl transition-all border border-transparent hover:border-emerald-200/60" title={`View ${founderName}'s Profile`}>
+                        {content}
+                      </a>
+                    ) : (
+                      <div className="flex items-center gap-4 group">
+                        {content}
                       </div>
-                      <div>
-                        <p className="font-black text-stone-900 group-hover:text-emerald-900 transition-colors">
-                          {listing.leadership_team?.founder?.name || listing.founder_name}
-                        </p>
-                        <p className="text-sm text-stone-400 font-bold uppercase tracking-widest mt-0.5">Founder</p>
-                      </div>
-                    </div>
-                  )}
+                    );
+                  })()}
 
                   {/* CEO */}
-                  {(listing.leadership_team?.ceo?.name || listing.ceo_name) && (
-                    <div className="flex items-center gap-4 group">
-                      <div className="w-14 h-14 bg-stone-100 rounded-2xl flex items-center justify-center text-stone-900 font-black text-xl shadow-inner group-hover:bg-stone-200 transition-colors overflow-hidden">
-                        {(listing.leadership_team?.ceo?.photo || listing.ceo_photo) ? (
-                          <img src={listing.leadership_team?.ceo?.photo || listing.ceo_photo} alt="" className="w-full h-full object-cover" />
-                        ) : (
-                          (listing.leadership_team?.ceo?.name || listing.ceo_name).charAt(0)
-                        )}
+                  {(() => {
+                    const ceoName = listing.leadership_team?.ceo?.name || listing.ceo_name;
+                    if (!ceoName) return null;
+
+                    const ceoUrl = resolveEntrepreneurUrl(listing.leadership_team?.ceo, listing.ceo_name);
+
+                    const content = (
+                      <>
+                        <div className="w-14 h-14 bg-stone-100 rounded-2xl flex items-center justify-center text-stone-900 font-black text-xl shadow-inner group-hover:bg-emerald-100 transition-colors overflow-hidden flex-shrink-0">
+                          {(listing.leadership_team?.ceo?.photo || listing.ceo_photo) ? (
+                            <img src={listing.leadership_team?.ceo?.photo || listing.ceo_photo} alt={ceoName} className="w-full h-full object-cover" />
+                          ) : (
+                            ceoName.charAt(0)
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-black text-stone-900 group-hover:text-emerald-900 transition-colors flex items-center justify-between gap-1.5">
+                            <span className="truncate">{ceoName}</span>
+                            {ceoUrl && <ExternalLink className="w-3.5 h-3.5 text-emerald-600 opacity-60 group-hover:opacity-100 transition-opacity flex-shrink-0" />}
+                          </p>
+                          <p className="text-sm text-stone-400 font-bold uppercase tracking-widest mt-0.5">Chief Executive</p>
+                        </div>
+                      </>
+                    );
+
+                    return ceoUrl ? (
+                      <a href={ceoUrl} className="flex items-center gap-4 group cursor-pointer hover:bg-emerald-50/70 p-2.5 -mx-2.5 rounded-2xl transition-all border border-transparent hover:border-emerald-200/60" title={`View ${ceoName}'s Profile`}>
+                        {content}
+                      </a>
+                    ) : (
+                      <div className="flex items-center gap-4 group">
+                        {content}
                       </div>
-                      <div>
-                        <p className="font-black text-stone-900 group-hover:text-emerald-900 transition-colors">
-                          {listing.leadership_team?.ceo?.name || listing.ceo_name}
-                        </p>
-                        <p className="text-sm text-stone-400 font-bold uppercase tracking-widest mt-0.5">Chief Executive</p>
-                      </div>
-                    </div>
-                  )}
+                    );
+                  })()}
                 </CardContent>
               </Card>
             )}
