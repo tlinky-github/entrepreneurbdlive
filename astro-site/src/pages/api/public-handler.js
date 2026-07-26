@@ -186,6 +186,7 @@ async function handleSubmitArticle(db, data, corsHeaders) {
   }
   const submission = {
     ...data,
+    type: 'post',
     status: 'pending',
     source: 'public',
     is_featured: false,
@@ -195,6 +196,7 @@ async function handleSubmitArticle(db, data, corsHeaders) {
     slug: data.slug || generateSlug(data.title)
   };
   const docRef = await db.collection('posts').add(submission);
+  await db.collection('submissions').add(submission).catch(() => {});
   return new Response(JSON.stringify({ success: true, id: docRef.id, title: data.title }), { status: 200, headers: corsHeaders });
 }
 

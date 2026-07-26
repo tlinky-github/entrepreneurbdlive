@@ -40,6 +40,12 @@ const UserDashboard = () => {
     if (!storyData.title || !storyData.content) return;
     setSubmittingStory(true);
     try {
+      const cleanSlug = (storyData.title || 'article')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
+
+      // 1. Save to submissions collection (for User Dashboard status tracking)
       await addDoc(collection(db, 'submissions'), {
         title: storyData.title,
         author_name: storyData.author_name || user?.name || '',
@@ -56,6 +62,26 @@ const UserDashboard = () => {
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       });
+
+      // 2. Save to posts collection (for Admin Posts & Content Manager queue)
+      await addDoc(collection(db, 'posts'), {
+        title: storyData.title,
+        author_name: storyData.author_name || user?.name || '',
+        category: storyData.category || '',
+        excerpt: storyData.excerpt || '',
+        content: storyData.content || '',
+        featured_image: storyData.featured_image || '',
+        contact_email: storyData.contact_email || user?.email || '',
+        email: user?.email,
+        status: 'pending',
+        source: 'user_submission',
+        is_featured: false,
+        view_count: 0,
+        slug: cleanSlug,
+        created_at: serverTimestamp(),
+        updated_at: serverTimestamp()
+      });
+
       setStorySuccess(true);
       fetchUserSubmissions();
       setStoryData({
@@ -453,7 +479,13 @@ const UserDashboard = () => {
                 <div key={sub.id} className="py-4 flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-stone-100 flex items-center justify-center text-stone-600 font-bold">
-                      {sub.type === 'directory' ? <Building2 className="w-5 h-5 text-blue-600" /> : <User className="w-5 h-5 text-amber-600" />}
+                      {sub.type === 'directory' ? (
+                        <Building2 className="w-5 h-5 text-blue-600" />
+                      ) : sub.type === 'post' || sub.type === 'article' ? (
+                        <FileText className="w-5 h-5 text-amber-600" />
+                      ) : (
+                        <User className="w-5 h-5 text-emerald-600" />
+                      )}
                     </div>
                     <div>
                       <h4 className="font-semibold text-stone-900 text-sm">{sub.title || sub.business_name || sub.full_name || 'Submission'}</h4>
@@ -525,7 +557,7 @@ const UserDashboard = () => {
                       <label className="block text-xs font-bold uppercase tracking-wider text-stone-700 mb-1">Article Title *</label>
                       <input 
                         type="text"
-                        placeholder="e.g. How We Scaled Our Startup in Bangladesh"
+                        placeholder="Enter a descriptive article title"
                         className="w-full bg-stone-50 border border-stone-200 rounded-xl p-3 text-sm focus:bg-white focus:ring-2 focus:ring-amber-500 outline-none"
                         value={storyData.title}
                         onChange={(e) => setStoryData({...storyData, title: e.target.value})}
@@ -538,7 +570,7 @@ const UserDashboard = () => {
                         <label className="block text-xs font-bold uppercase tracking-wider text-stone-700 mb-1">Author Name</label>
                         <input 
                           type="text"
-                          placeholder="e.g. Khaled Mahmud"
+                          placeholder="Enter author or pen name"
                           className="w-full bg-stone-50 border border-stone-200 rounded-xl p-3 text-sm focus:bg-white focus:ring-2 focus:ring-amber-500 outline-none"
                           value={storyData.author_name}
                           onChange={(e) => setStoryData({...storyData, author_name: e.target.value})}
@@ -548,7 +580,7 @@ const UserDashboard = () => {
                         <label className="block text-xs font-bold uppercase tracking-wider text-stone-700 mb-1">Private Contact Email</label>
                         <input 
                           type="email"
-                          placeholder="e.g. tlinky02@gmail.com"
+                          placeholder="name@example.com"
                           className="w-full bg-stone-50 border border-stone-200 rounded-xl p-3 text-sm focus:bg-white focus:ring-2 focus:ring-amber-500 outline-none"
                           value={storyData.contact_email}
                           onChange={(e) => setStoryData({...storyData, contact_email: e.target.value})}
@@ -560,7 +592,7 @@ const UserDashboard = () => {
                       <label className="block text-xs font-bold uppercase tracking-wider text-stone-700 mb-1">Short Excerpt / Summary</label>
                       <textarea 
                         rows={2}
-                        placeholder="Brief 2-3 sentence overview of your article..."
+                        placeholder="Provide a brief 2-3 sentence overview of your article..."
                         className="w-full bg-stone-50 border border-stone-200 rounded-xl p-3 text-sm focus:bg-white focus:ring-2 focus:ring-amber-500 outline-none"
                         value={storyData.excerpt}
                         onChange={(e) => setStoryData({...storyData, excerpt: e.target.value})}
@@ -571,7 +603,7 @@ const UserDashboard = () => {
                       <label className="block text-xs font-bold uppercase tracking-wider text-stone-700 mb-1">Article Story & Content / Doc Link *</label>
                       <textarea 
                         rows={5}
-                        placeholder="Write your article story here or provide a public Google Doc link..."
+                        placeholder="Write your article story here, or paste a link to a public Google Doc..."
                         className="w-full bg-stone-50 border border-stone-200 rounded-xl p-3 text-sm focus:bg-white focus:ring-2 focus:ring-amber-500 outline-none"
                         value={storyData.content}
                         onChange={(e) => setStoryData({...storyData, content: e.target.value})}

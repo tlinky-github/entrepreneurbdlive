@@ -17,7 +17,9 @@ import {
   ArrowUpRight,
   UserCircle,
   Globe,
-  FileText
+  FileText,
+  Mail,
+  User
 } from 'lucide-react';
 import { adminAPI } from '../../lib/api';
 
@@ -28,6 +30,24 @@ const formatDate = (date) => {
   }
   const d = new Date(date);
   return isNaN(d.getTime()) ? 'Invalid Date' : d.toLocaleDateString();
+};
+
+const SubmitterInfo = ({ item }) => {
+  const submitter = item.contact_email || item.email || item.author_name;
+  if (submitter) {
+    return (
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+        <Mail className="w-3 h-3 text-emerald-600" />
+        Submitted by: {submitter}
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-stone-100 text-stone-600 border border-stone-200">
+      <User className="w-3 h-3 text-stone-400" />
+      Submitted by: Public Guest Form
+    </span>
+  );
 };
 
 const AdminSubmissions = () => {
@@ -132,8 +152,9 @@ const AdminSubmissions = () => {
                             <Badge variant="outline" className="text-[10px] uppercase text-blue-600 bg-blue-50 border-blue-100 font-bold">Public</Badge>
                           )}
                         </div>
-                        <p className="text-sm text-stone-600 truncate">{p.designation} at <span className="font-semibold">{p.company_name}</span></p>
-                        <div className="flex items-center gap-4 mt-2 text-sm text-stone-400">
+                        <p className="text-sm text-stone-600 truncate mb-2">{p.designation} at <span className="font-semibold">{p.company_name}</span></p>
+                        <div className="flex flex-wrap items-center gap-3 text-xs text-stone-400">
+                          <SubmitterInfo item={p} />
                           <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> Submitted {formatDate(p.created_at)}</span>
                           <span className="flex items-center gap-1"><ArrowUpRight className="w-3 h-3" /> {p.industry}</span>
                         </div>
@@ -196,8 +217,9 @@ const AdminSubmissions = () => {
                             <Badge variant="outline" className="text-[10px] uppercase text-blue-600 bg-blue-50 border-blue-100 font-bold">Public</Badge>
                           )}
                         </div>
-                        <p className="text-sm text-stone-600 truncate">{l.listing_type_name || l.listing_type} • {l.headquarters}</p>
-                        <div className="flex items-center gap-4 mt-2 text-sm text-stone-400">
+                        <p className="text-sm text-stone-600 truncate mb-2">{l.listing_type_name || l.listing_type} • {l.headquarters}</p>
+                        <div className="flex flex-wrap items-center gap-3 text-xs text-stone-400">
+                           <SubmitterInfo item={l} />
                            <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> Submitted {formatDate(l.created_at)}</span>
                            {l.website && <span className="flex items-center gap-1"><Globe className="w-3 h-3" /> {l.website.replace(/^https?:\/\//, '')}</span>}
                         </div>
@@ -254,11 +276,10 @@ const AdminSubmissions = () => {
                           <h3 className="font-bold text-stone-900 truncate">{post.title || 'Untitled Article'}</h3>
                           <Badge variant="outline" className="text-[10px] uppercase text-amber-700 bg-amber-50 border-amber-200 font-bold">User Story</Badge>
                         </div>
-                        <p className="text-sm text-stone-600 truncate mb-1">{post.excerpt || post.content || 'No summary available'}</p>
-                        <div className="flex items-center gap-4 text-xs text-stone-400">
-                          <span>Author: <strong className="text-stone-700">{post.author_name || post.email || 'Community Member'}</strong></span>
-                          {post.contact_email && <span>Email: {post.contact_email}</span>}
-                          <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {formatDate(post.created_at || post.createdAt)}</span>
+                        <p className="text-sm text-stone-600 truncate mb-2">{post.excerpt || post.content || 'No summary available'}</p>
+                        <div className="flex flex-wrap items-center gap-3 text-xs text-stone-400">
+                          <SubmitterInfo item={post} />
+                          <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> Submitted {formatDate(post.created_at || post.createdAt)}</span>
                         </div>
                       </div>
 
