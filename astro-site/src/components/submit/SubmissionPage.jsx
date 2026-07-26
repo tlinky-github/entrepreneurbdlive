@@ -33,14 +33,22 @@ import {
 import PublicRichEditor from './PublicRichEditor.jsx';
 import Turnstile from './Turnstile.jsx';
 import publicAPI from '../../lib/publicApi.js';
+import { useAuth } from '../../lib/auth.jsx';
 
 const TURNSTILE_SITE_KEY = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY || import.meta.env.REACT_APP_TURNSTILE_SITE_KEY || '1x00000000000000000000AA';
 
 const SubmissionPage = () => {
-
+  let user = null;
+  try {
+    const auth = useAuth();
+    user = auth?.user || null;
+  } catch (e) {
+    // AuthProvider fallback
+  }
   const [activeTab, setActiveTab] = useState('entrepreneur');
   const [loading, setLoading] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState('');
+
   const [metadata, setMetadata] = useState({ 
     categories: [], 
     industries: [], 
@@ -92,6 +100,34 @@ const SubmissionPage = () => {
     contact_email: '', 
     contact_phone: ''  
   });
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const typeParam = params.get('type') || params.get('tab');
+      if (typeParam === 'directory' || typeParam === 'business' || typeParam === 'listing') {
+        setActiveTab('directory');
+      } else if (typeParam === 'entrepreneur' || typeParam === 'profile' || typeParam === 'founder') {
+        setActiveTab('entrepreneur');
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (user?.email) {
+      setPData(prev => ({
+        ...prev,
+        email: prev.email || user.email,
+        contact_email: prev.contact_email || user.email,
+        name: prev.name || user.name || ''
+      }));
+      setLData(prev => ({
+        ...prev,
+        email: prev.email || user.email,
+        contact_email: prev.contact_email || user.email
+      }));
+    }
+  }, [user]);
 
   useEffect(() => {
     const loadMetadata = async () => {

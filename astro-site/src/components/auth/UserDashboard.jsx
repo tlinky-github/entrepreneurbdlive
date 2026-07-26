@@ -241,7 +241,7 @@ const UserDashboard = () => {
                 </p>
               </div>
               <a
-                href="/submit"
+                href="/submit?type=entrepreneur"
                 className="inline-flex items-center justify-between text-sm font-semibold text-emerald-900 group-hover:text-emerald-950 pt-4 border-t border-stone-100"
               >
                 <span>Submit Profile</span>
@@ -261,7 +261,7 @@ const UserDashboard = () => {
                 </p>
               </div>
               <a
-                href="/submit"
+                href="/submit?type=directory"
                 className="inline-flex items-center justify-between text-sm font-semibold text-blue-700 group-hover:text-blue-800 pt-4 border-t border-stone-100"
               >
                 <span>Add Business Listing</span>
