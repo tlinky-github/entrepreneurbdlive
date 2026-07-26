@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 
 import { Card, CardContent } from '../ui/card.jsx';
 import { Button } from '../ui/button.jsx';
@@ -27,13 +27,149 @@ import {
   Star,
   CheckCircle,
   ShieldCheck,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Search,
+  ChevronDown,
+  Check,
+  Plus,
+  X
 } from 'lucide-react';
 
 import PublicRichEditor from './PublicRichEditor.jsx';
 import Turnstile from './Turnstile.jsx';
 import publicAPI from '../../lib/publicApi.js';
 import { useAuth } from '../../lib/auth.jsx';
+
+const SearchableSelect = ({
+  options = [],
+  value = '',
+  onChange,
+  placeholder = 'Select option...',
+  customLabel = '+ Add Custom / New',
+  allowCustom = true
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const [isCustomMode, setIsCustomMode] = useState(false);
+  const containerRef = useRef(null);
+
+  const formattedOptions = useMemo(() => {
+    return options.map(opt => {
+      if (typeof opt === 'object' && opt !== null) {
+        const label = opt.name || opt.title || opt.id;
+        const key = opt.id || label;
+        return { key: String(key), label: String(label) };
+      }
+      return { key: String(opt), label: String(opt) };
+    });
+  }, [options]);
+
+  const filteredOptions = useMemo(() => {
+    if (!search.trim()) return formattedOptions;
+    const q = search.toLowerCase();
+    return formattedOptions.filter(opt => opt.label.toLowerCase().includes(q));
+  }, [formattedOptions, search]);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleSelect = (labelVal) => {
+    if (labelVal === '__custom__') {
+      setIsCustomMode(true);
+      onChange('');
+    } else {
+      setIsCustomMode(false);
+      onChange(labelVal);
+    }
+    setIsOpen(false);
+    setSearch('');
+  };
+
+  return (
+    <div className={`relative w-full ${isOpen ? 'z-40' : 'z-10'}`} ref={containerRef}>
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 h-12 sm:h-14 text-sm font-medium text-left flex items-center justify-between focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:outline-none transition-all hover:bg-stone-100/70"
+      >
+        <span className={value ? "text-stone-900 font-semibold truncate" : "text-stone-400"}>
+          {value || placeholder}
+        </span>
+        <ChevronDown className={`w-4 h-4 text-stone-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+
+      {isOpen && (
+        <div className="absolute z-50 left-0 right-0 mt-2 bg-white border border-stone-200 rounded-2xl shadow-2xl p-2 animate-in fade-in-50 zoom-in-95 duration-150">
+          <div className="p-2 border-b border-stone-100 flex items-center gap-2 mb-1">
+            <Search className="w-4 h-4 text-stone-400 flex-shrink-0" />
+            <input
+              type="text"
+              autoFocus
+              className="w-full text-sm font-medium bg-transparent focus:outline-none placeholder:text-stone-400"
+              placeholder={`Search...`}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            {search && (
+              <button type="button" onClick={() => setSearch('')} className="text-stone-400 hover:text-stone-600">
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
+          <div className="max-h-56 overflow-y-auto space-y-0.5 pr-1" style={{ scrollbarWidth: 'thin' }}>
+            {filteredOptions.length > 0 ? (
+              filteredOptions.map((opt) => (
+                <button
+                  key={opt.key}
+                  type="button"
+                  onClick={() => handleSelect(opt.label)}
+                  className={`w-full text-left px-3 py-2.5 rounded-xl text-sm font-medium transition-colors flex items-center justify-between ${
+                    value === opt.label ? 'bg-emerald-50 text-emerald-900 font-bold' : 'text-stone-700 hover:bg-stone-100'
+                  }`}
+                >
+                  <span className="truncate">{opt.label}</span>
+                  {value === opt.label && <Check className="w-4 h-4 text-emerald-600 flex-shrink-0" />}
+                </button>
+              ))
+            ) : (
+              <div className="p-3 text-xs text-stone-400 text-center font-medium">No matching items found</div>
+            )}
+
+            {allowCustom && (
+              <button
+                type="button"
+                onClick={() => handleSelect('__custom__')}
+                className="w-full text-left px-3 py-2.5 rounded-xl text-sm font-bold text-emerald-700 hover:bg-emerald-50 transition-colors border-t border-stone-100 mt-1 flex items-center gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                {customLabel}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {isCustomMode && (
+        <div className="mt-2">
+          <Input
+            placeholder={`Type custom ${placeholder.toLowerCase()}...`}
+            className="bg-stone-50 border-emerald-500 border-2 h-12 sm:h-14 rounded-xl"
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+          />
+        </div>
+      )}
+    </div>
+  );
+};
 
 const TURNSTILE_SITE_KEY = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY || import.meta.env.REACT_APP_TURNSTILE_SITE_KEY || '1x00000000000000000000AA';
 
@@ -74,6 +210,11 @@ const SubmissionPage = ({ initialMetadata }) => {
     company_name: '',
     industry: '', 
     category: '', 
+    startup_stage: '',
+    city: '',
+    expertise: '',
+    education: '',
+    founded_year: '',
     excerpt: '', 
     content: '', 
     email: '',
@@ -91,19 +232,24 @@ const SubmissionPage = ({ initialMetadata }) => {
     industry: '', 
     headquarters: '',
     city: '',
+    country: '',
     listing_type: '',
     website: '',
     employee_size: '',
+    founded_year: '',
+    expertise: '',
     ceo_name: '',
     founder_name: '',
     excerpt: '', 
     content: '', 
+    life_at_company: '',
     logo: '',
     cover_image: '',
     email: '',
     phone: '',
     social_linkedin: '',
     social_twitter: '',
+    social_facebook: '',
     contact_email: '', 
     contact_phone: ''  
   });
@@ -294,7 +440,7 @@ const SubmissionPage = ({ initialMetadata }) => {
               {/* Main Form */}
               <div className="lg:col-span-3">
                 <form onSubmit={handlePSubmit} className="space-y-6 sm:space-y-8">
-                  <Card className="rounded-[1.5rem] sm:rounded-[2.5rem] border-none shadow-xl shadow-stone-200/50 overflow-hidden">
+                  <Card className="rounded-[1.5rem] sm:rounded-[2.5rem] border-none shadow-xl shadow-stone-200/50">
                     <CardContent className="p-6 sm:p-12 space-y-8 sm:space-y-10">
                       <SectionTitle 
                         icon={Briefcase} 
@@ -341,23 +487,77 @@ const SubmissionPage = ({ initialMetadata }) => {
                       <div className="grid sm:grid-cols-2 gap-6 sm:gap-8">
                         <div className="space-y-3">
                           <label className="text-sm sm:text-sm font-bold text-stone-700 ml-1 uppercase tracking-wider">Category</label>
-                          <p className="text-[10px] text-stone-500 ml-1 mb-1 font-medium leading-tight">The specific niche or sector you focus on (e.g., EdTech, Fintech).</p>
-                          <Input 
-                            placeholder="e.g. Fintech, Edtech" 
-                            className="bg-stone-50 border-stone-200 h-12 sm:h-14 rounded-xl"
+                          <p className="text-[10px] text-stone-500 ml-1 mb-1 font-medium leading-tight">The specific niche or sector you focus on.</p>
+                          <SearchableSelect 
+                            options={metadata.categories}
                             value={pData.category}
-                            onChange={(e) => setPData({...pData, category: e.target.value})}
+                            onChange={(val) => setPData({...pData, category: val})}
+                            placeholder="Select Category"
+                            customLabel="+ Add Custom / New Category"
                           />
-                          <p className="text-[10px] text-stone-400 mt-1 uppercase font-bold tracking-tight">Manual entry - Subject to verification</p>
                         </div>
                         <div className="space-y-3">
                           <label className="text-sm sm:text-sm font-bold text-stone-700 ml-1 uppercase tracking-wider">Industry</label>
-                          <p className="text-[10px] text-stone-500 ml-1 mb-1 font-medium leading-tight">The broader market industry you operate in (e.g., Software, Finance).</p>
-                          <Input 
-                            placeholder="e.g. Software, Banking" 
-                            className="bg-stone-50 border-stone-200 h-12 sm:h-14 rounded-xl"
+                          <p className="text-[10px] text-stone-500 ml-1 mb-1 font-medium leading-tight">The broader market industry you operate in.</p>
+                          <SearchableSelect 
+                            options={metadata.industries}
                             value={pData.industry}
-                            onChange={(e) => setPData({...pData, industry: e.target.value})}
+                            onChange={(val) => setPData({...pData, industry: val})}
+                            placeholder="Select Industry"
+                            customLabel="+ Add Custom / New Industry"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid sm:grid-cols-2 gap-6 sm:gap-8">
+                        <div className="space-y-3">
+                          <label className="text-sm sm:text-sm font-bold text-stone-700 ml-1 uppercase tracking-wider">Startup Stage</label>
+                          <SearchableSelect 
+                            options={metadata.startup_stages?.length > 0 ? metadata.startup_stages : ['Idea Stage', 'Seed Stage', 'Early Growth', 'Scaling', 'Established']}
+                            value={pData.startup_stage}
+                            onChange={(val) => setPData({...pData, startup_stage: val})}
+                            placeholder="Select Startup Stage"
+                            customLabel="+ Add Custom Stage"
+                          />
+                        </div>
+                        <div className="space-y-3">
+                          <label className="text-sm sm:text-sm font-bold text-stone-700 ml-1 uppercase tracking-wider">City</label>
+                          <SearchableSelect 
+                            options={metadata.cities}
+                            value={pData.city}
+                            onChange={(val) => setPData({...pData, city: val})}
+                            placeholder="Select City"
+                            customLabel="+ Add Custom City"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid sm:grid-cols-3 gap-6 sm:gap-8">
+                        <div className="space-y-3">
+                          <label className="text-sm sm:text-sm font-bold text-stone-700 ml-1 uppercase tracking-wider">Expertise</label>
+                          <Input 
+                            placeholder="e.g. AI, Product Strategy" 
+                            className="bg-stone-50 border-stone-200 h-12 sm:h-14 rounded-xl"
+                            value={pData.expertise}
+                            onChange={(e) => setPData({...pData, expertise: e.target.value})}
+                          />
+                        </div>
+                        <div className="space-y-3">
+                          <label className="text-sm sm:text-sm font-bold text-stone-700 ml-1 uppercase tracking-wider">Education</label>
+                          <Input 
+                            placeholder="e.g. B.Sc in CSE, BUET" 
+                            className="bg-stone-50 border-stone-200 h-12 sm:h-14 rounded-xl"
+                            value={pData.education}
+                            onChange={(e) => setPData({...pData, education: e.target.value})}
+                          />
+                        </div>
+                        <div className="space-y-3">
+                          <label className="text-sm sm:text-sm font-bold text-stone-700 ml-1 uppercase tracking-wider">Founded Year</label>
+                          <Input 
+                            placeholder="e.g. 2021" 
+                            className="bg-stone-50 border-stone-200 h-12 sm:h-14 rounded-xl"
+                            value={pData.founded_year}
+                            onChange={(e) => setPData({...pData, founded_year: e.target.value})}
                           />
                         </div>
                       </div>
@@ -555,7 +755,7 @@ const SubmissionPage = ({ initialMetadata }) => {
               {/* Main Form */}
               <div className="lg:col-span-3">
                 <form onSubmit={handleLSubmit} className="space-y-6 sm:space-y-8">
-                  <Card className="rounded-[1.5rem] sm:rounded-[2.5rem] border-none shadow-xl shadow-stone-200/50 overflow-hidden">
+                  <Card className="rounded-[1.5rem] sm:rounded-[2.5rem] border-none shadow-xl shadow-stone-200/50">
                     <CardContent className="p-6 sm:p-12 space-y-8 sm:space-y-10">
                       <SectionTitle 
                         icon={Building2} 
@@ -578,22 +778,24 @@ const SubmissionPage = ({ initialMetadata }) => {
                       <div className="grid sm:grid-cols-2 gap-6 sm:gap-8">
                         <div className="space-y-3">
                           <label className="text-sm sm:text-sm font-bold text-stone-700 ml-1 uppercase tracking-wider">Category</label>
-                          <p className="text-[10px] text-stone-500 ml-1 mb-1 font-medium leading-tight">The specific niche your business serves (e.g., E-commerce, Logistics).</p>
-                          <Input 
-                            placeholder="e.g. E-commerce" 
-                            className="bg-stone-50 border-stone-200 h-12 sm:h-14 rounded-xl"
+                          <p className="text-[10px] text-stone-500 ml-1 mb-1 font-medium leading-tight">The specific niche your business serves.</p>
+                          <SearchableSelect 
+                            options={metadata.categories}
                             value={lData.category}
-                            onChange={(e) => setLData({...lData, category: e.target.value})}
+                            onChange={(val) => setLData({...lData, category: val})}
+                            placeholder="Select Category"
+                            customLabel="+ Add Custom / New Category"
                           />
                         </div>
                         <div className="space-y-3">
                           <label className="text-sm sm:text-sm font-bold text-stone-700 ml-1 uppercase tracking-wider">Industry</label>
-                          <p className="text-[10px] text-stone-500 ml-1 mb-1 font-medium leading-tight">Your broader market sector (e.g., Technology, Retail).</p>
-                          <Input 
-                            placeholder="e.g. Technology" 
-                            className="bg-stone-50 border-stone-200 h-12 sm:h-14 rounded-xl"
+                          <p className="text-[10px] text-stone-500 ml-1 mb-1 font-medium leading-tight">Your broader market sector.</p>
+                          <SearchableSelect 
+                            options={metadata.industries}
                             value={lData.industry}
-                            onChange={(e) => setLData({...lData, industry: e.target.value})}
+                            onChange={(val) => setLData({...lData, industry: val})}
+                            placeholder="Select Industry"
+                            customLabel="+ Add Custom / New Industry"
                           />
                         </div>
                       </div>
@@ -621,49 +823,66 @@ const SubmissionPage = ({ initialMetadata }) => {
                         </div>
                       </div>
 
-                      <div className="grid sm:grid-cols-2 gap-6 sm:gap-8">
-                         <div className="space-y-3">
+                      <div className="grid sm:grid-cols-3 gap-6 sm:gap-8">
+                        <div className="space-y-3">
                           <label className="text-sm sm:text-sm font-bold text-stone-700 ml-1 uppercase tracking-wider">City</label>
-                          <select 
-                            className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 h-12 sm:h-14 text-sm font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:outline-none transition-all cursor-pointer"
+                          <SearchableSelect 
+                            options={metadata.cities}
                             value={lData.city}
-                            onChange={(e) => setLData({...lData, city: e.target.value})}
-                          >
-                            <option value="">Select City</option>
-                            {(metadata.cities || []).map(c => <option key={c} value={c}>{c}</option>)}
-                          </select>
+                            onChange={(val) => setLData({...lData, city: val})}
+                            placeholder="Select City"
+                            customLabel="+ Add Custom City"
+                          />
+                        </div>
+                        <div className="space-y-3">
+                          <label className="text-sm sm:text-sm font-bold text-stone-700 ml-1 uppercase tracking-wider">Country</label>
+                          <Input 
+                            placeholder="e.g. Bangladesh" 
+                            className="bg-stone-50 border-stone-200 h-12 sm:h-14 rounded-xl"
+                            value={lData.country}
+                            onChange={(e) => setLData({...lData, country: e.target.value})}
+                          />
                         </div>
                         <div className="space-y-3">
                           <label className="text-sm sm:text-sm font-bold text-stone-700 ml-1 uppercase tracking-wider">Listing Type</label>
-                          <select 
-                            className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 h-12 sm:h-14 text-sm font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:outline-none transition-all cursor-pointer"
+                          <SearchableSelect 
+                            options={metadata.listing_types}
                             value={lData.listing_type}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              setLData({...lData, listing_type: val, listing_type_name: val});
-                            }}
-                          >
-                            <option value="">Select Type</option>
-                            {(metadata.listing_types || []).map(t => {
-                              const label = typeof t === 'object' ? (t.name || t.title || t.id) : t;
-                              const keyVal = typeof t === 'object' ? t.id : t;
-                              return <option key={keyVal} value={label}>{label}</option>;
-                            })}
-                          </select>
+                            onChange={(val) => setLData({...lData, listing_type: val, listing_type_name: val})}
+                            placeholder="Select Listing Type"
+                            customLabel="+ Add Custom Listing Type"
+                          />
                         </div>
                       </div>
 
-                      <div className="grid sm:grid-cols-2 gap-6 sm:gap-8">
+                      <div className="grid sm:grid-cols-3 gap-6 sm:gap-8">
                          <div className="space-y-3">
                           <label className="text-sm sm:text-sm font-bold text-stone-700 ml-1 uppercase tracking-wider">Employee Size</label>
-                          <select 
-                            className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 h-12 sm:h-14 text-sm font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:outline-none transition-all cursor-pointer"
+                          <SearchableSelect 
+                            options={metadata.employee_sizes}
                             value={lData.employee_size}
-                            onChange={(e) => setLData({...lData, employee_size: e.target.value})}
-                          >
-                            <option value="">Select Size</option>
-                            {(metadata.employee_sizes || []).map(s => <option key={s} value={s}>{s}</option>)}
-                          </select>
+                            onChange={(val) => setLData({...lData, employee_size: val})}
+                            placeholder="Select Employee Size"
+                            customLabel="+ Add Custom Size"
+                          />
+                        </div>
+                        <div className="space-y-3">
+                          <label className="text-sm sm:text-sm font-bold text-stone-700 ml-1 uppercase tracking-wider">Founded Year</label>
+                          <Input 
+                            placeholder="e.g. 2020" 
+                            className="bg-stone-50 border-stone-200 h-12 sm:h-14 rounded-xl"
+                            value={lData.founded_year}
+                            onChange={(e) => setLData({...lData, founded_year: e.target.value})}
+                          />
+                        </div>
+                        <div className="space-y-3">
+                          <label className="text-sm sm:text-sm font-bold text-stone-700 ml-1 uppercase tracking-wider">Expertise / Products</label>
+                          <Input 
+                            placeholder="e.g. SaaS, E-commerce Logistics" 
+                            className="bg-stone-50 border-stone-200 h-12 sm:h-14 rounded-xl"
+                            value={lData.expertise}
+                            onChange={(e) => setLData({...lData, expertise: e.target.value})}
+                          />
                         </div>
                       </div>
                     </CardContent>
@@ -755,6 +974,18 @@ const SubmissionPage = ({ initialMetadata }) => {
                           value={lData.content}
                           onChange={(html) => setLData({...lData, content: html})}
                           placeholder="Provide a comprehensive overview of your business, services, and achievements..."
+                        />
+                      </div>
+
+                      <div className="space-y-6 pt-4 border-t border-stone-100">
+                        <div className="flex flex-col gap-1 mb-2">
+                          <label className="text-sm sm:text-sm font-bold text-stone-700 ml-1 uppercase tracking-wider">Life at Company (Culture & Environment)</label>
+                          <p className="text-sm text-stone-500 ml-1">Describe your company culture, team values, office environment, perks, and life at work.</p>
+                        </div>
+                        <PublicRichEditor 
+                          value={lData.life_at_company}
+                          onChange={(html) => setLData({...lData, life_at_company: html})}
+                          placeholder="Tell future team members and partners what it is like working at your company..."
                         />
                       </div>
                     </CardContent>
