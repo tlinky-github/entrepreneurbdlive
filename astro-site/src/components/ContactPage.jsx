@@ -8,6 +8,7 @@ import { Label } from '../components/ui/label';
 import { siteConfig } from '../data/mock';
 import { toast } from 'sonner';
 import { contactAPI, settingsAPI } from '../lib/api';
+import { validateEmailAddress } from '../lib/emailValidator';
 
 const ContactPage = ({ initialSiteSettings }) => {
   const [siteSettings, setSiteSettings] = React.useState(initialSiteSettings || null);
@@ -19,6 +20,7 @@ const ContactPage = ({ initialSiteSettings }) => {
   });
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isSubmittedSuccess, setIsSubmittedSuccess] = React.useState(false);
+  const [emailError, setEmailError] = React.useState('');
 
   React.useEffect(() => {
     if (!initialSiteSettings) {
@@ -40,6 +42,7 @@ const ContactPage = ({ initialSiteSettings }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    if (name === 'email') setEmailError('');
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
@@ -47,6 +50,17 @@ const ContactPage = ({ initialSiteSettings }) => {
     e.preventDefault();
     setIsSubmitting(true);
     setIsSubmittedSuccess(false);
+    setEmailError('');
+
+    // MX Record + Syntax & Disposable Email Verification
+    const validation = await validateEmailAddress(formData.email);
+    if (!validation.valid) {
+      const errorMsg = validation.reason || 'Invalid email address.';
+      setEmailError(errorMsg);
+      toast.error('Invalid Email Address', { description: errorMsg });
+      setIsSubmitting(false);
+      return;
+    }
 
     try {
       await contactAPI.send(formData);
@@ -263,8 +277,13 @@ const ContactPage = ({ initialSiteSettings }) => {
                           onChange={handleChange}
                           placeholder="your@email.com"
                           required
-                          className="border-stone-200 focus:border-emerald-500 focus:ring-emerald-500"
+                          className={`border-stone-200 focus:border-emerald-500 focus:ring-emerald-500 ${emailError ? 'border-red-500 text-red-900 bg-red-50/20' : ''}`}
                         />
+                        {emailError && (
+                          <p className="text-xs text-red-600 font-medium mt-1 flex items-center gap-1">
+                            ⚠️ {emailError}
+                          </p>
+                        )}
                       </div>
                     </div>
 

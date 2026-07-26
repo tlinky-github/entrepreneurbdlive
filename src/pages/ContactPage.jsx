@@ -10,6 +10,7 @@ import { Label } from '../components/ui/label';
 import { siteConfig } from '../data/mock';
 import { toast } from 'sonner';
 import { contactAPI, settingsAPI } from '../lib/api';
+import { validateEmailAddress } from '../lib/emailValidator';
 
 const ContactPage = () => {
   const [siteSettings, setSiteSettings] = React.useState(null);
@@ -20,6 +21,7 @@ const ContactPage = () => {
     message: ''
   });
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [emailError, setEmailError] = React.useState('');
 
   React.useEffect(() => {
     settingsAPI.get().then(res => {
@@ -39,12 +41,24 @@ const ContactPage = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    if (name === 'email') setEmailError('');
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setEmailError('');
+
+    // MX Record + Syntax & Disposable Email Verification
+    const validation = await validateEmailAddress(formData.email);
+    if (!validation.valid) {
+      const errorMsg = validation.reason || 'Invalid email address.';
+      setEmailError(errorMsg);
+      toast.error('Invalid Email Address', { description: errorMsg });
+      setIsSubmitting(false);
+      return;
+    }
 
     try {
       await contactAPI.send(formData);
