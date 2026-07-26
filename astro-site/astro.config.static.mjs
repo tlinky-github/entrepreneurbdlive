@@ -1,19 +1,20 @@
 import { defineConfig, passthroughImageService } from 'astro/config';
 import react from '@astrojs/react';
 import tailwind from '@astrojs/tailwind';
-import vercel from '@astrojs/vercel';
 import sitemap from '@astrojs/sitemap';
 
 export default defineConfig({
   site: 'https://lawngreen-hippopotamus-233067.hostingersite.com',
-  output: 'server',
-  adapter: vercel(),
+  output: 'static',
+  // No adapter needed for pure static hosting (Hostinger serves flat files from public_html)
   image: {
     service: passthroughImageService(),
   },
   compressHTML: true,
-  security: {
-    checkOrigin: false,
+  build: {
+    format: 'file',
+    assets: 'assets',
+    inlineStylesheets: 'always'
   },
   integrations: [
     react(),
@@ -24,12 +25,5 @@ export default defineConfig({
   ],
   vite: {
     envPrefix: ['PUBLIC_', 'REACT_APP_'],
-    ssr: {
-      noExternal: ['lucide-react', 'react-router-dom', 'react-router'],
-      external: ['sharp'],
-    },
-    optimizeDeps: {
-      exclude: ['sharp'],
-    },
   },
 });

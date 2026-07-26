@@ -1,0 +1,20 @@
+---
+export const prerender = true;
+import AdminApp from '../components/admin/AdminApp.jsx';
+import { Toaster } from 'sonner';
+import '../styles/globals.css';
+---
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Admin Panel | Entrepreneurs BD</title>
+    <link rel="icon" type="image/png" href="/logo.png" />
+  </head>
+  <body class="bg-stone-100">
+    <AdminApp client:only="react" />
+    <Toaster client:only="react" position="top-right" richColors />
+  </body>
+</html>

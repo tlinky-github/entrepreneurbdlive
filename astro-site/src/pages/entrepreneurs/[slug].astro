@@ -1,38 +1,38 @@
 ---
 import PublicLayout from '../../layouts/PublicLayout.astro';
 import EntrepreneurDetail from '../../components/entrepreneurs/EntrepreneurDetail.jsx';
-import { profileAPI, authorAPI, taxonomyAPI } from '../../lib/serverApi';
+import { profileAPI, authorAPI, taxonomyAPI, getPublishedDocs, incrementViewCount } from '../../lib/serverApi';
 import { getPersonSchema, buildSchema, interpolateSEOVariables, getRobotsMetaString } from '../../lib/schema';
 
-const { slug } = Astro.params;
+export async function getStaticPaths() {
+  try {
+    const profiles = await getPublishedDocs('entrepreneurs', 500);
+    return profiles.map((profile: any) => ({
+      params: { slug: profile.slug },
+      props: { initialProfile: profile },
+    }));
+  } catch (e) {
+    return [];
+  }
+}
 
-let profile = null;
+const { slug } = Astro.params;
+const { initialProfile } = Astro.props;
+
+let profile = initialProfile || null;
 let authorData = null;
 let startupStages = [];
 
 try {
   const [profileRes, stagesRes] = await Promise.all([
-    profileAPI.get(slug as string),
+    profile ? Promise.resolve({ data: profile }) : profileAPI.get(slug as string),
     taxonomyAPI.list('startup_stages')
   ]);
   profile = profileRes.data;
   startupStages = stagesRes.data || [];
 
-  if (profile && profile.id) {
-    const cookieName = `viewed_ent_${profile.id}`;
-    if (!Astro.cookies.has(cookieName)) {
-      Astro.cookies.set(cookieName, '1', {
-        path: '/',
-        httpOnly: true,
-        secure: true,
-        sameSite: 'lax',
-        maxAge: 60 * 60 * 24 // 24 hours
-      });
-      // Increment views on firestore
-      const { incrementViewCount } = await import('../../lib/serverApi');
-      incrementViewCount('profiles', profile.id);
-    }
-  }
+  // View counting is handled client-side
+  // (Astro.cookies is server-only and cannot be used in static pre-rendered pages)
   
   if (profile?.authorId) {
     try {

@@ -69,10 +69,15 @@ function HeaderContent({ currentPath = '/' }) {
               if (link.children) {
                 const isDropdownActive = link.children.some(child => isActive(child.href));
                 return (
-                  <div key={link.label} className="relative">
+                  <div 
+                    key={link.label} 
+                    className="relative group"
+                    onMouseEnter={() => setOpenDropdown(link.label)}
+                    onMouseLeave={() => setOpenDropdown(null)}
+                  >
                     <button
+                      type="button"
                       onClick={() => setOpenDropdown(openDropdown === link.label ? null : link.label)}
-                      onBlur={() => setTimeout(() => setOpenDropdown(null), 150)}
                       className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-1 ${
                         isDropdownActive
                           ? 'bg-emerald-50 text-emerald-900'

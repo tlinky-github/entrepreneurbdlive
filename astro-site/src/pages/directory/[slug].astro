@@ -1,37 +1,37 @@
 ---
 import PublicLayout from '../../layouts/PublicLayout.astro';
 import DirectoryDetail from '../../components/directory/DirectoryDetail.jsx';
-import { listingAPI, taxonomyAPI } from '../../lib/serverApi';
+import { listingAPI, taxonomyAPI, getPublishedDocs, incrementViewCount } from '../../lib/serverApi';
 import { getBusinessSchema, buildSchema, interpolateSEOVariables, getRobotsMetaString } from '../../lib/schema';
 
-const { slug } = Astro.params;
+export async function getStaticPaths() {
+  try {
+    const listings = await getPublishedDocs('listings', 500);
+    return listings.map((listing: any) => ({
+      params: { slug: listing.slug },
+      props: { initialListing: listing },
+    }));
+  } catch (e) {
+    return [];
+  }
+}
 
-let listing = null;
+const { slug } = Astro.params;
+const { initialListing } = Astro.props;
+
+let listing = initialListing || null;
 let startupStages = [];
 
 try {
   const [listingRes, stagesRes] = await Promise.all([
-    listingAPI.get(slug as string),
+    listing ? Promise.resolve({ data: listing }) : listingAPI.get(slug as string),
     taxonomyAPI.list('startup_stages')
   ]);
   listing = listingRes.data;
   startupStages = stagesRes.data || [];
 
-  if (listing && listing.id) {
-    const cookieName = `viewed_dir_${listing.id}`;
-    if (!Astro.cookies.has(cookieName)) {
-      Astro.cookies.set(cookieName, '1', {
-        path: '/',
-        httpOnly: true,
-        secure: true,
-        sameSite: 'lax',
-        maxAge: 60 * 60 * 24 // 24 hours
-      });
-      // Increment views on firestore
-      const { incrementViewCount } = await import('../../lib/serverApi');
-      incrementViewCount('listings', listing.id);
-    }
-  }
+  // View counting is handled client-side
+  // (Astro.cookies is server-only and cannot be used in static pre-rendered pages)
 } catch (e: any) {
   console.error('[Directory Detail] Fetch failed:', e.message);
 }

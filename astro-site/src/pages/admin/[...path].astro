@@ -1,4 +1,32 @@
 ---
+export function getStaticPaths() {
+  return [
+    { params: { path: undefined } },
+    { params: { path: 'content-editor' } },
+    { params: { path: 'content-manager' } },
+    { params: { path: 'test-editor' } },
+    { params: { path: 'posts' } },
+    { params: { path: 'authors' } },
+    { params: { path: 'entrepreneurs' } },
+    { params: { path: 'directory' } },
+    { params: { path: 'directories' } },
+    { params: { path: 'resources' } },
+    { params: { path: 'media' } },
+    { params: { path: 'traffic-center' } },
+    { params: { path: 'users' } },
+    { params: { path: 'taxonomies' } },
+    { params: { path: 'knowledge-hub' } },
+    { params: { path: 'pages' } },
+    { params: { path: 'settings' } },
+    { params: { path: 'ai-settings' } },
+    { params: { path: 'analytics' } },
+    { params: { path: 'submissions' } },
+    { params: { path: 'reports' } },
+    { params: { path: 'import' } },
+    { params: { path: 'custom-code' } }
+  ];
+}
+
 import AdminApp from '../../components/admin/AdminApp.jsx';
 import { Toaster } from 'sonner';
 import '../../styles/globals.css';
