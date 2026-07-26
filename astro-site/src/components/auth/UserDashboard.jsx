@@ -568,10 +568,10 @@ const UserDashboard = () => {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-stone-700 mb-1">Article Story & Content *</label>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-stone-700 mb-1">Article Story & Content / Doc Link *</label>
                       <textarea 
                         rows={5}
-                        placeholder="Write your article story here..."
+                        placeholder="Write your article story here or provide a public Google Doc link..."
                         className="w-full bg-stone-50 border border-stone-200 rounded-xl p-3 text-sm focus:bg-white focus:ring-2 focus:ring-amber-500 outline-none"
                         value={storyData.content}
                         onChange={(e) => setStoryData({...storyData, content: e.target.value})}

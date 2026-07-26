@@ -1210,26 +1210,67 @@ export const adminAPI = {
   approve: async (type: string, id: string) => {
     const collectionMap: any = {
       blog: 'posts',
+      post: 'posts',
       profile: 'profiles',
       listing: 'listings'
     };
     const colName = collectionMap[type] || type;
+
+    try {
+      const subDocRef = doc(db, 'submissions', id);
+      const subDocSnap = await getDoc(subDocRef);
+      if (subDocSnap.exists()) {
+        const subData = subDocSnap.data();
+        if (subData.type === 'post' || subData.type === 'article' || subData.title) {
+          await addDoc(collection(db, 'posts'), {
+            title: subData.title || 'Untitled Post',
+            content: subData.content || '',
+            excerpt: subData.excerpt || '',
+            author_name: subData.author_name || '',
+            category: subData.category || '',
+            featured_image: subData.featured_image || '',
+            status: 'published',
+            is_featured: false,
+            view_count: 0,
+            created_at: serverTimestamp(),
+            updated_at: serverTimestamp(),
+            slug: (subData.title || 'post').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+          });
+        }
+        await updateDoc(subDocRef, { status: 'published', updated_at: serverTimestamp() });
+        return { success: true };
+      }
+    } catch (e) {
+      console.warn('Submission check error, falling back to direct collection update', e);
+    }
+
     await updateDoc(doc(db, colName, id), { status: 'published' });
     return { success: true };
   },
   reject: async (type: string, id: string) => {
     const collectionMap: any = {
       blog: 'posts',
+      post: 'posts',
       profile: 'profiles',
       listing: 'listings'
     };
     const colName = collectionMap[type] || type;
+    try {
+      const subDocRef = doc(db, 'submissions', id);
+      const subDocSnap = await getDoc(subDocRef);
+      if (subDocSnap.exists()) {
+        await updateDoc(subDocRef, { status: 'rejected', updated_at: serverTimestamp() });
+        return { success: true };
+      }
+    } catch (e) {}
+
     await updateDoc(doc(db, colName, id), { status: 'rejected' });
     return { success: true };
   },
   setStatus: async (type: string, id: string, status: string) => {
     const collectionMap: any = {
       blog: 'posts',
+      post: 'posts',
       profile: 'profiles',
       listing: 'listings',
       knowledge: 'resources',
@@ -1244,21 +1285,29 @@ export const adminAPI = {
     try {
       const qProfiles = query(collection(db, 'profiles'), where('status', '==', 'pending'));
       const qListings = query(collection(db, 'listings'), where('status', '==', 'pending'));
-      
-      const [profilesSnap, listingsSnap] = await Promise.all([
-        getDocs(qProfiles),
-        getDocs(qListings)
+      const qPosts = query(collection(db, 'posts'), where('status', '==', 'pending'));
+      const qSubmissions = query(collection(db, 'submissions'), where('status', '==', 'pending'));
+
+      const [profilesSnap, listingsSnap, postsSnap, subSnap] = await Promise.all([
+        getDocs(qProfiles).catch(() => ({ docs: [] })),
+        getDocs(qListings).catch(() => ({ docs: [] })),
+        getDocs(qPosts).catch(() => ({ docs: [] })),
+        getDocs(qSubmissions).catch(() => ({ docs: [] }))
       ]);
+
+      const directPosts = postsSnap.docs.map(docToData);
+      const userSubPosts = subSnap.docs.map(docToData).filter((s: any) => s.type === 'post' || s.type === 'article' || s.title);
 
       return {
         data: {
           profiles: profilesSnap.docs.map(docToData),
-          listings: listingsSnap.docs.map(docToData)
+          listings: listingsSnap.docs.map(docToData),
+          posts: [...directPosts, ...userSubPosts]
         }
       };
     } catch (error) {
       console.error('Error fetching pending items:', error);
-      return { data: { profiles: [], listings: [] } };
+      return { data: { profiles: [], listings: [], posts: [] } };
     }
   },
   getReports: async () => {

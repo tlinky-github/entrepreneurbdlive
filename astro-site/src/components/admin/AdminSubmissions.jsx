@@ -16,17 +16,16 @@ import {
   Inbox,
   ArrowUpRight,
   UserCircle,
-  Globe
+  Globe,
+  FileText
 } from 'lucide-react';
 import { adminAPI } from '../../lib/api';
 
 const formatDate = (date) => {
   if (!date) return 'N/A';
-  // Handle Firestore Timestamp
   if (date && typeof date === 'object' && 'seconds' in date) {
     return new Date(date.seconds * 1000).toLocaleDateString();
   }
-  // Handle Date strings or objects
   const d = new Date(date);
   return isNaN(d.getTime()) ? 'Invalid Date' : d.toLocaleDateString();
 };
@@ -35,14 +34,14 @@ const AdminSubmissions = () => {
   const navigate = useNavigate();
   const { refreshStats } = useOutletContext();
   const [loading, setLoading] = useState(true);
-  const [data, setData] = useState({ profiles: [], listings: [] });
+  const [data, setData] = useState({ profiles: [], listings: [], posts: [] });
   const [activeTab, setActiveTab] = useState('entrepreneurs');
 
   const loadPending = async () => {
     setLoading(true);
     try {
       const res = await adminAPI.getPending();
-      setData(res.data);
+      setData(res.data || { profiles: [], listings: [], posts: [] });
     } catch (err) {
       toast.error('Failed to load pending submissions');
     } finally {
@@ -99,15 +98,18 @@ const AdminSubmissions = () => {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="bg-stone-200/50 p-1">
           <TabsTrigger value="entrepreneurs" className="px-6">
-            Founders ({data.profiles.length})
+            Founders ({(data.profiles || []).length})
           </TabsTrigger>
           <TabsTrigger value="listings" className="px-6">
-            Businesses ({data.listings.length})
+            Businesses ({(data.listings || []).length})
+          </TabsTrigger>
+          <TabsTrigger value="posts" className="px-6">
+            Articles & Stories ({(data.posts || []).length})
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="entrepreneurs">
-          {data.profiles.length === 0 ? (
+          {(!data.profiles || data.profiles.length === 0) ? (
             <EmptyState message="No pending founder profiles" />
           ) : (
             <div className="grid gap-4">
@@ -171,7 +173,7 @@ const AdminSubmissions = () => {
         </TabsContent>
 
         <TabsContent value="listings">
-          {data.listings.length === 0 ? (
+          {(!data.listings || data.listings.length === 0) ? (
             <EmptyState message="No pending business listings" />
           ) : (
             <div className="grid gap-4">
@@ -224,6 +226,65 @@ const AdminSubmissions = () => {
                           className="bg-emerald-600 hover:bg-emerald-700 text-white"
                         >
                           <CheckCircle className="w-4 h-4 mr-1" /> Approve
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="posts">
+          {(!data.posts || data.posts.length === 0) ? (
+            <EmptyState message="No pending articles or stories" />
+          ) : (
+            <div className="grid gap-4">
+              {data.posts.map((post) => (
+                <Card key={post.id} className="overflow-hidden hover:shadow-md transition-shadow">
+                  <CardContent className="p-0">
+                    <div className="flex items-center p-6 gap-6">
+                      <div className="w-16 h-16 rounded-xl bg-amber-50 text-amber-700 flex-shrink-0 flex items-center justify-center border border-amber-200">
+                        <FileText className="w-8 h-8" />
+                      </div>
+                      
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="font-bold text-stone-900 truncate">{post.title || 'Untitled Article'}</h3>
+                          <Badge variant="outline" className="text-[10px] uppercase text-amber-700 bg-amber-50 border-amber-200 font-bold">User Story</Badge>
+                        </div>
+                        <p className="text-sm text-stone-600 truncate mb-1">{post.excerpt || post.content || 'No summary available'}</p>
+                        <div className="flex items-center gap-4 text-xs text-stone-400">
+                          <span>Author: <strong className="text-stone-700">{post.author_name || post.email || 'Community Member'}</strong></span>
+                          {post.contact_email && <span>Email: {post.contact_email}</span>}
+                          <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {formatDate(post.created_at || post.createdAt)}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => navigate(`/admin/content-editor?type=blog&id=${post.id}`)}
+                          className="text-stone-600"
+                        >
+                          <Eye className="w-4 h-4 mr-1" /> Polish / Edit
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleReject('post', post.id)}
+                          className="text-red-600 hover:bg-red-50 hover:text-red-700 border-stone-200"
+                        >
+                          <XCircle className="w-4 h-4" />
+                        </Button>
+                        <Button 
+                          size="sm"
+                          onClick={() => handleApprove('post', post.id)}
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                        >
+                          <CheckCircle className="w-4 h-4 mr-1" /> Approve & Publish
                         </Button>
                       </div>
                     </div>
