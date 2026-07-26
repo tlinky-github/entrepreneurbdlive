@@ -21,45 +21,43 @@ let stats = {};
 let siteSettings = null;
 
 try {
-  siteSettings = await getSiteSettings();
-} catch (e) { console.error('[Home] Settings fetch failed:', e.message); }
+  const [
+    settingsResult,
+    postsResult,
+    entrepreneursResult,
+    listingsResult,
+    typesResult,
+    resourcesResult,
+    statsResult
+  ] = await Promise.allSettled([
+    getSiteSettings(),
+    getFeaturedDocs('posts', 3),
+    getFeaturedDocs('profiles', 4),
+    getFeaturedDocs('listings', 4),
+    taxonomyAPI.getByCollection('listing_types'),
+    getFeaturedDocs('resources', 6),
+    getPublicStats()
+  ]);
 
-try {
-  // Fetch featured posts, limit 3. If none, fallback to recent 3
-  featuredPosts = await getFeaturedDocs('posts', 3);
-  if (featuredPosts.length === 0) {
-    featuredPosts = await getRecentPosts(3);
-  }
-} catch (e) { console.error('[Home] Posts fetch failed:', e.message); }
-
-try {
-  featuredEntrepreneurs = await getFeaturedDocs('profiles', 4);
-} catch (e) { console.error('[Home] Profiles fetch failed:', e.message); }
-
-try {
-  featuredListings = await getFeaturedDocs('listings', 4);
-} catch (e) { console.error('[Home] Listings fetch failed:', e.message); }
-
-try {
-  listingTypes = await taxonomyAPI.getByCollection('listing_types');
-} catch (e) { console.error('[Home] Listing types fetch failed:', e.message); }
-
-try {
-  knowledgeItems = await getRecentPosts(6); // Wait, resource API list
-  // Note: Assuming 'resources' collection exists, we fallback to it. But we don't have getRecentResources.
-  const resDocs = await getFeaturedDocs('resources', 6);
-  if (resDocs.length === 0) {
-     const { getPublishedDocs } = await import('../lib/serverApi');
-     const allRes = await getPublishedDocs('resources', 6);
-     knowledgeItems = allRes;
+  if (settingsResult.status === 'fulfilled') siteSettings = settingsResult.value;
+  if (postsResult.status === 'fulfilled' && postsResult.value.length > 0) {
+    featuredPosts = postsResult.value;
   } else {
-     knowledgeItems = resDocs;
+    featuredPosts = await getRecentPosts(3).catch(() => []);
   }
-} catch (e) { console.error('[Home] Resources fetch failed:', e.message); }
-
-try {
-  stats = await getPublicStats();
-} catch (e) { console.error('[Home] Stats fetch failed:', e.message); }
+  if (entrepreneursResult.status === 'fulfilled') featuredEntrepreneurs = entrepreneursResult.value;
+  if (listingsResult.status === 'fulfilled') featuredListings = listingsResult.value;
+  if (typesResult.status === 'fulfilled') listingTypes = typesResult.value;
+  if (resourcesResult.status === 'fulfilled' && resourcesResult.value.length > 0) {
+    knowledgeItems = resourcesResult.value;
+  } else {
+    const { getPublishedDocs } = await import('../lib/serverApi');
+    knowledgeItems = await getPublishedDocs('resources', 6).catch(() => []);
+  }
+  if (statsResult.status === 'fulfilled') stats = statsResult.value;
+} catch (e) {
+  console.error('[Home] Parallel fetch failed:', e.message);
+}
 
 const iconMap = {
   Lightbulb: Lightbulb,
@@ -121,8 +119,11 @@ const siteDescription = siteSettings?.seo_description || "Connect with entrepren
 
           <div class="hidden lg:block animate-slide-up">
             <img
-              src="https://images.unsplash.com/photo-1627599936744-51d288f89af4?w=600&h=400&fit=crop"
+              src="https://images.unsplash.com/photo-1627599936744-51d288f89af4?w=600&h=400&fit=crop&fm=webp&q=80"
               alt="Bangladeshi entrepreneurs collaborating"
+              width="600"
+              height="400"
+              fetchpriority="high"
               decoding="async"
               class="rounded-2xl shadow-2xl"
             />
