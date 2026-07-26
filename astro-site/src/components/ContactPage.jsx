@@ -1,5 +1,5 @@
 import React from 'react';
-import { Mail, MapPin, Linkedin, Facebook, Send, MessageSquare, Phone, Twitter, Youtube } from 'lucide-react';
+import { Mail, MapPin, Linkedin, Facebook, Send, MessageSquare, Phone, Twitter, Youtube, CheckCircle2 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Input } from '../components/ui/input';
@@ -18,6 +18,7 @@ const ContactPage = ({ initialSiteSettings }) => {
     message: ''
   });
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [isSubmittedSuccess, setIsSubmittedSuccess] = React.useState(false);
 
   React.useEffect(() => {
     if (!initialSiteSettings) {
@@ -45,9 +46,11 @@ const ContactPage = ({ initialSiteSettings }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setIsSubmittedSuccess(false);
 
     try {
       await contactAPI.send(formData);
+      setIsSubmittedSuccess(true);
       toast.success('Message sent successfully!', {
         description: 'We will get back to you as soon as possible.'
       });
@@ -226,6 +229,16 @@ const ContactPage = ({ initialSiteSettings }) => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
+                  {isSubmittedSuccess && (
+                    <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex items-start gap-3 text-emerald-900">
+                      <CheckCircle2 className="w-6 h-6 text-emerald-600 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <h4 className="font-bold text-emerald-900 text-base">Message Sent Successfully!</h4>
+                        <p className="text-sm text-emerald-700 mt-1">Thank you for reaching out. We have received your inquiry and will get back to you as soon as possible.</p>
+                      </div>
+                    </div>
+                  )}
+
                   <form onSubmit={handleSubmit} className="space-y-6">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                       <div className="space-y-2">

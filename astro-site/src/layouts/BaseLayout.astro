@@ -3,6 +3,7 @@
 import '../styles/globals.css';
 import AdminToolbar from '../components/AdminToolbar.jsx';
 import CustomCodeInjector from '../components/common/CustomCodeInjector.jsx';
+import { Toaster } from 'sonner';
 import { getSiteSettings } from '../lib/serverApi';
 
 interface Props {
@@ -318,5 +319,6 @@ const ogImage = image.startsWith('http') ? image : `${siteUrl}${image}`;
     <script set:html={customBodyJs} />
   )}
   <CustomCodeInjector client:load />
+  <Toaster client:only="react" position="top-right" richColors />
 </body>
 </html>

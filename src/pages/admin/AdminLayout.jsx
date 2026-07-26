@@ -126,56 +126,68 @@ const AdminLayout = () => {
 
           {/* Navigation */}
           <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-            {menuItems.map((item) => (
-              <Link
-                key={item.href}
-                to={item.href}
-                onClick={() => setSidebarOpen(false)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
-                  isActive(item.href, item.exact)
-                    ? 'bg-emerald-900 text-white'
-                    : 'text-stone-600 hover:bg-stone-100'
-                }`}
-              >
-                <item.icon className="w-5 h-5" />
-                <span>{item.label}</span>
-                {item.label === 'Entrepreneurs' && stats?.pending_profiles > 0 && (
-                  <Badge className="ml-auto bg-red-500 text-white text-xs mr-2">
-                    {stats.pending_profiles}
-                  </Badge>
-                )}
-                {item.label === 'Directory' && stats?.pending_listings > 0 && (
-                  <Badge className="ml-auto bg-red-500 text-white text-xs mr-2">
-                    {stats.pending_listings}
-                  </Badge>
-                )}
-                {item.label === 'Submissions' && (stats?.pending_public_submissions > 0) && (
-                  <Badge className="ml-auto bg-blue-500 text-white text-xs mr-2 animate-pulse">
-                    {stats.pending_public_submissions}
-                  </Badge>
-                )}
-                {item.label === 'Reports' && stats?.pending_reports > 0 && (
-                  <Badge className="ml-auto bg-orange-500 text-white text-xs mr-2 animate-pulse">
-                    {stats.pending_reports}
-                  </Badge>
-                )}
-                {item.addType && (
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      navigate(`/admin/content-editor?type=${item.addType}`);
-                    }}
-                    className={`ml-auto p-1 rounded-md hover:bg-stone-200 transition-colors ${
-                      isActive(item.href) ? 'hover:bg-emerald-800 text-white' : 'text-stone-400 hover:text-stone-700'
-                    }`}
-                    title={`Add New ${item.label}`}
-                  >
-                    <Plus className="w-4 h-4" />
-                  </button>
-                )}
-              </Link>
-            ))}
+            {menuItems.map((item) => {
+              const IconComp = item.icon || UserCircle;
+              const active = isActive(item.href, item.exact);
+              return (
+                <Link
+                  key={item.href}
+                  to={item.href}
+                  onClick={() => setSidebarOpen(false)}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+                    active
+                      ? 'bg-emerald-900 text-white'
+                      : 'text-stone-600 hover:bg-stone-100'
+                  }`}
+                >
+                  <IconComp className={`w-5 h-5 flex-shrink-0 ${active ? 'text-white' : 'text-stone-500'}`} />
+                  <span className="truncate">{item.label}</span>
+
+                  <div className="ml-auto flex items-center gap-1.5">
+                    {item.label === 'Entrepreneurs' && stats?.pending_profiles > 0 && (
+                      <Badge className="bg-red-500 hover:bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded-md">
+                        {stats.pending_profiles}
+                      </Badge>
+                    )}
+                    {item.label === 'Directory' && stats?.pending_listings > 0 && (
+                      <Badge className="bg-red-500 hover:bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded-md">
+                        {stats.pending_listings}
+                      </Badge>
+                    )}
+                    {item.label === 'Submissions' && stats?.pending_public_submissions > 0 && (
+                      <Badge className="bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold px-2 py-0.5 rounded-md animate-pulse">
+                        {stats.pending_public_submissions}
+                      </Badge>
+                    )}
+                    {item.label === 'Contact Messages' && stats?.unread_contact_messages > 0 && (
+                      <Badge className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-2 py-0.5 rounded-md animate-pulse">
+                        {stats.unread_contact_messages}
+                      </Badge>
+                    )}
+                    {item.label === 'Reports' && stats?.pending_reports > 0 && (
+                      <Badge className="bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold px-2 py-0.5 rounded-md animate-pulse">
+                        {stats.pending_reports}
+                      </Badge>
+                    )}
+                    {item.addType && (
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          navigate(`/admin/content-editor?type=${item.addType}`);
+                        }}
+                        className={`p-1 rounded-md transition-colors ${
+                          active ? 'hover:bg-emerald-800 text-white' : 'text-stone-400 hover:text-stone-700 hover:bg-stone-200'
+                        }`}
+                        title={`Add New ${item.label}`}
+                      >
+                        <Plus className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                </Link>
+              );
+            })}
           </nav>
 
           {/* User Info */}

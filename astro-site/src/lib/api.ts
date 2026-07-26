@@ -1179,7 +1179,7 @@ export const contentAPI = {
 export const adminAPI = {
   getStats: async () => {
     try {
-      const [postsSnap, profilesSnap, listingsSnap, resourcesSnap, usersSnap, pendingProfilesSnap, pendingListingsSnap, reportsSnap] = await Promise.all([
+      const [postsSnap, profilesSnap, listingsSnap, resourcesSnap, usersSnap, pendingProfilesSnap, pendingListingsSnap, reportsSnap, unreadContactSnap] = await Promise.all([
         getDocs(collection(db, 'posts')),
         getDocs(collection(db, 'profiles')),
         getDocs(collection(db, 'listings')),
@@ -1187,7 +1187,8 @@ export const adminAPI = {
         getDocs(collection(db, 'users')),
         getDocs(query(collection(db, 'profiles'), where('status', '==', 'pending'))),
         getDocs(query(collection(db, 'listings'), where('status', '==', 'pending'))),
-        getDocs(query(collection(db, 'comment_reports'), where('status', '==', 'pending')))
+        getDocs(query(collection(db, 'comment_reports'), where('status', '==', 'pending'))),
+        getDocs(query(collection(db, 'contact_messages'), where('status', '==', 'unread'))).catch(() => ({ size: 0, docs: [] }))
       ]);
 
       const pendingPublicProfiles = pendingProfilesSnap.docs.filter(d => d.data().source === 'public').length;
@@ -1204,7 +1205,8 @@ export const adminAPI = {
           pending_listings: pendingListingsSnap.size,
           pending_approvals: pendingProfilesSnap.size + pendingListingsSnap.size,
           pending_public_submissions: pendingPublicProfiles + pendingPublicListings,
-          pending_reports: reportsSnap.size
+          pending_reports: reportsSnap.size,
+          unread_contact_messages: unreadContactSnap.size || 0
         }
       };
     } catch (error) {
