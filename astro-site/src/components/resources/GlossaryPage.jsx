@@ -127,31 +127,31 @@ const GlossaryPage = ({ initialTerms = [] }) => {
               <div className="space-y-12">
                 {sortedLetters.map((letter) => (
                   <div key={letter} id={`letter-${letter}`} className="scroll-mt-40">
-                    <h2 className="text-3xl font-bold text-emerald-900 mb-6 pb-2 border-b border-stone-200">
-                      {letter}
-                    </h2>
+                    <div className="text-3xl font-bold text-emerald-900 mb-6 pb-2 border-b border-stone-200">
+                      <span>{letter}</span>
+                    </div>
                     <div className="space-y-6">
                       {(groupedTerms[letter] || []).map((item, index) => (
-                        <Card key={index} className="group border-stone-200">
+                        <Card key={index} className="group border-stone-200 glossary-term-card">
                           <CardContent className="p-6">
-                            <dt className="text-lg font-semibold text-stone-900 mb-2">
-                                {(item.url || item.link_url || item.href || item.link) ? (
-                                  <a 
-                                    href={item.url || item.link_url || item.href || item.link}
-                                    target={item.target || "_blank"}
-                                    rel={item.rel || "noopener noreferrer"}
-                                    className="text-emerald-900 hover:text-emerald-700 hover:underline inline-flex items-center gap-1.5 group/link"
-                                  >
-                                    <span>{item.term || 'Untitled'}</span>
-                                    <ExternalLink className="w-4 h-4 text-emerald-600 group-hover/link:text-emerald-800 transition-colors inline-block" />
-                                  </a>
-                                ) : (
-                                  <span>{item.term || 'Untitled'}</span>
-                                )}
-                              </dt>
-                            <dd className="text-stone-600 leading-relaxed pl-4 border-l-2 border-emerald-200 group-hover:border-emerald-500 transition-colors">
+                            {(item.url || item.link_url || item.href || item.link) ? (
+                              <h2>
+                                <a 
+                                  href={item.url || item.link_url || item.href || item.link}
+                                  target={item.target || "_blank"}
+                                  rel={item.rel || "noopener noreferrer"}
+                                  className="text-emerald-900 hover:text-emerald-700 hover:underline inline-flex items-center gap-1.5 group/link"
+                                >
+                                  {item.term || 'Untitled'}
+                                  <ExternalLink className="w-4 h-4 text-emerald-600 group-hover/link:text-emerald-800 transition-colors inline-block" />
+                                </a>
+                              </h2>
+                            ) : (
+                              <h2>{item.term || 'Untitled'}</h2>
+                            )}
+                            <p className="text-stone-600 leading-relaxed pl-4 border-l-2 border-emerald-200 group-hover:border-emerald-500 transition-colors">
                               {item.definition || 'No definition available.'}
-                            </dd>
+                            </p>
                           </CardContent>
                         </Card>
                       ))}
