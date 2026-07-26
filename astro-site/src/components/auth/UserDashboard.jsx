@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../lib/auth';
 import { db } from '../../lib/firebase';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
 import { 
   User, Building2, FileText, Sparkles, Plus, CheckCircle2, 
   Clock, LogOut, ShieldCheck, ArrowRight, LayoutDashboard, 
-  Globe, Star, Lock, Mail, ExternalLink
+  Globe, Star, Lock, Mail, ExternalLink, X, Loader2
 } from 'lucide-react';
 
 const UserDashboard = () => {
@@ -14,11 +14,66 @@ const UserDashboard = () => {
   const [loadingSubmissions, setLoadingSubmissions] = useState(false);
   const [imgError, setImgError] = useState(false);
 
+  // Story / Article Submission Modal State
+  const [storyModalOpen, setStoryModalOpen] = useState(false);
+  const [submittingStory, setSubmittingStory] = useState(false);
+  const [storySuccess, setStorySuccess] = useState(false);
+  const [storyData, setStoryData] = useState({
+    title: '',
+    author_name: '',
+    category: '',
+    excerpt: '',
+    content: '',
+    featured_image: '',
+    contact_email: '',
+    contact_phone: ''
+  });
+
   useEffect(() => {
     if (isAuthenticated && user?.email) {
       fetchUserSubmissions();
     }
   }, [isAuthenticated, user]);
+
+  const handleStorySubmit = async (e) => {
+    e.preventDefault();
+    if (!storyData.title || !storyData.content) return;
+    setSubmittingStory(true);
+    try {
+      await addDoc(collection(db, 'submissions'), {
+        title: storyData.title,
+        author_name: storyData.author_name || user?.name || '',
+        category: storyData.category || '',
+        excerpt: storyData.excerpt || '',
+        content: storyData.content || '',
+        featured_image: storyData.featured_image || '',
+        contact_email: storyData.contact_email || user?.email || '',
+        contact_phone: storyData.contact_phone || '',
+        email: user?.email,
+        type: 'post',
+        status: 'pending',
+        source: 'dashboard',
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+      setStorySuccess(true);
+      fetchUserSubmissions();
+      setStoryData({
+        title: '',
+        author_name: '',
+        category: '',
+        excerpt: '',
+        content: '',
+        featured_image: '',
+        contact_email: '',
+        contact_phone: ''
+      });
+    } catch (err) {
+      console.error('Error submitting story:', err);
+    } finally {
+      setSubmittingStory(false);
+    }
+  };
 
   const fetchUserSubmissions = async () => {
     setLoadingSubmissions(true);
@@ -280,13 +335,16 @@ const UserDashboard = () => {
                   Share educational guides, startup insights, or thought leadership with our audience.
                 </p>
               </div>
-              <a
-                href="/submit"
-                className="inline-flex items-center justify-between text-sm font-semibold text-amber-700 group-hover:text-amber-800 pt-4 border-t border-stone-100"
+              <button
+                onClick={() => {
+                  setStorySuccess(false);
+                  setStoryModalOpen(true);
+                }}
+                className="inline-flex items-center justify-between text-sm font-semibold text-amber-700 group-hover:text-amber-800 pt-4 border-t border-stone-100 w-full text-left cursor-pointer"
               >
                 <span>Contribute Story</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </a>
+              </button>
             </div>
 
             {/* Admin Portal Shortcut (Admin Only) */}
@@ -422,6 +480,127 @@ const UserDashboard = () => {
             </div>
           )}
         </div>
+
+        {/* Story / Article Submission Modal */}
+        {storyModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
+            <div className="bg-white rounded-3xl max-w-2xl w-full border border-stone-200 p-6 sm:p-8 shadow-2xl relative my-8">
+              <button 
+                onClick={() => setStoryModalOpen(false)}
+                className="absolute top-5 right-5 p-2 rounded-full text-stone-400 hover:text-stone-600 hover:bg-stone-100 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              {storySuccess ? (
+                <div className="text-center py-10 space-y-4">
+                  <div className="w-16 h-16 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center mx-auto">
+                    <CheckCircle2 className="w-10 h-10" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-stone-900">Story Submitted for Review!</h3>
+                  <p className="text-stone-600 text-sm max-w-md mx-auto">
+                    Thank you for sharing your insights. Your story has been submitted to our editorial team for review and will appear in your dashboard status list below.
+                  </p>
+                  <button
+                    onClick={() => setStoryModalOpen(false)}
+                    className="bg-emerald-900 hover:bg-emerald-950 text-white font-bold py-2.5 px-6 rounded-xl transition-colors mt-4 text-sm"
+                  >
+                    Done
+                  </button>
+                </div>
+              ) : (
+                <div>
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-10 h-10 bg-amber-100 text-amber-700 rounded-xl flex items-center justify-center">
+                      <FileText className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-stone-900">Contribute Story / Article</h3>
+                      <p className="text-xs text-stone-500">Share your startup lessons and guides with the community</p>
+                    </div>
+                  </div>
+
+                  <form onSubmit={handleStorySubmit} className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-stone-700 mb-1">Article Title *</label>
+                      <input 
+                        type="text"
+                        placeholder="e.g. How We Scaled Our Startup in Bangladesh"
+                        className="w-full bg-stone-50 border border-stone-200 rounded-xl p-3 text-sm focus:bg-white focus:ring-2 focus:ring-amber-500 outline-none"
+                        value={storyData.title}
+                        onChange={(e) => setStoryData({...storyData, title: e.target.value})}
+                        required
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-bold uppercase tracking-wider text-stone-700 mb-1">Author Name</label>
+                        <input 
+                          type="text"
+                          placeholder="e.g. Khaled Mahmud"
+                          className="w-full bg-stone-50 border border-stone-200 rounded-xl p-3 text-sm focus:bg-white focus:ring-2 focus:ring-amber-500 outline-none"
+                          value={storyData.author_name}
+                          onChange={(e) => setStoryData({...storyData, author_name: e.target.value})}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold uppercase tracking-wider text-stone-700 mb-1">Private Contact Email</label>
+                        <input 
+                          type="email"
+                          placeholder="e.g. tlinky02@gmail.com"
+                          className="w-full bg-stone-50 border border-stone-200 rounded-xl p-3 text-sm focus:bg-white focus:ring-2 focus:ring-amber-500 outline-none"
+                          value={storyData.contact_email}
+                          onChange={(e) => setStoryData({...storyData, contact_email: e.target.value})}
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-stone-700 mb-1">Short Excerpt / Summary</label>
+                      <textarea 
+                        rows={2}
+                        placeholder="Brief 2-3 sentence overview of your article..."
+                        className="w-full bg-stone-50 border border-stone-200 rounded-xl p-3 text-sm focus:bg-white focus:ring-2 focus:ring-amber-500 outline-none"
+                        value={storyData.excerpt}
+                        onChange={(e) => setStoryData({...storyData, excerpt: e.target.value})}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-stone-700 mb-1">Article Story & Content *</label>
+                      <textarea 
+                        rows={5}
+                        placeholder="Write your article story here..."
+                        className="w-full bg-stone-50 border border-stone-200 rounded-xl p-3 text-sm focus:bg-white focus:ring-2 focus:ring-amber-500 outline-none"
+                        value={storyData.content}
+                        onChange={(e) => setStoryData({...storyData, content: e.target.value})}
+                        required
+                      />
+                    </div>
+
+                    <div className="pt-4 border-t border-stone-100 flex justify-end gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setStoryModalOpen(false)}
+                        className="px-5 py-2.5 rounded-xl border border-stone-200 text-stone-600 text-sm font-semibold hover:bg-stone-50"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={submittingStory}
+                        className="px-6 py-2.5 rounded-xl bg-amber-800 hover:bg-amber-900 text-white text-sm font-bold shadow-md flex items-center gap-2 cursor-pointer"
+                      >
+                        {submittingStory ? <><Loader2 className="w-4 h-4 animate-spin" /> Submitting...</> : 'Submit Story'}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
       </div>
     </div>

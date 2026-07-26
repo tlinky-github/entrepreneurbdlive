@@ -39,6 +39,22 @@ const publicAPI = {
   },
 
   /**
+   * Submit an Article / Story
+   */
+  submitArticle: async (data, turnstileToken) => {
+    const response = await fetch(`${API_BASE}?action=submit-article`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'submit-article', turnstileToken, data }),
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to submit article');
+    }
+    return await response.json();
+  },
+
+  /**
    * Get a presigned upload URL for guests
    */
   getUploadUrl: async (fileName, contentType, turnstileToken) => {

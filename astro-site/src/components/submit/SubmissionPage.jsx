@@ -96,7 +96,6 @@ const SubmissionPage = () => {
     phone: '',
     social_linkedin: '',
     social_twitter: '',
-    social_facebook: '',
     contact_email: '', 
     contact_phone: ''  
   });
@@ -174,6 +173,23 @@ const SubmissionPage = () => {
     try {
       await publicAPI.submitListing(lData, turnstileToken);
       window.location.href = `/submit/success?name=${encodeURIComponent(lData.business_name)}&type=listing`;
+    } catch (err) {
+      toast.error(err.message);
+      setLoading(false);
+    }
+  };
+
+  const handleASubmit = async (e) => {
+    e.preventDefault();
+    if (!turnstileToken) return toast.error('Please complete the Captcha');
+    if (!aData.title) return toast.error('Article Title is required');
+    if (!aData.content) return toast.error('Article Content is required');
+    if (!aData.contact_email) return toast.error('Private Contact Email is required for moderation');
+
+    setLoading(true);
+    try {
+      await publicAPI.submitArticle(aData, turnstileToken);
+      window.location.href = `/submit/success?name=${encodeURIComponent(aData.title)}&type=article`;
     } catch (err) {
       toast.error(err.message);
       setLoading(false);

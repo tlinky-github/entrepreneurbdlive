@@ -100,6 +100,8 @@ export const ALL = async ({ request }) => {
         return await handleSubmitProfile(db, data, corsHeaders);
       case 'submit-listing':
         return await handleSubmitListing(db, data, corsHeaders);
+      case 'submit-article':
+        return await handleSubmitArticle(db, data, corsHeaders);
       case 'get-upload-url':
         return await handleGetUploadUrl(body.fileData, corsHeaders);
       case 'upload-direct':
@@ -176,6 +178,24 @@ async function handleSubmitListing(db, data, corsHeaders) {
   };
   const docRef = await db.collection('listings').add(submission);
   return new Response(JSON.stringify({ success: true, id: docRef.id, business_name: data.business_name }), { status: 200, headers: corsHeaders });
+}
+
+async function handleSubmitArticle(db, data, corsHeaders) {
+  if (!data.title || !data.email) {
+    return new Response(JSON.stringify({ success: false, error: 'Missing Article Title or Email' }), { status: 400, headers: corsHeaders });
+  }
+  const submission = {
+    ...data,
+    status: 'pending',
+    source: 'public',
+    is_featured: false,
+    view_count: 0,
+    created_at: getServerTimestamp(),
+    updated_at: getServerTimestamp(),
+    slug: data.slug || generateSlug(data.title)
+  };
+  const docRef = await db.collection('posts').add(submission);
+  return new Response(JSON.stringify({ success: true, id: docRef.id, title: data.title }), { status: 200, headers: corsHeaders });
 }
 
 async function handleGetUploadUrl(fileData, corsHeaders) {
