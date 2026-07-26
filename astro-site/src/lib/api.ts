@@ -407,15 +407,20 @@ export const profileAPI = {
 
 export const taxonomyAPI = {
   list: async (type: string) => {
-    const colMap: any = {
-      categories: 'categories',
-      blog_categories: 'blog_categories',
-      industries: 'industries',
-      cities: 'cities'
-    };
-    const colName = colMap[type] || type;
-    const snapshot = await getDocs(collection(db, colName));
-    return { data: snapshot.docs.map(docToData) };
+    try {
+      const colMap: any = {
+        categories: 'categories',
+        blog_categories: 'blog_categories',
+        industries: 'industries',
+        cities: 'cities'
+      };
+      const colName = colMap[type] || type;
+      const snapshot = await getDocs(collection(db, colName));
+      return { data: snapshot.docs.map(docToData) };
+    } catch (e: any) {
+      console.warn(`[taxonomyAPI] list(${type}) fallback on permission/fetch error:`, e.message);
+      return { data: [] };
+    }
   },
   create: async (type: string, name: string) => {
     const slug = name.toLowerCase().replace(/\s+/g, '-');

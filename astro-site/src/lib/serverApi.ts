@@ -209,13 +209,18 @@ export async function getSubmitMetadata() {
     db.collection('startup_stages').get().catch(() => ({ docs: [] })),
     db.collection('employee_sizes').get().catch(() => ({ docs: [] })),
   ]);
+
+  const defaultEmpSizes = ['1-10', '11-50', '51-200', '201-500', '501-1000', '1001-5000', '5000+'];
+  const fetchedEmpSizes = (employeeSizesSnap.docs || []).map((d: any) => d.data().name || d.id);
+  const employee_sizes = fetchedEmpSizes.length > 0 ? fetchedEmpSizes : defaultEmpSizes;
+
   return {
     categories: (catsSnap.docs || []).map((d: any) => ({ id: d.id, ...d.data() })),
     industries: (indSnap.docs || []).map((d: any) => d.data().name || d.id),
     cities: (citySnap.docs || []).map((d: any) => d.data().name || d.id),
     listing_types: (listingTypesSnap.docs || []).map((d: any) => ({ id: d.id, ...d.data() })),
     startup_stages: (startupStagesSnap.docs || []).map((d: any) => d.data().name || d.id),
-    employee_sizes: (employeeSizesSnap.docs || []).map((d: any) => d.data().name || d.id),
+    employee_sizes,
   };
 }
 

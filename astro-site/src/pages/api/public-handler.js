@@ -135,12 +135,15 @@ async function handleListMetadata(db, corsHeaders) {
     db.collection('employee_sizes').get().catch(() => ({ docs: [] })),
   ]);
 
+  const defaultEmpSizes = ['1-10', '11-50', '51-200', '201-500', '501-1000', '1001-5000', '5000+'];
+  const fetchedEmpSizes = (employeeSizesSnap.docs || []).map(d => d.data().name || d.id);
+  const employee_sizes = fetchedEmpSizes.length > 0 ? fetchedEmpSizes : defaultEmpSizes;
+
   const categories = (catsSnap.docs || []).map(d => ({ id: d.id, ...d.data() }));
   const industries = (indSnap.docs || []).map(d => d.data().name || d.id);
   const cities = (citySnap.docs || []).map(d => d.data().name || d.id);
   const listing_types = (listingTypesSnap.docs || []).map(d => ({ id: d.id, ...d.data() }));
   const startup_stages = (startupStagesSnap.docs || []).map(d => d.data().name || d.id);
-  const employee_sizes = (employeeSizesSnap.docs || []).map(d => d.data().name || d.id);
 
   return new Response(JSON.stringify({
     success: true,
@@ -149,13 +152,16 @@ async function handleListMetadata(db, corsHeaders) {
 }
 
 async function handleSubmitProfile(db, data, corsHeaders) {
-  if (!data.name || !data.email) {
+  const submitEmail = data.email || data.contact_email;
+  if (!data.name || !submitEmail) {
     return new Response(JSON.stringify({ success: false, error: 'Missing Name or Email' }), { status: 400, headers: corsHeaders });
   }
   const submission = {
     ...data,
+    email: submitEmail,
+    type: 'entrepreneur',
     status: 'pending',
-    source: 'public',
+    source: data.source || 'public',
     is_featured: false,
     view_count: 0,
     created_at: getServerTimestamp(),
@@ -163,17 +169,21 @@ async function handleSubmitProfile(db, data, corsHeaders) {
     slug: data.slug || generateSlug(data.name)
   };
   const docRef = await db.collection('profiles').add(submission);
+  await db.collection('submissions').add(submission).catch(() => {});
   return new Response(JSON.stringify({ success: true, id: docRef.id, name: data.name }), { status: 200, headers: corsHeaders });
 }
 
 async function handleSubmitListing(db, data, corsHeaders) {
-  if (!data.business_name) {
-    return new Response(JSON.stringify({ success: false, error: 'Missing Business Name' }), { status: 400, headers: corsHeaders });
+  const submitEmail = data.email || data.contact_email;
+  if (!data.business_name || !submitEmail) {
+    return new Response(JSON.stringify({ success: false, error: 'Missing Business Name or Contact Email' }), { status: 400, headers: corsHeaders });
   }
   const submission = {
     ...data,
+    email: submitEmail,
+    type: 'directory',
     status: 'pending',
-    source: 'public',
+    source: data.source || 'public',
     is_featured: false,
     is_verified: false,
     view_count: 0,
@@ -182,15 +192,19 @@ async function handleSubmitListing(db, data, corsHeaders) {
     slug: data.slug || generateSlug(data.business_name)
   };
   const docRef = await db.collection('listings').add(submission);
+  await db.collection('submissions').add(submission).catch(() => {});
   return new Response(JSON.stringify({ success: true, id: docRef.id, business_name: data.business_name }), { status: 200, headers: corsHeaders });
 }
 
 async function handleSubmitArticle(db, data, corsHeaders) {
-  if (!data.title || !data.email) {
-    return new Response(JSON.stringify({ success: false, error: 'Missing Article Title or Email' }), { status: 400, headers: corsHeaders });
+  const submitEmail = data.email || data.contact_email;
+  if (!data.title || !submitEmail) {
+    return new Response(JSON.stringify({ success: false, error: 'Missing Article Title or Contact Email' }), { status: 400, headers: corsHeaders });
   }
   const submission = {
     ...data,
+    email: submitEmail,
+    contact_email: data.contact_email || submitEmail,
     type: 'post',
     status: 'pending',
     source: data.source || 'public',

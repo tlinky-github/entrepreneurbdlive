@@ -17,7 +17,8 @@ import {
   Briefcase,
   Star,
   Rocket,
-  BookOpen
+  BookOpen,
+  Users
 } from 'lucide-react';
 import { 
   Table, 
@@ -44,6 +45,7 @@ const AdminTaxonomies = () => {
     { id: 'cities', label: 'Cities', icon: MapPin, color: 'stone' },
     { id: 'listing_types', label: 'Listing Types', icon: Building2, color: 'orange' },
     { id: 'startup_stages', label: 'Startup Stages', icon: Star, color: 'yellow' },
+    { id: 'employee_sizes', label: 'Employee Sizes', icon: Users, color: 'indigo' },
   ];
 
   const loadTaxonomy = useCallback(async () => {
