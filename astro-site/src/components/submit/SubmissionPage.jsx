@@ -638,13 +638,16 @@ const SubmissionPage = ({ initialMetadata }) => {
                           <select 
                             className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 h-12 sm:h-14 text-sm font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:outline-none transition-all cursor-pointer"
                             value={lData.listing_type}
-                            onChange={(e) => setLData({...lData, listing_type: e.target.value})}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setLData({...lData, listing_type: val, listing_type_name: val});
+                            }}
                           >
                             <option value="">Select Type</option>
                             {(metadata.listing_types || []).map(t => {
-                              const id = typeof t === 'object' ? (t.id || t.name) : t;
-                              const label = typeof t === 'object' ? (t.name || t.id) : t;
-                              return <option key={id} value={id}>{label}</option>;
+                              const label = typeof t === 'object' ? (t.name || t.title || t.id) : t;
+                              const keyVal = typeof t === 'object' ? t.id : t;
+                              return <option key={keyVal} value={label}>{label}</option>;
                             })}
                           </select>
                         </div>

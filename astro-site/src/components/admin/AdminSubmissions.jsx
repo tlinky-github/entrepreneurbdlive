@@ -217,7 +217,9 @@ const AdminSubmissions = () => {
                             <Badge variant="outline" className="text-[10px] uppercase text-blue-600 bg-blue-50 border-blue-100 font-bold">Public</Badge>
                           )}
                         </div>
-                        <p className="text-sm text-stone-600 truncate mb-2">{l.listing_type_name || l.listing_type} • {l.headquarters}</p>
+                        <p className="text-sm text-stone-600 truncate mb-2">
+                          {l.listing_type_name || (l.listing_type && !/^[A-Za-z0-9]{18,24}$/.test(l.listing_type) ? l.listing_type : (l.category || 'Business Listing'))} {l.headquarters ? `• ${l.headquarters}` : ''}
+                        </p>
                         <div className="flex flex-wrap items-center gap-3 text-xs text-stone-400">
                            <SubmitterInfo item={l} />
                            <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> Submitted {formatDate(l.created_at)}</span>
