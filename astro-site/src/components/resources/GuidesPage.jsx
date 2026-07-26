@@ -1,26 +1,39 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowRight, BookOpen, ChevronRight } from 'lucide-react';
+import { 
+  ArrowRight, BookOpen, ChevronRight, Lightbulb, Rocket, Target, 
+  Briefcase, Award, Zap, Compass, TrendingUp, HelpCircle, FileText, CheckCircle 
+} from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
-import { guides as mockGuides } from '../../data/mock';
+import { Skeleton } from '../../components/ui/skeleton';
 import { guidesAPI } from '../../lib/api';
 
-const GuidesPage = () => {
-  const [firestoreGuides, setFirestoreGuides] = useState([]);
+const iconMap = {
+  BookOpen, Lightbulb, Rocket, Target, Briefcase, Award, Zap, Compass, TrendingUp, HelpCircle, FileText, CheckCircle
+};
+
+const GuidesPage = ({ initialGuides = [] }) => {
+  const [firestoreGuides, setFirestoreGuides] = useState(initialGuides || []);
+  const [loading, setLoading] = useState(!initialGuides || initialGuides.length === 0);
 
   useEffect(() => {
     const load = async () => {
       try {
         const res = await guidesAPI.list();
-        setFirestoreGuides((res.data || []).filter(g => g.status === 'published'));
+        const published = (res.data || []).filter(g => g.status === 'published');
+        if (published.length > 0 || !initialGuides || initialGuides.length === 0) {
+          setFirestoreGuides(published);
+        }
       } catch (err) {
         console.error('Failed to load guides from Firestore:', err);
+      } finally {
+        setLoading(false);
       }
     };
     load();
   }, []);
 
-  const allGuides = [...firestoreGuides, ...mockGuides];
+  const allGuides = firestoreGuides;
 
   return (
     <>
@@ -49,48 +62,83 @@ const GuidesPage = () => {
       <section className="py-20 lg:py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto space-y-8">
-            {allGuides.map((guide, guideIndex) => (
-              <Card key={guide.id} className="border-stone-200 overflow-hidden shadow-md">
-                <CardHeader className="bg-stone-50 border-b border-stone-200">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-emerald-900 flex items-center justify-center">
-                      <BookOpen className="w-6 h-6 text-emerald-100" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-xl text-stone-900">
-                        {guide.title}
-                      </CardTitle>
-                      <CardDescription className="text-stone-500">
-                        {guide.description}
-                      </CardDescription>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="pt-8">
-                  <div className="space-y-8">
-                    {(Array.isArray(guide.content) ? guide.content : []).map((section, sectionIndex) => (
-                      <div key={sectionIndex} className="flex gap-4">
-                        <div className="flex-shrink-0">
-                          <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
-                            <span className="text-emerald-900 font-bold text-sm">
-                              {sectionIndex + 1}
-                            </span>
-                          </div>
-                        </div>
-                        <div>
-                          <h4 className="font-semibold text-stone-900 mb-2">
-                            {section.heading}
-                          </h4>
-                          <p className="text-stone-600 leading-relaxed">
-                            {section.text}
-                          </p>
-                        </div>
+            {loading ? (
+              <div className="space-y-6">
+                {[...Array(3)].map((_, i) => (
+                  <Skeleton key={i} className="h-40 w-full rounded-xl bg-stone-100" />
+                ))}
+              </div>
+            ) : allGuides.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-stone-500">No guides published yet.</p>
+              </div>
+            ) : (
+              allGuides.map((guide, guideIndex) => (
+                <Card key={guide.id || guideIndex} className="border-stone-200 overflow-hidden shadow-md">
+                  <CardHeader className="bg-stone-50 border-b border-stone-200">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-xl bg-emerald-900 flex items-center justify-center flex-shrink-0 text-xl">
+                        {(() => {
+                          const IconComp = iconMap[guide.icon];
+                          if (IconComp) return <IconComp className="w-6 h-6 text-emerald-100" />;
+                          if (guide.icon) return <span>{guide.icon}</span>;
+                          return <BookOpen className="w-6 h-6 text-emerald-100" />;
+                        })()}
                       </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                      <div>
+                        <CardTitle className="text-xl text-stone-900">
+                          {guide.title}
+                        </CardTitle>
+                        <CardDescription className="text-stone-500">
+                          {guide.description}
+                        </CardDescription>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pt-8">
+                    <div className="space-y-8">
+                      {(() => {
+                        const steps = (Array.isArray(guide.steps) && guide.steps.length > 0)
+                          ? guide.steps
+                          : (Array.isArray(guide.content) && guide.content.length > 0)
+                            ? guide.content
+                            : (Array.isArray(guide.sections) ? guide.sections : []);
+
+                        if (steps.length === 0) {
+                          return <p className="text-stone-400 text-sm italic">No steps added for this guide yet.</p>;
+                        }
+
+                        return steps.map((section, sectionIndex) => {
+                          const heading = section.heading || section.title || section.name || `Step ${sectionIndex + 1}`;
+                          const text = section.text || section.description || section.details || section.content || '';
+                          return (
+                            <div key={sectionIndex} className="flex gap-4">
+                              <div className="flex-shrink-0">
+                                <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
+                                  <span className="text-emerald-900 font-bold text-sm">
+                                    {sectionIndex + 1}
+                                  </span>
+                                </div>
+                              </div>
+                              <div>
+                                <h4 className="font-semibold text-stone-900 mb-2">
+                                  {heading}
+                                </h4>
+                                {text && (
+                                  <p className="text-stone-600 leading-relaxed whitespace-pre-line">
+                                    {text}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        });
+                      })()}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
           </div>
         </div>
       </section>

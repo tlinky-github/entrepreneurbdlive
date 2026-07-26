@@ -1,8 +1,16 @@
 ---
 import PublicLayout from '../../layouts/PublicLayout.astro';
 import GuidesPage from '../../components/resources/GuidesPage.jsx';
+import { getPublishedDocs } from '../../lib/serverApi';
+
+let initialGuides: any[] = [];
+try {
+  initialGuides = await getPublishedDocs('guides', 500);
+} catch (e) {
+  console.error('[Guides Page] Server fetch failed:', e);
+}
 ---
 
 <PublicLayout title="Practical Guides | Entrepreneurs BD">
-  <GuidesPage client:load />
+  <GuidesPage client:load initialGuides={initialGuides} />
 </PublicLayout>

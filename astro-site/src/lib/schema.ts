@@ -129,8 +129,8 @@ export const getBusinessSchema = (listing: any) => {
   };
 };
 
-export const extractFAQSchema = (htmlContent: string) => {
-  if (!htmlContent) return null;
+export const extractFAQSchema = (htmlContent: any) => {
+  if (!htmlContent || typeof htmlContent !== 'string') return null;
   const faqMatch = htmlContent.match(/<faq-section[^>]*data-faqs=["'](.*?)["']/);
   if (!faqMatch || !faqMatch[1]) return null;
   
@@ -160,7 +160,7 @@ export const extractFAQSchema = (htmlContent: string) => {
 /**
  * Helper to combine custom schema with auto-generated schema
  */
-export const buildSchema = (customSchemaStr: string | null | undefined, defaultSchema: any, authorData?: any, htmlContent?: string) => {
+export const buildSchema = (customSchemaStr: string | null | undefined, defaultSchema: any, authorData?: any, htmlContent?: any) => {
   const schemas: any[] = [];
   
   // 1. Always include Organization Schema
@@ -180,7 +180,7 @@ export const buildSchema = (customSchemaStr: string | null | undefined, defaultS
   }
 
   // 3. Auto FAQ Schema
-  if (htmlContent) {
+  if (htmlContent && typeof htmlContent === 'string') {
     const faqSchema = extractFAQSchema(htmlContent);
     if (faqSchema) schemas.push(faqSchema);
   }

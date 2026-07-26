@@ -459,8 +459,26 @@ const GuidesTab = () => {
               <Input value={form.title} onChange={(e) => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Guide title" />
             </div>
             <div>
-              <label className="text-sm font-semibold text-stone-500">Icon (emoji)</label>
-              <Input value={form.icon} onChange={(e) => setForm(f => ({ ...f, icon: e.target.value }))} placeholder="📘" className="w-20" />
+              <label className="text-sm font-semibold text-stone-500">Icon (Emoji or Lucide Icon Name)</label>
+              <Input 
+                value={form.icon} 
+                onChange={(e) => setForm(f => ({ ...f, icon: e.target.value }))} 
+                placeholder="e.g. 📘, 💡, 🚀 or Lightbulb, Rocket" 
+                className="text-sm" 
+              />
+              <div className="flex items-center gap-1.5 mt-1.5 text-xs text-stone-400">
+                <span>Quick select:</span>
+                {['📘', '💡', '🚀', '🎯', '📊', '💼', '🏆', 'Lightbulb', 'BookOpen', 'Rocket'].map(ic => (
+                  <button 
+                    key={ic} 
+                    type="button" 
+                    onClick={() => setForm(f => ({ ...f, icon: ic }))}
+                    className="px-1.5 py-0.5 rounded bg-stone-100 hover:bg-emerald-100 hover:text-emerald-900 font-mono text-[11px] transition-colors"
+                  >
+                    {ic}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
           <div>

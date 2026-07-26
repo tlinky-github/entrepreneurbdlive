@@ -2,32 +2,36 @@ import React, { useState, useEffect } from 'react';
 import { MessageCircle, BookOpen, ArrowRight, ChevronDown, ChevronUp, HelpCircle, ChevronRight } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
-// Accordion removed per user request
-import { faqs as mockFaqs } from '../../data/mock';
+import { Skeleton } from '../../components/ui/skeleton';
 import { faqCategoriesAPI } from '../../lib/api';
 
-const FAQsPage = () => {
-  const [firestoreFaqs, setFirestoreFaqs] = useState([]);
+const FAQsPage = ({ initialFaqs = [] }) => {
+  const [firestoreFaqs, setFirestoreFaqs] = useState(initialFaqs || []);
+  const [loading, setLoading] = useState(!initialFaqs || initialFaqs.length === 0);
 
   useEffect(() => {
     const load = async () => {
       try {
         const res = await faqCategoriesAPI.list();
         const published = (res.data || []).filter(f => f.status === 'published');
-        // Map Firestore format to mock format
-        setFirestoreFaqs(published.map(f => ({
+        const mapped = published.map(f => ({
           category: f.name,
           icon: f.icon || '❓',
           questions: f.questions || []
-        })));
+        }));
+        if (mapped.length > 0 || !initialFaqs || initialFaqs.length === 0) {
+          setFirestoreFaqs(mapped);
+        }
       } catch (err) {
         console.error('Failed to load FAQs from Firestore:', err);
+      } finally {
+        setLoading(false);
       }
     };
     load();
   }, []);
 
-  const allFaqs = [...firestoreFaqs, ...mockFaqs];
+  const allFaqs = firestoreFaqs;
 
   return (
     <>
@@ -54,28 +58,40 @@ const FAQsPage = () => {
       <section className="py-20 lg:py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl mx-auto space-y-12">
-            {allFaqs.map((category, categoryIndex) => (
-              <div key={categoryIndex}>
-                <h2 className="text-2xl font-bold text-stone-900 mb-6 pb-3 border-b border-stone-200">
-                  {category.category || category.name || 'FAQ Category'}
-                </h2>
-                <div className="w-full space-y-8">
-                  {(Array.isArray(category.questions) ? category.questions : []).map((faq, faqIndex) => (
-                    <div
-                      key={faqIndex}
-                      className="border-b border-stone-200 pb-8 last:border-0 last:pb-0"
-                    >
-                      <h3 className="text-xl font-bold text-stone-900 mb-3 leading-tight">
-                        {faq.q || 'Question unavailable'}
-                      </h3>
-                      <div className="text-stone-700 leading-relaxed prose prose-stone max-w-none prose-p:my-2 prose-a:text-emerald-600 prose-a:font-semibold hover:prose-a:text-emerald-700">
-                        {faq.a || 'Answer unavailable.'}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+            {loading ? (
+              <div className="space-y-6">
+                {[...Array(3)].map((_, i) => (
+                  <Skeleton key={i} className="h-32 w-full rounded-xl bg-stone-100" />
+                ))}
               </div>
-            ))}
+            ) : allFaqs.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-stone-500">No FAQs published yet.</p>
+              </div>
+            ) : (
+              allFaqs.map((category, categoryIndex) => (
+                <div key={categoryIndex}>
+                  <h2 className="text-2xl font-bold text-stone-900 mb-6 pb-3 border-b border-stone-200">
+                    {category.category || category.name || 'FAQ Category'}
+                  </h2>
+                  <div className="w-full space-y-8">
+                    {(Array.isArray(category.questions) ? category.questions : []).map((faq, faqIndex) => (
+                      <div
+                        key={faqIndex}
+                        className="border-b border-stone-200 pb-8 last:border-0 last:pb-0"
+                      >
+                        <h3 className="text-xl font-bold text-stone-900 mb-3 leading-tight">
+                          {faq.q || 'Question unavailable'}
+                        </h3>
+                        <div className="text-stone-700 leading-relaxed prose prose-stone max-w-none prose-p:my-2 prose-a:text-emerald-600 prose-a:font-semibold hover:prose-a:text-emerald-700">
+                          {faq.a || 'Answer unavailable.'}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </section>

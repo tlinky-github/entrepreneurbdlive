@@ -1,8 +1,21 @@
 ---
 import PublicLayout from '../../layouts/PublicLayout.astro';
 import FAQsPage from '../../components/resources/FAQsPage.jsx';
+import { getPublishedDocs } from '../../lib/serverApi';
+
+let initialFaqs: any[] = [];
+try {
+  const raw = await getPublishedDocs('faq_categories', 500);
+  initialFaqs = (raw || []).map((f: any) => ({
+    category: f.name,
+    icon: f.icon || '❓',
+    questions: f.questions || []
+  }));
+} catch (e) {
+  console.error('[FAQs Page] Server fetch failed:', e);
+}
 ---
 
 <PublicLayout title="Frequently Asked Questions | Entrepreneurs BD">
-  <FAQsPage client:load />
+  <FAQsPage client:load initialFaqs={initialFaqs} />
 </PublicLayout>
