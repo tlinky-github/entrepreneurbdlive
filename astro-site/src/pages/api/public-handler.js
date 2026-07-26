@@ -125,26 +125,26 @@ export const ALL = async ({ request }) => {
 };
 
 async function handleListMetadata(db, corsHeaders) {
-  const [cats, industries, types] = await Promise.all([
-    db.collection('categories').get(),
-    db.collection('taxonomies').doc('industries').get(),
-    db.collection('taxonomies').get()
+  // Fetch all taxonomy data from Firestore in parallel — no hardcoded values
+  const [catsSnap, indSnap, citySnap, listingTypesSnap, startupStagesSnap, employeeSizesSnap] = await Promise.all([
+    db.collection('categories').get().catch(() => ({ docs: [] })),
+    db.collection('industries').get().catch(() => ({ docs: [] })),
+    db.collection('cities').get().catch(() => ({ docs: [] })),
+    db.collection('listing_types').get().catch(() => ({ docs: [] })),
+    db.collection('startup_stages').get().catch(() => ({ docs: [] })),
+    db.collection('employee_sizes').get().catch(() => ({ docs: [] })),
   ]);
 
-  const listingTypes = types.docs.find(d => d.id === 'listing_types')?.data()?.items || [];
-  const startupStages = types.docs.find(d => d.id === 'startup_stages')?.data()?.items || [];
-  const employeeSizes = types.docs.find(d => d.id === 'employee_sizes')?.data()?.items || [];
-  const cityItems = types.docs.find(d => d.id === 'cities')?.data()?.items || [];
-  const industryItems = industries.exists ? (industries.data().items || []) : [];
+  const categories = (catsSnap.docs || []).map(d => ({ id: d.id, ...d.data() }));
+  const industries = (indSnap.docs || []).map(d => d.data().name || d.id);
+  const cities = (citySnap.docs || []).map(d => d.data().name || d.id);
+  const listing_types = (listingTypesSnap.docs || []).map(d => ({ id: d.id, ...d.data() }));
+  const startup_stages = (startupStagesSnap.docs || []).map(d => d.data().name || d.id);
+  const employee_sizes = (employeeSizesSnap.docs || []).map(d => d.data().name || d.id);
 
   return new Response(JSON.stringify({
     success: true,
-    categories: cats.docs.map(d => ({ id: d.id, ...d.data() })),
-    industries: industryItems,
-    listing_types: listingTypes,
-    startup_stages: startupStages,
-    employee_sizes: employeeSizes,
-    cities: cityItems
+    data: { categories, industries, cities, listing_types, startup_stages, employee_sizes }
   }), { status: 200, headers: corsHeaders });
 }
 

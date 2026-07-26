@@ -37,7 +37,7 @@ import { useAuth } from '../../lib/auth.jsx';
 
 const TURNSTILE_SITE_KEY = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY || import.meta.env.REACT_APP_TURNSTILE_SITE_KEY || '1x00000000000000000000AA';
 
-const SubmissionPage = () => {
+const SubmissionPage = ({ initialMetadata }) => {
   let user = null;
   try {
     const auth = useAuth();
@@ -49,15 +49,23 @@ const SubmissionPage = () => {
   const [loading, setLoading] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState('');
 
-  const [metadata, setMetadata] = useState({ 
-    categories: [], 
-    industries: [], 
-    listing_types: [],
-    startup_stages: [],
-    cities: [],
-    employee_sizes: ['1-10', '11-50', '51-200', '201-500', '501-1000', '1001-5000', '5000+'] 
-  });
-  const [metadataLoading, setMetadataLoading] = useState(true);
+  const hasInitialData = initialMetadata && (
+    (initialMetadata.industries?.length > 0) ||
+    (initialMetadata.cities?.length > 0) ||
+    (initialMetadata.categories?.length > 0)
+  );
+
+  const [metadata, setMetadata] = useState(
+    hasInitialData ? initialMetadata : {
+      categories: [],
+      industries: [],
+      listing_types: [],
+      startup_stages: [],
+      cities: [],
+      employee_sizes: []
+    }
+  );
+  const [metadataLoading, setMetadataLoading] = useState(!hasInitialData);
 
   // Form States
   const [pData, setPData] = useState({
@@ -129,21 +137,32 @@ const SubmissionPage = () => {
   }, [user]);
 
   useEffect(() => {
+    // Skip client-side fetch if metadata was already SSR pre-loaded
+    if (hasInitialData) {
+      setMetadataLoading(false);
+      return;
+    }
     const loadMetadata = async () => {
       try {
         const res = await publicAPI.listMetadata(turnstileToken || TURNSTILE_SITE_KEY);
+        const metaObj = res?.data || res || {};
         setMetadata({
-          ...res.data,
-          employee_sizes: ['1-10', '11-50', '51-200', '201-500', '501-1000', '1001-5000', '5000+']
+          categories: metaObj.categories || [],
+          industries: metaObj.industries || [],
+          listing_types: metaObj.listing_types || [],
+          startup_stages: metaObj.startup_stages || [],
+          employee_sizes: metaObj.employee_sizes || [],
+          cities: metaObj.cities || []
         });
       } catch (err) {
-        console.error('Metadata load failed:', err);
+        console.warn('Metadata fetch failed, form will still work:', err);
       } finally {
         setMetadataLoading(false);
       }
     };
     loadMetadata();
-  }, [turnstileToken]);
+  }, []);
+
 
   const handlePSubmit = async (e) => {
     e.preventDefault();
@@ -622,7 +641,11 @@ const SubmissionPage = () => {
                             onChange={(e) => setLData({...lData, listing_type: e.target.value})}
                           >
                             <option value="">Select Type</option>
-                            {(metadata.listing_types || []).map(t => <option key={t} value={t}>{t}</option>)}
+                            {(metadata.listing_types || []).map(t => {
+                              const id = typeof t === 'object' ? (t.id || t.name) : t;
+                              const label = typeof t === 'object' ? (t.name || t.id) : t;
+                              return <option key={id} value={id}>{label}</option>;
+                            })}
                           </select>
                         </div>
                       </div>
@@ -636,7 +659,7 @@ const SubmissionPage = () => {
                             onChange={(e) => setLData({...lData, employee_size: e.target.value})}
                           >
                             <option value="">Select Size</option>
-                            {metadata.employee_sizes.map(s => <option key={s} value={s}>{s}</option>)}
+                            {(metadata.employee_sizes || []).map(s => <option key={s} value={s}>{s}</option>)}
                           </select>
                         </div>
                       </div>

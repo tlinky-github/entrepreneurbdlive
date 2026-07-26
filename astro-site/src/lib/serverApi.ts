@@ -198,6 +198,28 @@ export async function getCategories() {
   }
 }
 
+/** Fetch all metadata needed by the submission form (SSR — always from Firestore) */
+export async function getSubmitMetadata() {
+  const db = getDb() as any;
+  const [catsSnap, indSnap, citySnap, listingTypesSnap, startupStagesSnap, employeeSizesSnap] = await Promise.all([
+    db.collection('categories').get().catch(() => ({ docs: [] })),
+    db.collection('industries').get().catch(() => ({ docs: [] })),
+    db.collection('cities').get().catch(() => ({ docs: [] })),
+    db.collection('listing_types').get().catch(() => ({ docs: [] })),
+    db.collection('startup_stages').get().catch(() => ({ docs: [] })),
+    db.collection('employee_sizes').get().catch(() => ({ docs: [] })),
+  ]);
+  return {
+    categories: (catsSnap.docs || []).map((d: any) => ({ id: d.id, ...d.data() })),
+    industries: (indSnap.docs || []).map((d: any) => d.data().name || d.id),
+    cities: (citySnap.docs || []).map((d: any) => d.data().name || d.id),
+    listing_types: (listingTypesSnap.docs || []).map((d: any) => ({ id: d.id, ...d.data() })),
+    startup_stages: (startupStagesSnap.docs || []).map((d: any) => d.data().name || d.id),
+    employee_sizes: (employeeSizesSnap.docs || []).map((d: any) => d.data().name || d.id),
+  };
+}
+
+
 /** Fetch a document by ID */
 export async function getDocById(collectionName: string, id: string) {
   try {

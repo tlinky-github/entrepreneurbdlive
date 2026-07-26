@@ -1,8 +1,155 @@
 ---
 import PublicLayout from '../layouts/PublicLayout.astro';
 import SubmissionPageWrapper from '../components/submit/SubmissionPageWrapper.jsx';
+import { getSubmitMetadata } from '../lib/serverApi';
+
+let initialMetadata = { categories: [], industries: [], cities: [], listing_types: [], startup_stages: [], employee_sizes: [] };
+try {
+  initialMetadata = await getSubmitMetadata();
+} catch (e) {}
 ---
 
-<PublicLayout title="Get Listed | Entrepreneurs BD">
-  <SubmissionPageWrapper client:only="react" />
+<PublicLayout title="Get Listed | Entrepreneurs BD" description="Submit your entrepreneur profile or business listing to Entrepreneurs BD.">
+
+  <!--
+    Strategy: Show static skeleton immediately. React mounts normally (fully visible).
+    Once React has rendered, the skeleton is removed. No opacity tricks, no pointer-events.
+  -->
+
+  <!-- Static SSR skeleton (sits above React in DOM, removed once React loads) -->
+  <div id="submit-ssr-skeleton" class="skeleton-page" aria-hidden="true">
+    <div style="max-width:64rem;margin:0 auto;padding:2.5rem 1rem 4rem;">
+
+      <!-- Header -->
+      <div style="text-align:center;margin-bottom:3.5rem;">
+        <span style="display:inline-block;background:#d1fae5;color:#14532d;padding:6px 22px;border-radius:999px;font-size:10px;font-weight:900;letter-spacing:.18em;text-transform:uppercase;margin-bottom:18px;">
+          Community Ecosystem
+        </span>
+        <h1 style="font-size:clamp(2rem,5vw,3.75rem);font-weight:900;color:#1c1917;margin:0 0 1.5rem;letter-spacing:-.03em;line-height:1.05;">
+          Apply to be <span style="color:#14532d;">Listed</span>
+        </h1>
+        <p style="font-size:clamp(.95rem,1.5vw,1.2rem);color:#57534e;max-width:38rem;margin:0 auto;font-weight:500;line-height:1.6;">
+          Join the most comprehensive directory of startups and visionaries in Bangladesh.
+        </p>
+      </div>
+
+      <!-- Fake tab bar (visual only, not interactive) -->
+      <div style="display:flex;justify-content:center;margin-bottom:3rem;">
+        <div style="background:rgba(214,211,209,.5);padding:4px;border-radius:14px;display:flex;gap:4px;width:100%;max-width:32rem;border:1px solid rgba(214,211,209,.5);">
+          <div style="flex:1;background:#fff;border-radius:10px;padding:14px 0;text-align:center;font-weight:700;font-size:.875rem;color:#14532d;box-shadow:0 2px 8px rgba(0,0,0,.08);">
+            Founder Spotlight
+          </div>
+          <div style="flex:1;border-radius:10px;padding:14px 0;text-align:center;font-weight:700;font-size:.875rem;color:#78716c;">
+            Directory
+          </div>
+        </div>
+      </div>
+
+      <!-- Shimmer cards -->
+      <div style="display:flex;flex-direction:column;gap:2rem;">
+        <div class="skel-card">
+          <div style="display:flex;align-items:center;gap:1rem;margin-bottom:2rem;">
+            <div class="skel-block" style="width:48px;height:48px;border-radius:14px;flex-shrink:0;"></div>
+            <div style="flex:1;">
+              <div class="skel-block" style="height:18px;width:40%;border-radius:6px;margin-bottom:8px;"></div>
+              <div class="skel-block" style="height:12px;width:60%;border-radius:4px;"></div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
+            <div><div class="skel-block" style="height:12px;width:60%;border-radius:4px;margin-bottom:10px;"></div><div class="skel-block" style="height:44px;border-radius:12px;"></div></div>
+            <div><div class="skel-block" style="height:12px;width:70%;border-radius:4px;margin-bottom:10px;"></div><div class="skel-block" style="height:44px;border-radius:12px;"></div></div>
+            <div><div class="skel-block" style="height:12px;width:55%;border-radius:4px;margin-bottom:10px;"></div><div class="skel-block" style="height:44px;border-radius:12px;"></div></div>
+            <div><div class="skel-block" style="height:12px;width:50%;border-radius:4px;margin-bottom:10px;"></div><div class="skel-block" style="height:44px;border-radius:12px;"></div></div>
+          </div>
+        </div>
+
+        <div class="skel-card">
+          <div style="display:flex;align-items:center;gap:1rem;margin-bottom:2rem;">
+            <div class="skel-block" style="width:48px;height:48px;border-radius:14px;flex-shrink:0;"></div>
+            <div style="flex:1;">
+              <div class="skel-block" style="height:18px;width:50%;border-radius:6px;margin-bottom:8px;"></div>
+              <div class="skel-block" style="height:12px;width:70%;border-radius:4px;"></div>
+            </div>
+          </div>
+          <div class="skel-block" style="height:12px;width:30%;border-radius:4px;margin-bottom:10px;"></div>
+          <div class="skel-block" style="height:120px;border-radius:12px;margin-bottom:1.5rem;"></div>
+          <div class="skel-block" style="height:12px;width:35%;border-radius:4px;margin-bottom:10px;"></div>
+          <div class="skel-block" style="height:44px;border-radius:12px;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- React island: rendered and visible normally, appears after skeleton is removed -->
+  <div id="submit-react-root" style="display:none;">
+    <SubmissionPageWrapper client:only="react" initialMetadata={initialMetadata} />
+  </div>
+
+  <script is:inline>
+    (function () {
+      var skeleton = document.getElementById('submit-ssr-skeleton');
+      var reactRoot = document.getElementById('submit-react-root');
+      if (!skeleton || !reactRoot) return;
+
+      function reveal() {
+        // Show React content
+        reactRoot.style.display = '';
+        // Remove skeleton from DOM entirely (no overlap, no z-index issues)
+        skeleton.style.transition = 'opacity 0.15s ease';
+        skeleton.style.opacity = '0';
+        setTimeout(function () { skeleton.remove(); }, 160);
+      }
+
+      var obs = new MutationObserver(function () {
+        if (
+          reactRoot.querySelector('form') ||
+          reactRoot.querySelector('[role="tablist"]') ||
+          reactRoot.querySelector('[data-state]') ||
+          reactRoot.querySelector('[class*="min-h-screen"]')
+        ) {
+          obs.disconnect();
+          reveal();
+        }
+      });
+
+      obs.observe(reactRoot, { childList: true, subtree: true });
+
+      // Hard fallback: reveal after 5s regardless
+      setTimeout(function () {
+        obs.disconnect();
+        reveal();
+      }, 5000);
+    })();
+  </script>
+
 </PublicLayout>
+
+<style>
+  .skeleton-page {
+    background: #fafaf9;
+    min-height: 100vh;
+  }
+
+  @keyframes shimmer {
+    0%   { background-position: -600px 0; }
+    100% { background-position:  600px 0; }
+  }
+
+  .skel-card {
+    background: #fff;
+    border-radius: 2.5rem;
+    box-shadow: 0 20px 60px -10px rgba(0,0,0,.07);
+    padding: 2.5rem 3rem;
+  }
+
+  .skel-block {
+    display: block;
+    background: linear-gradient(90deg, #f5f5f4 25%, #e2e0de 50%, #f5f5f4 75%);
+    background-size: 600px 100%;
+    animation: shimmer 1.5s infinite linear;
+  }
+
+  @media (max-width: 640px) {
+    .skel-card { padding: 1.5rem; }
+  }
+</style>

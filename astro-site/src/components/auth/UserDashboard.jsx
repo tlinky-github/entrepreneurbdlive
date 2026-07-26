@@ -41,7 +41,7 @@ const UserDashboard = () => {
     if (!storyData.title || !storyData.content) return;
     setSubmittingStory(true);
     try {
-      // 1. Submit via server API to bypass client Firestore permissions safely
+      // 1. Primary: Submit via server Admin SDK — bypasses Firestore client rules
       await publicAPI.submitArticle({
         title: storyData.title,
         author_name: storyData.author_name || user?.name || '',
@@ -57,7 +57,7 @@ const UserDashboard = () => {
         source: 'dashboard'
       });
 
-      // 2. Also attempt client addDoc as fallback
+      // 2. Also attempt client addDoc as fallback (silent if rules block it)
       try {
         await addDoc(collection(db, 'submissions'), {
           title: storyData.title,
@@ -76,7 +76,7 @@ const UserDashboard = () => {
           updatedAt: serverTimestamp()
         });
       } catch (clientErr) {
-        console.warn('Client-side addDoc ignored (handled by server API):', clientErr);
+        console.warn('Client-side addDoc skipped (handled by server API):', clientErr.message);
       }
 
       setStorySuccess(true);
@@ -98,25 +98,16 @@ const UserDashboard = () => {
     }
   };
 
+
   const fetchUserSubmissions = async () => {
     setLoadingSubmissions(true);
     try {
-      // Fetch via server API first to bypass Firestore client permission restrictions
+      // Always use server Admin SDK — client SDK is blocked by Firestore rules
       const serverRes = await publicAPI.getUserSubmissions(user.email);
-      if (serverRes?.data && serverRes.data.length > 0) {
-        setSubmissions(serverRes.data);
-        return;
-      }
-      // Fallback to client query if server API returns empty
-      const q = query(
-        collection(db, 'submissions'),
-        where('email', '==', user.email)
-      );
-      const snapshot = await getDocs(q);
-      const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setSubmissions(docs);
+      setSubmissions(serverRes?.data || []);
     } catch (err) {
-      console.warn('Fallback error fetching user submissions:', err);
+      console.warn('Could not fetch submissions:', err);
+      setSubmissions([]);
     } finally {
       setLoadingSubmissions(false);
     }

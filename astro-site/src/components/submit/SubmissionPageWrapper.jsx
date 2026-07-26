@@ -2,10 +2,10 @@ import React from 'react';
 import { AuthProvider } from '../../lib/auth.jsx';
 import SubmissionPage from './SubmissionPage.jsx';
 
-const SubmissionPageWrapper = () => {
+const SubmissionPageWrapper = ({ initialMetadata }) => {
   return (
     <AuthProvider>
-      <SubmissionPage />
+      <SubmissionPage initialMetadata={initialMetadata} />
     </AuthProvider>
   );
 };

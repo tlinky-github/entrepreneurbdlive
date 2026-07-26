@@ -292,25 +292,38 @@ const getFirebaseServiceAccount = () => {
   const credsJson = env('FIREBASE_CREDENTIALS_JSON', 'FIREBASE_SERVICE_ACCOUNT_JSON');
   if (credsJson) {
     let sanitized = credsJson.trim();
-    // Strip outer quotes if present
-    if ((sanitized.startsWith('"') && sanitized.endsWith('"')) || 
+
+    // Strip outer single or double quotes added by some .env editors/shells
+    if ((sanitized.startsWith('"') && sanitized.endsWith('"')) ||
         (sanitized.startsWith("'") && sanitized.endsWith("'"))) {
       sanitized = sanitized.slice(1, -1).trim();
     }
 
-    const cleaned = sanitizeJsonNewlines(sanitized);
+    // Replace double-escaped newlines (\\n) with real newlines ONLY inside the private_key value
+    // Do this before JSON.parse so the key is valid
+    sanitized = sanitized.replace(/\\\\n/g, '\\n');
+
     try {
-      return JSON.parse(cleaned);
+      const parsed = JSON.parse(sanitized);
+      // Ensure private_key has real newlines (in case they survived as literal \n strings)
+      if (parsed.private_key) {
+        parsed.private_key = parsed.private_key.replace(/\\n/g, '\n');
+      }
+      console.log('[FirebaseAdmin] Service account parsed successfully. project_id:', parsed.project_id, 'client_email:', parsed.client_email);
+      return parsed;
     } catch (e) {
-      console.error('[FirebaseAdmin] Failed to parse FIREBASE_CREDENTIALS_JSON directly:', e.message, 'Length:', cleaned.length, 'Starts with:', cleaned.slice(0, 15));
+      console.error('[FirebaseAdmin] Failed to parse FIREBASE_CREDENTIALS_JSON:', e.message);
+      console.error('[FirebaseAdmin] First 100 chars:', sanitized.slice(0, 100));
     }
   }
 
+  // Fallback to individual env vars
   const projectId = env('FIREBASE_PROJECT_ID', 'REACT_APP_FIREBASE_PROJECT_ID');
   const clientEmail = env('FIREBASE_CLIENT_EMAIL');
   const privateKey = env('FIREBASE_PRIVATE_KEY');
 
   if (projectId && clientEmail && privateKey) {
+    console.log('[FirebaseAdmin] Using individual FIREBASE_PROJECT_ID / FIREBASE_CLIENT_EMAIL / FIREBASE_PRIVATE_KEY vars');
     return {
       project_id: projectId,
       client_email: clientEmail,
@@ -318,8 +331,10 @@ const getFirebaseServiceAccount = () => {
     };
   }
 
+  console.error('[FirebaseAdmin] No credentials found. Set FIREBASE_CREDENTIALS_JSON in your .env file.');
   return null;
 };
+
 
 let adminInitError = null;
 
