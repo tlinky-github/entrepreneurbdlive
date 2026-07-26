@@ -282,6 +282,21 @@ export const taxonomyAPI = {
   }
 };
 
+/** Fetch site settings from Firestore (settings/global) */
+export async function getSiteSettings() {
+  try {
+    const db = getDb() as any;
+    const docRef = await db.collection('settings').doc('global').get();
+    if (docRef.exists) {
+      return convertTimestamps(docRef.data());
+    }
+    return null;
+  } catch (error: any) {
+    console.warn('[serverApi] Failed to fetch site settings:', error.message);
+    return null;
+  }
+}
+
 /** Increment a document's view count */
 export async function incrementViewCount(collectionName: string, id: string) {
   try {

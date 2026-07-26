@@ -106,7 +106,7 @@ const SubmissionPage = () => {
       const params = new URLSearchParams(window.location.search);
       const typeParam = params.get('type') || params.get('tab');
       if (typeParam === 'directory' || typeParam === 'business' || typeParam === 'listing') {
-        setActiveTab('directory');
+        setActiveTab('listing');
       } else if (typeParam === 'entrepreneur' || typeParam === 'profile' || typeParam === 'founder') {
         setActiveTab('entrepreneur');
       }

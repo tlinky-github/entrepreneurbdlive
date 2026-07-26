@@ -1,11 +1,12 @@
 // Header component — runs as a React island (client:load) for interactivity
 // This is the SAME Header from the React CRA project, adapted to use <a> tags instead of react-router <Link>
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Menu, X, FileText, Building2, Users, BookOpen,
   ChevronDown, MessageCircle, Library, Plus, LayoutDashboard, User, LogOut
 } from 'lucide-react';
 import { useAuth, AuthProvider } from '../lib/auth';
+import { settingsAPI } from '../lib/api';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,7 +36,14 @@ function HeaderContent({ currentPath = '/' }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [expandedMenu, setExpandedMenu] = useState(null);
   const [openDropdown, setOpenDropdown] = useState(null);
+  const [siteSettings, setSiteSettings] = useState(null);
   const { user, isAuthenticated, isAdmin, logout } = useAuth();
+
+  useEffect(() => {
+    settingsAPI.get().then(res => {
+      if (res?.data) setSiteSettings(res.data);
+    }).catch(() => {});
+  }, []);
 
   const isActive = (path) => currentPath.startsWith(path);
 
@@ -54,13 +62,22 @@ function HeaderContent({ currentPath = '/' }) {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <a href="/" className="flex items-center gap-2 group">
-            <div className="w-10 h-10 bg-emerald-900 rounded-lg flex items-center justify-center group-hover:bg-emerald-800 transition-colors">
-              <span className="text-white font-bold text-xl">e</span>
-            </div>
-            <div className="hidden sm:block">
-              <span className="font-bold text-lg text-stone-900">entrepreneurs</span>
-              <span className="text-emerald-900 font-bold">.bd</span>
-            </div>
+            {siteSettings?.logo_url ? (
+              <img src={siteSettings.logo_url} alt={siteSettings.site_name || 'Logo'} className="h-9 object-contain" />
+            ) : (
+              <>
+                <div className="w-10 h-10 bg-emerald-900 rounded-lg flex items-center justify-center group-hover:bg-emerald-800 transition-colors">
+                  <span className="text-white font-bold text-xl">
+                    {(siteSettings?.site_name || 'Entrepreneur BD').charAt(0).toLowerCase()}
+                  </span>
+                </div>
+                <div className="hidden sm:block">
+                  <span className="font-bold text-lg text-stone-900">
+                    {siteSettings?.site_name || 'Entrepreneur BD'}
+                  </span>
+                </div>
+              </>
+            )}
           </a>
 
           {/* Desktop Navigation */}

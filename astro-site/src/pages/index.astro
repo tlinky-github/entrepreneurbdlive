@@ -1,6 +1,6 @@
 ---
 import PublicLayout from '../layouts/PublicLayout.astro';
-import { getRecentPosts, getFeaturedDocs, getPublicStats, taxonomyAPI } from '../lib/serverApi';
+import { getRecentPosts, getFeaturedDocs, getPublicStats, taxonomyAPI, getSiteSettings } from '../lib/serverApi';
 import { getWebSiteSchema, getOrganizationSchema } from '../lib/schema';
 import { resolveListingTypeLabel } from '../lib/listingTypes.js';
 import { Badge } from '../components/ui/badge.jsx';
@@ -18,6 +18,11 @@ let featuredListings = [];
 let listingTypes = [];
 let knowledgeItems = [];
 let stats = {};
+let siteSettings = null;
+
+try {
+  siteSettings = await getSiteSettings();
+} catch (e) { console.error('[Home] Settings fetch failed:', e.message); }
 
 try {
   // Fetch featured posts, limit 3. If none, fallback to recent 3
@@ -65,11 +70,17 @@ const iconMap = {
   Rocket: Rocket,
 };
 const pageSchema = [getWebSiteSchema(), getOrganizationSchema()];
+
+const siteTitle = siteSettings?.seo_title || siteSettings?.site_name 
+  ? `${siteSettings.site_name}${siteSettings.site_tagline ? ` - ${siteSettings.site_tagline}` : ''}`
+  : "Entrepreneur BD - Bangladesh Entrepreneur Ecosystem";
+
+const siteDescription = siteSettings?.seo_description || "Connect with entrepreneurs, discover startups, and access resources for business growth in Bangladesh.";
 ---
 
 <PublicLayout 
-  title="Entrepreneurs BD - Bangladesh's Premier Growth Hub"
-  description="The premier platform for startup founders, business owners, and visionaries in Bangladesh. Connect, discover, and scale your business."
+  title={siteTitle}
+  description={siteDescription}
   schema={pageSchema}
 >
   <div class="bg-stone-50" data-testid="home-page">
