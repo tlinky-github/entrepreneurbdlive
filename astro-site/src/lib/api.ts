@@ -487,6 +487,170 @@ export const resourceAPI = {
   }
 };
 
+const getCollectionName = (typeOrData?: any, optionalType?: string) => {
+  const rawType = (typeof typeOrData === 'string' ? typeOrData : (typeOrData?.type || optionalType || 'posts')).toLowerCase();
+  const map: Record<string, string> = {
+    blog: 'posts',
+    posts: 'posts',
+    entrepreneurs: 'profiles',
+    profiles: 'profiles',
+    directory: 'listings',
+    listings: 'listings',
+    knowledge: 'knowledge',
+    resources: 'resources',
+    guides: 'guides',
+    faqs: 'faq_categories',
+    faq_categories: 'faq_categories',
+    glossary: 'glossary'
+  };
+  return map[rawType] || rawType;
+};
+
+export const contentAPI = {
+  list: async (type: string = 'posts') => {
+    try {
+      const colName = getCollectionName(type);
+      const snapshot = await getDocs(collection(db, colName));
+      return { data: snapshot.docs.map(docToData) };
+    } catch (error) {
+      console.error(`contentAPI list(${type}) error:`, error);
+      return { data: [] };
+    }
+  },
+
+  get: async (arg1: any, arg2?: any) => {
+    try {
+      let colName = 'posts';
+      let idOrSlug = '';
+
+      if (typeof arg1 === 'string' && typeof arg2 === 'string') {
+        colName = getCollectionName(arg1);
+        idOrSlug = arg2;
+      } else if (typeof arg1 === 'string') {
+        idOrSlug = arg1;
+      }
+
+      if (!idOrSlug) return { data: null };
+
+      try {
+        const docSnap = await getDoc(doc(db, colName, idOrSlug));
+        if (docSnap.exists()) {
+          return { data: docToData(docSnap) };
+        }
+      } catch (e) {}
+
+      const q = query(collection(db, colName), where('slug', '==', idOrSlug), fsLimit(1));
+      const snapshot = await getDocs(q);
+      if (!snapshot.empty) {
+        return { data: docToData(snapshot.docs[0]) };
+      }
+
+      return { data: null };
+    } catch (error) {
+      console.error(`contentAPI get error:`, error);
+      return { data: null };
+    }
+  },
+
+  create: async (arg1: any, arg2?: any) => {
+    try {
+      let type = 'posts';
+      let data: any = {};
+
+      if (typeof arg1 === 'string') {
+        type = arg1;
+        data = arg2 || {};
+      } else {
+        data = arg1 || {};
+        type = data.type || 'posts';
+      }
+
+      const colName = getCollectionName(type, data.type);
+      const cleanData = { ...data };
+      delete cleanData.id;
+
+      const docRef = await addDoc(collection(db, colName), {
+        ...cleanData,
+        created_at: serverTimestamp(),
+        updated_at: serverTimestamp()
+      });
+
+      return { id: docRef.id, ...cleanData };
+    } catch (error) {
+      console.error(`contentAPI create error:`, error);
+      throw error;
+    }
+  },
+
+  update: async (arg1: any, arg2?: any, arg3?: any) => {
+    try {
+      let type = 'posts';
+      let id = '';
+      let data: any = {};
+
+      if (typeof arg1 === 'string' && typeof arg2 === 'string' && arg3) {
+        type = arg1;
+        id = arg2;
+        data = arg3;
+      } else if (typeof arg1 === 'string' && arg2) {
+        id = arg1;
+        data = arg2;
+        type = data.type || 'posts';
+      }
+
+      const colName = getCollectionName(type, data.type);
+      const cleanData = { ...data };
+      delete cleanData.id;
+
+      await updateDoc(doc(db, colName, id), {
+        ...cleanData,
+        updated_at: serverTimestamp()
+      });
+
+      return { id, ...cleanData };
+    } catch (error) {
+      console.error(`contentAPI update error:`, error);
+      throw error;
+    }
+  },
+
+  delete: async (arg1: any, arg2?: any) => {
+    try {
+      let type = 'posts';
+      let id = '';
+
+      if (typeof arg1 === 'string' && typeof arg2 === 'string') {
+        type = arg1;
+        id = arg2;
+      } else if (typeof arg1 === 'string') {
+        id = arg1;
+      }
+
+      const colName = getCollectionName(type);
+      await deleteDoc(doc(db, colName, id));
+      return { success: true };
+    } catch (error) {
+      console.error(`contentAPI delete error:`, error);
+      throw error;
+    }
+  },
+
+  bulkUpdate: async (type: string, ids: string[], fields: Record<string, any>) => {
+    try {
+      const colName = getCollectionName(type);
+      await Promise.all(
+        ids.map(id =>
+          updateDoc(doc(db, colName, id), { ...fields, updated_at: serverTimestamp() })
+        )
+      );
+      return { success: true };
+    } catch (error) {
+      console.error(`contentAPI bulkUpdate error:`, error);
+      throw error;
+    }
+  }
+};
+
 export const faqCategoriesAPI = {
   list: async () => {
     try {
@@ -496,6 +660,31 @@ export const faqCategoriesAPI = {
       console.error('FAQ categories list error:', error);
       return { data: [] };
     }
+  },
+  get: async (id: string) => {
+    const docSnap = await getDoc(doc(db, 'faq_categories', id));
+    return { data: docToData(docSnap) };
+  },
+  create: async (data: any) => {
+    const docRef = await addDoc(collection(db, 'faq_categories'), {
+      ...data,
+      created_at: serverTimestamp(),
+      updated_at: serverTimestamp()
+    });
+    return { id: docRef.id, ...data };
+  },
+  update: async (id: string, data: any) => {
+    const cleanData = { ...data };
+    delete cleanData.id;
+    await updateDoc(doc(db, 'faq_categories', id), {
+      ...cleanData,
+      updated_at: serverTimestamp()
+    });
+    return { id, ...cleanData };
+  },
+  delete: async (id: string) => {
+    await deleteDoc(doc(db, 'faq_categories', id));
+    return { success: true };
   }
 };
 
@@ -508,6 +697,31 @@ export const guidesAPI = {
       console.error('Guides list error:', error);
       return { data: [] };
     }
+  },
+  get: async (id: string) => {
+    const docSnap = await getDoc(doc(db, 'guides', id));
+    return { data: docToData(docSnap) };
+  },
+  create: async (data: any) => {
+    const docRef = await addDoc(collection(db, 'guides'), {
+      ...data,
+      created_at: serverTimestamp(),
+      updated_at: serverTimestamp()
+    });
+    return { id: docRef.id, ...data };
+  },
+  update: async (id: string, data: any) => {
+    const cleanData = { ...data };
+    delete cleanData.id;
+    await updateDoc(doc(db, 'guides', id), {
+      ...cleanData,
+      updated_at: serverTimestamp()
+    });
+    return { id, ...cleanData };
+  },
+  delete: async (id: string) => {
+    await deleteDoc(doc(db, 'guides', id));
+    return { success: true };
   }
 };
 
@@ -520,6 +734,31 @@ export const glossaryAPI = {
       console.error('Glossary list error:', error);
       return { data: [] };
     }
+  },
+  get: async (id: string) => {
+    const docSnap = await getDoc(doc(db, 'glossary', id));
+    return { data: docToData(docSnap) };
+  },
+  create: async (data: any) => {
+    const docRef = await addDoc(collection(db, 'glossary'), {
+      ...data,
+      created_at: serverTimestamp(),
+      updated_at: serverTimestamp()
+    });
+    return { id: docRef.id, ...data };
+  },
+  update: async (id: string, data: any) => {
+    const cleanData = { ...data };
+    delete cleanData.id;
+    await updateDoc(doc(db, 'glossary', id), {
+      ...cleanData,
+      updated_at: serverTimestamp()
+    });
+    return { id, ...cleanData };
+  },
+  delete: async (id: string) => {
+    await deleteDoc(doc(db, 'glossary', id));
+    return { success: true };
   }
 };
 
@@ -1055,123 +1294,6 @@ export const interactionAPI = {
     if (!user) return { data: { following: false } };
     const snap = await getDoc(doc(db, 'followers', `${user.uid}_${profileId}`));
     return { data: { following: snap.exists() } };
-  }
-};
-
-export const contentAPI = {
-  list: async (type: string) => {
-    const collectionMap: any = {
-      blog: 'posts',
-      entrepreneurs: 'profiles',
-      directory: 'listings',
-      knowledge: 'resources'
-    };
-    const colName = collectionMap[type] || type;
-    const snapshot = await getDocs(collection(db, colName));
-    return { data: snapshot.docs.map(docToData) };
-  },
-  get: async (type: string, id: string) => {
-    const collectionMap: any = {
-      blog: 'posts',
-      entrepreneurs: 'profiles',
-      directory: 'listings',
-      knowledge: 'resources'
-    };
-    const colName = collectionMap[type] || type;
-    let docRef = doc(db, colName, id);
-    let docSnap = await getDoc(docRef);
-    
-    // Fallback for legacy AI posts
-    if (!docSnap.exists() && (type === 'blog' || type === 'knowledge')) {
-      const aiRef = doc(db, 'ai_posts', id);
-      const aiSnap = await getDoc(aiRef);
-      if (aiSnap.exists()) {
-        docSnap = aiSnap;
-        docRef = aiRef;
-      }
-    }
-
-    if (docSnap.exists()) {
-      // Update view count
-      await updateDoc(docRef, {
-        view_count: increment(1)
-      }).catch(err => console.warn('Failed to increment view count:', err));
-    }
-    
-    return { data: docToData(docSnap) };
-  },
-  create: async (payload: any) => {
-    const { type, ...data } = payload;
-    const collectionMap: any = {
-      blog: 'posts',
-      entrepreneurs: 'profiles',
-      directory: 'listings',
-      knowledge: 'resources'
-    };
-    const colName = collectionMap[type] || type;
-    const res = await addDoc(collection(db, colName), {
-      ...data,
-      authorId: data.authorId || null,
-      faqs: data.faqs || [],
-      created_at: serverTimestamp()
-    });
-    return { id: res.id, ...data };
-  },
-  update: async (id: string, payload: any) => {
-    const { type, ...data } = payload;
-    const collectionMap: any = {
-      blog: 'posts',
-      entrepreneurs: 'profiles',
-      directory: 'listings',
-      knowledge: 'resources'
-    };
-    const colName = collectionMap[type] || type;
-    const ref = doc(db, colName, id);
-    
-    // Check if we are migrating from ai_posts
-    const aiRef = doc(db, 'ai_posts', id);
-    const aiSnap = await getDoc(aiRef);
-    
-    // Use setDoc with merge: true to allow "Migration on Save"
-    await setDoc(ref, { 
-      ...data, 
-      authorId: data.authorId || null,
-      faqs: data.faqs || [],
-      updated_at: serverTimestamp() 
-    }, { merge: true });
-
-    // Clean up legacy if migrated
-    if (aiSnap.exists() && colName !== 'ai_posts') {
-      await deleteDoc(aiRef).catch(err => console.warn('Cleanup of ai_posts failed:', err));
-    }
-
-    return { id, ...data };
-  },
-  delete: async (type: string, id: string) => {
-    const collectionMap: any = {
-      blog: 'posts',
-      entrepreneurs: 'profiles',
-      directory: 'listings',
-      knowledge: 'resources'
-    };
-    const colName = collectionMap[type] || type;
-    await deleteDoc(doc(db, colName, id));
-    return { success: true };
-  },
-  bulkUpdate: async (type: string, ids: string[], fields: Record<string, any>) => {
-    const collectionMap: any = {
-      blog: 'posts',
-      entrepreneurs: 'profiles',
-      directory: 'listings',
-      knowledge: 'resources'
-    };
-    const colName = collectionMap[type] || type;
-    await Promise.all(
-      ids.map(id =>
-        updateDoc(doc(db, colName, id), { ...fields, updated_at: serverTimestamp() })
-      )
-    );
-    return { success: true };
   }
 };
 

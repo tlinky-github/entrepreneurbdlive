@@ -63,6 +63,12 @@ service cloud.firestore {
       allow update: if isAdmin();
     }
 
+    match /knowledge/{article} {
+      allow read: if true;
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin();
+    }
+
     match /code_snippets/{snippet} {
       allow read: if true;
       allow create, delete: if isAdmin();

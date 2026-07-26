@@ -358,62 +358,229 @@ export const contentAPI = {
     
     return { data: docToData(docSnap) };
   },
-  create: async (payload) => {
-    const { type, ...data } = payload;
+  list: async (type = 'posts') => {
+    try {
+      const collectionMap = {
+        blog: 'posts',
+        entrepreneurs: 'profiles',
+        directory: 'listings',
+        knowledge: 'knowledge',
+        guides: 'guides',
+        faqs: 'faq_categories',
+        glossary: 'glossary'
+      };
+      const colName = collectionMap[type] || type;
+      const snapshot = await getDocs(collection(db, colName));
+      return { data: snapshot.docs.map(docToData) };
+    } catch (error) {
+      console.error(`contentAPI list error:`, error);
+      return { data: [] };
+    }
+  },
+  create: async (arg1, arg2) => {
+    let type = 'posts';
+    let data = {};
+    if (typeof arg1 === 'string') {
+      type = arg1;
+      data = arg2 || {};
+    } else {
+      data = arg1 || {};
+      type = data.type || 'posts';
+    }
+
     const collectionMap = {
       blog: 'posts',
       entrepreneurs: 'profiles',
       directory: 'listings',
-      knowledge: 'resources'
+      knowledge: 'knowledge',
+      guides: 'guides',
+      faqs: 'faq_categories',
+      glossary: 'glossary'
     };
     const colName = collectionMap[type] || type;
+    const cleanData = { ...data };
+    delete cleanData.id;
+
     const res = await addDoc(collection(db, colName), {
-      ...data,
-      authorId: data.authorId || null,
-      faqs: data.faqs || [],
-      created_at: serverTimestamp()
+      ...cleanData,
+      authorId: cleanData.authorId || null,
+      faqs: cleanData.faqs || [],
+      created_at: serverTimestamp(),
+      updated_at: serverTimestamp()
     });
-    return { id: res.id, ...data };
+    return { id: res.id, ...cleanData };
   },
-  update: async (id, payload) => {
-    const { type, ...data } = payload;
+  update: async (arg1, arg2, arg3) => {
+    let type = 'posts';
+    let id = '';
+    let data = {};
+
+    if (typeof arg1 === 'string' && typeof arg2 === 'string' && arg3) {
+      type = arg1;
+      id = arg2;
+      data = arg3;
+    } else if (typeof arg1 === 'string' && arg2) {
+      id = arg1;
+      data = arg2;
+      type = data.type || 'posts';
+    }
+
     const collectionMap = {
       blog: 'posts',
       entrepreneurs: 'profiles',
       directory: 'listings',
-      knowledge: 'resources'
+      knowledge: 'knowledge',
+      guides: 'guides',
+      faqs: 'faq_categories',
+      glossary: 'glossary'
     };
     const colName = collectionMap[type] || type;
     const ref = doc(db, colName, id);
+    const cleanData = { ...data };
+    delete cleanData.id;
     
-    // Check if we are migrating from ai_posts
-    const aiRef = doc(db, 'ai_posts', id);
-    const aiSnap = await getDoc(aiRef);
-    
-    // Use setDoc with merge: true to allow "Migration on Save"
     await setDoc(ref, { 
-      ...data, 
-      authorId: data.authorId || null,
-      faqs: data.faqs || [],
+      ...cleanData, 
+      authorId: cleanData.authorId || null,
+      faqs: cleanData.faqs || [],
       updated_at: serverTimestamp() 
     }, { merge: true });
 
-    // Clean up legacy if migrated
-    if (aiSnap.exists() && colName !== 'ai_posts') {
-      await deleteDoc(aiRef).catch(err => console.warn('Cleanup of ai_posts failed:', err));
+    return { id, ...cleanData };
+  },
+  delete: async (arg1, arg2) => {
+    let type = 'posts';
+    let id = '';
+
+    if (typeof arg1 === 'string' && typeof arg2 === 'string') {
+      type = arg1;
+      id = arg2;
+    } else if (typeof arg1 === 'string') {
+      id = arg1;
     }
 
-    return { id, ...data };
-  },
-  delete: async (type, id) => {
     const collectionMap = {
       blog: 'posts',
       entrepreneurs: 'profiles',
       directory: 'listings',
-      knowledge: 'resources'
+      knowledge: 'knowledge',
+      guides: 'guides',
+      faqs: 'faq_categories',
+      glossary: 'glossary'
     };
     const colName = collectionMap[type] || type;
     await deleteDoc(doc(db, colName, id));
+    return { success: true };
+  }
+};
+
+export const faqCategoriesAPI = {
+  list: async () => {
+    try {
+      const snapshot = await getDocs(collection(db, 'faq_categories'));
+      return { data: snapshot.docs.map(docToData) };
+    } catch (error) {
+      console.error('FAQ categories list error:', error);
+      return { data: [] };
+    }
+  },
+  get: async (id) => {
+    const docSnap = await getDoc(doc(db, 'faq_categories', id));
+    return { data: docToData(docSnap) };
+  },
+  create: async (data) => {
+    const docRef = await addDoc(collection(db, 'faq_categories'), {
+      ...data,
+      created_at: serverTimestamp(),
+      updated_at: serverTimestamp()
+    });
+    return { id: docRef.id, ...data };
+  },
+  update: async (id, data) => {
+    const cleanData = { ...data };
+    delete cleanData.id;
+    await updateDoc(doc(db, 'faq_categories', id), {
+      ...cleanData,
+      updated_at: serverTimestamp()
+    });
+    return { id, ...cleanData };
+  },
+  delete: async (id) => {
+    await deleteDoc(doc(db, 'faq_categories', id));
+    return { success: true };
+  }
+};
+
+export const guidesAPI = {
+  list: async () => {
+    try {
+      const snapshot = await getDocs(collection(db, 'guides'));
+      return { data: snapshot.docs.map(docToData) };
+    } catch (error) {
+      console.error('Guides list error:', error);
+      return { data: [] };
+    }
+  },
+  get: async (id) => {
+    const docSnap = await getDoc(doc(db, 'guides', id));
+    return { data: docToData(docSnap) };
+  },
+  create: async (data) => {
+    const docRef = await addDoc(collection(db, 'guides'), {
+      ...data,
+      created_at: serverTimestamp(),
+      updated_at: serverTimestamp()
+    });
+    return { id: docRef.id, ...data };
+  },
+  update: async (id, data) => {
+    const cleanData = { ...data };
+    delete cleanData.id;
+    await updateDoc(doc(db, 'guides', id), {
+      ...cleanData,
+      updated_at: serverTimestamp()
+    });
+    return { id, ...cleanData };
+  },
+  delete: async (id) => {
+    await deleteDoc(doc(db, 'guides', id));
+    return { success: true };
+  }
+};
+
+export const glossaryAPI = {
+  list: async () => {
+    try {
+      const snapshot = await getDocs(collection(db, 'glossary'));
+      return { data: snapshot.docs.map(docToData) };
+    } catch (error) {
+      console.error('Glossary list error:', error);
+      return { data: [] };
+    }
+  },
+  get: async (id) => {
+    const docSnap = await getDoc(doc(db, 'glossary', id));
+    return { data: docToData(docSnap) };
+  },
+  create: async (data) => {
+    const docRef = await addDoc(collection(db, 'glossary'), {
+      ...data,
+      created_at: serverTimestamp(),
+      updated_at: serverTimestamp()
+    });
+    return { id: docRef.id, ...data };
+  },
+  update: async (id, data) => {
+    const cleanData = { ...data };
+    delete cleanData.id;
+    await updateDoc(doc(db, 'glossary', id), {
+      ...cleanData,
+      updated_at: serverTimestamp()
+    });
+    return { id, ...cleanData };
+  },
+  delete: async (id) => {
+    await deleteDoc(doc(db, 'glossary', id));
     return { success: true };
   }
 };
