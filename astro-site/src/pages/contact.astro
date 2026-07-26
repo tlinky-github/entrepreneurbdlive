@@ -1,8 +1,14 @@
 ---
 import PublicLayout from '../layouts/PublicLayout.astro';
 import ContactPage from '../components/ContactPage.jsx';
+import { getSiteSettings } from '../lib/serverApi';
+
+let initialSiteSettings = null;
+try {
+  initialSiteSettings = await getSiteSettings();
+} catch (e) {}
 ---
 
 <PublicLayout title="Contact Us | Entrepreneurs BD">
-  <ContactPage client:load />
+  <ContactPage initialSiteSettings={initialSiteSettings} client:load />
 </PublicLayout>

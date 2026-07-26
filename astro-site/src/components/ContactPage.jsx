@@ -1,5 +1,5 @@
 import React from 'react';
-import { Mail, MapPin, Linkedin, Facebook, Send, MessageSquare } from 'lucide-react';
+import { Mail, MapPin, Linkedin, Facebook, Send, MessageSquare, Phone, Twitter, Youtube } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Input } from '../components/ui/input';
@@ -7,9 +7,10 @@ import { Textarea } from '../components/ui/textarea';
 import { Label } from '../components/ui/label';
 import { siteConfig } from '../data/mock';
 import { toast } from 'sonner';
-import { contactAPI } from '../lib/api';
+import { contactAPI, settingsAPI } from '../lib/api';
 
-const ContactPage = () => {
+const ContactPage = ({ initialSiteSettings }) => {
+  const [siteSettings, setSiteSettings] = React.useState(initialSiteSettings || null);
   const [formData, setFormData] = React.useState({
     name: '',
     email: '',
@@ -17,6 +18,24 @@ const ContactPage = () => {
     message: ''
   });
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!initialSiteSettings) {
+      settingsAPI.get().then(res => {
+        if (res?.data) setSiteSettings(res.data);
+      }).catch(err => console.error('Failed to load site settings:', err));
+    }
+  }, [initialSiteSettings]);
+
+  const email = siteSettings?.contact_email || siteConfig.contact.email || 'hello@entrepreneurs.bd';
+  const phone = siteSettings?.contact_phone;
+  const address = siteSettings?.address || siteConfig.contact.location || 'Dhaka, Bangladesh';
+  const siteName = siteSettings?.site_name || 'entrepreneurs.bd';
+
+  const linkedin = siteSettings?.linkedin || siteConfig.founder.linkedin;
+  const facebook = siteSettings?.facebook || siteConfig.founder.facebook;
+  const twitter = siteSettings?.twitter;
+  const youtube = siteSettings?.youtube;
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -68,66 +87,115 @@ const ContactPage = () => {
               <Card className="border-stone-200 shadow-sm">
                 <CardHeader>
                   <CardTitle className="text-lg text-stone-900">Contact Information</CardTitle>
-                  <CardDescription>Ways to reach entrepreneurs.bd</CardDescription>
+                  <CardDescription>Ways to reach {siteName}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="flex items-start gap-4">
-                    <div className="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center flex-shrink-0">
-                      <Mail className="w-5 h-5 text-emerald-900" />
+                  {email && (
+                    <div className="flex items-start gap-4">
+                      <div className="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center flex-shrink-0">
+                        <Mail className="w-5 h-5 text-emerald-900" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-stone-900">Email</p>
+                        <a
+                          href={`mailto:${email}`}
+                          className="text-sm text-stone-600 hover:text-emerald-900 transition-colors"
+                        >
+                          {email}
+                        </a>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm font-medium text-stone-900">Email</p>
-                      <a
-                        href={`mailto:${siteConfig.contact.email}`}
-                        className="text-sm text-stone-600 hover:text-emerald-900 transition-colors"
-                      >
-                        {siteConfig.contact.email}
-                      </a>
-                    </div>
-                  </div>
+                  )}
 
-                  <div className="flex items-start gap-4">
-                    <div className="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center flex-shrink-0">
-                      <MapPin className="w-5 h-5 text-emerald-900" />
+                  {phone && (
+                    <div className="flex items-start gap-4">
+                      <div className="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center flex-shrink-0">
+                        <Phone className="w-5 h-5 text-emerald-900" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-stone-900">Phone</p>
+                        <a
+                          href={`tel:${phone}`}
+                          className="text-sm text-stone-600 hover:text-emerald-900 transition-colors"
+                        >
+                          {phone}
+                        </a>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm font-medium text-stone-900">Location</p>
-                      <p className="text-sm text-stone-600">
-                        {siteConfig.contact.location}
-                      </p>
+                  )}
+
+                  {address && (
+                    <div className="flex items-start gap-4">
+                      <div className="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center flex-shrink-0">
+                        <MapPin className="w-5 h-5 text-emerald-900" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-stone-900">Location</p>
+                        <p className="text-sm text-stone-600">
+                          {address}
+                        </p>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </CardContent>
               </Card>
 
-              <Card className="border-stone-200 shadow-sm">
-                <CardHeader>
-                  <CardTitle className="text-lg text-stone-900">Connect Online</CardTitle>
-                  <CardDescription>Follow the founder on social media</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex gap-3">
-                    <a
-                      href={siteConfig.founder.linkedin}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 px-4 py-2 rounded-lg bg-stone-50 hover:bg-emerald-50 text-stone-600 hover:text-emerald-900 transition-colors"
-                    >
-                      <Linkedin className="w-4 h-4" />
-                      <span className="text-sm font-medium">LinkedIn</span>
-                    </a>
-                    <a
-                      href={siteConfig.founder.facebook}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 px-4 py-2 rounded-lg bg-stone-50 hover:bg-emerald-50 text-stone-600 hover:text-emerald-900 transition-colors"
-                    >
-                      <Facebook className="w-4 h-4" />
-                      <span className="text-sm font-medium">Facebook</span>
-                    </a>
-                  </div>
-                </CardContent>
-              </Card>
+              {(linkedin || facebook || twitter || youtube) && (
+                <Card className="border-stone-200 shadow-sm">
+                  <CardHeader>
+                    <CardTitle className="text-lg text-stone-900">Connect Online</CardTitle>
+                    <CardDescription>Follow us on social media</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-wrap gap-3">
+                      {linkedin && (
+                        <a
+                          href={linkedin}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-stone-50 hover:bg-emerald-50 text-stone-600 hover:text-emerald-900 transition-colors"
+                        >
+                          <Linkedin className="w-4 h-4" />
+                          <span className="text-sm font-medium">LinkedIn</span>
+                        </a>
+                      )}
+                      {facebook && (
+                        <a
+                          href={facebook}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-stone-50 hover:bg-emerald-50 text-stone-600 hover:text-emerald-900 transition-colors"
+                        >
+                          <Facebook className="w-4 h-4" />
+                          <span className="text-sm font-medium">Facebook</span>
+                        </a>
+                      )}
+                      {twitter && (
+                        <a
+                          href={twitter}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-stone-50 hover:bg-emerald-50 text-stone-600 hover:text-emerald-900 transition-colors"
+                        >
+                          <Twitter className="w-4 h-4" />
+                          <span className="text-sm font-medium">Twitter</span>
+                        </a>
+                      )}
+                      {youtube && (
+                        <a
+                          href={youtube}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-stone-50 hover:bg-emerald-50 text-stone-600 hover:text-emerald-900 transition-colors"
+                        >
+                          <Youtube className="w-4 h-4" />
+                          <span className="text-sm font-medium">YouTube</span>
+                        </a>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
 
               <Card className="border-emerald-100 bg-emerald-50/50">
                 <CardHeader>
