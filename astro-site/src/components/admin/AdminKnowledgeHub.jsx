@@ -553,28 +553,37 @@ const FAQsTab = () => {
   const [loading, setLoading] = useState(true);
   const [editId, setEditId] = useState(null);
   const [deleteId, setDeleteId] = useState(null);
-  const [form, setForm] = useState({ name: '', icon: '❓', questions: [{ q: '', a: '' }], status: 'published' });
+  const [form, setForm] = useState({ name: '', icon: '❓', order: 1, questions: [{ q: '', a: '' }], status: 'published' });
   const [saving, setSaving] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
       const res = await faqCategoriesAPI.list();
-      setCategories(res.data || []);
+      const items = (res.data || []).map((cat, idx) => ({
+        ...cat,
+        order: Number(cat.order ?? cat.position ?? (idx + 1))
+      }));
+      items.sort((a, b) => a.order - b.order);
+      setCategories(items);
     } catch (err) { console.error('FAQs error:', err); }
     finally { setLoading(false); }
   }, []);
 
   useEffect(() => { load(); }, [load]);
 
-  const resetForm = () => { setForm({ name: '', icon: '❓', questions: [{ q: '', a: '' }], status: 'published' }); setEditId(null); };
+  const resetForm = () => { setForm({ name: '', icon: '❓', order: categories.length + 1, questions: [{ q: '', a: '' }], status: 'published' }); setEditId(null); };
 
   const handleSave = async () => {
     if (!form.name.trim()) { toast.error('Category name required'); return; }
     setSaving(true);
     try {
-      if (editId) { await faqCategoriesAPI.update(editId, form); toast.success('FAQ category updated'); }
-      else { await faqCategoriesAPI.create(form); toast.success('FAQ category created'); }
+      const payload = {
+        ...form,
+        order: Number(form.order || (editId ? 1 : categories.length + 1))
+      };
+      if (editId) { await faqCategoriesAPI.update(editId, payload); toast.success('FAQ category updated'); }
+      else { await faqCategoriesAPI.create(payload); toast.success('FAQ category created'); }
       resetForm(); load();
     } catch (err) { toast.error('Failed to save'); }
     finally { setSaving(false); }
@@ -582,9 +591,37 @@ const FAQsTab = () => {
 
   const handleDelete = async () => {
     if (!deleteId) return;
-    try { await faqCategoriesAPI.delete(deleteId); toast.success('Deleted'); if (refreshStats) refreshStats(); load(); }
+    try { await faqCategoriesAPI.delete(deleteId); toast.success('Deleted'); load(); }
     catch (err) { toast.error('Failed to delete'); }
     finally { setDeleteId(null); }
+  };
+
+  const moveCategory = async (index, direction) => {
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= categories.length) return;
+
+    const cat1 = categories[index];
+    const cat2 = categories[targetIndex];
+    const order1 = Number(cat1.order || (index + 1));
+    const order2 = Number(cat2.order || (targetIndex + 1));
+
+    try {
+      await faqCategoriesAPI.update(cat1.id, { order: order2 });
+      await faqCategoriesAPI.update(cat2.id, { order: order1 });
+      toast.success('Position updated');
+      load();
+    } catch (err) {
+      toast.error('Failed to update position');
+    }
+  };
+
+  const moveQuestion = (index, direction) => {
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= form.questions.length) return;
+    const newQs = [...form.questions];
+    const [moved] = newQs.splice(index, 1);
+    newQs.splice(targetIndex, 0, moved);
+    setForm(f => ({ ...f, questions: newQs }));
   };
 
   return (
@@ -592,33 +629,48 @@ const FAQsTab = () => {
       <Card className="mb-6">
         <CardHeader><CardTitle className="text-sm">{editId ? 'Edit FAQ Category' : 'Add FAQ Category'}</CardTitle></CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+            <div className="sm:col-span-2">
               <label className="text-sm font-semibold text-stone-500">Category Name</label>
               <Input value={form.name} onChange={(e) => setForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Getting Started" />
             </div>
             <div>
               <label className="text-sm font-semibold text-stone-500">Icon (emoji)</label>
-              <Input value={form.icon} onChange={(e) => setForm(f => ({ ...f, icon: e.target.value }))} placeholder="❓" className="w-20" />
+              <Input value={form.icon} onChange={(e) => setForm(f => ({ ...f, icon: e.target.value }))} placeholder="❓" className="w-full" />
+            </div>
+            <div>
+              <label className="text-sm font-semibold text-stone-500">Position / Order</label>
+              <Input type="number" min="1" value={form.order || 1} onChange={(e) => setForm(f => ({ ...f, order: parseInt(e.target.value) || 1 }))} className="w-full" />
             </div>
           </div>
+
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-bold uppercase text-stone-500">Questions</label>
+              <label className="text-sm font-bold uppercase text-stone-500">Questions (In Order)</label>
               <Button size="sm" variant="outline" onClick={() => setForm(f => ({ ...f, questions: [...f.questions, { q: '', a: '' }] }))}>
                 <Plus className="w-3 h-3 mr-1" /> Add Q&A
               </Button>
             </div>
             {form.questions.map((qa, i) => (
-              <div key={i} className="mb-3 p-3 bg-stone-50 rounded-lg space-y-2">
+              <div key={i} className="mb-3 p-3 bg-stone-50 rounded-lg space-y-2 border border-stone-200">
                 <div className="flex gap-2 items-center">
-                  <span className="text-sm font-bold text-stone-400">Q{i + 1}</span>
+                  <span className="text-xs font-bold text-stone-400 min-w-[28px]">Q{i + 1}</span>
                   <Input value={qa.q} onChange={(e) => { const qs = [...form.questions]; qs[i].q = e.target.value; setForm(f => ({ ...f, questions: qs })); }} placeholder="Question" className="flex-1" />
+                  
+                  <div className="flex items-center gap-0.5">
+                    <Button size="sm" type="button" variant="ghost" disabled={i === 0} onClick={() => moveQuestion(i, -1)} className="h-7 w-7 p-0">
+                      <ChevronUp className="w-3.5 h-3.5" />
+                    </Button>
+                    <Button size="sm" type="button" variant="ghost" disabled={i === form.questions.length - 1} onClick={() => moveQuestion(i, 1)} className="h-7 w-7 p-0">
+                      <ChevronDown className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+
                   {form.questions.length > 1 && (
-                    <Button size="sm" variant="ghost" onClick={() => setForm(f => ({ ...f, questions: f.questions.filter((_, idx) => idx !== i) }))} className="text-red-500"><X className="w-3 h-3" /></Button>
+                    <Button size="sm" type="button" variant="ghost" onClick={() => setForm(f => ({ ...f, questions: f.questions.filter((_, idx) => idx !== i) }))} className="text-red-500 h-7 w-7 p-0"><X className="w-3.5 h-3.5" /></Button>
                   )}
                 </div>
-                <textarea value={qa.a} onChange={(e) => { const qs = [...form.questions]; qs[i].a = e.target.value; setForm(f => ({ ...f, questions: qs })); }} placeholder="Answer" className="w-full p-2 border rounded text-sm" rows={2} />
+                <textarea value={qa.a} onChange={(e) => { const qs = [...form.questions]; qs[i].a = e.target.value; setForm(f => ({ ...f, questions: qs })); }} placeholder="Answer" className="w-full p-2 border rounded text-sm bg-white" rows={2} />
               </div>
             ))}
           </div>
@@ -639,14 +691,27 @@ const FAQsTab = () => {
             <p className="text-center text-stone-500 py-8">No FAQ categories yet</p>
           ) : (
             <div className="space-y-2">
-              {categories.map(cat => (
-                <div key={cat.id} className="flex items-center justify-between p-3 bg-stone-50 rounded-lg">
-                  <div>
-                    <p className="font-medium">{cat.icon} {cat.name}</p>
-                    <p className="text-sm text-stone-500">{cat.questions?.length || 0} questions</p>
+              {categories.map((cat, idx) => (
+                <div key={cat.id} className="flex items-center justify-between p-3 bg-stone-50 rounded-lg border border-stone-100 hover:border-stone-300 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs font-bold font-mono bg-emerald-100 text-emerald-900 px-2 py-0.5 rounded-full">
+                      #{cat.order || (idx + 1)}
+                    </span>
+                    <div>
+                      <p className="font-medium text-stone-900">{cat.icon} {cat.name}</p>
+                      <p className="text-xs text-stone-500">{cat.questions?.length || 0} questions</p>
+                    </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline" onClick={() => { setEditId(cat.id); setForm(cat); }}><Edit2 className="w-3 h-3" /></Button>
+                  <div className="flex items-center gap-1.5">
+                    <div className="flex items-center mr-2 bg-white rounded border border-stone-200">
+                      <Button size="sm" type="button" variant="ghost" disabled={idx === 0} onClick={() => moveCategory(idx, -1)} className="h-7 w-7 p-0" title="Move Up">
+                        <ChevronUp className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button size="sm" type="button" variant="ghost" disabled={idx === categories.length - 1} onClick={() => moveCategory(idx, 1)} className="h-7 w-7 p-0" title="Move Down">
+                        <ChevronDown className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                    <Button size="sm" variant="outline" onClick={() => { setEditId(cat.id); setForm({ ...cat, order: cat.order || (idx + 1) }); }}><Edit2 className="w-3 h-3" /></Button>
                     <Button size="sm" variant="ghost" className="text-red-500" onClick={() => setDeleteId(cat.id)}><Trash2 className="w-3 h-3" /></Button>
                   </div>
                 </div>

@@ -6,11 +6,14 @@ import { getPublishedDocs } from '../../lib/serverApi';
 let initialFaqs: any[] = [];
 try {
   const raw = await getPublishedDocs('faq_categories', 500);
-  initialFaqs = (raw || []).map((f: any) => ({
+  const published = (raw || []).map((f: any, idx: number) => ({
     category: f.name,
     icon: f.icon || '❓',
+    order: Number(f.order ?? f.position ?? (idx + 1)),
     questions: f.questions || []
   }));
+  published.sort((a: any, b: any) => a.order - b.order);
+  initialFaqs = published;
 } catch (e) {
   console.error('[FAQs Page] Server fetch failed:', e);
 }

@@ -14,11 +14,13 @@ const FAQsPage = ({ initialFaqs = [] }) => {
       try {
         const res = await faqCategoriesAPI.list();
         const published = (res.data || []).filter(f => f.status === 'published');
-        const mapped = published.map(f => ({
+        const mapped = published.map((f, idx) => ({
           category: f.name,
           icon: f.icon || '❓',
+          order: Number(f.order ?? f.position ?? (idx + 1)),
           questions: f.questions || []
         }));
+        mapped.sort((a, b) => a.order - b.order);
         if (mapped.length > 0 || !initialFaqs || initialFaqs.length === 0) {
           setFirestoreFaqs(mapped);
         }
