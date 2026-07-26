@@ -1,4 +1,4 @@
-import { defineConfig, passthroughImageService } from 'astro/config';
+import { defineConfig } from 'astro/config';
 import react from '@astrojs/react';
 import tailwind from '@astrojs/tailwind';
 import vercel from '@astrojs/vercel';
@@ -8,12 +8,15 @@ export default defineConfig({
   site: 'https://entrepreneurs.bd',
   output: 'server',
   adapter: vercel(),
-  image: {
-    service: passthroughImageService(),
-  },
   compressHTML: true,
   security: {
     checkOrigin: false,
+  },
+  server: {
+    host: true,
+  },
+  build: {
+    inlineStylesheets: 'never'
   },
   integrations: [
     react(),
@@ -26,10 +29,10 @@ export default defineConfig({
     envPrefix: ['PUBLIC_', 'REACT_APP_'],
     ssr: {
       noExternal: ['lucide-react', 'react-router-dom', 'react-router'],
-      external: ['sharp'],
+      external: ['sharp', 'firebase-admin', 'firebase-admin/firestore', 'firebase-admin/auth', '@aws-sdk/client-s3'],
     },
     optimizeDeps: {
-      exclude: ['sharp'],
+      exclude: ['sharp', 'firebase-admin', 'firebase-admin/firestore', 'firebase-admin/auth', '@aws-sdk/client-s3'],
     },
   },
 });
