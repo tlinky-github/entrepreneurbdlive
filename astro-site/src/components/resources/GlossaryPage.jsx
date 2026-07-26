@@ -58,14 +58,16 @@ const GlossaryPage = ({ initialTerms = [] }) => {
           <div className="max-w-3xl mx-auto text-center">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-stone-200 mb-6 shadow-sm">
               <Book className="w-4 h-4 text-emerald-900" />
-              <span className="text-sm font-medium text-emerald-900">Reference</span>
+              <span className="text-sm font-medium text-emerald-900">
+                {allTerms.length > 0 ? `${allTerms.length}+ Terms Reference` : 'Business Reference'}
+              </span>
             </div>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-stone-900 mb-6">
               Entrepreneurship Glossary
             </h1>
             <p className="text-lg text-stone-600 leading-relaxed mb-8 max-w-2xl mx-auto">
               Clear definitions of essential entrepreneurship and business terms.
-              Use this glossary as a reference while exploring our content.
+              Use this reference to explore {allTerms.length > 0 ? `${allTerms.length}+ curated terms` : 'our business terms'}.
             </p>
 
             {/* Search */}
@@ -73,7 +75,7 @@ const GlossaryPage = ({ initialTerms = [] }) => {
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-400" />
               <Input
                 type="text"
-                placeholder="Search terms..."
+                placeholder={allTerms.length > 0 ? `Search ${allTerms.length}+ terms...` : "Search terms..."}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-12 h-12 border-stone-200 focus:border-emerald-500 focus:ring-emerald-500 bg-white"
