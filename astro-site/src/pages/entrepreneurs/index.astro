@@ -1,11 +1,32 @@
 ---
 import PublicLayout from '../../layouts/PublicLayout.astro';
 import EntrepreneurList from '../../components/entrepreneurs/EntrepreneurList.jsx';
+import { getPublishedDocs, taxonomyAPI } from '../../lib/serverApi';
+
+let initialProfiles = [];
+let industries = [];
+let cities = [];
+
+try {
+  const [pDocs, indRes, cityRes] = await Promise.all([
+    getPublishedDocs('profiles', 50),
+    taxonomyAPI.getByCollection('industries'),
+    taxonomyAPI.getByCollection('cities')
+  ]);
+  initialProfiles = pDocs || [];
+  industries = (indRes || []).map((i) => i.name || i);
+  cities = (cityRes || []).map((c) => c.name || c);
+} catch (e) {}
 ---
 
 <PublicLayout
   title="Entrepreneurs | Entrepreneurs BD"
   description="Connect with Bangladesh's most innovative founders and business leaders. Find mentors, partners, and collaborators."
 >
-  <EntrepreneurList client:load />
+  <EntrepreneurList 
+    client:load 
+    initialProfiles={initialProfiles} 
+    initialIndustries={industries} 
+    initialCities={cities} 
+  />
 </PublicLayout>

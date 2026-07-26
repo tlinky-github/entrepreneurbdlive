@@ -16,6 +16,10 @@ export default defineConfig({
     service: passthroughImageService(),
   },
   compressHTML: true,
+  prefetch: {
+    prefetchAll: true,
+    defaultStrategy: 'hover'
+  },
   server: {
     host: true,
     port: 4323,

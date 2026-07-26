@@ -43,12 +43,12 @@ const useSearchParams = () => {
   return [searchParams, setSearchParams];
 };
 
-const EntrepreneurList = () => {
-  const [profiles, setProfiles] = useState([]);
-  const [industries, setIndustries] = useState([]);
-  const [cities, setCities] = useState([]);
+const EntrepreneurList = ({ initialProfiles = [], initialIndustries = [], initialCities = [] }) => {
+  const [profiles, setProfiles] = useState(initialProfiles);
+  const [industries, setIndustries] = useState(initialIndustries);
+  const [cities, setCities] = useState(initialCities);
   const [startupStages, setStartupStages] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(initialProfiles.length === 0);
   const [searchParams, setSearchParams] = useSearchParams();
 
   const search = searchParams.get('search') || '';

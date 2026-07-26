@@ -42,6 +42,22 @@ function getDb() {
   return getFirestore();
 }
 
+// In-Memory Server TTL Cache to reduce TTFB from ~350ms down to ~5ms
+const cacheMap = new Map<string, { data: any; expiry: number }>();
+const CACHE_TTL_MS = 60 * 1000; // 60 seconds
+
+function getCached<T>(key: string): T | null {
+  const item = cacheMap.get(key);
+  if (item && item.expiry > Date.now()) {
+    return item.data as T;
+  }
+  return null;
+}
+
+function setCached(key: string, data: any, ttlMs: number = CACHE_TTL_MS) {
+  cacheMap.set(key, { data, expiry: Date.now() + ttlMs });
+}
+
 /** Strip HTML tags */
 export function stripHtml(html: string): string {
   return (html || '').replace(/<[^>]*>/g, '').trim();
@@ -83,6 +99,9 @@ export async function getPublishedDocs(collectionName: string, limitCount = 100)
 
 /** Fetch featured documents */
 export async function getFeaturedDocs(collectionName: string, limitCount = 4) {
+  const cacheKey = `featured_${collectionName}_${limitCount}`;
+  const cached = getCached<any[]>(cacheKey);
+  if (cached) return cached;
   try {
     const db = getDb() as any;
     const snapshot = await db
@@ -91,7 +110,9 @@ export async function getFeaturedDocs(collectionName: string, limitCount = 4) {
       .where('is_featured', '==', true)
       .limit(limitCount)
       .get();
-    return dbSnapshotToList(snapshot);
+    const res = dbSnapshotToList(snapshot);
+    setCached(cacheKey, res);
+    return res;
   } catch (e: any) {
     console.error(`[serverApi] getFeaturedDocs(${collectionName}):`, e.message);
     return [];
@@ -100,6 +121,9 @@ export async function getFeaturedDocs(collectionName: string, limitCount = 4) {
 
 /** Fetch recent posts, ordered by created_at desc */
 export async function getRecentPosts(limitCount = 12) {
+  const cacheKey = `recent_posts_${limitCount}`;
+  const cached = getCached<any[]>(cacheKey);
+  if (cached) return cached;
   try {
     const db = getDb() as any;
     const snapshot = await db
@@ -108,9 +132,10 @@ export async function getRecentPosts(limitCount = 12) {
       .orderBy('created_at', 'desc')
       .limit(limitCount)
       .get();
-    return dbSnapshotToList(snapshot);
+    const res = dbSnapshotToList(snapshot);
+    setCached(cacheKey, res);
+    return res;
   } catch (e: any) {
-    // Fallback without orderBy if index missing
     try {
       const db2 = getDb() as any;
       const snapshot2 = await db2
@@ -124,7 +149,9 @@ export async function getRecentPosts(limitCount = 12) {
         const db3 = new Date(b.created_at || 0).getTime();
         return db3 - da;
       });
-      return results.slice(0, limitCount);
+      const finalRes = results.slice(0, limitCount);
+      setCached(cacheKey, finalRes);
+      return finalRes;
     } catch (e2: any) {
       console.error('[serverApi] getRecentPosts fallback failed:', e2.message);
       return [];
@@ -134,6 +161,9 @@ export async function getRecentPosts(limitCount = 12) {
 
 /** Homepage stats */
 export async function getPublicStats() {
+  const cacheKey = 'public_stats';
+  const cached = getCached<any>(cacheKey);
+  if (cached) return cached;
   try {
     const db = getDb() as any;
     const [postsSnap, profilesSnap, listingsSnap, resourcesSnap] = await Promise.all([
@@ -142,12 +172,14 @@ export async function getPublicStats() {
       db.collection('listings').where('status', '==', 'published').count().get(),
       db.collection('resources').where('status', '==', 'published').count().get(),
     ]);
-    return {
+    const res = {
       total_blog_posts: postsSnap.data().count,
       total_entrepreneurs: profilesSnap.data().count,
       total_listings: listingsSnap.data().count,
       total_resources: resourcesSnap.data().count,
     };
+    setCached(cacheKey, res);
+    return res;
   } catch (e: any) {
     console.error('[serverApi] getPublicStats:', e.message);
     return {};
@@ -284,11 +316,16 @@ export const taxonomyAPI = {
 
 /** Fetch site settings from Firestore (settings/global) */
 export async function getSiteSettings() {
+  const cacheKey = 'site_settings';
+  const cached = getCached<any>(cacheKey);
+  if (cached) return cached;
   try {
     const db = getDb() as any;
     const docRef = await db.collection('settings').doc('global').get();
     if (docRef.exists) {
-      return convertTimestamps(docRef.data());
+      const data = convertTimestamps(docRef.data());
+      setCached(cacheKey, data);
+      return data;
     }
     return null;
   } catch (error: any) {

@@ -49,11 +49,11 @@ const useSearchParams = () => {
   return [searchParams, setSearchParams];
 };
 
-const DirectoryList = () => {
-  const [listings, setListings] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [listingTypes, setListingTypes] = useState([]);
-  const [loading, setLoading] = useState(true);
+const DirectoryList = ({ initialListings = [], initialListingTypes = [], initialCategories = [] }) => {
+  const [listings, setListings] = useState(initialListings);
+  const [categories, setCategories] = useState(initialCategories);
+  const [listingTypes, setListingTypes] = useState(initialListingTypes);
+  const [loading, setLoading] = useState(initialListings.length === 0);
   const [searchParams, setSearchParams] = useSearchParams();
 
   const search = searchParams.get('search') || '';

@@ -1,11 +1,32 @@
 ---
 import PublicLayout from '../../layouts/PublicLayout.astro';
 import DirectoryList from '../../components/directory/DirectoryList.jsx';
+import { getPublishedDocs, taxonomyAPI } from '../../lib/serverApi';
+
+let initialListings = [];
+let listingTypes = [];
+let categories = [];
+
+try {
+  const [lDocs, typesRes, catRes] = await Promise.all([
+    getPublishedDocs('listings', 50),
+    taxonomyAPI.getByCollection('listing_types'),
+    taxonomyAPI.getByCollection('categories')
+  ]);
+  initialListings = lDocs || [];
+  listingTypes = typesRes || [];
+  categories = catRes || [];
+} catch (e) {}
 ---
 
 <PublicLayout
   title="Business Directory | Entrepreneurs BD"
   description="Discover the most ambitious businesses and entrepreneurs across Bangladesh. Connect, collaborate, and grow with our verified community."
 >
-  <DirectoryList client:load />
+  <DirectoryList 
+    client:load 
+    initialListings={initialListings} 
+    initialListingTypes={listingTypes} 
+    initialCategories={categories} 
+  />
 </PublicLayout>
