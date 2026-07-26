@@ -32,18 +32,20 @@ const navLinks = [
   },
 ];
 
-function HeaderContent({ currentPath = '/' }) {
+function HeaderContent({ currentPath = '/', initialSiteSettings = null }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [expandedMenu, setExpandedMenu] = useState(null);
   const [openDropdown, setOpenDropdown] = useState(null);
-  const [siteSettings, setSiteSettings] = useState(null);
+  const [siteSettings, setSiteSettings] = useState(initialSiteSettings);
   const { user, isAuthenticated, isAdmin, logout } = useAuth();
 
   useEffect(() => {
-    settingsAPI.get().then(res => {
-      if (res?.data) setSiteSettings(res.data);
-    }).catch(() => {});
-  }, []);
+    if (!initialSiteSettings) {
+      settingsAPI.get().then(res => {
+        if (res?.data) setSiteSettings(res.data);
+      }).catch(() => {});
+    }
+  }, [initialSiteSettings]);
 
   const isActive = (path) => currentPath.startsWith(path);
 
@@ -63,20 +65,27 @@ function HeaderContent({ currentPath = '/' }) {
           {/* Logo */}
           <a href="/" className="flex items-center gap-2 group">
             {siteSettings?.logo_url ? (
-              <img src={siteSettings.logo_url} alt={siteSettings.site_name || 'Logo'} className="h-9 object-contain" />
-            ) : (
+              <img src={siteSettings.logo_url} alt={siteSettings.site_name || 'Site Logo'} className="h-9 object-contain" />
+            ) : siteSettings?.site_name ? (
               <>
                 <div className="w-10 h-10 bg-emerald-900 rounded-lg flex items-center justify-center group-hover:bg-emerald-800 transition-colors">
                   <span className="text-white font-bold text-xl">
-                    {(siteSettings?.site_name || 'Entrepreneur BD').charAt(0).toLowerCase()}
+                    {siteSettings.site_name.charAt(0).toLowerCase()}
                   </span>
                 </div>
                 <div className="hidden sm:block">
                   <span className="font-bold text-lg text-stone-900">
-                    {siteSettings?.site_name || 'Entrepreneur BD'}
+                    {siteSettings.site_name}
                   </span>
                 </div>
               </>
+            ) : (
+              <div className="flex items-center gap-2">
+                <div className="w-10 h-10 bg-emerald-900/10 animate-pulse rounded-lg flex items-center justify-center">
+                  <span className="text-emerald-900 font-bold text-lg">e</span>
+                </div>
+                <div className="w-32 h-5 bg-stone-200 animate-pulse rounded hidden sm:block"></div>
+              </div>
             )}
           </a>
 

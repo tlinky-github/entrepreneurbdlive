@@ -2,6 +2,7 @@
 // Public page layout — wraps BaseLayout with the Header island
 import BaseLayout from './BaseLayout.astro';
 import Header from '../components/Header.jsx';
+import { getSiteSettings } from '../lib/serverApi';
 
 interface Props {
   title: string;
@@ -17,9 +18,14 @@ interface Props {
 
 const props = Astro.props;
 const currentPath = Astro.url.pathname;
+
+let initialSiteSettings = null;
+try {
+  initialSiteSettings = await getSiteSettings();
+} catch (e) {}
 ---
 
 <BaseLayout {...props}>
-  <Header slot="header" currentPath={currentPath} client:only="react" />
+  <Header slot="header" currentPath={currentPath} initialSiteSettings={initialSiteSettings} client:only="react" />
   <slot />
 </BaseLayout>
