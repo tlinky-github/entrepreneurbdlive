@@ -1163,11 +1163,47 @@ export const codeSnippetsAPI = {
   }
 };
 
+// --- Contact Messages API ---
+export const contactAPI = {
+  send: async (data) => {
+    const docRef = await addDoc(collection(db, 'contact_messages'), {
+      ...data,
+      status: 'unread',
+      created_at: serverTimestamp()
+    });
+    return { id: docRef.id, success: true };
+  },
+  list: async () => {
+    try {
+      const q = query(collection(db, 'contact_messages'), orderBy('created_at', 'desc'));
+      const snapshot = await getDocs(q);
+      return { data: snapshot.docs.map(d => ({ id: d.id, ...d.data() })) };
+    } catch (error) {
+      const snapshot = await getDocs(collection(db, 'contact_messages'));
+      const items = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      items.sort((a, b) => {
+        const da = a.created_at ? new Date(a.created_at).getTime() : 0;
+        const dbTime = b.created_at ? new Date(b.created_at).getTime() : 0;
+        return dbTime - da;
+      });
+      return { data: items };
+    }
+  },
+  updateStatus: async (id, status) => {
+    await updateDoc(doc(db, 'contact_messages', id), { status });
+    return { success: true };
+  },
+  delete: async (id) => {
+    await deleteDoc(doc(db, 'contact_messages', id));
+    return { success: true };
+  }
+};
+
 export default { 
   postAPI, profileAPI, listingAPI, contentAPI, interactionAPI, 
   adminAPI, publicAPI, commentAPI, resourceAPI, authAPI, categoryAPI, 
   blogCategoryAPI, industryAPI, cityAPI, taxonomyAPI, settingsAPI, authorAPI, mediaAPI,
-  guidesAPI, faqCategoriesAPI, glossaryAPI, codeSnippetsAPI
+  guidesAPI, faqCategoriesAPI, glossaryAPI, codeSnippetsAPI, contactAPI
 };
 // --- Redirects API ---
 export const redirectAPI = {

@@ -7,6 +7,7 @@ import { Textarea } from '../components/ui/textarea';
 import { Label } from '../components/ui/label';
 import { siteConfig } from '../data/mock';
 import { toast } from 'sonner';
+import { contactAPI } from '../lib/api';
 
 const ContactPage = () => {
   const [formData, setFormData] = React.useState({
@@ -26,15 +27,18 @@ const ContactPage = () => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    // Simulate form submission
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    toast.success('Message sent successfully!', {
-      description: 'We will get back to you as soon as possible.'
-    });
-
-    setFormData({ name: '', email: '', subject: '', message: '' });
-    setIsSubmitting(false);
+    try {
+      await contactAPI.send(formData);
+      toast.success('Message sent successfully!', {
+        description: 'We will get back to you as soon as possible.'
+      });
+      setFormData({ name: '', email: '', subject: '', message: '' });
+    } catch (error) {
+      console.error('Contact submission error:', error);
+      toast.error('Failed to send message. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (

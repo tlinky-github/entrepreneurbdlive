@@ -31,6 +31,7 @@ import {
   Inbox,
   ArrowRightLeft,
   Upload,
+  Mail,
 } from 'lucide-react';
 
 const AdminLayout = () => {
@@ -64,6 +65,7 @@ const AdminLayout = () => {
   const menuItems = [
     { href: '/admin/content-manager', label: 'Content Manager', icon: BookOpen },
     { href: '/admin/submissions', label: 'Submissions', icon: Inbox },
+    { href: '/admin/contact-messages', label: 'Contact Messages', icon: Mail },
     { href: '/admin/knowledge-hub', label: 'Knowledge Hub', icon: BookOpen },
     { href: '/admin/posts', label: 'Blog Posts', icon: FileText, addType: 'blog' },
     { href: '/admin/authors', label: 'Authors', icon: UserCircle },

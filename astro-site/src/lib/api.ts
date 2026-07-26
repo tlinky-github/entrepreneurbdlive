@@ -1445,6 +1445,42 @@ export const publicAPI = {
   }
 };
 
+// --- Contact Messages API ---
+export const contactAPI = {
+  send: async (data: { name: string; email: string; subject: string; message: string }) => {
+    const docRef = await addDoc(collection(db, 'contact_messages'), {
+      ...data,
+      status: 'unread',
+      created_at: serverTimestamp()
+    });
+    return { id: docRef.id, success: true };
+  },
+  list: async () => {
+    try {
+      const q = query(collection(db, 'contact_messages'), orderBy('created_at', 'desc'));
+      const snapshot = await getDocs(q);
+      return { data: snapshot.docs.map(docToData) };
+    } catch (error) {
+      const snapshot = await getDocs(collection(db, 'contact_messages'));
+      const items = snapshot.docs.map(docToData);
+      items.sort((a: any, b: any) => {
+        const da = a.created_at ? new Date(a.created_at).getTime() : 0;
+        const dbTime = b.created_at ? new Date(b.created_at).getTime() : 0;
+        return dbTime - da;
+      });
+      return { data: items };
+    }
+  },
+  updateStatus: async (id: string, status: string) => {
+    await updateDoc(doc(db, 'contact_messages', id), { status });
+    return { success: true };
+  },
+  delete: async (id: string) => {
+    await deleteDoc(doc(db, 'contact_messages', id));
+    return { success: true };
+  }
+};
+
 // --- Auth API (stub — auth is managed via Firebase directly in auth.jsx) ---
 export const authAPI = {
   login: () => Promise.resolve({ data: {} }),
@@ -1455,7 +1491,7 @@ const apiDefault = {
   postAPI, profileAPI, listingAPI, contentAPI, interactionAPI, 
   adminAPI, publicAPI, commentAPI, resourceAPI, authAPI, categoryAPI, 
   blogCategoryAPI, industryAPI, cityAPI, taxonomyAPI, settingsAPI, authorAPI, mediaAPI,
-  guidesAPI, faqCategoriesAPI, glossaryAPI, codeSnippetsAPI, redirectAPI, deadLinkAPI,
+  guidesAPI, faqCategoriesAPI, glossaryAPI, codeSnippetsAPI, redirectAPI, deadLinkAPI, contactAPI,
   get: async (url: string) => {
     if (url === '/pages') {
       const snapshot = await getDocs(collection(db, 'pages'));

@@ -21,6 +21,7 @@ import AdminMedia from './AdminMedia';
 import AdminKnowledgeHub from './AdminKnowledgeHub';
 import AdminReports from './AdminReports';
 import AdminSubmissions from './AdminSubmissions';
+import AdminContactMessages from './AdminContactMessages';
 import AdminTrafficCenter from './AdminTrafficCenter';
 import AdminImport from './AdminImport';
 import TestEditor from './TestEditor';
@@ -90,6 +91,7 @@ const router = createBrowserRouter([
       { path: "ai-settings", element: <AISettings /> },
       { path: "analytics", element: <AdminAnalytics /> },
       { path: "submissions", element: <AdminSubmissions /> },
+      { path: "contact-messages", element: <AdminContactMessages /> },
       { path: "reports", element: <AdminReports /> },
       { path: "import", element: <AdminImport /> }
     ]
