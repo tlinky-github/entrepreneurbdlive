@@ -78,7 +78,7 @@ const KnowledgeHubPage = ({ firestoreArticles = [] }) => {
               return (
                 <Card
                   key={pillar.id}
-                  className="group hover:scale-105 transition-transform duration-300 border-stone-200 bg-white h-full shadow-sm hover:shadow-xl"
+                  className="group hover:scale-105 transition-transform duration-300 border-stone-200 bg-white h-full shadow-sm hover:shadow-xl flex flex-col justify-between"
                 >
                   <CardHeader className="pb-4">
                     <div className="w-14 h-14 rounded-xl bg-emerald-50 flex items-center justify-center mb-4 group-hover:bg-emerald-900 transition-colors">
@@ -93,13 +93,13 @@ const KnowledgeHubPage = ({ firestoreArticles = [] }) => {
                       {pillar.subtitle}
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="flex flex-col flex-1">
+                  <CardContent className="flex flex-col flex-1 justify-between">
                     <p className="text-sm text-stone-600 mb-6 flex-1">
                       {pillar.description}
                     </p>
-                    <div className="flex items-center justify-between pt-4 border-t border-stone-100">
+                    <div className="flex items-center justify-between pt-4 border-t border-stone-100 mt-auto">
                       <span className="text-sm text-stone-400">
-                        {pillar.content.sections.length} sections
+                        {pillar.content?.sections?.length || 0} sections
                       </span>
                       <a
                         href={`/knowledge/${pillar.id}`}
@@ -125,7 +125,7 @@ const KnowledgeHubPage = ({ firestoreArticles = [] }) => {
                 {paginatedArticles.map((article) => (
                   <Card
                     key={article.id}
-                    className="group hover:scale-105 transition-transform duration-300 border-stone-200 bg-white h-full shadow-sm hover:shadow-xl"
+                    className="group hover:scale-105 transition-transform duration-300 border-stone-200 bg-white h-full shadow-sm hover:shadow-xl flex flex-col justify-between"
                   >
                     <CardHeader className="pb-4">
                       {article.featured_image && (
@@ -138,8 +138,8 @@ const KnowledgeHubPage = ({ firestoreArticles = [] }) => {
                         {article.excerpt || article.seo_description || ''}
                       </CardDescription>
                     </CardHeader>
-                    <CardContent className="flex flex-col flex-1">
-                      <div className="flex items-center justify-between pt-4 border-t border-stone-100">
+                    <CardContent className="flex flex-col flex-1 justify-between">
+                      <div className="flex items-center justify-between pt-4 border-t border-stone-100 mt-auto">
                         <span className="text-sm text-stone-400">Article</span>
                         <a
                           href={`/knowledge/${article.slug}`}
