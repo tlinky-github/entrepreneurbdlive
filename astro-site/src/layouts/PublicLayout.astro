@@ -26,6 +26,6 @@ try {
 ---
 
 <BaseLayout {...props}>
-  <Header slot="header" currentPath={currentPath} initialSiteSettings={initialSiteSettings} client:only="react" />
+  <Header slot="header" currentPath={currentPath} initialSiteSettings={initialSiteSettings} client:load />
   <slot />
 </BaseLayout>
