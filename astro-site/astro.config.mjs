@@ -5,7 +5,7 @@ import vercel from '@astrojs/vercel';
 import sitemap from '@astrojs/sitemap';
 
 export default defineConfig({
-  site: 'https://lawngreen-hippopotamus-233067.hostingersite.com',
+  site: 'https://entrepreneurs.bd',
   output: 'server',
   adapter: vercel(),
   image: {

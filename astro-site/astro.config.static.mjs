@@ -4,7 +4,7 @@ import tailwind from '@astrojs/tailwind';
 import sitemap from '@astrojs/sitemap';
 
 export default defineConfig({
-  site: 'https://lawngreen-hippopotamus-233067.hostingersite.com',
+  site: 'https://entrepreneurs.bd',
   output: 'static',
   // No adapter needed for pure static hosting (Hostinger serves flat files from public_html)
   image: {
