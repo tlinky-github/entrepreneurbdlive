@@ -96,10 +96,43 @@ export const postAPI = {
       const unsortedSnap = await getDocs(unsortedQ);
       const unsortedResults = unsortedSnap.docs.map(docToData);
 
-      // MERGE: Deduplicate by ID, sorted results take priority
       const seenIds = new Set(sortedResults.map(r => r.id));
       const legacyOnly = unsortedResults.filter(r => !seenIds.has(r.id));
-      const merged = [...sortedResults, ...legacyOnly];
+      const rawMerged = [...sortedResults, ...legacyOnly];
+
+      // Deduplicate by slug
+      const uniqueMap = new Map();
+      const duplicatesToDelete = [];
+
+      for (const item of rawMerged) {
+        if (!item.slug) {
+          uniqueMap.set(`id_${item.id}`, item);
+          continue;
+        }
+        const key = item.slug.toLowerCase().trim();
+        if (!uniqueMap.has(key)) {
+          uniqueMap.set(key, item);
+        } else {
+          const existing = uniqueMap.get(key);
+          const getTime = (d) => d?.updated_at?.toDate ? d.updated_at.toDate().getTime() : (new Date(d?.updated_at || d?.created_at || 0).getTime());
+          const itemTime = getTime(item);
+          const existingTime = getTime(existing);
+
+          if (itemTime > existingTime) {
+            duplicatesToDelete.push(existing.id);
+            uniqueMap.set(key, item);
+          } else {
+            duplicatesToDelete.push(item.id);
+          }
+        }
+      }
+
+      if (duplicatesToDelete.length > 0) {
+        console.warn(`[postAPI] Auto-cleaning ${duplicatesToDelete.length} duplicate docs in posts collection...`);
+        Promise.all(duplicatesToDelete.map(id => deleteDoc(doc(db, 'posts', id)).catch(() => {})));
+      }
+
+      const merged = Array.from(uniqueMap.values());
 
       // Final client-side sort (handles both created_at and createdAt)
       merged.sort((a, b) => {
@@ -371,7 +404,40 @@ export const contentAPI = {
       };
       const colName = collectionMap[type] || type;
       const snapshot = await getDocs(collection(db, colName));
-      return { data: snapshot.docs.map(docToData) };
+      const rawDocs = snapshot.docs.map(docToData);
+
+      const uniqueMap = new Map();
+      const duplicatesToDelete = [];
+
+      for (const item of rawDocs) {
+        if (!item.slug) {
+          uniqueMap.set(`id_${item.id}`, item);
+          continue;
+        }
+        const key = `${colName}_${item.slug.toLowerCase().trim()}`;
+        if (!uniqueMap.has(key)) {
+          uniqueMap.set(key, item);
+        } else {
+          const existing = uniqueMap.get(key);
+          const getTime = (d) => d?.updated_at?.toDate ? d.updated_at.toDate().getTime() : (new Date(d?.updated_at || d?.created_at || 0).getTime());
+          const itemTime = getTime(item);
+          const existingTime = getTime(existing);
+
+          if (itemTime > existingTime) {
+            duplicatesToDelete.push(existing.id);
+            uniqueMap.set(key, item);
+          } else {
+            duplicatesToDelete.push(item.id);
+          }
+        }
+      }
+
+      if (duplicatesToDelete.length > 0) {
+        console.warn(`[contentAPI] Auto-cleaning ${duplicatesToDelete.length} duplicate docs in ${colName}...`);
+        Promise.all(duplicatesToDelete.map(id => deleteDoc(doc(db, colName, id)).catch(() => {})));
+      }
+
+      return { data: Array.from(uniqueMap.values()) };
     } catch (error) {
       console.error(`contentAPI list error:`, error);
       return { data: [] };
@@ -400,6 +466,23 @@ export const contentAPI = {
     const colName = collectionMap[type] || type;
     const cleanData = { ...data };
     delete cleanData.id;
+
+    if (cleanData.slug) {
+      try {
+        const q = query(collection(db, colName), where('slug', '==', cleanData.slug.toLowerCase().trim()), fsLimit(1));
+        const existingSnap = await getDocs(q);
+        if (!existingSnap.empty) {
+          const existingDoc = existingSnap.docs[0];
+          await updateDoc(doc(db, colName, existingDoc.id), {
+            ...cleanData,
+            updated_at: serverTimestamp()
+          });
+          return { id: existingDoc.id, ...cleanData };
+        }
+      } catch (e) {
+        console.warn('[contentAPI.create] Upsert check failed:', e);
+      }
+    }
 
     const res = await addDoc(collection(db, colName), {
       ...cleanData,
@@ -1210,97 +1293,6 @@ export const settingsAPI = {
   },
   update: async (data) => {
     await setDoc(doc(db, 'settings', 'global'), { ...data, updated_at: serverTimestamp() }, { merge: true });
-    return { success: true };
-  }
-};
-
-
-
-export const guidesAPI = {
-  list: async () => {
-    try {
-      const snapshot = await getDocs(query(collection(db, 'guides'), orderBy('created_at', 'desc')));
-      return { data: snapshot.docs.map(docToData) };
-    } catch (error) {
-      console.error('Guides list error:', error);
-      const snapshot = await getDocs(collection(db, 'guides'));
-      return { data: snapshot.docs.map(docToData) };
-    }
-  },
-  get: async (id) => {
-    const docSnap = await getDoc(doc(db, 'guides', id));
-    return { data: docToData(docSnap) };
-  },
-  create: async (data) => {
-    const res = await addDoc(collection(db, 'guides'), { ...data, created_at: serverTimestamp() });
-    return { id: res.id, ...data };
-  },
-  update: async (id, data) => {
-    await updateDoc(doc(db, 'guides', id), { ...data, updated_at: serverTimestamp() });
-    return { id, ...data };
-  },
-  delete: async (id) => {
-    await deleteDoc(doc(db, 'guides', id));
-    return { success: true };
-  }
-};
-
-// --- FAQ Categories API ---
-export const faqCategoriesAPI = {
-  list: async () => {
-    try {
-      const snapshot = await getDocs(query(collection(db, 'faq_categories'), orderBy('created_at', 'desc')));
-      return { data: snapshot.docs.map(docToData) };
-    } catch (error) {
-      console.error('FAQ categories list error:', error);
-      const snapshot = await getDocs(collection(db, 'faq_categories'));
-      return { data: snapshot.docs.map(docToData) };
-    }
-  },
-  get: async (id) => {
-    const docSnap = await getDoc(doc(db, 'faq_categories', id));
-    return { data: docToData(docSnap) };
-  },
-  create: async (data) => {
-    const res = await addDoc(collection(db, 'faq_categories'), { ...data, created_at: serverTimestamp() });
-    return { id: res.id, ...data };
-  },
-  update: async (id, data) => {
-    await updateDoc(doc(db, 'faq_categories', id), { ...data, updated_at: serverTimestamp() });
-    return { id, ...data };
-  },
-  delete: async (id) => {
-    await deleteDoc(doc(db, 'faq_categories', id));
-    return { success: true };
-  }
-};
-
-// --- Glossary API ---
-export const glossaryAPI = {
-  list: async () => {
-    try {
-      const snapshot = await getDocs(query(collection(db, 'glossary'), orderBy('term', 'asc')));
-      return { data: snapshot.docs.map(docToData) };
-    } catch (error) {
-      console.error('Glossary list error:', error);
-      const snapshot = await getDocs(collection(db, 'glossary'));
-      return { data: snapshot.docs.map(docToData) };
-    }
-  },
-  get: async (id) => {
-    const docSnap = await getDoc(doc(db, 'glossary', id));
-    return { data: docToData(docSnap) };
-  },
-  create: async (data) => {
-    const res = await addDoc(collection(db, 'glossary'), { ...data, created_at: serverTimestamp() });
-    return { id: res.id, ...data };
-  },
-  update: async (id, data) => {
-    await updateDoc(doc(db, 'glossary', id), { ...data, updated_at: serverTimestamp() });
-    return { id, ...data };
-  },
-  delete: async (id) => {
-    await deleteDoc(doc(db, 'glossary', id));
     return { success: true };
   }
 };
