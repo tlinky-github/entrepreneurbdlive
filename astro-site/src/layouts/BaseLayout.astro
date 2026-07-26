@@ -100,6 +100,23 @@ const ogImage = image.startsWith('http') ? image : `${siteUrl}${image}`;
     </>
   )}
 
+  <!-- Automatic Dynamic Import Error Recovery -->
+  <script is:inline>
+    (function() {
+      function handleModuleError(err) {
+        const msg = (err && (err.message || String(err))) || '';
+        if (msg.includes('Failed to fetch dynamically imported module') || msg.includes('Error hydrating') || msg.includes('importing a module script failed')) {
+          if (!sessionStorage.getItem('reloaded_for_module')) {
+            sessionStorage.setItem('reloaded_for_module', 'true');
+            window.location.reload();
+          }
+        }
+      }
+      window.addEventListener('error', function (e) { handleModuleError(e.error || e.message); });
+      window.addEventListener('unhandledrejection', function (e) { handleModuleError(e.reason); });
+    })();
+  </script>
+
   <!-- SEO — rendered at build/request time, no JS needed -->
   <title>{title}</title>
   <meta name="description" content={description} />
