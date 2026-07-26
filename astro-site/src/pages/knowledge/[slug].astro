@@ -7,8 +7,10 @@ import { buildSchema, interpolateSEOVariables, getRobotsMetaString } from '../..
 
 export async function getStaticPaths() {
   try {
-    const articles = await getPublishedDocs('resources', 500);
-    return articles.map((article: any) => ({
+    const knowledgeArticles = await getPublishedDocs('knowledge', 500);
+    const resourcesArticles = await getPublishedDocs('resources', 500);
+    const combined = [...knowledgeArticles, ...resourcesArticles];
+    return combined.map((article: any) => ({
       params: { slug: article.slug },
       props: { initialArticle: article },
     }));
@@ -23,15 +25,16 @@ const { initialArticle } = Astro.props;
 let article = initialArticle || null;
 let isFirestore = !!initialArticle;
 
-// 1. Try Firestore
+// 1. Try Firestore ('knowledge' collection first, then 'resources')
 try {
-  article = await getDocBySlug('resources', slug as string);
+  if (!article) {
+    article = await getDocBySlug('knowledge', slug as string);
+  }
+  if (!article) {
+    article = await getDocBySlug('resources', slug as string);
+  }
   if (article) {
     isFirestore = true;
-    
-    // Cookie-controlled view counting
-    // View counting is handled client-side
-    // (Astro.cookies is server-only and cannot be used in static pre-rendered pages)
   }
 } catch (e) {
   console.error('[Knowledge Article] Firestore fetch failed:', e);
@@ -40,7 +43,7 @@ try {
 // 2. Try mock/pillar pages
 if (!article) {
   const allPillarPages = [...pillarPages, ...pillarPagesPart2];
-  article = allPillarPages.find(p => p.id === slug);
+  article = allPillarPages.find(p => p.id === slug || p.slug === slug);
 }
 
 // Handle redirects if configured in RankMath advanced settings
@@ -49,12 +52,20 @@ if (article && article.redirection && article.redirection.enable && article.redi
   return Astro.redirect(article.redirection.url, redirectStatus);
 }
 
+// Prepare authorData safely for schema generation
+const authorData = article?.author_name ? {
+  name: article.author_name,
+  designation: article.author_designation || 'Official Author',
+  photo: article.author_photo || '',
+  slug: article.author_slug || ''
+} : null;
+
 // SEO metadata with RankMath support
 const rawTitleTemplate = article?.seo_title || article?.seoTitle || "%title% %sep% %sitename%";
 const rawDescTemplate = article?.seo_description || article?.seoDescription || "%excerpt%";
 
 const siteTitleVal = article?.title || 'Knowledge Hub Article';
-const siteExcerptVal = article?.description || article?.subtitle || '';
+const siteExcerptVal = article?.excerpt || article?.description || article?.subtitle || '';
 
 const title = article ? interpolateSEOVariables(rawTitleTemplate, siteTitleVal, siteExcerptVal) : 'Knowledge Hub Article | Entrepreneurs BD';
 const description = article ? interpolateSEOVariables(rawDescTemplate, siteTitleVal, siteExcerptVal) : 'Read this business knowledge article on Entrepreneurs BD.';
