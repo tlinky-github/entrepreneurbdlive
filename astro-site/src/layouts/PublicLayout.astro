@@ -20,6 +20,6 @@ const currentPath = Astro.url.pathname;
 ---
 
 <BaseLayout {...props}>
-  <Header slot="header" currentPath={currentPath} client:load />
+  <Header slot="header" currentPath={currentPath} client:only="react" />
   <slot />
 </BaseLayout>
