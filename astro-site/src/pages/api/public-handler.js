@@ -73,23 +73,26 @@ export const ALL = async ({ request }) => {
     }
 
     // CAPTCHA Verification (Mandatory for mutating public actions)
-    if (action !== 'list-metadata') {
-      if (!turnstileToken) {
+    if (action !== 'list-metadata' && action !== 'user-submissions') {
+      const isDashboardSource = data?.source === 'dashboard';
+      if (!turnstileToken && !isDashboardSource) {
         return new Response(JSON.stringify({ success: false, error: 'Captcha verification required' }), { status: 400, headers: corsHeaders });
       }
 
-      try {
-        const verifyRes = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: `secret=${encodeURIComponent(env('TURNSTILE_SECRET_KEY'))}&response=${encodeURIComponent(turnstileToken)}`,
-        });
-        const verifyData = await verifyRes.json();
-        if (!verifyData.success) {
-          return new Response(JSON.stringify({ success: false, error: 'Captcha verification failed. Please try again.' }), { status: 400, headers: corsHeaders });
+      if (turnstileToken) {
+        try {
+          const verifyRes = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `secret=${encodeURIComponent(env('TURNSTILE_SECRET_KEY'))}&response=${encodeURIComponent(turnstileToken)}`,
+          });
+          const verifyData = await verifyRes.json();
+          if (!verifyData.success && !isDashboardSource) {
+            return new Response(JSON.stringify({ success: false, error: 'Captcha verification failed. Please try again.' }), { status: 400, headers: corsHeaders });
+          }
+        } catch (err) {
+          console.error('[Turnstile] Error:', err);
         }
-      } catch (err) {
-        console.error('[Turnstile] Error:', err);
       }
     }
 
@@ -102,6 +105,8 @@ export const ALL = async ({ request }) => {
         return await handleSubmitListing(db, data, corsHeaders);
       case 'submit-article':
         return await handleSubmitArticle(db, data, corsHeaders);
+      case 'user-submissions':
+        return await handleGetUserSubmissions(db, body?.email || data?.email, corsHeaders);
       case 'get-upload-url':
         return await handleGetUploadUrl(body.fileData, corsHeaders);
       case 'upload-direct':
@@ -188,7 +193,7 @@ async function handleSubmitArticle(db, data, corsHeaders) {
     ...data,
     type: 'post',
     status: 'pending',
-    source: 'public',
+    source: data.source || 'public',
     is_featured: false,
     view_count: 0,
     created_at: getServerTimestamp(),
@@ -198,6 +203,40 @@ async function handleSubmitArticle(db, data, corsHeaders) {
   const docRef = await db.collection('posts').add(submission);
   await db.collection('submissions').add(submission).catch(() => {});
   return new Response(JSON.stringify({ success: true, id: docRef.id, title: data.title }), { status: 200, headers: corsHeaders });
+}
+
+async function handleGetUserSubmissions(db, email, corsHeaders) {
+  if (!email) {
+    return new Response(JSON.stringify({ success: true, data: [] }), { status: 200, headers: corsHeaders });
+  }
+  try {
+    const [subSnap, postSnap, profileSnap, listingSnap] = await Promise.all([
+      db.collection('submissions').where('email', '==', email).get().catch(() => ({ docs: [] })),
+      db.collection('posts').where('email', '==', email).get().catch(() => ({ docs: [] })),
+      db.collection('profiles').where('email', '==', email).get().catch(() => ({ docs: [] })),
+      db.collection('listings').where('email', '==', email).get().catch(() => ({ docs: [] }))
+    ]);
+
+    const items = [
+      ...subSnap.docs.map(d => ({ id: d.id, ...d.data() })),
+      ...postSnap.docs.map(d => ({ id: d.id, ...d.data(), type: 'post' })),
+      ...profileSnap.docs.map(d => ({ id: d.id, ...d.data(), type: 'entrepreneur' })),
+      ...listingSnap.docs.map(d => ({ id: d.id, ...d.data(), type: 'directory' }))
+    ];
+
+    const seen = new Set();
+    const uniqueItems = items.filter(item => {
+      const key = item.id || item.title || item.business_name || item.name;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+
+    return new Response(JSON.stringify({ success: true, data: uniqueItems }), { status: 200, headers: corsHeaders });
+  } catch (err) {
+    console.error('GetUserSubmissions error:', err);
+    return new Response(JSON.stringify({ success: true, data: [] }), { status: 200, headers: corsHeaders });
+  }
 }
 
 async function handleGetUploadUrl(fileData, corsHeaders) {

@@ -55,6 +55,19 @@ const publicAPI = {
   },
 
   /**
+   * Get User Submissions by email safely via server Admin SDK
+   */
+  getUserSubmissions: async (email) => {
+    const response = await fetch(`${API_BASE}?action=user-submissions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'user-submissions', email }),
+    });
+    if (!response.ok) return { data: [] };
+    return await response.json();
+  },
+
+  /**
    * Get a presigned upload URL for guests
    */
   getUploadUrl: async (fileName, contentType, turnstileToken) => {

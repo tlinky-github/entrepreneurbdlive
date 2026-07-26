@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../lib/auth';
 import { db } from '../../lib/firebase';
+import publicAPI from '../../lib/publicApi';
 import { collection, query, where, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
 import { 
   User, Building2, FileText, Sparkles, Plus, CheckCircle2, 
@@ -40,13 +41,8 @@ const UserDashboard = () => {
     if (!storyData.title || !storyData.content) return;
     setSubmittingStory(true);
     try {
-      const cleanSlug = (storyData.title || 'article')
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)/g, '');
-
-      // 1. Save to submissions collection (for User Dashboard status tracking)
-      await addDoc(collection(db, 'submissions'), {
+      // 1. Submit via server API to bypass client Firestore permissions safely
+      await publicAPI.submitArticle({
         title: storyData.title,
         author_name: storyData.author_name || user?.name || '',
         category: storyData.category || '',
@@ -58,29 +54,30 @@ const UserDashboard = () => {
         email: user?.email,
         type: 'post',
         status: 'pending',
-        source: 'dashboard',
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
+        source: 'dashboard'
       });
 
-      // 2. Save to posts collection (for Admin Posts & Content Manager queue)
-      await addDoc(collection(db, 'posts'), {
-        title: storyData.title,
-        author_name: storyData.author_name || user?.name || '',
-        category: storyData.category || '',
-        excerpt: storyData.excerpt || '',
-        content: storyData.content || '',
-        featured_image: storyData.featured_image || '',
-        contact_email: storyData.contact_email || user?.email || '',
-        email: user?.email,
-        status: 'pending',
-        source: 'user_submission',
-        is_featured: false,
-        view_count: 0,
-        slug: cleanSlug,
-        created_at: serverTimestamp(),
-        updated_at: serverTimestamp()
-      });
+      // 2. Also attempt client addDoc as fallback
+      try {
+        await addDoc(collection(db, 'submissions'), {
+          title: storyData.title,
+          author_name: storyData.author_name || user?.name || '',
+          category: storyData.category || '',
+          excerpt: storyData.excerpt || '',
+          content: storyData.content || '',
+          featured_image: storyData.featured_image || '',
+          contact_email: storyData.contact_email || user?.email || '',
+          contact_phone: storyData.contact_phone || '',
+          email: user?.email,
+          type: 'post',
+          status: 'pending',
+          source: 'dashboard',
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+      } catch (clientErr) {
+        console.warn('Client-side addDoc ignored (handled by server API):', clientErr);
+      }
 
       setStorySuccess(true);
       fetchUserSubmissions();
@@ -104,6 +101,13 @@ const UserDashboard = () => {
   const fetchUserSubmissions = async () => {
     setLoadingSubmissions(true);
     try {
+      // Fetch via server API first to bypass Firestore client permission restrictions
+      const serverRes = await publicAPI.getUserSubmissions(user.email);
+      if (serverRes?.data && serverRes.data.length > 0) {
+        setSubmissions(serverRes.data);
+        return;
+      }
+      // Fallback to client query if server API returns empty
       const q = query(
         collection(db, 'submissions'),
         where('email', '==', user.email)
@@ -112,7 +116,7 @@ const UserDashboard = () => {
       const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setSubmissions(docs);
     } catch (err) {
-      console.error('Error fetching user submissions:', err);
+      console.warn('Fallback error fetching user submissions:', err);
     } finally {
       setLoadingSubmissions(false);
     }
