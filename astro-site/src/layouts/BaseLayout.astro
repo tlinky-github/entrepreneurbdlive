@@ -2,6 +2,7 @@
 // Base layout for all public pages
 import '../styles/globals.css';
 import AdminToolbar from '../components/AdminToolbar.jsx';
+import CustomCodeInjector from '../components/common/CustomCodeInjector.jsx';
 import { getSiteSettings } from '../lib/serverApi';
 
 interface Props {
@@ -38,6 +39,11 @@ const twitterUrl = siteSettings?.twitter;
 const linkedinUrl = siteSettings?.linkedin;
 const youtubeUrl = siteSettings?.youtube;
 const googleAnalyticsId = siteSettings?.google_analytics_id;
+
+const customCss = siteSettings?.custom_css;
+const customHeadHtml = siteSettings?.custom_head_html;
+const customBodyJs = siteSettings?.custom_body_js;
+const customFooterHtml = siteSettings?.custom_footer_html;
 
 const {
   title,
@@ -117,9 +123,12 @@ const ogImage = image.startsWith('http') ? image : `${siteUrl}${image}`;
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 
-  <!-- Structured Data -->
-  {schema && (
-    <script type="application/ld+json" set:html={JSON.stringify(schema)} />
+  <!-- Custom CSS & Head HTML from Site Settings -->
+  {customCss && (
+    <style set:html={customCss} />
+  )}
+  {customHeadHtml && (
+    <Fragment set:html={customHeadHtml} />
   )}
 
   <slot name="head" />
@@ -274,5 +283,14 @@ const ogImage = image.startsWith('http') ? image : `${siteUrl}${image}`;
       </div>
     </div>
   </footer>
+
+  <!-- Custom Footer HTML & Body JS from Site Settings -->
+  {customFooterHtml && (
+    <Fragment set:html={customFooterHtml} />
+  )}
+  {customBodyJs && (
+    <script set:html={customBodyJs} />
+  )}
+  <CustomCodeInjector client:load />
 </body>
 </html>

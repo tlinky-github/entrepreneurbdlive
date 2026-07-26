@@ -198,6 +198,25 @@ export const codeSnippetsAPI = {
       console.error('Code snippets list error:', error);
       return { data: [] };
     }
+  },
+  create: async (data: any) => {
+    const docRef = await addDoc(collection(db, 'code_snippets'), {
+      ...data,
+      created_at: serverTimestamp(),
+      updated_at: serverTimestamp()
+    });
+    return { success: true, id: docRef.id };
+  },
+  update: async (id: string, data: any) => {
+    await updateDoc(doc(db, 'code_snippets', id), {
+      ...data,
+      updated_at: serverTimestamp()
+    });
+    return { success: true };
+  },
+  delete: async (id: string) => {
+    await deleteDoc(doc(db, 'code_snippets', id));
+    return { success: true };
   }
 };
 
