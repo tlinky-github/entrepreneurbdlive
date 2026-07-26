@@ -94,43 +94,53 @@ function HeaderContent({ currentPath = '/', initialSiteSettings = null }) {
             {navLinks.map((link) => {
               if (link.children) {
                 const isDropdownActive = link.children.some(child => isActive(child.href));
+                const isOpen = openDropdown === link.label;
                 return (
-                  <div 
-                    key={link.label} 
-                    className="relative group"
-                    onMouseEnter={() => setOpenDropdown(link.label)}
-                    onMouseLeave={() => setOpenDropdown(null)}
+                  <DropdownMenu
+                    key={link.label}
+                    open={isOpen}
+                    onOpenChange={(open) => setOpenDropdown(open ? link.label : null)}
                   >
-                    <button
-                      type="button"
-                      onClick={() => setOpenDropdown(openDropdown === link.label ? null : link.label)}
-                      className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-1 ${
-                        isDropdownActive
-                          ? 'bg-emerald-50 text-emerald-900'
-                          : 'text-stone-600 hover:text-emerald-900 hover:bg-emerald-50'
-                      }`}
+                    <div
+                      className="relative"
+                      onMouseEnter={() => setOpenDropdown(link.label)}
+                      onMouseLeave={() => setOpenDropdown(null)}
                     >
-                      {link.label}
-                      <ChevronDown className={`w-4 h-4 ml-1 opacity-50 transition-transform ${openDropdown === link.label ? 'rotate-180' : ''}`} />
-                    </button>
-                    {openDropdown === link.label && (
-                      <div className="absolute top-full left-0 mt-1 w-48 bg-white rounded-md shadow-lg border border-stone-200 py-1 z-50">
+                      <DropdownMenuTrigger asChild>
+                        <button
+                          type="button"
+                          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-1 cursor-pointer outline-none ${
+                            isDropdownActive || isOpen
+                              ? 'bg-emerald-50 text-emerald-900'
+                              : 'text-stone-600 hover:text-emerald-900 hover:bg-emerald-50'
+                          }`}
+                        >
+                          {link.label}
+                          <ChevronDown className={`w-4 h-4 ml-1 opacity-50 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        align="start"
+                        sideOffset={4}
+                        className="w-48 bg-white rounded-lg shadow-lg border border-stone-200 py-1.5 z-50"
+                      >
                         {link.children.map((child) => {
                           const Icon = child.icon;
                           return (
-                            <a
-                              key={child.href}
-                              href={child.href}
-                              className="flex items-center gap-2 px-4 py-2 text-sm text-stone-700 hover:bg-stone-50 hover:text-emerald-900"
-                            >
-                              <Icon className="w-4 h-4 text-stone-500" />
-                              {child.label}
-                            </a>
+                            <DropdownMenuItem key={child.href} asChild>
+                              <a
+                                href={child.href}
+                                className="flex items-center gap-2 px-3 py-2 text-sm text-stone-700 hover:bg-emerald-50 hover:text-emerald-900 rounded-md cursor-pointer transition-colors"
+                              >
+                                <Icon className="w-4 h-4 text-stone-500" />
+                                {child.label}
+                              </a>
+                            </DropdownMenuItem>
                           );
                         })}
-                      </div>
-                    )}
-                  </div>
+                      </DropdownMenuContent>
+                    </div>
+                  </DropdownMenu>
                 );
               }
               return (
