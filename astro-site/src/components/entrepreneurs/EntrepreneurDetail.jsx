@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { profileAPI, authorAPI, taxonomyAPI } from '../../lib/api';
+import { profileAPI, authorAPI, taxonomyAPI, listingAPI } from '../../lib/api';
 import CustomCodeInjector from '../../components/common/CustomCodeInjector';
 import NotFound from '../../components/common/NotFound';
 import { Button } from '../../components/ui/button';
@@ -24,7 +24,8 @@ import {
   CheckCircle,
   Plus,
   Minus,
-  Share2
+  Share2,
+  ExternalLink
 } from 'lucide-react';
 import DefaultAvatar from '../ui/DefaultAvatar';
 import CompactProfileCard from './CompactProfileCard';
@@ -40,6 +41,50 @@ const EntrepreneurDetail = ({ slug, initialProfile, initialAuthorData, startupSt
   const [startupStages, setStartupStages] = useState(initialStartupStages);
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [relatedProfiles, setRelatedProfiles] = useState([]);
+  const [directoryListings, setDirectoryListings] = useState([]);
+
+  useEffect(() => {
+    const fetchListings = async () => {
+      try {
+        const res = await listingAPI.list({ status: 'published' });
+        if (res.data) setDirectoryListings(res.data);
+      } catch (err) {
+        console.error('Error fetching directory listings for auto-linking:', err);
+      }
+    };
+    fetchListings();
+  }, []);
+
+  const resolveCompanyUrl = (companyName, prof) => {
+    if (prof?.linked_business_slug) {
+      return `/directory/${prof.linked_business_slug}`;
+    }
+    if (prof?.linked_business_id) {
+      return `/directory/${prof.linked_business_id}`;
+    }
+    if (!companyName) return null;
+
+    const target = companyName.trim().toLowerCase();
+    const cleanTarget = target.replace(/\b(ltd|limited|inc|corp|corporation|llc|pvt)\b/gi, '').replace(/[^\w\s]/g, '').trim();
+
+    const matched = directoryListings.find((item) => {
+      const bName = (item.business_name || item.title || item.name || '').trim().toLowerCase();
+      const cleanBName = bName.replace(/\b(ltd|limited|inc|corp|corporation|llc|pvt)\b/gi, '').replace(/[^\w\s]/g, '').trim();
+      const itemSlug = (item.slug || item.id || '').toLowerCase();
+      return (
+        bName === target ||
+        itemSlug === target ||
+        (cleanTarget.length > 2 && cleanBName === cleanTarget) ||
+        (cleanTarget.length > 2 && cleanBName.includes(cleanTarget)) ||
+        (cleanTarget.length > 2 && cleanTarget.includes(cleanBName))
+      );
+    });
+
+    if (matched) {
+      return `/directory/${matched.slug || matched.id}`;
+    }
+    return null;
+  };
 
   useEffect(() => {
     const loadStartupStages = async () => {
@@ -187,21 +232,26 @@ const EntrepreneurDetail = ({ slug, initialProfile, initialAuthorData, startupSt
                         <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />
                       )}
                     </div>
-                    {(profile.designation || profile.role_title) && (profile.company_name || profile.business_name) && (
-                      <p className="text-lg text-stone-600">
-                        {profile.designation || profile.role_title} at{' '}
-                        {profile.linked_business_slug ? (
-                          <a 
-                            href={`/directory/${profile.linked_business_slug}`}
-                            className="font-bold text-emerald-900 hover:underline decoration-emerald-200 decoration-2 underline-offset-4"
-                          >
-                            {profile.company_name || profile.business_name}
-                          </a>
-                        ) : (
-                          <span className="font-medium">{profile.company_name || profile.business_name}</span>
-                        )}
-                      </p>
-                    )}
+                    {(profile.designation || profile.role_title) && (profile.company_name || profile.business_name) && (() => {
+                      const companyName = profile.company_name || profile.business_name;
+                      const companyUrl = resolveCompanyUrl(companyName, profile);
+                      return (
+                        <p className="text-lg text-stone-600">
+                          {profile.designation || profile.role_title} at{' '}
+                          {companyUrl ? (
+                            <a 
+                              href={companyUrl}
+                              className="font-bold text-emerald-900 hover:underline decoration-emerald-200 decoration-2 underline-offset-4 inline-flex items-center gap-1 group"
+                            >
+                              <span>{companyName}</span>
+                              <ExternalLink className="w-4 h-4 text-emerald-700 opacity-80 group-hover:opacity-100 transition-opacity" />
+                            </a>
+                          ) : (
+                            <span className="font-medium">{companyName}</span>
+                          )}
+                        </p>
+                      );
+                    })()}
                     
                     <div className="flex flex-wrap items-center gap-6 mt-3">
                       {(profile.linkedin || profile.social_linkedin) && (
