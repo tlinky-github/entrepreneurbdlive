@@ -319,9 +319,34 @@ export const authorAPI = {
 
 // ─── Content / Knowledge API ──────────────────────────────────────────────────
 export const contentAPI = {
-  list: (limit = 50) =>
-    queryCollection('resources', [['status', '==', 'published']], limit),
-  getBySlug: (slug: string) => getDocBySlug('resources', slug),
+  list: async (limit = 50) => {
+    try {
+      const [knowledge, resources] = await Promise.all([
+        queryCollection('knowledge', [['status', '==', 'published']], limit),
+        queryCollection('resources', [['status', '==', 'published']], limit),
+      ]);
+      const combined = [...knowledge, ...resources];
+      const seen = new Set();
+      const unique = [];
+      for (const article of combined) {
+        if (!article.slug) continue;
+        const key = article.slug.toLowerCase().trim();
+        if (!seen.has(key)) {
+          seen.add(key);
+          unique.push(article);
+        }
+      }
+      return unique.slice(0, limit);
+    } catch (e: any) {
+      console.error('[serverApi] contentAPI.list failed:', e.message);
+      return [];
+    }
+  },
+  getBySlug: async (slug: string) => {
+    let doc = await getDocBySlug('knowledge', slug);
+    if (!doc) doc = await getDocBySlug('resources', slug);
+    return doc;
+  },
 };
 
 // ─── Taxonomy API ─────────────────────────────────────────────────────────────

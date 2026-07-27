@@ -117,11 +117,61 @@ export function processHtmlContent(html: string | null | undefined, featuredImag
     }
   });
 
-  // 4. Fix tables
+  // 4. Fix & parse Markdown Pipe Tables
+  $('p, div').each((_, el) => {
+    const $el = $(el);
+    const text = $el.text().trim();
+    if (text.includes('|') && text.includes('---')) {
+      // Split by newlines or double-pipes (collapsed rows)
+      let lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+      if (lines.length < 2 && text.includes('||')) {
+        lines = text.split(/\s*\|\|\s*/).map(l => l.trim()).filter(Boolean);
+      }
+      
+      const tableLines = lines.filter(l => l.startsWith('|') || l.endsWith('|') || l.includes('---'));
+      if (tableLines.length >= 2) {
+        const headerIndex = tableLines.findIndex(l => l.includes('---'));
+        if (headerIndex > 0) {
+          const parseRow = (line: string) => line.replace(/^\|/, '').replace(/\|$/, '').split('|').map(c => c.trim());
+          const headers = parseRow(tableLines[0]);
+          const bodyLines = tableLines.slice(headerIndex + 1);
+          
+          let tableHtml = `
+            <div class="table-wrapper my-6 overflow-x-auto rounded-lg border border-stone-200 shadow-sm bg-white">
+              <table class="w-full text-left text-sm border-collapse">
+                <thead class="bg-stone-100 border-b border-stone-200 text-stone-900 font-semibold">
+                  <tr>
+                    ${headers.map(h => `<th class="p-3.5 border-r border-stone-200 last:border-r-0">${h}</th>`).join('')}
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-stone-200 text-stone-700">
+                  ${bodyLines.map((bLine, rIdx) => {
+                    const row = parseRow(bLine);
+                    if (row.length === 0 || (row.length === 1 && !row[0])) return '';
+                    return `
+                      <tr class="${rIdx % 2 === 0 ? 'bg-white' : 'bg-stone-50/50'} hover:bg-stone-100/50 transition-colors">
+                        ${row.map(cell => `<td class="p-3.5 border-r border-stone-200 last:border-r-0">${cell}</td>`).join('')}
+                      </tr>
+                    `;
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>
+          `;
+          $el.replaceWith(tableHtml);
+        }
+      }
+    }
+  });
+
   $('table').each((_, table) => {
     const $table = $(table);
     if ($table.parent().attr('class') !== 'table-wrapper') {
-      $table.wrap('<div class="table-wrapper"></div>');
+      $table.wrap('<div class="table-wrapper my-6 overflow-x-auto rounded-lg border border-stone-200 shadow-sm bg-white"></div>');
+      $table.addClass('w-full text-left text-sm border-collapse');
+      $table.find('thead').addClass('bg-stone-100 border-b border-stone-200 text-stone-900 font-semibold');
+      $table.find('th').addClass('p-3.5 border-r border-stone-200 last:border-r-0');
+      $table.find('td').addClass('p-3.5 border-r border-stone-200 last:border-r-0');
     }
   });
 

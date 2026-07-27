@@ -1,15 +1,102 @@
 import React, { useState, useEffect } from 'react';
-import { contentAPI } from '../../lib/api';
+import { contentAPI, getDocBySlug } from '../../lib/api';
 import { sanitizeHtml } from '../../lib/utils';
 import CustomCodeInjector from '../../components/common/CustomCodeInjector';
 import { pillarPages, pillarPagesPart2 } from '../../data/mock';
 import { ArrowLeft, ArrowRight, BookOpen, ChevronRight, Loader2 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
-import { processHtmlContent } from '../../lib/smartDesign';
 
-const KnowledgeArticlePage = ({ slug, article, isFirestore }) => {
+// Browser-safe HTML processor (no Node.js / cheerio deps)
+function processArticleHtml(html, featuredImage, title) {
+  if (!html) return '';
+  let content = String(html);
+
+  // Decode double-encoded HTML entities
+  content = content
+    .replace(/&amp;apos;/g, "'")
+    .replace(/&amp;quot;/g, '"')
+    .replace(/&amp;amp;/g, '&')
+    .replace(/&amp;#38;/g, '&')
+    .replace(/&amp;#39;/g, "'")
+    .replace(/&amp;ndash;/g, '\u2013')
+    .replace(/&amp;mdash;/g, '\u2014')
+    .replace(/&amp;rsquo;/g, '\u2019')
+    .replace(/&amp;lsquo;/g, '\u2018')
+    .replace(/&amp;ldquo;/g, '\u201C')
+    .replace(/&amp;rdquo;/g, '\u201D')
+    .replace(/&apos;/g, "'");
+
+  // Remove AI-generated meta noise
+  content = content
+    .replace(/<p[^>]*>(?:<[^>]+>)*\s*SEO Title:[\s\S]*?<\/p>/gi, '')
+    .replace(/<p[^>]*>(?:<[^>]+>)*\s*Meta Description:[\s\S]*?<\/p>/gi, '');
+
+  // Inject featured image after first/second h2
+  if (featuredImage) {
+    const h2Matches = [...content.matchAll(/<h2/gi)];
+    if (h2Matches.length > 0) {
+      const injPoint = h2Matches.length >= 2 ? h2Matches[1].index : h2Matches[0].index;
+      const finalAlt = title && title !== 'undefined' ? title : 'Featured Image';
+      const imgHtml = `<div class="featured-image-inline"><img src="${featuredImage}" alt="${finalAlt}" class="w-full h-auto object-cover" /></div>`;
+      content = content.slice(0, injPoint) + imgHtml + content.slice(injPoint);
+    }
+  }
+
+  // Render <faq-section> custom elements
+  content = content.replace(/<faq-section([^>]*)\/?>/gi, (match, attrs) => {
+    const faqMatch = attrs.match(/data-faqs=(?:'([^']*)'|"([^"]*)")/i);
+    const faqsJson = faqMatch ? (faqMatch[1] || faqMatch[2]) : null;
+    if (!faqsJson) return '';
+    try {
+      const faqs = JSON.parse(faqsJson.replace(/&apos;/g, "'").replace(/&quot;/g, '"'));
+      let faqHtml = `<div class="mt-10 mb-6"><h2 class="text-[1.875rem] font-bold text-stone-900 mb-5">Frequently Asked Questions</h2><div class="faq-list">`;
+      faqs.forEach(faq => {
+        const q = (faq.question || faq.q || '').replace(/&amp;/g, '&').replace(/&apos;/g, "'");
+        const a = (faq.answer || faq.a || '').replace(/style="[^"]*"/gi, '').replace(/&amp;/g, '&').replace(/&apos;/g, "'");
+        faqHtml += `<div class="faq-item mb-8 last:mb-0"><h3 class="text-[1.25rem] font-bold text-stone-900 mb-3 leading-tight">${q}</h3><div class="text-stone-700 leading-relaxed prose prose-stone max-w-none">${a}</div></div>`;
+      });
+      faqHtml += `</div></div>`;
+      return faqHtml;
+    } catch { return ''; }
+  });
+  content = content.replace(/<\/faq-section>/gi, '');
+
+  return content;
+}
+
+const KnowledgeArticlePage = ({ slug, article: initialArticle, isFirestore: initialIsFirestore }) => {
   const allPillarPages = [...pillarPages, ...pillarPagesPart2];
+
+  const [article, setArticle] = useState(initialArticle || null);
+  const [isFirestore, setIsFirestore] = useState(!!initialIsFirestore);
+  const [loading, setLoading] = useState(!initialArticle);
+
+  // Client-side fetch for draft previews (not in static paths)
+  useEffect(() => {
+    if (initialArticle) return;
+    let cancelled = false;
+    const fetchDraft = async () => {
+      try {
+        let doc = await getDocBySlug('knowledge', slug);
+        if (!doc) doc = await getDocBySlug('resources', slug);
+        if (!cancelled && doc) {
+          setArticle(doc);
+          setIsFirestore(true);
+        } else if (!cancelled) {
+          // Fall back to pillar pages
+          const pillar = allPillarPages.find(p => p.id === slug || p.slug === slug);
+          if (pillar) { setArticle(pillar); setIsFirestore(false); }
+        }
+      } catch (e) {
+        console.error('[KnowledgeArticlePage] client fetch error:', e);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    fetchDraft();
+    return () => { cancelled = true; };
+  }, [slug]);
 
   const articleContent = article?.content || {};
   const articleSections = !isFirestore && Array.isArray(articleContent.sections) ? articleContent.sections : [];
@@ -19,15 +106,70 @@ const KnowledgeArticlePage = ({ slug, article, isFirestore }) => {
   const prevArticle = currentIndex > 0 ? allPillarPages[currentIndex - 1] : null;
   const nextArticle = currentIndex < allPillarPages.length - 1 ? allPillarPages[currentIndex + 1] : null;
 
+  // Extract dynamic Table of Contents (TOC) headings
+  const getTocHeadings = () => {
+    if (isFirestore) {
+      const html = article?.content || '';
+      if (!html || typeof html !== 'string') return [];
+      const headings = [];
+      const regex = /<h[23][^>]*>(.*?)<\/h[23]>/gi;
+      let match;
+      let count = 0;
+      while ((match = regex.exec(html)) !== null) {
+        const text = match[1].replace(/<[^>]+>/g, '').trim();
+        if (text) {
+          count++;
+          const id = `heading-${count}-${text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}`;
+          headings.push({ id, text });
+        }
+      }
+      return headings;
+    } else {
+      const list = [];
+      if (articleContent.introduction) list.push({ id: 'introduction', text: 'Introduction' });
+      articleSections.forEach((sec, idx) => {
+        if (sec.heading) list.push({ id: `section-${idx}`, text: sec.heading });
+      });
+      if (articleFaqs && articleFaqs.length > 0) list.push({ id: 'faqs', text: 'FAQs' });
+      return list;
+    }
+  };
+
+  const tocHeadings = getTocHeadings();
+
+  // Process HTML for Firestore articles to inject matching IDs into headings
+  const getProcessedFirestoreHtml = () => {
+    if (!isFirestore || !article?.content) return '';
+    let html = processArticleHtml(article.content, article.featured_image, article.featured_image_alt || article.title);
+    let count = 0;
+    html = html.replace(/<h([23])([^>]*)>(.*?)<\/h\1>/gi, (fullMatch, level, attrs, content) => {
+      const text = content.replace(/<[^>]+>/g, '').trim();
+      if (!text) return fullMatch;
+      count++;
+      const id = `heading-${count}-${text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}`;
+      return `<h${level} id="${id}" class="scroll-mt-28"${attrs}>${content}</h${level}>`;
+    });
+    return sanitizeHtml(html);
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-10 h-10 text-emerald-900 animate-spin mx-auto mb-4" />
+          <p className="text-stone-500 text-sm">Loading article...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!article) {
     return (
       <>
         <div className="py-24 text-center">
           <h1 className="text-2xl font-bold text-stone-900 mb-4">Article Not Found</h1>
           <p className="text-stone-500 mb-8">The requested article could not be found.</p>
-          <Button asChild>
-            <Link to="/knowledge">Back to Knowledge Hub</Link>
-          </Button>
+          <a href="/knowledge" className="inline-flex items-center px-4 py-2 bg-emerald-900 text-white rounded-lg hover:bg-emerald-800 transition-colors">Back to Knowledge Hub</a>
         </div>
       </>
     );
@@ -86,35 +228,27 @@ const KnowledgeArticlePage = ({ slug, article, isFirestore }) => {
         <div className="container-wide px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-12">
             {/* Table of Contents - Sidebar */}
-            {/* Table of Contents - Sidebar */}
             <aside className="lg:col-span-1">
               <div className="sticky top-24">
                 <h3 className="font-semibold text-stone-900 mb-4 text-sm uppercase tracking-wide">
                   In This Article
                 </h3>
-                <nav className="space-y-2">
-                  <a
-                    href="#introduction"
-                    className="block text-sm text-stone-600 hover:text-emerald-900 py-1 border-l-2 border-transparent hover:border-emerald-500 pl-3 transition-colors"
-                  >
-                    Introduction
-                  </a>
-                  {articleSections.map((section, index) => (
-                    <a
-                      key={index}
-                      href={`#section-${index}`}
-                      className="block text-sm text-stone-600 hover:text-emerald-900 py-1 border-l-2 border-transparent hover:border-emerald-500 pl-3 transition-colors"
-                    >
-                      {section.heading}
-                    </a>
-                  ))}
-                  <a
-                    href="#faqs"
-                    className="block text-sm text-stone-600 hover:text-emerald-900 py-1 border-l-2 border-transparent hover:border-emerald-500 pl-3 transition-colors"
-                  >
-                    FAQs
-                  </a>
-                </nav>
+                {tocHeadings.length > 0 ? (
+                  <nav className="space-y-2 max-h-[70vh] overflow-y-auto pr-2">
+                    {tocHeadings.map((heading, index) => (
+                      <a
+                        key={index}
+                        href={`#${heading.id}`}
+                        className="block text-sm text-stone-600 hover:text-emerald-900 py-1 border-l-2 border-transparent hover:border-emerald-500 pl-3 transition-colors truncate"
+                        title={heading.text}
+                      >
+                        {heading.text}
+                      </a>
+                    ))}
+                  </nav>
+                ) : (
+                  <p className="text-xs text-stone-400 italic">No section headings</p>
+                )}
               </div>
             </aside>
 
@@ -125,7 +259,7 @@ const KnowledgeArticlePage = ({ slug, article, isFirestore }) => {
                   /* Firestore rich HTML content */
                   <div 
                     className="prose prose-stone max-w-none"
-                    dangerouslySetInnerHTML={{ __html: sanitizeHtml(processHtmlContent(article.content || '', article.featured_image, article.featured_image_alt || article.title)) }}
+                    dangerouslySetInnerHTML={{ __html: getProcessedFirestoreHtml() }}
                   />
                 ) : (
                   /* Legacy pillar page structured content */

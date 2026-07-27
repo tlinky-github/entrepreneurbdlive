@@ -19,9 +19,10 @@ const iconMap = {
   Rocket: Rocket,
 };
 
-const KnowledgeHubPage = ({ firestoreArticles = [] }) => {
+const KnowledgeHubPage = ({ firestoreArticles: initialArticles = [] }) => {
   const allPillarPages = [...pillarPages, ...pillarPagesPart2];
   
+  const [articles, setArticles] = useState(initialArticles);
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 9;
 
@@ -33,10 +34,44 @@ const KnowledgeHubPage = ({ firestoreArticles = [] }) => {
     }
   }, []);
 
-  const totalPages = Math.ceil(firestoreArticles.length / ITEMS_PER_PAGE);
+  // Client-side sync to fetch latest published articles from Firestore
+  useEffect(() => {
+    let cancelled = false;
+    const fetchLatest = async () => {
+      try {
+        const [resK, resR] = await Promise.all([
+          contentAPI.list('knowledge').catch(() => ({ data: [] })),
+          contentAPI.list('resources').catch(() => ({ data: [] })),
+        ]);
+        const kDocs = Array.isArray(resK?.data) ? resK.data : [];
+        const rDocs = Array.isArray(resR?.data) ? resR.data : [];
+        const combined = [...kDocs, ...rDocs];
+
+        // Deduplicate & filter published
+        const map = new Map();
+        for (const item of combined) {
+          if (!item.slug) continue;
+          if (item.status && item.status !== 'published') continue;
+          if (!map.has(item.slug)) {
+            map.set(item.slug, item);
+          }
+        }
+        const docs = Array.from(map.values());
+        if (!cancelled && docs.length > 0) {
+          setArticles(docs);
+        }
+      } catch (e) {
+        console.error('[KnowledgeHubPage] Client fetch error:', e);
+      }
+    };
+    fetchLatest();
+    return () => { cancelled = true; };
+  }, []);
+
+  const totalPages = Math.ceil(articles.length / ITEMS_PER_PAGE);
   const safeCurrentPage = Math.max(1, Math.min(currentPage, totalPages || 1));
   const startIndex = (safeCurrentPage - 1) * ITEMS_PER_PAGE;
-  const paginatedArticles = firestoreArticles.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  const paginatedArticles = articles.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
@@ -72,75 +107,46 @@ const KnowledgeHubPage = ({ firestoreArticles = [] }) => {
       {/* Topics Grid */}
       <section className="py-20 lg:py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {allPillarPages.map((pillar, index) => {
-              const IconComponent = iconMap[pillar.icon] || BookOpen;
-              return (
-                <Card
-                  key={pillar.id}
-                  className="group hover:scale-105 transition-transform duration-300 border-stone-200 bg-white h-full shadow-sm hover:shadow-xl flex flex-col justify-between"
-                >
-                  <CardHeader className="pb-4">
-                    <div className="w-14 h-14 rounded-xl bg-emerald-50 flex items-center justify-center mb-4 group-hover:bg-emerald-900 transition-colors">
-                      <IconComponent className="w-7 h-7 text-emerald-900 group-hover:text-white transition-colors" />
-                    </div>
-                    <CardTitle className="text-xl text-stone-900 group-hover:text-emerald-900 transition-colors">
-                      <a href={`/knowledge/${pillar.id}`}>
-                        {pillar.title}
-                      </a>
-                    </CardTitle>
-                    <CardDescription className="text-stone-500">
-                      {pillar.subtitle}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="flex flex-col flex-1 justify-between">
-                    <p className="text-sm text-stone-600 mb-6 flex-1">
-                      {pillar.description}
-                    </p>
-                    <div className="flex items-center justify-between pt-4 border-t border-stone-100 mt-auto">
-                      <span className="text-sm text-stone-400">
-                        {pillar.content?.sections?.length || 0} sections
-                      </span>
-                      <a
-                        href={`/knowledge/${pillar.id}`}
-                        className="inline-flex items-center text-sm font-medium text-emerald-900 hover:text-emerald-700 transition-colors"
-                      >
-                        Read Article
-                        <ArrowRight className="ml-1 h-4 w-4" />
-                      </a>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
 
-          {/* Firestore-created articles */}
-          {firestoreArticles.length > 0 && (
-            <>
-              <div className="mt-12 mb-8 text-center">
-                <h2 className="text-2xl font-bold text-stone-900">More Articles</h2>
+          {/* Published Firestore Articles (Shown Prominently at Top) */}
+          {articles.length > 0 && (
+            <div className="mb-16">
+              <div className="mb-8 flex items-center justify-between border-b border-stone-200 pb-4">
+                <div>
+                  <h2 className="text-2xl sm:text-3xl font-bold text-stone-900">Latest Knowledge Articles</h2>
+                  <p className="text-sm text-stone-500 mt-1">Recently published articles and deep dives</p>
+                </div>
+                <span className="text-sm font-medium text-emerald-900 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
+                  {articles.length} {articles.length === 1 ? 'Article' : 'Articles'}
+                </span>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {paginatedArticles.map((article) => (
                   <Card
-                    key={article.id}
+                    key={article.id || article.slug}
                     className="group hover:scale-105 transition-transform duration-300 border-stone-200 bg-white h-full shadow-sm hover:shadow-xl flex flex-col justify-between"
                   >
                     <CardHeader className="pb-4">
-                      {article.featured_image && (
-                        <img src={article.featured_image} alt={article.title} className="w-full h-40 object-cover rounded-lg mb-4" />
+                      {article.featured_image ? (
+                        <img src={article.featured_image} alt={article.title} className="w-full h-44 object-cover rounded-lg mb-4" />
+                      ) : (
+                        <div className="w-14 h-14 rounded-xl bg-emerald-50 flex items-center justify-center mb-4 group-hover:bg-emerald-900 transition-colors">
+                          <BookOpen className="w-7 h-7 text-emerald-900 group-hover:text-white transition-colors" />
+                        </div>
                       )}
                       <CardTitle className="text-xl text-stone-900 group-hover:text-emerald-900 transition-colors">
                         <a href={`/knowledge/${article.slug}`}>{article.title}</a>
                       </CardTitle>
-                      <CardDescription className="text-stone-500">
-                        {article.excerpt || article.seo_description || ''}
+                      <CardDescription className="text-stone-500 line-clamp-2">
+                        {article.subtitle || article.excerpt || article.seo_description || ''}
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="flex flex-col flex-1 justify-between">
+                      <p className="text-sm text-stone-600 mb-6 flex-1 line-clamp-3">
+                        {article.description || article.excerpt || ''}
+                      </p>
                       <div className="flex items-center justify-between pt-4 border-t border-stone-100 mt-auto">
-                        <span className="text-sm text-stone-400">Article</span>
+                        <span className="text-sm font-medium text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded">Article</span>
                         <a
                           href={`/knowledge/${article.slug}`}
                           className="inline-flex items-center text-sm font-medium text-emerald-900 hover:text-emerald-700 transition-colors"
@@ -155,7 +161,7 @@ const KnowledgeHubPage = ({ firestoreArticles = [] }) => {
               </div>
               
               {totalPages > 1 && (
-                <div className="mt-16 border-t border-stone-200 pt-8">
+                <div className="mt-12 border-t border-stone-200 pt-8">
                   <SitePagination 
                     currentPage={safeCurrentPage} 
                     totalPages={totalPages} 
@@ -163,8 +169,58 @@ const KnowledgeHubPage = ({ firestoreArticles = [] }) => {
                   />
                 </div>
               )}
-            </>
+            </div>
           )}
+
+          {/* Core Foundation Guides (Pillar Pages) */}
+          <div>
+            <div className="mb-8 border-b border-stone-200 pb-4">
+              <h2 className="text-2xl sm:text-3xl font-bold text-stone-900">Core Business Topics</h2>
+              <p className="text-sm text-stone-500 mt-1">Fundamental guides to mastering entrepreneurship</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {allPillarPages.map((pillar) => {
+                const IconComponent = iconMap[pillar.icon] || BookOpen;
+                return (
+                  <Card
+                    key={pillar.id}
+                    className="group hover:scale-105 transition-transform duration-300 border-stone-200 bg-white h-full shadow-sm hover:shadow-xl flex flex-col justify-between"
+                  >
+                    <CardHeader className="pb-4">
+                      <div className="w-14 h-14 rounded-xl bg-emerald-50 flex items-center justify-center mb-4 group-hover:bg-emerald-900 transition-colors">
+                        <IconComponent className="w-7 h-7 text-emerald-900 group-hover:text-white transition-colors" />
+                      </div>
+                      <CardTitle className="text-xl text-stone-900 group-hover:text-emerald-900 transition-colors">
+                        <a href={`/knowledge/${pillar.id}`}>
+                          {pillar.title}
+                        </a>
+                      </CardTitle>
+                      <CardDescription className="text-stone-500">
+                        {pillar.subtitle}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex flex-col flex-1 justify-between">
+                      <p className="text-sm text-stone-600 mb-6 flex-1">
+                        {pillar.description}
+                      </p>
+                      <div className="flex items-center justify-between pt-4 border-t border-stone-100 mt-auto">
+                        <span className="text-sm text-stone-400">
+                          {pillar.content?.sections?.length || 0} sections
+                        </span>
+                        <a
+                          href={`/knowledge/${pillar.id}`}
+                          className="inline-flex items-center text-sm font-medium text-emerald-900 hover:text-emerald-700 transition-colors"
+                        >
+                          Read Article
+                          <ArrowRight className="ml-1 h-4 w-4" />
+                        </a>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </section>
 

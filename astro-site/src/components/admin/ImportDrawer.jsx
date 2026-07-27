@@ -102,6 +102,7 @@ function markdownToHtml(md) {
   let paragraph = [];
   let listType = null;
   let listItems = [];
+  let tableLines = [];
 
   const formatInline = (text) => String(text || '')
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
@@ -123,14 +124,45 @@ function markdownToHtml(md) {
     listItems = [];
   };
 
+  const flushTable = () => {
+    if (!tableLines.length) return;
+    const headerIndex = tableLines.findIndex(l => l.includes('---'));
+    if (headerIndex > 0) {
+      const parseRow = (line) => line.replace(/^\|/, '').replace(/\|$/, '').split('|').map(c => formatInline(c.trim()));
+      const headers = parseRow(tableLines[0]);
+      const bodyLines = tableLines.slice(headerIndex + 1);
+
+      let tableHtml = `<div class="table-wrapper my-6 overflow-x-auto rounded-lg border border-stone-200 shadow-sm bg-white"><table class="w-full text-left text-sm border-collapse"><thead class="bg-stone-100 border-b border-stone-200 text-stone-900 font-semibold"><tr>${headers.map(h => `<th class="p-3.5 border-r border-stone-200 last:border-r-0">${h}</th>`).join('')}</tr></thead><tbody class="divide-y divide-stone-200 text-stone-700">${bodyLines.map((bLine, rIdx) => {
+        const row = parseRow(bLine);
+        if (row.length === 0 || (row.length === 1 && !row[0])) return '';
+        return `<tr class="${rIdx % 2 === 0 ? 'bg-white' : 'bg-stone-50/50'} hover:bg-stone-100/50 transition-colors">${row.map(cell => `<td class="p-3.5 border-r border-stone-200 last:border-r-0">${cell}</td>`).join('')}</tr>`;
+      }).join('')}</tbody></table></div>`;
+
+      blocks.push(tableHtml);
+    } else {
+      tableLines.forEach(l => blocks.push(`<p>${formatInline(l)}</p>`));
+    }
+    tableLines = [];
+  };
+
   lines.forEach((line) => {
     const trimmed = line.trim();
 
     if (!trimmed) {
       flushParagraph();
       flushList();
+      flushTable();
       return;
     }
+
+    if (trimmed.startsWith('|') || (tableLines.length > 0 && (trimmed.includes('|') || trimmed.includes('---')))) {
+      flushParagraph();
+      flushList();
+      tableLines.push(trimmed);
+      return;
+    }
+
+    flushTable();
 
     const headingMatch = trimmed.match(/^(#{1,3})\s+(.+)$/);
     const unorderedMatch = trimmed.match(/^[-*+]\s+(.+)$/);
@@ -159,6 +191,7 @@ function markdownToHtml(md) {
 
   flushParagraph();
   flushList();
+  flushTable();
   return blocks.join('\n');
 }
 

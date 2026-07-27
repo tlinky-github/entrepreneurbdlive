@@ -77,6 +77,27 @@ const socialMeta = article?.social_meta || undefined;
 
 // Generate Schema
 const pageSchema = buildSchema(article?.custom_schema, null, authorData, article?.content_html || article?.content);
+// Serialize Firestore article to break cyclic references (Timestamps, DocumentReferences, etc.)
+function serializeFirestore(obj: any, depth = 0): any {
+  if (depth > 20 || obj === null || obj === undefined) return obj ?? null;
+  if (typeof obj !== 'object') return obj;
+  // Firestore Timestamp
+  if (typeof obj.toDate === 'function') return obj.toDate().toISOString();
+  // Firestore DocumentReference
+  if (obj._path || obj.firestore) return null;
+  if (Array.isArray(obj)) return obj.map((item) => serializeFirestore(item, depth + 1));
+  const result: Record<string, any> = {};
+  for (const [key, val] of Object.entries(obj)) {
+    try {
+      result[key] = serializeFirestore(val, depth + 1);
+    } catch {
+      result[key] = null;
+    }
+  }
+  return result;
+}
+
+const safeArticle = article ? serializeFirestore(article) : null;
 ---
 
 <PublicLayout
@@ -88,5 +109,5 @@ const pageSchema = buildSchema(article?.custom_schema, null, authorData, article
   robotsMeta={robotsMeta}
   socialMeta={socialMeta}
 >
-  <KnowledgeArticlePage client:load slug={slug} article={article} isFirestore={isFirestore} />
+  <KnowledgeArticlePage client:load slug={slug} article={safeArticle} isFirestore={isFirestore} />
 </PublicLayout>
