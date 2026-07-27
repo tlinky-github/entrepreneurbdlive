@@ -58,7 +58,11 @@ const KnowledgeHubPage = ({ firestoreArticles: initialArticles = [] }) => {
         }
         const docs = Array.from(map.values());
         if (!cancelled && docs.length > 0) {
-          setArticles(docs);
+          const currentSlugs = (articles || []).map(a => a.slug).join(',');
+          const newSlugs = docs.map(d => d.slug).join(',');
+          if (currentSlugs !== newSlugs) {
+            setArticles(docs);
+          }
         }
       } catch (e) {
         console.error('[KnowledgeHubPage] Client fetch error:', e);

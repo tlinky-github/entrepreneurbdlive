@@ -326,9 +326,10 @@ export const contentAPI = {
         queryCollection('resources', [['status', '==', 'published']], limit),
       ]);
       const combined = [...knowledge, ...resources];
+      const published = combined.filter((a: any) => a.status === 'published');
       const seen = new Set();
       const unique = [];
-      for (const article of combined) {
+      for (const article of published) {
         if (!article.slug) continue;
         const key = article.slug.toLowerCase().trim();
         if (!seen.has(key)) {
