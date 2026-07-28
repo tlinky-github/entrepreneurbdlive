@@ -134,11 +134,30 @@ export const postAPI = {
 
       const merged = Array.from(uniqueMap.values());
 
-      // Final client-side sort (handles both created_at and createdAt)
+      // Final client-side sort — respects sortBy and sortOrder params
+      const sortField = params.sortBy || 'created_at';
+      const sortDir = params.sortOrder === 'asc' ? 1 : -1;
       merged.sort((a, b) => {
-        const da = new Date(a.created_at || a.createdAt || 0);
-        const db2 = new Date(b.created_at || b.createdAt || 0);
-        return db2 - da;
+        let aVal = a[sortField];
+        let bVal = b[sortField];
+        // Fallback for created_at field which may be stored as createdAt
+        if (sortField === 'created_at' && aVal == null) aVal = a.createdAt;
+        if (sortField === 'created_at' && bVal == null) bVal = b.createdAt;
+        // Treat missing values as oldest (sort to end)
+        const aTime = aVal ? new Date(aVal).getTime() : 0;
+        const bTime = bVal ? new Date(bVal).getTime() : 0;
+        // For non-date string fields (title), do string comparison
+        if (sortField === 'title') {
+          const aStr = (aVal || '').toString().toLowerCase();
+          const bStr = (bVal || '').toString().toLowerCase();
+          return sortDir * aStr.localeCompare(bStr);
+        }
+        // For numeric fields (view_count)
+        if (sortField === 'view_count') {
+          return sortDir * ((aVal || 0) - (bVal || 0));
+        }
+        // Default: date-based sort
+        return sortDir * (aTime - bTime);
       });
 
       // Apply limit
@@ -223,6 +242,22 @@ export const profileAPI = {
         );
       }
 
+      // Client-side sort — respects sortBy and sortOrder params
+      const sortField = params.sortBy || 'created_at';
+      const sortDir = params.sortOrder === 'asc' ? 1 : -1;
+      data.sort((a, b) => {
+        let aVal = a[sortField];
+        let bVal = b[sortField];
+        if (sortField === 'name') {
+          const aStr = (aVal || '').toString().toLowerCase();
+          const bStr = (bVal || '').toString().toLowerCase();
+          return sortDir * aStr.localeCompare(bStr);
+        }
+        const aTime = aVal ? new Date(aVal).getTime() : 0;
+        const bTime = bVal ? new Date(bVal).getTime() : 0;
+        return sortDir * (aTime - bTime);
+      });
+
       return { data };
     } catch (error) {
       console.error('Firestore Profile List Error:', error);
@@ -304,6 +339,25 @@ export const listingAPI = {
           l.leadership_team?.ceo?.name?.toLowerCase().includes(search)
         );
       }
+
+      // Client-side sort — respects sortBy and sortOrder params
+      const sortField = params.sortBy || 'created_at';
+      const sortDir = params.sortOrder === 'asc' ? 1 : -1;
+      data.sort((a, b) => {
+        let aVal = a[sortField];
+        let bVal = b[sortField];
+        if (sortField === 'business_name') {
+          const aStr = (aVal || '').toString().toLowerCase();
+          const bStr = (bVal || '').toString().toLowerCase();
+          return sortDir * aStr.localeCompare(bStr);
+        }
+        if (sortField === 'view_count') {
+          return sortDir * ((aVal || 0) - (bVal || 0));
+        }
+        const aTime = aVal ? new Date(aVal).getTime() : 0;
+        const bTime = bVal ? new Date(bVal).getTime() : 0;
+        return sortDir * (aTime - bTime);
+      });
 
       return { data };
     } catch (error) {
