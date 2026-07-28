@@ -68,10 +68,13 @@ const ImageUploader = ({
   const editorContainerRef = useRef(null);
   const editorInstanceRef = useRef(null);
 
-  // Sync with value prop
+  // Sync with value prop — also switch to upload tab so preview is visible
   useEffect(() => {
     if (value) {
       setPreviewUrl(value);
+      setActiveTab('upload');
+    } else {
+      setPreviewUrl('');
     }
   }, [value]);
 
@@ -648,16 +651,25 @@ const ImageUploader = ({
                       <div 
                         key={item.id}
                         onClick={() => {
-                          setPreviewUrl(item.url);
-                          setAlt(item.fileName?.split('.')[0].replace(/[-_]/g, ' ') || '');
-                          setSourceSize(item.size || null);
-                          setOptimizedSize(null);
-                          // Notify parent immediately
-                          onChange(item.url, { 
-                            alt: item.fileName?.split('.')[0].replace(/[-_]/g, ' ') || '',
-                            title: item.fileName
-                          });
-                          setActiveTab('upload');
+                          if (previewUrl === item.url) {
+                            // Deselect: clicking the already-selected image clears it
+                            setPreviewUrl('');
+                            setAlt('');
+                            setSourceSize(null);
+                            setOptimizedSize(null);
+                            onChange('');
+                          } else {
+                            setPreviewUrl(item.url);
+                            setAlt(item.fileName?.split('.')[0].replace(/[-_]/g, ' ') || '');
+                            setSourceSize(item.size || null);
+                            setOptimizedSize(null);
+                            // Notify parent immediately
+                            onChange(item.url, { 
+                              alt: item.fileName?.split('.')[0].replace(/[-_]/g, ' ') || '',
+                              title: item.fileName
+                            });
+                            setActiveTab('upload');
+                          }
                         }}
                         className={`aspect-square rounded-lg overflow-hidden border-2 cursor-pointer transition-all hover:scale-[1.05] active:scale-95 group relative ${
                           previewUrl === item.url ? 'border-emerald-600 shadow-md ring-2 ring-emerald-100' : 'border-transparent hover:border-stone-200'
@@ -669,6 +681,24 @@ const ImageUploader = ({
                           className="w-full h-full object-cover"
                           loading="lazy"
                         />
+                        {/* Deselect button — only shown on the currently selected image */}
+                        {previewUrl === item.url && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPreviewUrl('');
+                              setAlt('');
+                              setSourceSize(null);
+                              setOptimizedSize(null);
+                              onChange('');
+                            }}
+                            className="absolute left-1 top-1 z-20 rounded-full bg-emerald-600 text-white p-1 shadow-md hover:bg-red-500 transition-colors focus:outline-none focus:ring-2 focus:ring-white"
+                            title="Deselect image"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        )}
                         <button
                           type="button"
                           onClick={(event) => {
@@ -1044,17 +1074,41 @@ const ImageUploader = ({
 
       {/* Persistence Preview (always visible if value exists) */}
       {value && !previewUrl && (
-        <div className="relative rounded-lg overflow-hidden border border-stone-200 bg-stone-100">
+        <div className="rounded-lg border border-stone-200 bg-stone-100 overflow-hidden">
           <img src={value} alt="Current" className="w-full max-h-[250px] object-contain" />
-          <Button
-            type="button"
-            variant="destructive"
-            size="sm"
-            className="absolute top-2 right-2"
-            onClick={() => setShowDeleteConfirm(true)}
-          >
-            <Trash2 className="w-4 h-4 mr-1" /> Remove
-          </Button>
+          <div className="flex items-center justify-end gap-2 px-3 py-2 bg-stone-50 border-t border-stone-200">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="border-stone-300 text-stone-600 hover:bg-stone-100"
+              onClick={() => {
+                onChange('');
+                setPreviewUrl('');
+                setAlt('');
+                setCaption('');
+              }}
+            >
+              Remove from field
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              size="sm"
+              onClick={() => {
+                // Find the media record for this URL so the delete dialog can use it
+                const match = mediaList.find(item => item.url === value);
+                if (match) {
+                  setSelectedDeleteItem(match);
+                } else {
+                  // No library record found — just set a minimal item so the dialog opens
+                  setSelectedDeleteItem({ url: value, fileName: value.split('/').pop() });
+                }
+              }}
+            >
+              <Trash2 className="w-4 h-4 mr-1" /> Delete from library
+            </Button>
+          </div>
         </div>
       )}
 

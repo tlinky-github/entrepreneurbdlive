@@ -328,6 +328,8 @@ const ContentEditorPanel = () => {
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
   const [activeLinkData, setActiveLinkData] = useState(null);
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
+  const [editingImagePos, setEditingImagePos] = useState(null);
+  const [editingImageAttrs, setEditingImageAttrs] = useState(null);
 
   // Per-post custom code
   const [customCss, setCustomCss] = useState('');
@@ -465,11 +467,30 @@ const ContentEditorPanel = () => {
         class: 'tiptap-content focus:outline-none min-height: 400px;',
       },
       handleClick: (view, pos, event) => {
+        // Handle image clicks — open ImageEditorDialog to edit/replace the image
+        const target = event?.target;
+        if (target instanceof Element) {
+          const img = target.closest('img') || (target.tagName === 'IMG' ? target : null);
+          if (img) {
+            event.preventDefault();
+            event.stopPropagation();
+            const node = view.state.doc.nodeAt(pos);
+            const attrs = node?.type?.name === 'image' ? node.attrs : {};
+            setEditingImagePos(pos);
+            setEditingImageAttrs({
+              src: attrs.src || img.getAttribute('src') || '',
+              alt: attrs.alt || img.getAttribute('alt') || '',
+              title: attrs.title || img.getAttribute('title') || '',
+              caption: attrs.caption || '',
+            });
+            setImageDialogOpen(true);
+            return true;
+          }
+        }
         if (event.target.closest('a')) {
           event.preventDefault();
           const attrs = editor.getAttributes('link');
           if (attrs && (attrs.href || attrs['data-actual-href'])) {
-            // Force selection to the link so attributes are correctly picked up
             editor.commands.setTextSelection(pos);
             setLinkSource('editor');
             setActiveLinkData({
@@ -2567,9 +2588,32 @@ const ContentEditorPanel = () => {
 
       <ImageEditorDialog
         open={imageDialogOpen}
-        onOpenChange={setImageDialogOpen}
+        onOpenChange={(open) => {
+          setImageDialogOpen(open);
+          if (!open) { setEditingImagePos(null); setEditingImageAttrs(null); }
+        }}
+        initialValue={editingImageAttrs?.src || ''}
         onInsert={(data) => {
-          editor.chain().focus().setImage(data).run();
+          if (editingImagePos !== null) {
+            const { state, dispatch } = editor.view;
+            const node = state.doc.nodeAt(editingImagePos);
+            if (node && node.type.name === 'image') {
+              const tr = state.tr.setNodeMarkup(editingImagePos, undefined, {
+                ...node.attrs,
+                ...data,
+                src: data.src,
+              });
+              dispatch(tr);
+              editor.view.focus();
+            } else {
+              editor.chain().focus().insertContent({ type: 'image', attrs: data }).run();
+            }
+            setEditingImagePos(null);
+            setEditingImageAttrs(null);
+          } else {
+            editor.chain().focus().setImage(data).run();
+          }
+          setImageDialogOpen(false);
         }}
       />
 

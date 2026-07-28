@@ -3,7 +3,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { X, Image as ImageIcon } from 'lucide-react';
 import ImageUploader from '../common/ImageUploader';
 
-const ImageEditorDialog = ({ open, onOpenChange, onInsert }) => {
+const ImageEditorDialog = ({ open, onOpenChange, onInsert, initialValue }) => {
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
@@ -32,6 +32,7 @@ const ImageEditorDialog = ({ open, onOpenChange, onInsert }) => {
           {/* Uploader Body */}
           <div className="p-6 overflow-y-auto max-h-[70vh]">
             <ImageUploader 
+              value={initialValue || ''}
               onChange={(url, meta) => {
                 if (url) {
                   onInsert({ 
