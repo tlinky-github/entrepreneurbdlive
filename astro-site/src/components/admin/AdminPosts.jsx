@@ -58,6 +58,13 @@ const formatDate = (date) => {
   return isNaN(d.getTime()) ? '-' : d.toLocaleDateString();
 };
 
+const getDisplayDate = (post) => {
+  if (post.status === 'published') {
+    return post.published_at ?? (post.created_at ?? post.createdAt);
+  }
+  return post.created_at ?? post.createdAt;
+};
+
 const AdminPosts = () => {
   const navigate = useNavigate();
   const [posts, setPosts] = useState([]);
@@ -228,6 +235,8 @@ const AdminPosts = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="created_at">Date</SelectItem>
+                  <SelectItem value="updated_at">Last Edited</SelectItem>
+                  <SelectItem value="published_at">Publish Date</SelectItem>
                   <SelectItem value="view_count">Views</SelectItem>
                   <SelectItem value="title">Title</SelectItem>
                 </SelectContent>
@@ -377,7 +386,7 @@ const AdminPosts = () => {
                         </span>
                       </TableCell>
                       <TableCell className="text-stone-500 text-sm">
-                        {formatDate(post.created_at || post.createdAt)}
+                        {formatDate(getDisplayDate(post))}
                       </TableCell>
                       <TableCell>
                         <DropdownMenu>

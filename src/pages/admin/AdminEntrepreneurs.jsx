@@ -56,6 +56,8 @@ const AdminEntrepreneurs = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('created_at');
+  const [sortOrder, setSortOrder] = useState('desc');
   const [deleteId, setDeleteId] = useState(null);
   const [actionLoading, setActionLoading] = useState(null);
 
@@ -65,6 +67,8 @@ const AdminEntrepreneurs = () => {
       const params = { limit: 50, isAdmin: true };
       if (search) params.search = search;
       if (statusFilter !== 'all') params.status = statusFilter;
+      params.sortBy = sortBy;
+      params.sortOrder = sortOrder;
 
       const res = await profileAPI.list(params);
       setProfiles(res.data || []);
@@ -73,7 +77,7 @@ const AdminEntrepreneurs = () => {
     } finally {
       setLoading(false);
     }
-  }, [search, statusFilter]);
+  }, [search, statusFilter, sortBy, sortOrder]);
 
   useEffect(() => {
     loadProfiles();
@@ -169,7 +173,7 @@ const AdminEntrepreneurs = () => {
               />
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-40">
+              <SelectTrigger className="w-[140px]">
                 <Filter className="w-4 h-4 mr-2" />
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
@@ -177,7 +181,29 @@ const AdminEntrepreneurs = () => {
                 <SelectItem value="all">All Status</SelectItem>
                 <SelectItem value="pending">Pending</SelectItem>
                 <SelectItem value="published">Published</SelectItem>
+                <SelectItem value="draft">Draft</SelectItem>
                 <SelectItem value="rejected">Rejected</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue placeholder="Sort By" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="created_at">Date</SelectItem>
+                <SelectItem value="updated_at">Last Edited</SelectItem>
+                <SelectItem value="name">Name</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={sortOrder} onValueChange={setSortOrder}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue placeholder="Order" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="desc">Descending</SelectItem>
+                <SelectItem value="asc">Ascending</SelectItem>
               </SelectContent>
             </Select>
           </div>

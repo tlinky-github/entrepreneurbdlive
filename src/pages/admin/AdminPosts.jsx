@@ -42,26 +42,56 @@ import {
   TableHeader,
   TableRow,
 } from '../../components/ui/table';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../../components/ui/select';
+
+const formatDate = (date) => {
+  if (!date) return '-';
+  const d = new Date(date);
+  return isNaN(d.getTime()) ? '-' : d.toLocaleDateString();
+};
+
+const getDisplayDate = (post) => {
+  if (post.status === 'published') {
+    return post.published_at ?? (post.created_at ?? post.createdAt);
+  }
+  return post.created_at ?? post.createdAt;
+};
 
 const AdminPosts = () => {
   const navigate = useNavigate();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [sortBy, setSortBy] = useState('created_at');
+  const [sortOrder, setSortOrder] = useState('desc');
   const [deleteId, setDeleteId] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
   const loadPosts = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await postAPI.list({ search: search || undefined, limit: 50, isAdmin: true, status: 'all' });
+      const res = await postAPI.list({
+        search: search || undefined,
+        limit: 50,
+        isAdmin: true,
+        status: filterStatus,
+        sortBy,
+        sortOrder,
+      });
       setPosts(res.data || []);
     } catch (error) {
       toast.error('Failed to load posts');
     } finally {
       setLoading(false);
     }
-  }, [search]);
+  }, [search, filterStatus, sortBy, sortOrder]);
 
   useEffect(() => {
     loadPosts();
@@ -120,17 +150,56 @@ const AdminPosts = () => {
         </div>
       </div>
 
-      {/* Search */}
+      {/* Filters & Search */}
       <Card className="mb-6 border-stone-200">
         <CardContent className="p-4">
-          <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-400" />
-            <Input
-              placeholder="Search posts..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-10"
-            />
+          <div className="flex flex-col sm:flex-row gap-4 justify-between">
+            <div className="flex gap-4 flex-wrap">
+              <Select value={filterStatus} onValueChange={setFilterStatus}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="published">Published</SelectItem>
+                  <SelectItem value="draft">Draft</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue placeholder="Sort By" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="created_at">Date</SelectItem>
+                  <SelectItem value="updated_at">Last Edited</SelectItem>
+                  <SelectItem value="published_at">Publish Date</SelectItem>
+                  <SelectItem value="view_count">Views</SelectItem>
+                  <SelectItem value="title">Title</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={sortOrder} onValueChange={setSortOrder}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue placeholder="Order" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="desc">Descending</SelectItem>
+                  <SelectItem value="asc">Ascending</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="relative w-full sm:max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-400" />
+              <Input
+                placeholder="Search posts..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-10"
+              />
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -200,7 +269,7 @@ const AdminPosts = () => {
                       </span>
                     </TableCell>
                     <TableCell className="text-stone-500 text-sm">
-                      {(post.created_at || post.createdAt) ? new Date(post.created_at || post.createdAt).toLocaleDateString() : '-'}
+                      {formatDate(getDisplayDate(post))}
                     </TableCell>
                     <TableCell>
                       <DropdownMenu>

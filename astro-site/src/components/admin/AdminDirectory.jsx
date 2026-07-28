@@ -59,6 +59,8 @@ const AdminDirectory = () => {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('created_at');
+  const [sortOrder, setSortOrder] = useState('desc');
   const [deleteId, setDeleteId] = useState(null);
   const [actionLoading, setActionLoading] = useState(null);
 
@@ -75,6 +77,8 @@ const AdminDirectory = () => {
       if (search) params.search = search;
       if (statusFilter !== 'all') params.status = statusFilter;
       if (typeFilter !== 'all') params.listing_type = typeFilter;
+      params.sortBy = sortBy;
+      params.sortOrder = sortOrder;
 
       const res = await listingAPI.list(params);
       setListings(res.data || []);
@@ -83,7 +87,7 @@ const AdminDirectory = () => {
     } finally {
       setLoading(false);
     }
-  }, [search, statusFilter, typeFilter]);
+  }, [search, statusFilter, typeFilter, sortBy, sortOrder]);
 
   useEffect(() => {
     loadListings();
@@ -93,7 +97,7 @@ const AdminDirectory = () => {
   useEffect(() => {
     setCurrentPage(1);
     setSelectedIds([]);
-  }, [search, statusFilter, typeFilter]);
+  }, [search, statusFilter, typeFilter, sortBy, sortOrder]);
 
   const handleApprove = async (id) => {
     setActionLoading(id);
@@ -251,11 +255,12 @@ const AdminDirectory = () => {
                 <SelectItem value="all">All Status</SelectItem>
                 <SelectItem value="pending">Pending</SelectItem>
                 <SelectItem value="published">Published</SelectItem>
+                <SelectItem value="draft">Draft</SelectItem>
                 <SelectItem value="rejected">Rejected</SelectItem>
               </SelectContent>
             </Select>
             <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger className="w-40">
+              <SelectTrigger className="w-[140px]">
                 <SelectValue placeholder="Type" />
               </SelectTrigger>
               <SelectContent>
@@ -264,6 +269,28 @@ const AdminDirectory = () => {
                 <SelectItem value="sme">SME</SelectItem>
                 <SelectItem value="entrepreneur">Entrepreneur</SelectItem>
                 <SelectItem value="service_provider">Service Provider</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue placeholder="Sort By" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="created_at">Date</SelectItem>
+                <SelectItem value="updated_at">Last Edited</SelectItem>
+                <SelectItem value="view_count">Views</SelectItem>
+                <SelectItem value="business_name">Name</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={sortOrder} onValueChange={setSortOrder}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue placeholder="Order" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="desc">Descending</SelectItem>
+                <SelectItem value="asc">Ascending</SelectItem>
               </SelectContent>
             </Select>
           </div>
