@@ -340,6 +340,7 @@ const ContentEditorPanel = () => {
   const [cities, setCities] = useState([]);
   const [listingTypes, setListingTypes] = useState([]);
   const [startupStages, setStartupStages] = useState([]);
+  const [employeeSizes, setEmployeeSizes] = useState([]);
   const [showQuickAdd, setShowQuickAdd] = useState({ category: false, author: false, listingType: false, stage: false, industry: false, city: false });
   const [quickAddValue, setQuickAddValue] = useState('');
   const [leadershipSearch, setLeadershipSearch] = useState({ founder: '', ceo: '', business: '' });
@@ -955,6 +956,13 @@ const ContentEditorPanel = () => {
     } catch (error) { console.error('Error loading cities:', error); }
   }, []);
 
+  const refreshEmployeeSizes = useCallback(async () => {
+    try {
+      const res = await taxonomyAPI.list('employee_sizes');
+      if (res.data) setEmployeeSizes(res.data);
+    } catch (error) { console.error('Error loading employee sizes:', error); }
+  }, []);
+
   const refreshListings = useCallback(async () => {
     try {
       const res = await contentAPI.list('directory');
@@ -983,15 +991,18 @@ const ContentEditorPanel = () => {
       refreshListingTypes();
       refreshCities();
       refreshIndustries();
+      refreshStartupStages();
+      refreshEmployeeSizes();
       refreshEntrepreneurs();
     }
     if (type === 'entrepreneurs') {
       refreshStartupStages();
       refreshIndustries();
       refreshCities();
+      refreshEmployeeSizes();
       refreshListings();
     }
-  }, [type, refreshListingTypes, refreshCities, refreshStartupStages, refreshIndustries, refreshListings, refreshEntrepreneurs]);
+  }, [type, refreshListingTypes, refreshCities, refreshStartupStages, refreshIndustries, refreshEmployeeSizes, refreshListings, refreshEntrepreneurs]);
 
   const handleQuickAdd = async (taxType) => {
     if (!quickAddValue.trim()) return;
@@ -1028,6 +1039,11 @@ const ContentEditorPanel = () => {
           await refreshCities();
           setCity(newItem.name);
           break;
+        case 'employeeSize':
+          newItem = await taxonomyAPI.create('employee_sizes', quickAddValue);
+          await refreshEmployeeSizes();
+          setEmployeeSize(newItem.name || newItem.slug);
+          break;
       }
       toast.success(`Success! Created "${quickAddValue}"`);
       setQuickAddValue('');
@@ -1043,7 +1059,7 @@ const ContentEditorPanel = () => {
   const getOptionValue = (option, currentTaxType) => {
     if (typeof option === 'string') return option;
     if (currentTaxType === 'stage') return option?.slug || option?.id || option?.name || '';
-    if (currentTaxType === 'city' || currentTaxType === 'industry') return option?.name || option?.slug || option?.id || '';
+    if (currentTaxType === 'city' || currentTaxType === 'industry' || currentTaxType === 'employeeSize') return option?.name || option?.slug || option?.id || '';
     return option?.id || option?.slug || option?.name || '';
   };
 
@@ -1992,21 +2008,14 @@ Only output the raw JSON object, nothing else. Do not use markdown wrapping (\`\
                         placeholder="e.g. Bangladesh"
                       />
                     </div>
-                    <div>
-                      <label>Employee Size</label>
-                      <select
-                        value={employeeSize}
-                        onChange={(e) => setEmployeeSize(e.target.value)}
-                        className="input-select"
-                      >
-                        <option value="">Select Size</option>
-                        <option value="1-10">1-10</option>
-                        <option value="11-50">11-50</option>
-                        <option value="51-200">51-200</option>
-                        <option value="201-500">201-500</option>
-                        <option value="500+">500+</option>
-                      </select>
-                    </div>
+                    <QuickSelector
+                      label="Employee Size"
+                      value={employeeSize}
+                      onChange={setEmployeeSize}
+                      options={employeeSizes.length > 0 ? employeeSizes : ['1-10', '11-50', '51-200', '201-500', '500+']}
+                      taxType="employeeSize"
+                      placeholder="Select Size"
+                    />
                     <div>
                       <label>Founded Year</label>
                       <Input
@@ -2030,6 +2039,14 @@ Only output the raw JSON object, nothing else. Do not use markdown wrapping (\`\
                       options={industries}
                       taxType="industry"
                       placeholder="Select Industry"
+                    />
+                    <QuickSelector
+                      label="Startup Stage"
+                      value={startupStage}
+                      onChange={setStartupStage}
+                      options={startupStages}
+                      taxType="stage"
+                      placeholder="Select Stage"
                     />
                     {submittedIndustry && (
                       <p className="text-[10px] text-emerald-600 font-bold px-1 uppercase leading-tight mt-1">

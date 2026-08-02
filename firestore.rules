@@ -101,6 +101,10 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isAdmin();
     }
+    match /employee_sizes/{size} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
     match /media/{item} {
       allow read: if true;
       allow write: if isAdmin();

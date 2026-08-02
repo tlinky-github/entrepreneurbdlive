@@ -384,24 +384,26 @@ const DirectoryDetail = () => {
                <CardHeader className="bg-stone-50 border-b border-stone-100">
                   <CardTitle className="text-xs font-black uppercase tracking-[0.2em] text-stone-600">Company Vitals</CardTitle>
                </CardHeader>
-               <CardContent className="p-8 space-y-6">
-                  <div className="flex justify-between items-center group">
-                    <span className="text-stone-400 text-sm font-bold uppercase tracking-wider group-hover:text-emerald-600 transition-colors">Industry</span>
-                    <span className="text-stone-900 font-black">{listing.industry || listing.industry_name || 'General Business'}</span>
-                  </div>
-                  <div className="flex justify-between items-center group">
-                    <span className="text-stone-400 text-sm font-bold uppercase tracking-wider group-hover:text-emerald-600 transition-colors">Staff Size</span>
-                    <span className="text-stone-900 font-black">{listing.employee_size || 'Startup'}</span>
-                  </div>
-                  {listing.startup_stage && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-stone-400 text-sm font-bold uppercase tracking-wider">Growth Stage</span>
-                      <Badge className="bg-emerald-900 text-white hover:bg-emerald-950 font-black px-4 py-1">
-                        {listing.startup_stage}
-                      </Badge>
-                    </div>
-                  )}
-                  {listing.headquarters && (
+               <CardContent className="p-6 space-y-5">
+                 <div className="flex items-start gap-4 group">
+                   <span className="text-stone-400 text-xs font-bold uppercase tracking-wider group-hover:text-emerald-600 transition-colors w-24 shrink-0 pt-0.5">Industry</span>
+                   <span className="text-stone-900 font-black text-sm flex-1 min-w-0 break-words">{listing.industry || listing.industry_name || 'General Business'}</span>
+                 </div>
+                 <div className="flex items-start gap-4 group">
+                   <span className="text-stone-400 text-xs font-bold uppercase tracking-wider group-hover:text-emerald-600 transition-colors w-24 shrink-0 pt-0.5">Staff Size</span>
+                   <span className="text-stone-900 font-black text-sm flex-1 min-w-0">{listing.employee_size || 'Startup'}</span>
+                 </div>
+                 {listing.startup_stage && (
+                   <div className="flex items-start gap-4 group">
+                     <span className="text-stone-400 text-xs font-bold uppercase tracking-wider w-24 shrink-0 pt-0.5">Growth Stage</span>
+                     <div className="flex-1 min-w-0">
+                       <Badge className="bg-emerald-900 text-white hover:bg-emerald-950 font-black px-3 py-1 text-xs inline-block">
+                         {listing.startup_stage}
+                       </Badge>
+                     </div>
+                   </div>
+                 )}
+                 {listing.headquarters && (
                      <div className="pt-4 border-t border-stone-100">
                         <span className="text-stone-400 text-[10px] font-black uppercase block mb-2">Location</span>
                         <p className="text-stone-700 font-bold flex items-start gap-2">

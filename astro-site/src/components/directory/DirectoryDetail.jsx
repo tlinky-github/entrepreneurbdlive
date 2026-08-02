@@ -437,7 +437,7 @@ const DirectoryDetail = ({ slug, initialListing, startupStages: initialStartupSt
                                         
                                       return (
                                         <div key={fIndex} className="mb-6 last:mb-0">
-                                          <p className="font-bold text-stone-900 !m-0 text-lg">{faq.question || faq.q}</p>
+                                          <h3 className="font-bold text-stone-900 !m-0 text-lg">{faq.question || faq.q}</h3>
                                           <div 
                                             className="text-stone-800 leading-[1.8] !mt-1 !mb-0 prose-faq"
                                             dangerouslySetInnerHTML={{ __html: answerHtml }}
@@ -485,24 +485,26 @@ const DirectoryDetail = ({ slug, initialListing, startupStages: initialStartupSt
                <CardHeader className="bg-stone-50 border-b border-stone-100">
                   <CardTitle className="text-sm font-black uppercase tracking-[0.2em] text-stone-600">Company Vitals</CardTitle>
                </CardHeader>
-               <CardContent className="p-8 space-y-6">
-                  <div className="flex justify-between items-center group">
-                    <span className="text-stone-400 text-sm font-bold uppercase tracking-wider group-hover:text-emerald-600 transition-colors">Industry</span>
-                    <span className="text-stone-900 font-black">{listing.industry || listing.industry_name || 'General Business'}</span>
+               <CardContent className="p-6 space-y-5">
+                  <div className="flex items-start gap-4 group">
+                    <span className="text-stone-400 text-xs font-bold uppercase tracking-wider group-hover:text-emerald-600 transition-colors w-24 shrink-0 pt-0.5">Industry</span>
+                    <span className="text-stone-900 font-black text-sm flex-1 min-w-0 break-words">{listing.industry || listing.industry_name || 'General Business'}</span>
                   </div>
-                  <div className="flex justify-between items-center group">
-                    <span className="text-stone-400 text-sm font-bold uppercase tracking-wider group-hover:text-emerald-600 transition-colors">Staff Size</span>
-                    <span className="text-stone-900 font-black">{listing.employee_size || 'Startup'}</span>
+                  <div className="flex items-start gap-4 group">
+                    <span className="text-stone-400 text-xs font-bold uppercase tracking-wider group-hover:text-emerald-600 transition-colors w-24 shrink-0 pt-0.5">Staff Size</span>
+                    <span className="text-stone-900 font-black text-sm flex-1 min-w-0">{listing.employee_size || 'Startup'}</span>
                   </div>
                   {listing.startup_stage && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-stone-400 text-sm font-bold uppercase tracking-wider">Growth Stage</span>
-                      <Badge className="bg-emerald-900 text-white hover:bg-emerald-950 font-black px-4 py-1">
-                        {(() => {
-                          const match = startupStages.find(s => s.id === listing.startup_stage || s.slug === listing.startup_stage || s.name?.toLowerCase() === listing.startup_stage.toLowerCase());
-                          return match ? match.name : listing.startup_stage;
-                        })()}
-                      </Badge>
+                    <div className="flex items-start gap-4 group">
+                      <span className="text-stone-400 text-xs font-bold uppercase tracking-wider w-24 shrink-0 pt-0.5">Growth Stage</span>
+                      <div className="flex-1 min-w-0">
+                        <Badge className="bg-emerald-900 text-white hover:bg-emerald-950 font-black px-3 py-1 text-xs inline-block">
+                          {(() => {
+                            const match = startupStages.find(s => s.id === listing.startup_stage || s.slug === listing.startup_stage || s.name?.toLowerCase() === listing.startup_stage.toLowerCase());
+                            return match ? match.name : listing.startup_stage;
+                          })()}
+                        </Badge>
+                      </div>
                     </div>
                   )}
                   {listing.headquarters && (

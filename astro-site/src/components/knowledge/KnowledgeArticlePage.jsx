@@ -50,10 +50,17 @@ function processArticleHtml(html, featuredImage, title) {
     if (!faqsJson) return '';
     try {
       const faqs = JSON.parse(faqsJson.replace(/&apos;/g, "'").replace(/&quot;/g, '"'));
-      let faqHtml = `<div class="mt-10 mb-6"><h2 class="text-[1.875rem] font-bold text-stone-900 mb-5">Frequently Asked Questions</h2><div class="faq-list">`;
+      const decodeFaq = (str) => String(str || '')
+        .replace(/&amp;lt;/g, '<').replace(/&lt;/g, '<')
+        .replace(/&amp;gt;/g, '>').replace(/&gt;/g, '>')
+        .replace(/&amp;quot;/g, '"').replace(/&quot;/g, '"')
+        .replace(/&amp;apos;/g, "'").replace(/&apos;/g, "'")
+        .replace(/&#39;/g, "'")
+        .replace(/&amp;amp;/g, '&').replace(/&amp;/g, '&');
+
       faqs.forEach(faq => {
-        const q = (faq.question || faq.q || '').replace(/&amp;/g, '&').replace(/&apos;/g, "'");
-        const a = (faq.answer || faq.a || '').replace(/style="[^"]*"/gi, '').replace(/&amp;/g, '&').replace(/&apos;/g, "'");
+        const q = decodeFaq(faq.question || faq.q);
+        const a = decodeFaq(faq.answer || faq.a).replace(/style="[^"]*"/gi, '');
         faqHtml += `<div class="faq-item mb-8 last:mb-0"><h3 class="text-[1.25rem] font-bold text-stone-900 mb-3 leading-tight">${q}</h3><div class="text-stone-700 leading-relaxed prose prose-stone max-w-none">${a}</div></div>`;
       });
       faqHtml += `</div></div>`;
@@ -289,16 +296,28 @@ const KnowledgeArticlePage = ({ slug, article: initialArticle, isFirestore: init
                         {articleFaqs.map((faq, index) => (
                           <div key={index} className="faq-item border-b border-stone-200 pb-8 last:border-0 last:pb-0">
                             <h3 className="text-xl font-bold text-stone-900 mb-3 leading-tight">
-                              {faq.q}
+                              {(() => {
+                                const qText = (faq.q || faq.question || '')
+                                  .replace(/&amp;lt;/g, '<').replace(/&lt;/g, '<')
+                                  .replace(/&amp;gt;/g, '>').replace(/&gt;/g, '>')
+                                  .replace(/&amp;quot;/g, '"').replace(/&quot;/g, '"')
+                                  .replace(/&amp;apos;/g, "'").replace(/&apos;/g, "'")
+                                  .replace(/&#39;/g, "'")
+                                  .replace(/&amp;amp;/g, '&').replace(/&amp;/g, '&');
+                                return qText;
+                              })()}
                             </h3>
                             <div className="text-stone-700 leading-relaxed prose prose-stone max-w-none prose-p:my-2 prose-a:text-emerald-600 prose-a:font-semibold hover:prose-a:text-emerald-700">
                               {(() => {
-                                const answerHtml = sanitizeHtml(
-                                  (faq.a || '')
-                                    .replace(/&lt;/g, '<').replace(/&gt;/g, '>')
-                                    .replace(/&quot;/g, '"').replace(/&amp;apos;/g, "'").replace(/&amp;/g, '&')
-                                    .replace(/style="[^"]*"/gi, '') // Strip nasty inline styles
-                                );
+                                const rawAns = (faq.a || faq.answer || '')
+                                  .replace(/&amp;lt;/g, '<').replace(/&lt;/g, '<')
+                                  .replace(/&amp;gt;/g, '>').replace(/&gt;/g, '>')
+                                  .replace(/&amp;quot;/g, '"').replace(/&quot;/g, '"')
+                                  .replace(/&amp;apos;/g, "'").replace(/&apos;/g, "'")
+                                  .replace(/&#39;/g, "'")
+                                  .replace(/&amp;amp;/g, '&').replace(/&amp;/g, '&')
+                                  .replace(/style="[^"]*"/gi, '');
+                                const answerHtml = sanitizeHtml(rawAns);
                                 return <div dangerouslySetInnerHTML={{ __html: answerHtml }} />;
                               })()}
                             </div>

@@ -306,20 +306,29 @@ const KnowledgeArticlePage = () => {
                       <Accordion type="single" collapsible className="w-full">
                         {articleFaqs.map((faq, index) => (
                           <AccordionItem key={index} value={`faq-${index}`} className="border-b border-stone-200">
-                            <AccordionTrigger className="text-left text-stone-900 hover:text-emerald-900 hover:no-underline py-4 font-medium">
-                              {faq.q}
-                            </AccordionTrigger>
-                            <AccordionContent className="text-stone-600 pb-4 leading-relaxed">
-                              {(() => {
-                                const answerHtml = sanitizeHtml(
-                                  (faq.a || '')
-                                    .replace(/&lt;/g, '<').replace(/&gt;/g, '>')
-                                    .replace(/&quot;/g, '"').replace(/&amp;apos;/g, "'").replace(/&amp;/g, '&')
-                                    .replace(/style="[^"]*"/gi, '') // Strip nasty inline styles
-                                );
-                                return <div dangerouslySetInnerHTML={{ __html: answerHtml }} />;
-                              })()}
-                            </AccordionContent>
+                             <AccordionTrigger className="text-left text-stone-900 hover:text-emerald-900 hover:no-underline py-4 font-medium">
+                               {(faq.q || faq.question || '')
+                                 .replace(/&amp;lt;/g, '<').replace(/&lt;/g, '<')
+                                 .replace(/&amp;gt;/g, '>').replace(/&gt;/g, '>')
+                                 .replace(/&amp;quot;/g, '"').replace(/&quot;/g, '"')
+                                 .replace(/&amp;apos;/g, "'").replace(/&apos;/g, "'")
+                                 .replace(/&#39;/g, "'")
+                                 .replace(/&amp;amp;/g, '&').replace(/&amp;/g, '&')}
+                             </AccordionTrigger>
+                             <AccordionContent className="text-stone-600 pb-4 leading-relaxed">
+                               {(() => {
+                                 const rawAns = (faq.a || faq.answer || '')
+                                   .replace(/&amp;lt;/g, '<').replace(/&lt;/g, '<')
+                                   .replace(/&amp;gt;/g, '>').replace(/&gt;/g, '>')
+                                   .replace(/&amp;quot;/g, '"').replace(/&quot;/g, '"')
+                                   .replace(/&amp;apos;/g, "'").replace(/&apos;/g, "'")
+                                   .replace(/&#39;/g, "'")
+                                   .replace(/&amp;amp;/g, '&').replace(/&amp;/g, '&')
+                                   .replace(/style="[^"]*"/gi, '');
+                                 const answerHtml = sanitizeHtml(rawAns);
+                                 return <div dangerouslySetInnerHTML={{ __html: answerHtml }} />;
+                               })()}
+                             </AccordionContent>
                           </AccordionItem>
                         ))}
                       </Accordion>

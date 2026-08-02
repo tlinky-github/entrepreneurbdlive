@@ -226,8 +226,16 @@ export function processHtmlContent(html: string | null | undefined, featuredImag
             const rawQuestion = faq.question || faq.q || '';
             const rawAnswer = faq.answer || faq.a || '';
             
-            const question = rawQuestion.replace(/&amp;apos;/g, "'").replace(/&apos;/g, "'").replace(/&amp;quot;/g, '"').replace(/&quot;/g, '"').replace(/&amp;/g, '&');
-            const answer = rawAnswer.replace(/style="[^"]*"/gi, '').replace(/&amp;apos;/g, "'").replace(/&apos;/g, "'").replace(/&amp;quot;/g, '"').replace(/&quot;/g, '"').replace(/&amp;/g, '&');
+            const decodeEntities = (str: string) => String(str || '')
+              .replace(/&amp;lt;/g, '<').replace(/&lt;/g, '<')
+              .replace(/&amp;gt;/g, '>').replace(/&gt;/g, '>')
+              .replace(/&amp;quot;/g, '"').replace(/&quot;/g, '"')
+              .replace(/&amp;apos;/g, "'").replace(/&apos;/g, "'")
+              .replace(/&#39;/g, "'")
+              .replace(/&amp;amp;/g, '&').replace(/&amp;/g, '&');
+
+            const question = decodeEntities(rawQuestion);
+            const answer = decodeEntities(rawAnswer).replace(/style="[^"]*"/gi, '');
             
             faqHtml += `
               <div class="faq-item mb-8 last:mb-0">

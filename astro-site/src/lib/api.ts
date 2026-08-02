@@ -412,7 +412,10 @@ export const taxonomyAPI = {
         categories: 'categories',
         blog_categories: 'blog_categories',
         industries: 'industries',
-        cities: 'cities'
+        cities: 'cities',
+        listing_types: 'listing_types',
+        startup_stages: 'startup_stages',
+        employee_sizes: 'employee_sizes'
       };
       const colName = colMap[type] || type;
       const snapshot = await getDocs(collection(db, colName));
