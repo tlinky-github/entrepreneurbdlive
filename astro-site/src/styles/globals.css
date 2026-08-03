@@ -240,14 +240,14 @@ code {
   margin: 3rem 0;
 }
 
-.tiptap-content a:not(.editor-cta-button) {
+.tiptap-content a:not(.editor-cta-button):not(.ai-tool-btn) {
   color: #10b981;
   text-decoration: underline;
   font-weight: 500;
   transition: color 0.2s ease;
 }
 
-.tiptap-content a:not(.editor-cta-button):hover {
+.tiptap-content a:not(.editor-cta-button):not(.ai-tool-btn):hover {
   color: #064e3b;
 }
 
