@@ -68,8 +68,8 @@ function HeaderContent({ currentPath = '/', initialSiteSettings = null }) {
               <img src={siteSettings.logo_url} alt={siteSettings.site_name || 'Site Logo'} className="h-9 object-contain" />
             ) : siteSettings?.site_name ? (
               <>
-                <div className="w-10 h-10 bg-emerald-900 rounded-lg flex items-center justify-center group-hover:bg-emerald-800 transition-colors">
-                  <span className="text-white font-bold text-xl">
+                <div className="w-10 h-10 bg-emerald-900 rounded-lg flex items-center justify-center group-hover:bg-emerald-800 transition-colors overflow-hidden">
+                  <span className="text-white font-bold text-[2.25rem] leading-none flex items-center justify-center select-none transform -translate-y-[2px]">
                     {siteSettings.site_name.charAt(0).toLowerCase()}
                   </span>
                 </div>

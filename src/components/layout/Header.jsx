@@ -65,8 +65,8 @@ const Header = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 group" data-testid="header-logo">
-            <div className="w-10 h-10 bg-emerald-900 rounded-lg flex items-center justify-center group-hover:bg-emerald-800 transition-colors">
-              <span className="text-white font-bold text-xl">e</span>
+            <div className="w-10 h-10 bg-emerald-900 rounded-lg flex items-center justify-center group-hover:bg-emerald-800 transition-colors overflow-hidden">
+              <span className="text-white font-bold text-[2.25rem] leading-none flex items-center justify-center select-none transform -translate-y-[2px]">e</span>
             </div>
             <div className="hidden sm:block">
               <span className="font-bold text-lg text-stone-900">entrepreneurs</span>
