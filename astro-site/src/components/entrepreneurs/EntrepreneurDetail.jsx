@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { profileAPI, authorAPI, taxonomyAPI, listingAPI } from '../../lib/api';
+import { profileAPI, authorAPI, taxonomyAPI, listingAPI, incrementViewCountClient } from '../../lib/api';
 import CustomCodeInjector from '../../components/common/CustomCodeInjector';
 import NotFound from '../../components/common/NotFound';
 import { Button } from '../../components/ui/button';
@@ -42,6 +42,12 @@ const EntrepreneurDetail = ({ slug, initialProfile, initialAuthorData, startupSt
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [relatedProfiles, setRelatedProfiles] = useState([]);
   const [directoryListings, setDirectoryListings] = useState([]);
+
+  useEffect(() => {
+    if (profile?.id) {
+      incrementViewCountClient('profiles', profile.id);
+    }
+  }, [profile?.id]);
 
   useEffect(() => {
     const fetchListings = async () => {

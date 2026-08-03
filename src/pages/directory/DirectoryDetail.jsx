@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { listingAPI } from '../../lib/api';
+import { listingAPI, incrementViewCountClient } from '../../lib/api';
 import CustomCodeInjector from '../../components/common/CustomCodeInjector';
 import { SEO } from '../../components/SEO';
 import NotFound from '../../components/common/NotFound';
@@ -42,6 +42,9 @@ const DirectoryDetail = () => {
       try {
         const res = await listingAPI.get(slug);
         setListing(res.data);
+        if (res.data?.id) {
+          incrementViewCountClient('listings', res.data.id);
+        }
       } catch (error) {
         console.error('Error loading listing:', error);
       } finally {

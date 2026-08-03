@@ -56,6 +56,26 @@ const fileToBase64 = (file) => new Promise((resolve, reject) => {
   reader.readAsDataURL(file);
 });
 
+
+/**
+ * Increment view count for a document on client side (session-deduplicated)
+ */
+export async function incrementViewCountClient(collectionName, id) {
+  if (!id || typeof window === 'undefined') return;
+  const storageKey = `viewed_${collectionName}_${id}`;
+  try {
+    if (sessionStorage.getItem(storageKey)) return;
+    sessionStorage.setItem(storageKey, 'true');
+
+    const docRef = doc(db, collectionName, id);
+    await updateDoc(docRef, {
+      view_count: increment(1)
+    });
+  } catch (error) {
+    console.warn(`[incrementViewCountClient] Failed for ${collectionName}/${id}:`, error);
+  }
+}
+
 // --- Blog Posts API ---
 export const postAPI = {
   list: async (params = {}) => {

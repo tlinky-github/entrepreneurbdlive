@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { listingAPI, taxonomyAPI, profileAPI } from '../../lib/api';
+import { listingAPI, taxonomyAPI, profileAPI, incrementViewCountClient } from '../../lib/api';
 import CustomCodeInjector from '../../components/common/CustomCodeInjector';
 import NotFound from '../../components/common/NotFound';
 import { Button } from '../../components/ui/button';
@@ -41,6 +41,12 @@ const DirectoryDetail = ({ slug, initialListing, startupStages: initialStartupSt
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [relatedListings, setRelatedListings] = useState([]);
   const [profilesList, setProfilesList] = useState([]);
+
+  useEffect(() => {
+    if (listing?.id) {
+      incrementViewCountClient('listings', listing.id);
+    }
+  }, [listing?.id]);
 
   useEffect(() => {
     const loadProfiles = async () => {

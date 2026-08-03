@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { postAPI, commentAPI, interactionAPI, authorAPI } from '../../lib/api';
+import { postAPI, commentAPI, interactionAPI, authorAPI, incrementViewCountClient } from '../../lib/api';
 import CustomCodeInjector from '../../components/common/CustomCodeInjector';
 import { useAuth } from '../../lib/auth';
 import { Button } from '../../components/ui/button';
@@ -190,6 +190,9 @@ const BlogDetail = () => {
         }
 
         setPost(postRes.data);
+        if (postRes.data.id) {
+          incrementViewCountClient('posts', postRes.data.id);
+        }
 
         // Load related posts from the same category
         if (postRes.data.category_id) {

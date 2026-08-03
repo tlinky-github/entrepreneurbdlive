@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { commentAPI, interactionAPI } from '../../lib/api';
+import { commentAPI, interactionAPI, incrementViewCountClient } from '../../lib/api';
 import { useAuth } from '../../lib/auth';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -65,6 +65,9 @@ export default function BlogInteractions({ postId, postTitle, postExcerpt, initi
   const [reportingCommentId, setReportingCommentId] = useState(null);
 
   useEffect(() => {
+    if (postId) {
+      incrementViewCountClient('posts', postId);
+    }
     const loadData = async () => {
       try {
         const commentsRes = await commentAPI.list('blog', postId);

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { contentAPI, getDocBySlug } from '../../lib/api';
+import { contentAPI, getDocBySlug, incrementViewCountClient } from '../../lib/api';
 import { sanitizeHtml } from '../../lib/utils';
 import CustomCodeInjector from '../../components/common/CustomCodeInjector';
 import { pillarPages, pillarPagesPart2 } from '../../data/mock';
@@ -58,6 +58,7 @@ function processArticleHtml(html, featuredImage, title) {
         .replace(/&#39;/g, "'")
         .replace(/&amp;amp;/g, '&').replace(/&amp;/g, '&');
 
+      let faqHtml = `<div class="faq-container my-10 bg-stone-50 border border-stone-200 rounded-2xl p-6 md:p-8"><h2 class="text-2xl font-bold text-stone-900 mb-6 flex items-center gap-2"><span class="text-emerald-900">❓</span> Frequently Asked Questions</h2><div class="space-y-6">`;
       faqs.forEach(faq => {
         const q = decodeFaq(faq.question || faq.q);
         const a = decodeFaq(faq.answer || faq.a).replace(/style="[^"]*"/gi, '');
@@ -78,6 +79,13 @@ const KnowledgeArticlePage = ({ slug, article: initialArticle, isFirestore: init
   const [article, setArticle] = useState(initialArticle || null);
   const [isFirestore, setIsFirestore] = useState(!!initialIsFirestore);
   const [loading, setLoading] = useState(!initialArticle);
+
+  useEffect(() => {
+    if (article?.id && isFirestore) {
+      const col = article.type === 'resource' ? 'resources' : 'knowledge';
+      incrementViewCountClient(col, article.id);
+    }
+  }, [article?.id, isFirestore]);
 
   // Client-side fetch for draft previews (not in static paths)
   useEffect(() => {

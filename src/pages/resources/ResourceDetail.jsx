@@ -1,7 +1,7 @@
 // src/pages/resources/ResourceDetail.jsx
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { resourceAPI, authorAPI } from '../../lib/api';
+import { resourceAPI, authorAPI, incrementViewCountClient } from '../../lib/api';
 import { SEO } from '../../components/SEO';
 import NotFound from '../../components/common/NotFound';
 import { Badge } from '../../components/ui/badge';
@@ -40,6 +40,9 @@ const ResourceDetail = () => {
       try {
         const res = await resourceAPI.get(slug);
         setResource(res.data);
+        if (res.data?.id) {
+          incrementViewCountClient('resources', res.data.id);
+        }
 
         // Fetch Author Data if exists
         if (res.data?.authorId) {

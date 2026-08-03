@@ -62,6 +62,26 @@ const fileToBase64 = (file: File): Promise<string> => new Promise<string>((resol
   reader.readAsDataURL(file);
 });
 
+
+/**
+ * Increment view count for a document on client side (session-deduplicated)
+ */
+export async function incrementViewCountClient(collectionName: string, id: string) {
+  if (!id || typeof window === 'undefined') return;
+  const storageKey = `viewed_${collectionName}_${id}`;
+  try {
+    if (sessionStorage.getItem(storageKey)) return;
+    sessionStorage.setItem(storageKey, 'true');
+
+    const docRef = doc(db, collectionName, id);
+    await updateDoc(docRef, {
+      view_count: increment(1)
+    });
+  } catch (error) {
+    console.warn(`[incrementViewCountClient] Failed for ${collectionName}/${id}:`, error);
+  }
+}
+
 /**
  * Fetch a single document by slug from a Firestore collection
  */
