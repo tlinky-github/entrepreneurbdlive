@@ -223,6 +223,39 @@ const AdminSettings = () => {
               </div>
             </CardContent>
           </Card>
+
+          <Card className="border-stone-200 mt-6 animate-fade-in">
+            <CardHeader>
+              <CardTitle>Pagination Configuration</CardTitle>
+              <CardDescription>Specify the number of items per page for listings and profiles</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid sm:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="directory_per_page">Directory items per page</Label>
+                  <Input
+                    id="directory_per_page"
+                    type="number"
+                    value={settings.directory_per_page || '12'}
+                    onChange={(e) => handleChange('directory_per_page', e.target.value)}
+                    min="1"
+                    className="border-stone-200"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="entrepreneurs_per_page">Entrepreneurs profiles per page</Label>
+                  <Input
+                    id="entrepreneurs_per_page"
+                    type="number"
+                    value={settings.entrepreneurs_per_page || '12'}
+                    onChange={(e) => handleChange('entrepreneurs_per_page', e.target.value)}
+                    min="1"
+                    className="border-stone-200"
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="contact">

@@ -195,35 +195,6 @@ const AdminLLMSettings = () => {
           </div>
 
           <div className="border-t pt-6 space-y-4">
-            <h3 className="text-lg font-bold text-stone-900">Pagination Configuration</h3>
-            <p className="text-sm text-stone-500">Specify the number of items per page for listings and profiles.</p>
-            <div className="grid sm:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label htmlFor="directory_per_page" className="text-stone-700 font-bold text-sm">Directory items per page</Label>
-                <Input
-                  id="directory_per_page"
-                  type="number"
-                  value={settings.directory_per_page || '12'}
-                  onChange={(e) => handleChange('directory_per_page', e.target.value)}
-                  min="1"
-                  className="border-stone-200"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="entrepreneurs_per_page" className="text-stone-700 font-bold text-sm">Entrepreneurs profiles per page</Label>
-                <Input
-                  id="entrepreneurs_per_page"
-                  type="number"
-                  value={settings.entrepreneurs_per_page || '12'}
-                  onChange={(e) => handleChange('entrepreneurs_per_page', e.target.value)}
-                  min="1"
-                  className="border-stone-200"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="border-t pt-6 space-y-4">
             <h3 className="text-lg font-bold text-stone-900">Blog AI Tools Visual Builder</h3>
             <p className="text-sm text-stone-500">Add, edit, or remove the active AI platforms displayed in the blog post summary toolbar.</p>
             
