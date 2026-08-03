@@ -29,6 +29,10 @@ const AdminSettings = () => {
     seo_title: 'entrepreneurs.bd - Bangladesh Entrepreneur Ecosystem',
     seo_description: 'Connect with entrepreneurs, discover startups, and access resources for business growth in Bangladesh.',
     google_analytics_id: '',
+    llms_txt_intro: 'Welcome to entrepreneurs.bd. We are a trusted entrepreneurs hub offering educational resources, practical insights, business guides, and thought leadership.',
+    ai_read_tools: '[]',
+    directory_per_page: '12',
+    entrepreneurs_per_page: '12',
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -56,10 +60,26 @@ const AdminSettings = () => {
     }
   };
 
+  // Local helper state for visual AI Tools list builder
+  const [aiToolsList, setAiToolsList] = useState([]);
+  const [newTool, setNewTool] = useState({ name: '', color: 'bg-emerald-800 hover:bg-emerald-900', url: 'https://' });
+
   const loadSettings = async () => {
     try {
       const res = await settingsAPI.get();
       setSettings(prev => ({ ...prev, ...res.data }));
+      
+      // Initialize the visual list from saved JSON
+      if (res.data && res.data.ai_read_tools) {
+        try {
+          const parsed = typeof res.data.ai_read_tools === 'string' 
+            ? JSON.parse(res.data.ai_read_tools) 
+            : res.data.ai_read_tools;
+          setAiToolsList(Array.isArray(parsed) ? parsed : []);
+        } catch (e) {
+          setAiToolsList([]);
+        }
+      }
     } catch (error) {
       console.error('Failed to load settings:', error);
     } finally {
@@ -68,15 +88,31 @@ const AdminSettings = () => {
   };
 
   const handleChange = (field, value) => {
-    setSettings(prev => ({ ...prev, [field]: value }));
+    setSettings(prev => {
+      const updated = { ...prev, [field]: value };
+      return updated;
+    });
   };
 
   const handleSave = async () => {
     setSaving(true);
     try {
-      await settingsAPI.update(settings);
-      toast.success('Settings saved successfully');
+      const payload = {
+        ...settings,
+        ai_read_tools: JSON.stringify(aiToolsList)
+      };
+      
+      console.log('[Firestore DB Write Settings Payload]', payload);
+      const res = await settingsAPI.update(payload);
+      console.log('[Firestore DB Write Settings Response]', res);
+
+      if (res.success) {
+        toast.success('Settings saved successfully');
+      } else {
+        toast.error('Failed to save settings');
+      }
     } catch (error) {
+      console.error('[Firestore DB Write Settings Error]', error);
       toast.error('Failed to save settings');
     } finally {
       setSaving(false);
@@ -90,7 +126,7 @@ const AdminSettings = () => {
           <h1 className="text-2xl font-bold text-stone-900">Site Settings</h1>
           <p className="text-stone-500">Configure your site's global settings</p>
         </div>
-        <Button onClick={handleSave} disabled={saving || loading} className="bg-emerald-900 hover:bg-emerald-800">
+        <Button onClick={handleSave} disabled={saving} className="bg-emerald-900 hover:bg-emerald-800">
           {saving ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />

@@ -12,6 +12,7 @@ import AdminResources from './AdminResources';
 import AdminUsers from './AdminUsers';
 import AdminSettings from './AdminSettings';
 import AISettings from './AISettings';
+import AdminLLMSettings from './AdminLLMSettings';
 import AdminPages from './AdminPages';
 import AdminAnalytics from './AdminAnalytics';
 import AdminContentManager from './AdminContentManager';
@@ -88,6 +89,7 @@ const router = createBrowserRouter([
       { path: "pages/new", element: <PageEditor /> },
       { path: "pages/:id/edit", element: <PageEditor /> },
       { path: "settings", element: <AdminSettings /> },
+      { path: "llm-settings", element: <AdminLLMSettings /> },
       { path: "ai-settings", element: <AISettings /> },
       { path: "analytics", element: <AdminAnalytics /> },
       { path: "submissions", element: <AdminSubmissions /> },

@@ -1,15 +1,19 @@
 ---
 import PublicLayout from '../../layouts/PublicLayout.astro';
 import DirectoryList from '../../components/directory/DirectoryList.jsx';
-import { getPublishedDocs, taxonomyAPI } from '../../lib/serverApi';
+import { getPublishedDocs, taxonomyAPI, getSiteSettings } from '../../lib/serverApi';
 
 let initialListings = [];
 let listingTypes = [];
 let categories = [];
+let perPage = 12;
 
 try {
+  const settings = await getSiteSettings();
+  perPage = parseInt(settings?.directory_per_page) || 12;
+
   const [lDocs, typesRes, catRes] = await Promise.all([
-    getPublishedDocs('listings', 50),
+    getPublishedDocs('listings', perPage),
     taxonomyAPI.getByCollection('listing_types'),
     taxonomyAPI.getByCollection('categories')
   ]);
@@ -28,5 +32,6 @@ try {
     initialListings={initialListings} 
     initialListingTypes={listingTypes} 
     initialCategories={categories} 
+    initialPerPage={perPage}
   />
 </PublicLayout>

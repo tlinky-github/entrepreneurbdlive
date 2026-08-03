@@ -26,6 +26,8 @@ import {
 import DefaultAvatar from '../ui/DefaultAvatar';
 import ProfileCard from './ProfileCard';
 
+import { SitePagination } from '../../components/common/SitePagination';
+
 // Custom useSearchParams for Astro environment
 const useSearchParams = () => {
   const [searchParams, setSearchParamsState] = useState(
@@ -43,7 +45,7 @@ const useSearchParams = () => {
   return [searchParams, setSearchParams];
 };
 
-const EntrepreneurList = ({ initialProfiles = [], initialIndustries = [], initialCities = [] }) => {
+const EntrepreneurList = ({ initialProfiles = [], initialIndustries = [], initialCities = [], initialPerPage = 12 }) => {
   const [profiles, setProfiles] = useState(initialProfiles);
   const [industries, setIndustries] = useState(initialIndustries);
   const [cities, setCities] = useState(initialCities);
@@ -54,6 +56,8 @@ const EntrepreneurList = ({ initialProfiles = [], initialIndustries = [], initia
   const search = searchParams.get('search') || '';
   const industry = searchParams.get('industry') || '';
   const city = searchParams.get('city') || '';
+  const currentPage = parseInt(searchParams.get('page')) || 1;
+  const ITEMS_PER_PAGE = initialPerPage;
 
   // Load dynamic filters
   useEffect(() => {
@@ -82,8 +86,7 @@ const EntrepreneurList = ({ initialProfiles = [], initialIndustries = [], initia
           search: search || undefined,
           industry: industry || undefined,
           city: city || undefined,
-          status: 'published',
-          limit: 24
+          status: 'published'
         });
         setProfiles(res.data || []);
       } catch (error) {
@@ -103,11 +106,28 @@ const EntrepreneurList = ({ initialProfiles = [], initialIndustries = [], initia
     } else {
       params.delete(key);
     }
+    // Reset page back to 1 when search filters change
+    if (key !== 'page') {
+      params.delete('page');
+    }
     setSearchParams(params);
+    // Smooth scroll to top for better UX
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   const featuredProfiles = profiles.filter(p => p.is_featured);
-  const regularProfiles = profiles.filter(p => !p.is_featured);
+  let regularProfiles = profiles.filter(p => !p.is_featured);
+  if (search || industry || city) {
+    regularProfiles = profiles;
+  }
+
+  // Calculate Pagination parameters
+  const totalPages = Math.ceil(regularProfiles.length / ITEMS_PER_PAGE);
+  const safeCurrentPage = Math.max(1, Math.min(currentPage, totalPages || 1));
+  const startIndex = (safeCurrentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedProfiles = regularProfiles.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
   return (
     <div className="bg-stone-50 min-h-screen" data-testid="entrepreneurs-page">
@@ -212,10 +232,21 @@ const EntrepreneurList = ({ initialProfiles = [], initialIndustries = [], initia
 
             {/* All Profiles */}
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {regularProfiles.map((profile) => (
+              {paginatedProfiles.map((profile) => (
                 <ProfileCard key={profile.id} profile={profile} startupStages={startupStages} />
               ))}
             </div>
+
+            {/* Pagination Component */}
+            {totalPages > 1 && (
+              <div className="mt-16 border-t border-stone-200 pt-8">
+                <SitePagination 
+                  currentPage={safeCurrentPage} 
+                  totalPages={totalPages} 
+                  onPageChange={(p) => updateFilters('page', p)}
+                />
+              </div>
+            )}
           </>
         )}
       </div>

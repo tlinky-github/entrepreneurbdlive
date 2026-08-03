@@ -76,6 +76,7 @@ const AdminLayout = () => {
     { href: '/admin/traffic-center', label: 'Redirects', icon: ArrowRightLeft },
     { href: '/admin/users', label: 'Users', icon: Users },
     { href: '/admin/ai-settings', label: '✨ AI Generator', icon: TrendingUp },
+    { href: '/admin/llm-settings', label: 'LLM & Pagination', icon: Settings },
     { href: '/admin/reports', label: 'Reports', icon: AlertTriangle },
     { href: '/admin/import', label: 'Import Content', icon: Upload },
     { href: '/admin/settings', label: 'Settings', icon: Settings },

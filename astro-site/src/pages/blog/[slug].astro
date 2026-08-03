@@ -1,12 +1,13 @@
 ---
 import PublicLayout from '../../layouts/PublicLayout.astro';
-import { getDocBySlug, stripHtml, authorAPI, postAPI, getPublishedDocs, incrementViewCount } from '../../lib/serverApi';
+import { getDocBySlug, stripHtml, authorAPI, postAPI, getPublishedDocs, incrementViewCount, getSiteSettings } from '../../lib/serverApi';
 import { processHtmlContent, decodeHtmlEntities } from '../../lib/smartDesign';
 import { getArticleSchema, buildSchema, interpolateSEOVariables, getRobotsMetaString } from '../../lib/schema';
 import { Badge } from '../../components/ui/badge.jsx';
 import { Calendar, Clock, ArrowLeft, Globe, Linkedin, Twitter, Facebook } from 'lucide-react';
 import BlogInteractionsWrapper from '../../components/blog/BlogInteractionsWrapper.jsx';
 import BrandedPlaceholder from '../../components/blog/BrandedPlaceholder.jsx';
+import AIToolsModule from '../../components/blog/AIToolsModule.jsx';
 
 export async function getStaticPaths() {
   try {
@@ -23,13 +24,52 @@ export async function getStaticPaths() {
 const { slug } = Astro.params;
 const { post: initialPost } = Astro.props;
 
-// Fetch post from Firestore if not provided via props
-const post = initialPost || await getDocBySlug('posts', slug as string);
+// Determine if Markdown version is requested (URL ending in .md)
+const isMarkdownRequest = slug && slug.endsWith('.md');
+const cleanSlug = isMarkdownRequest ? slug.slice(0, -3) : slug;
+
+// Fetch post from Firestore
+const post = initialPost && !isMarkdownRequest 
+  ? initialPost 
+  : await getDocBySlug('posts', cleanSlug as string);
 
 // If no post is found, return 404
 if (!post) {
   return new Response('Post not found', { status: 404 });
 }
+
+// Return raw markdown if requested
+if (isMarkdownRequest) {
+  const content = `# ${post.title}\n\n${post.excerpt ? `> ${post.excerpt}\n\n` : ''}${post.content_html || post.content || ''}`;
+  const cleanContent = content
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n\n')
+    .replace(/<[^>]*>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .trim();
+
+  const markdownPayload = `---
+author: "${(post.author_name || '').replace(/"/g, '\\"')}"
+category: "${(post.category_name || '').replace(/"/g, '\\"')}"
+published_at: "${post.created_at || post.published_at || ''}"
+---\n\n${cleanContent}`;
+
+  return new Response(markdownPayload, {
+    status: 200,
+    headers: {
+      'Content-Type': 'text/markdown; charset=utf-8',
+      'X-Robots-Tag': 'noindex, nofollow',
+      'Access-Control-Allow-Origin': '*'
+    }
+  });
+}
+
+// Retrieve settings for dynamic tools list
+const settings = await getSiteSettings();
+const rawAiTools = settings?.ai_read_tools || null;
 
 // Handle redirects if configured in RankMath advanced settings
 if (post.redirection && post.redirection.enable && post.redirection.url) {
@@ -191,6 +231,18 @@ const pageSchema = buildSchema(post.custom_schema, defaultSchema, authorData, po
           </div>
         </div>
       </header>
+
+      <!-- AI Tools Integration Module -->
+      {settings?.show_ai_read_tools !== false && (
+        <AIToolsModule 
+          client:load 
+          postId={post.id} 
+          postTitle={post.title} 
+          postExcerpt={post.excerpt || ''} 
+          aiTools={rawAiTools}
+        />
+      )}
+
       <div class="tiptap-content">
         <div class="prose prose-stone max-w-none prose-h2:text-2xl prose-h2:font-black prose-p:text-stone-800 prose-p:leading-relaxed prose-p:text-lg prose-a:text-emerald-600 prose-a:font-semibold hover:prose-a:text-emerald-700 prose-a:no-underline hover:prose-a:underline" set:html={finalContentHtml}></div>
       </div>

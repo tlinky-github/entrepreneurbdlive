@@ -1,15 +1,19 @@
 ---
 import PublicLayout from '../../layouts/PublicLayout.astro';
 import EntrepreneurList from '../../components/entrepreneurs/EntrepreneurList.jsx';
-import { getPublishedDocs, taxonomyAPI } from '../../lib/serverApi';
+import { getPublishedDocs, taxonomyAPI, getSiteSettings } from '../../lib/serverApi';
 
 let initialProfiles = [];
 let industries = [];
 let cities = [];
+let perPage = 12;
 
 try {
+  const settings = await getSiteSettings();
+  perPage = parseInt(settings?.entrepreneurs_per_page) || 12;
+  
   const [pDocs, indRes, cityRes] = await Promise.all([
-    getPublishedDocs('profiles', 50),
+    getPublishedDocs('profiles', perPage),
     taxonomyAPI.getByCollection('industries'),
     taxonomyAPI.getByCollection('cities')
   ]);
@@ -28,5 +32,6 @@ try {
     initialProfiles={initialProfiles} 
     initialIndustries={industries} 
     initialCities={cities} 
+    initialPerPage={perPage}
   />
 </PublicLayout>

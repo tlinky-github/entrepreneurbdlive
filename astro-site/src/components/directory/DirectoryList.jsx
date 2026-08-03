@@ -49,7 +49,7 @@ const useSearchParams = () => {
   return [searchParams, setSearchParams];
 };
 
-const DirectoryList = ({ initialListings = [], initialListingTypes = [], initialCategories = [] }) => {
+const DirectoryList = ({ initialListings = [], initialListingTypes = [], initialCategories = [], initialPerPage = 12 }) => {
   const [listings, setListings] = useState(initialListings);
   const [categories, setCategories] = useState(initialCategories);
   const [listingTypes, setListingTypes] = useState(initialListingTypes);
@@ -60,7 +60,7 @@ const DirectoryList = ({ initialListings = [], initialListingTypes = [], initial
   const listingType = searchParams.get('type') || '';
   const category = searchParams.get('category') || '';
   const currentPage = parseInt(searchParams.get('page')) || 1;
-  const ITEMS_PER_PAGE = 12;
+  const ITEMS_PER_PAGE = initialPerPage;
 
   // Load dynamic filters
   useEffect(() => {
@@ -107,6 +107,10 @@ const DirectoryList = ({ initialListings = [], initialListingTypes = [], initial
       params.delete(key);
     }
     setSearchParams(params);
+    // Smooth scroll to top for better UX
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   const featuredListings = listings.filter(l => l.is_featured);
