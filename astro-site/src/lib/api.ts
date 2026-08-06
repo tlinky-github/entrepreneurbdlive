@@ -1420,33 +1420,39 @@ export const interactionAPI = {
 export const adminAPI = {
   getStats: async () => {
     try {
-      const [postsSnap, profilesSnap, listingsSnap, resourcesSnap, usersSnap, pendingProfilesSnap, pendingListingsSnap, reportsSnap, unreadContactSnap] = await Promise.all([
-        getDocs(collection(db, 'posts')),
-        getDocs(collection(db, 'profiles')),
-        getDocs(collection(db, 'listings')),
-        getDocs(collection(db, 'resources')),
-        getDocs(collection(db, 'users')),
-        getDocs(query(collection(db, 'profiles'), where('status', '==', 'pending'))),
-        getDocs(query(collection(db, 'listings'), where('status', '==', 'pending'))),
-        getDocs(query(collection(db, 'comment_reports'), where('status', '==', 'pending'))),
+      const [postsSnap, profilesSnap, listingsSnap, resourcesSnap, knowledgeSnap, guidesSnap, glossarySnap, faqsSnap, usersSnap, pendingProfilesSnap, pendingListingsSnap, reportsSnap, unreadContactSnap] = await Promise.all([
+        getDocs(collection(db, 'posts')).catch(() => ({ size: 0 })),
+        getDocs(collection(db, 'profiles')).catch(() => ({ size: 0 })),
+        getDocs(collection(db, 'listings')).catch(() => ({ size: 0 })),
+        getDocs(collection(db, 'resources')).catch(() => ({ size: 0 })),
+        getDocs(collection(db, 'knowledge')).catch(() => ({ size: 0 })),
+        getDocs(collection(db, 'guides')).catch(() => ({ size: 0 })),
+        getDocs(collection(db, 'glossary')).catch(() => ({ size: 0 })),
+        getDocs(collection(db, 'faq_categories')).catch(() => ({ size: 0 })),
+        getDocs(collection(db, 'users')).catch(() => ({ size: 0 })),
+        getDocs(query(collection(db, 'profiles'), where('status', '==', 'pending'))).catch(() => ({ size: 0, docs: [] })),
+        getDocs(query(collection(db, 'listings'), where('status', '==', 'pending'))).catch(() => ({ size: 0, docs: [] })),
+        getDocs(query(collection(db, 'comment_reports'), where('status', '==', 'pending'))).catch(() => ({ size: 0 })),
         getDocs(query(collection(db, 'contact_messages'), where('status', '==', 'unread'))).catch(() => ({ size: 0, docs: [] }))
       ]);
 
-      const pendingPublicProfiles = pendingProfilesSnap.docs.filter(d => d.data().source === 'public').length;
-      const pendingPublicListings = pendingListingsSnap.docs.filter(d => d.data().source === 'public').length;
+      const pendingPublicProfiles = (pendingProfilesSnap.docs || []).filter((d: any) => d.data().source === 'public').length;
+      const pendingPublicListings = (pendingListingsSnap.docs || []).filter((d: any) => d.data().source === 'public').length;
+
+      const totalResourcesCount = (resourcesSnap.size || 0) + (knowledgeSnap.size || 0) + (guidesSnap.size || 0) + (glossarySnap.size || 0) + (faqsSnap.size || 0);
 
       return {
         data: {
-          total_blog_posts: postsSnap.size,
-          total_entrepreneurs: profilesSnap.size,
-          total_listings: listingsSnap.size,
-          total_resources: resourcesSnap.size,
-          total_users: usersSnap.size,
-          pending_profiles: pendingProfilesSnap.size,
-          pending_listings: pendingListingsSnap.size,
-          pending_approvals: pendingProfilesSnap.size + pendingListingsSnap.size,
+          total_blog_posts: postsSnap.size || 0,
+          total_entrepreneurs: profilesSnap.size || 0,
+          total_listings: listingsSnap.size || 0,
+          total_resources: totalResourcesCount,
+          total_users: usersSnap.size || 0,
+          pending_profiles: pendingProfilesSnap.size || 0,
+          pending_listings: pendingListingsSnap.size || 0,
+          pending_approvals: (pendingProfilesSnap.size || 0) + (pendingListingsSnap.size || 0),
           pending_public_submissions: pendingPublicProfiles + pendingPublicListings,
-          pending_reports: reportsSnap.size,
+          pending_reports: reportsSnap.size || 0,
           unread_contact_messages: unreadContactSnap.size || 0
         }
       };
@@ -1667,18 +1673,31 @@ export const redirectAPI = {
 export const publicAPI = {
   getStats: async () => {
     try {
-      const [postsSnap, profilesSnap, listingsSnap, resourcesSnap] = await Promise.all([
-        getCountFromServer(query(collection(db, 'posts'), where('status', '==', 'published'))),
-        getCountFromServer(query(collection(db, 'profiles'), where('status', '==', 'published'))),
-        getCountFromServer(query(collection(db, 'listings'), where('status', '==', 'published'))),
-        getCountFromServer(query(collection(db, 'resources'), where('status', '==', 'published')))
+      const [postsSnap, profilesSnap, listingsSnap, resourcesSnap, knowledgeSnap, guidesSnap, glossarySnap, faqsSnap] = await Promise.all([
+        getCountFromServer(query(collection(db, 'posts'), where('status', '==', 'published'))).catch(() => ({ data: () => ({ count: 0 }) })),
+        getCountFromServer(query(collection(db, 'profiles'), where('status', '==', 'published'))).catch(() => ({ data: () => ({ count: 0 }) })),
+        getCountFromServer(query(collection(db, 'listings'), where('status', '==', 'published'))).catch(() => ({ data: () => ({ count: 0 }) })),
+        getCountFromServer(collection(db, 'resources')).catch(() => ({ data: () => ({ count: 0 }) })),
+        getCountFromServer(collection(db, 'knowledge')).catch(() => ({ data: () => ({ count: 0 }) })),
+        getCountFromServer(collection(db, 'guides')).catch(() => ({ data: () => ({ count: 0 }) })),
+        getCountFromServer(collection(db, 'glossary')).catch(() => ({ data: () => ({ count: 0 }) })),
+        getCountFromServer(collection(db, 'faq_categories')).catch(() => ({ data: () => ({ count: 0 }) }))
       ]);
+
+      const resCount = (resourcesSnap.data ? resourcesSnap.data().count : 0) || 0;
+      const knowCount = (knowledgeSnap.data ? knowledgeSnap.data().count : 0) || 0;
+      const guideCount = (guidesSnap.data ? guidesSnap.data().count : 0) || 0;
+      const glossCount = (glossarySnap.data ? glossarySnap.data().count : 0) || 0;
+      const faqCount = (faqsSnap.data ? faqsSnap.data().count : 0) || 0;
+
+      const totalResourcesCount = resCount + knowCount + guideCount + glossCount + faqCount;
+
       return {
         data: {
-          total_blog_posts: postsSnap.data().count,
-          total_entrepreneurs: profilesSnap.data().count,
-          total_listings: listingsSnap.data().count,
-          total_resources: resourcesSnap.data().count,
+          total_blog_posts: (postsSnap.data ? postsSnap.data().count : 0) || 0,
+          total_entrepreneurs: (profilesSnap.data ? profilesSnap.data().count : 0) || 0,
+          total_listings: (listingsSnap.data ? listingsSnap.data().count : 0) || 0,
+          total_resources: totalResourcesCount,
         }
       };
     } catch (error) {

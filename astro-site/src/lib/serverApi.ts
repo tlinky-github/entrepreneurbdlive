@@ -166,17 +166,30 @@ export async function getPublicStats() {
   if (cached) return cached;
   try {
     const db = getDb() as any;
-    const [postsSnap, profilesSnap, listingsSnap, resourcesSnap] = await Promise.all([
-      db.collection('posts').where('status', '==', 'published').count().get(),
-      db.collection('profiles').where('status', '==', 'published').count().get(),
-      db.collection('listings').where('status', '==', 'published').count().get(),
-      db.collection('resources').where('status', '==', 'published').count().get(),
+    const [postsSnap, profilesSnap, listingsSnap, resourcesSnap, knowledgeSnap, guidesSnap, glossarySnap, faqsSnap] = await Promise.all([
+      db.collection('posts').where('status', '==', 'published').count().get().catch(() => ({ data: () => ({ count: 0 }) })),
+      db.collection('profiles').where('status', '==', 'published').count().get().catch(() => ({ data: () => ({ count: 0 }) })),
+      db.collection('listings').where('status', '==', 'published').count().get().catch(() => ({ data: () => ({ count: 0 }) })),
+      db.collection('resources').count().get().catch(() => ({ data: () => ({ count: 0 }) })),
+      db.collection('knowledge').count().get().catch(() => ({ data: () => ({ count: 0 }) })),
+      db.collection('guides').count().get().catch(() => ({ data: () => ({ count: 0 }) })),
+      db.collection('glossary').count().get().catch(() => ({ data: () => ({ count: 0 }) })),
+      db.collection('faq_categories').count().get().catch(() => ({ data: () => ({ count: 0 }) })),
     ]);
+
+    const resCount = (resourcesSnap.data ? resourcesSnap.data().count : 0) || 0;
+    const knowCount = (knowledgeSnap.data ? knowledgeSnap.data().count : 0) || 0;
+    const guideCount = (guidesSnap.data ? guidesSnap.data().count : 0) || 0;
+    const glossCount = (glossarySnap.data ? glossarySnap.data().count : 0) || 0;
+    const faqCount = (faqsSnap.data ? faqsSnap.data().count : 0) || 0;
+
+    const totalResourcesCount = resCount + knowCount + guideCount + glossCount + faqCount;
+
     const res = {
-      total_blog_posts: postsSnap.data().count,
-      total_entrepreneurs: profilesSnap.data().count,
-      total_listings: listingsSnap.data().count,
-      total_resources: resourcesSnap.data().count,
+      total_blog_posts: (postsSnap.data ? postsSnap.data().count : 0) || 0,
+      total_entrepreneurs: (profilesSnap.data ? profilesSnap.data().count : 0) || 0,
+      total_listings: (listingsSnap.data ? listingsSnap.data().count : 0) || 0,
+      total_resources: totalResourcesCount,
     };
     setCached(cacheKey, res);
     return res;
