@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { profileAPI, interactionAPI, authorAPI } from '../../lib/api';
+import { profileAPI, interactionAPI, authorAPI, incrementViewCountClient } from '../../lib/api';
 import CustomCodeInjector from '../../components/common/CustomCodeInjector';
 import { SEO } from '../../components/SEO';
 import NotFound from '../../components/common/NotFound';
@@ -27,7 +27,8 @@ import {
   CheckCircle,
   Plus,
   Minus,
-  Share2
+  Share2,
+  Eye
 } from 'lucide-react';
 
 const EntrepreneurDetail = () => {
@@ -52,6 +53,9 @@ const EntrepreneurDetail = () => {
         }
 
         setProfile(res.data);
+        if (res.data?.id) {
+          incrementViewCountClient('profiles', res.data.id);
+        }
 
         // Fetch Author Data if exists
         if (res.data?.authorId) {
@@ -237,12 +241,18 @@ const EntrepreneurDetail = () => {
                         </a>
                       )}
                     </div>
-                    {(profile.city || profile.headquarters) && (
-                      <p className="text-sm text-stone-500 flex items-center gap-1 mt-2">
-                        <MapPin className="w-4 h-4" />
-                        {profile.headquarters || `${profile.city}${profile.country ? `, ${profile.country}` : ''}`}
+                    <div className="flex items-center gap-4 mt-2">
+                      {(profile.city || profile.headquarters) && (
+                        <p className="text-sm text-stone-500 flex items-center gap-1">
+                          <MapPin className="w-4 h-4" />
+                          {profile.headquarters || `${profile.city}${profile.country ? `, ${profile.country}` : ''}`}
+                        </p>
+                      )}
+                      <p className="text-sm text-stone-500 flex items-center gap-1">
+                        <Eye className="w-4 h-4" />
+                        {(profile.view_count || 0).toLocaleString()} Views
                       </p>
-                    )}
+                    </div>
                   </div>
 
                   <div className="flex items-center gap-2">

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { SEO } from '../components/SEO';
-import { ArrowLeft, ArrowRight, BookOpen, ChevronRight, Loader2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, BookOpen, ChevronRight, Loader2, Eye } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import {
@@ -11,7 +11,7 @@ import {
   AccordionTrigger,
 } from '../components/ui/accordion';
 import { pillarPages, pillarPagesPart2 } from '../data/mock';
-import { contentAPI } from '../lib/api';
+import { contentAPI, incrementViewCountClient } from '../lib/api';
 import { sanitizeHtml } from '../lib/utils';
 import CustomCodeInjector from '../components/common/CustomCodeInjector';
 
@@ -27,8 +27,11 @@ const KnowledgeArticlePage = () => {
     const loadFromFirestore = async () => {
       try {
         const res = await contentAPI.list('knowledge');
-        const match = (res.data || []).find(a => a.slug === slug);
-        if (match) setFirestoreArticle(match);
+        const match = (res.data || []).find(a => a.slug === slug || a.id === slug);
+        if (match) {
+          setFirestoreArticle(match);
+          incrementViewCountClient(match.type || 'knowledge', match.id);
+        }
       } catch (err) {
         console.error('Firestore lookup failed:', err);
       } finally {
@@ -114,9 +117,20 @@ const KnowledgeArticlePage = () => {
       <section className="py-12 lg:py-16 bg-stone-50" data-content-id={article.id} data-content-type="knowledge">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-stone-200 mb-6 shadow-sm">
-              <BookOpen className="w-4 h-4 text-emerald-900" />
-              <span className="text-sm font-medium text-emerald-900">Knowledge Article</span>
+            <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-white border border-stone-200 mb-6 shadow-sm">
+              <div className="flex items-center gap-2">
+                <BookOpen className="w-4 h-4 text-emerald-900" />
+                <span className="text-sm font-medium text-emerald-900">Knowledge Article</span>
+              </div>
+              {article.view_count !== undefined && (
+                <>
+                  <span className="text-stone-300">•</span>
+                  <div className="flex items-center gap-1 text-sm text-stone-500">
+                    <Eye className="w-4 h-4" />
+                    <span>{(article.view_count || 0).toLocaleString()} views</span>
+                  </div>
+                </>
+              )}
             </div>
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-stone-900 mb-6">
               {article.title}

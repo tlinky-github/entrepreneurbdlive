@@ -62,17 +62,33 @@ const fileToBase64 = (file) => new Promise((resolve, reject) => {
  */
 export async function incrementViewCountClient(collectionName, id) {
   if (!id || typeof window === 'undefined') return;
-  const storageKey = `viewed_${collectionName}_${id}`;
+
+  const collectionMap = {
+    blog: 'posts',
+    posts: 'posts',
+    entrepreneurs: 'profiles',
+    profiles: 'profiles',
+    directory: 'listings',
+    listings: 'listings',
+    knowledge: 'knowledge',
+    guides: 'guides',
+    faqs: 'faq_categories',
+    glossary: 'glossary',
+    resources: 'resources'
+  };
+  const targetCol = collectionMap[collectionName] || collectionName;
+
+  const storageKey = `viewed_${targetCol}_${id}`;
   try {
     if (sessionStorage.getItem(storageKey)) return;
     sessionStorage.setItem(storageKey, 'true');
 
-    const docRef = doc(db, collectionName, id);
+    const docRef = doc(db, targetCol, id);
     await updateDoc(docRef, {
       view_count: increment(1)
     });
   } catch (error) {
-    console.warn(`[incrementViewCountClient] Failed for ${collectionName}/${id}:`, error);
+    console.warn(`[incrementViewCountClient] Failed for ${targetCol}/${id}:`, error);
   }
 }
 

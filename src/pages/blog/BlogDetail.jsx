@@ -414,6 +414,10 @@ const BlogDetail = () => {
                 <Clock className="w-4 h-4" />
                 {readingTime} min read
              </div>
+             <div className="flex items-center gap-2">
+                <Eye className="w-4 h-4" />
+                {(post.view_count || 0).toLocaleString()} views
+             </div>
            </div>
         </header>
 

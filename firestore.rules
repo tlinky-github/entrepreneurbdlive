@@ -2,8 +2,8 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Helper function to check if user is an admin or editor in the database
+
+    // --- Helper Functions ---
     function isAdmin() {
       return request.auth != null && (
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'super_admin' ||
@@ -20,53 +20,66 @@ service cloud.firestore {
       return request.auth != null && request.auth.uid == userId;
     }
 
-    // Public Collections: Anyone can read, only Admin can write (with view_count exception)
+    // --- Submissions Collection (User Dashboard & Guest Forms) ---
+    match /submissions/{subId} {
+      allow create: if true;
+      allow read: if isAdmin() || (request.auth != null && (request.auth.token.email == resource.data.email || request.auth.uid == resource.data.userId));
+      allow update, delete: if isAdmin();
+    }
+
+    // --- Public Collections (Public Read, Public/User Pending Create, Admin Write, View Count Updates) ---
     match /posts/{post} {
       allow read: if true;
-      allow create, delete: if isAdmin();
-      allow update: if isAdmin() || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['view_count']);
+      allow create: if isAdmin() || request.resource.data.status == 'pending';
+      allow delete: if isAdmin();
+      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['view_count']) || isAdmin();
     }
 
     match /profiles/{profile} {
       allow read: if true;
-      allow create, delete: if isAdmin();
-      allow update: if isAdmin() || (request.resource.data.diff(resource.data).affectedKeys().hasAny(['view_count', 'follower_count']));
+      allow create: if isAdmin() || request.resource.data.status == 'pending';
+      allow delete: if isAdmin();
+      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['view_count']) 
+                    || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['follower_count']) 
+                    || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['view_count', 'follower_count']) 
+                    || isAdmin();
     }
 
     match /listings/{listing} {
       allow read: if true;
-      allow create, delete: if isAdmin();
-      allow update: if isAdmin() || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['view_count']);
+      allow create: if isAdmin() || request.resource.data.status == 'pending';
+      allow delete: if isAdmin();
+      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['view_count']) || isAdmin();
     }
 
     match /resources/{resource} {
       allow read: if true;
       allow create, delete: if isAdmin();
-      allow update: if isAdmin() || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['view_count']);
-    }
-
-    match /guides/{guide} {
-      allow read: if true;
-      allow create, delete: if isAdmin();
-      allow update: if isAdmin();
-    }
-
-    match /faq_categories/{category} {
-      allow read: if true;
-      allow create, delete: if isAdmin();
-      allow update: if isAdmin();
-    }
-
-    match /glossary/{term} {
-      allow read: if true;
-      allow create, delete: if isAdmin();
-      allow update: if isAdmin();
+      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['view_count']) || isAdmin();
     }
 
     match /knowledge/{article} {
       allow read: if true;
       allow create, delete: if isAdmin();
-      allow update: if isAdmin() || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['view_count']);
+      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['view_count']) || isAdmin();
+    }
+
+    match /guides/{guide} {
+      allow read: if true;
+      allow create, delete: if isAdmin();
+      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['view_count']) || isAdmin();
+    }
+
+    match /faq_categories/{category} {
+      allow read: if true;
+      allow create, delete: if isAdmin();
+      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['view_count']) || isAdmin();
+    }
+
+    match /glossary/{term} {
+      allow read: if true;
+      allow create, delete: if isAdmin();
+      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['view_count']) || isAdmin();
     }
 
     match /code_snippets/{snippet} {
@@ -75,49 +88,74 @@ service cloud.firestore {
       allow update: if isAdmin();
     }
 
-    // Taxonomies: Public read, Admin write
+    // --- Taxonomies & Categories (Public Read, Admin Write) ---
     match /industries/{industry} {
       allow read: if true;
       allow write: if isAdmin();
     }
+
     match /cities/{city} {
       allow read: if true;
       allow write: if isAdmin();
     }
-    match /likes/{likeId} {
-      allow read: if true;
-      allow write: if isOwner(request.resource.data.userId) || isOwner(resource.data.userId);
+
+    match /categories/{id} { 
+      allow read: if true; 
+      allow write: if isAdmin(); 
     }
-    match /bookmarks/{bookmarkId} {
-      allow read: if request.auth != null; // Allowed to check if own bookmark exists
-      allow write: if isOwner(request.resource.data.userId) || isOwner(resource.data.userId);
+
+    match /blog_categories/{id} { 
+      allow read: if true; 
+      allow write: if isAdmin(); 
     }
-    match /site_settings/{id} { allow read: if true; allow write: if isAdmin(); }
-    match /categories/{id} { allow read: if true; allow write: if isAdmin(); }
-    match /blog_categories/{id} { allow read: if true; allow write: if isAdmin(); }
-    match /listing_types/{id} { allow read: if true; allow write: if isAdmin(); }
-    match /authors/{id} { allow read: if true; allow write: if isAdmin(); }
+
+    match /listing_types/{id} { 
+      allow read: if true; 
+      allow write: if isAdmin(); 
+    }
+
     match /startup_stages/{stage} {
       allow read: if true;
       allow write: if isAdmin();
     }
+
     match /employee_sizes/{size} {
       allow read: if true;
       allow write: if isAdmin();
     }
+
+    match /authors/{id} { 
+      allow read: if true; 
+      allow write: if isAdmin(); 
+    }
+
     match /media/{item} {
       allow read: if true;
       allow write: if isAdmin();
     }
 
-    // Settings: Public read, Super Admin write
+    match /site_settings/{id} { 
+      allow read: if true; 
+      allow write: if isAdmin(); 
+    }
+
     match /settings/{setting} {
       allow read: if true;
       allow write: if isAdmin();
     }
 
-    // Users: User can read/write their own profile (limit what they can write)
-    // Admin can read/write everything
+    // --- User Interactions ---
+    match /likes/{likeId} {
+      allow read: if true;
+      allow write: if isOwner(request.resource.data.userId) || isOwner(resource.data.userId);
+    }
+
+    match /bookmarks/{bookmarkId} {
+      allow read: if request.auth != null;
+      allow write: if isOwner(request.resource.data.userId) || isOwner(resource.data.userId);
+    }
+
+    // --- Users Collection ---
     match /users/{userId} {
       allow read: if request.auth != null && (request.auth.uid == userId || isAdmin());
       allow create: if request.auth != null && request.auth.uid == userId;
@@ -128,14 +166,12 @@ service cloud.firestore {
       allow delete: if isSuperAdmin();
     }
 
-    // AI System Collections
-    // AI Configs: User can only read/write their own encrypted API keys
+    // --- AI System Collections ---
     match /ai_configs/{userId} {
       allow read: if request.auth != null && (request.auth.uid == userId || isAdmin());
       allow write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // AI Posts: Users manage their own posts, admins can view all
     match /ai_posts/{postId} {
       allow read: if request.auth != null && (
         resource.data.userId == request.auth.uid || isAdmin()
@@ -149,29 +185,37 @@ service cloud.firestore {
       );
     }
 
-    // AI Logs: Users can only read their own logs
-    // Backend writes logs with firebase-admin (bypasses rules)
     match /ai_logs/{logId} {
       allow read: if request.auth != null && resource.data.userId == request.auth.uid || isAdmin();
-      allow write: if false; // Backend only, uses Admin SDK
+      allow write: if false;
     }
 
-    // Comments: Public can read and create, only admins can update/delete
     match /comments/{commentId} {
       allow read, create: if true;
       allow update, delete: if isAdmin();
     }
 
-    // Comment Reports: Anyone can create, only admins can read/update/delete
+    // --- SEO & Traffic Management ---
+    match /redirects/{redirectId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    match /dead_links/{linkId} {
+      allow read: if request.auth != null;
+      allow write: if true;
+    }
+
     match /comment_reports/{reportId} {
       allow create: if true;
       allow read, update, delete: if isAdmin();
     }
 
-    // Contact Messages: Public can create, only admins can read, update, or delete
+    // --- Contact Messages ---
     match /contact_messages/{messageId} {
       allow create: if true;
       allow read, update, delete: if isAdmin();
     }
+
   }
 }
