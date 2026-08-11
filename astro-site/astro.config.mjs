@@ -9,6 +9,10 @@ export default defineConfig({
   output: 'server',
   adapter: vercel(),
   compressHTML: true,
+  prefetch: {
+    prefetchAll: true,
+    defaultStrategy: 'hover',
+  },
   security: {
     checkOrigin: false,
   },
