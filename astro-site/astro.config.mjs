@@ -28,10 +28,11 @@ export default defineConfig({
   vite: {
     envPrefix: ['PUBLIC_', 'REACT_APP_'],
     ssr: {
-      noExternal: ['lucide-react', 'react-router-dom', 'react-router'],
+      noExternal: ['lucide-react', 'react-router-dom', 'react-router', 'sonner'],
       external: ['sharp', 'firebase-admin', 'firebase-admin/firestore', 'firebase-admin/auth', '@aws-sdk/client-s3'],
     },
     optimizeDeps: {
+      include: ['sonner'],
       exclude: ['sharp', 'firebase-admin', 'firebase-admin/firestore', 'firebase-admin/auth', '@aws-sdk/client-s3'],
     },
   },

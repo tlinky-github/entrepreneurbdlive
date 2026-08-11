@@ -146,10 +146,6 @@ const ogImage = image.startsWith('http') ? image : `${siteUrl}${image}`;
   <meta name="twitter:description" content={socialMeta?.twitterDescription || socialMeta?.ogDescription || description} />
   <meta name="twitter:image" content={socialMeta?.twitterImage || socialMeta?.ogImage || ogImage} />
 
-  <!-- Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-
   <!-- Custom CSS & Head HTML from Site Settings -->
   {customCss && (
     <style set:html={customCss} />
@@ -318,7 +314,7 @@ const ogImage = image.startsWith('http') ? image : `${siteUrl}${image}`;
   {customBodyJs && (
     <script set:html={customBodyJs} />
   )}
-  <CustomCodeInjector client:load />
+  <CustomCodeInjector client:idle />
   <Toaster client:only="react" position="top-right" richColors />
 </body>
 </html>

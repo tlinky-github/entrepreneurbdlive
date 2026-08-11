@@ -201,10 +201,15 @@ export async function getPublicStats() {
 
 /** Fetch categories */
 export async function getCategories() {
+  const cacheKey = 'blog_categories_all';
+  const cached = getCached<any[]>(cacheKey);
+  if (cached) return cached;
   try {
     const db = getDb() as any;
     const snapshot = await db.collection('blog_categories').get();
-    return dbSnapshotToList(snapshot);
+    const res = dbSnapshotToList(snapshot);
+    setCached(cacheKey, res);
+    return res;
   } catch (e: any) {
     console.error('[serverApi] getCategories:', e.message);
     return [];
@@ -366,7 +371,14 @@ export const contentAPI = {
 // ─── Taxonomy API ─────────────────────────────────────────────────────────────
 export const taxonomyAPI = {
   getCategories: () => getCategories(),
-  getByCollection: (collectionName: string) => queryCollection(collectionName, [], 200),
+  getByCollection: async (collectionName: string) => {
+    const cacheKey = `taxonomy_${collectionName}`;
+    const cached = getCached<any[]>(cacheKey);
+    if (cached) return cached;
+    const res = await queryCollection(collectionName, [], 200);
+    setCached(cacheKey, res);
+    return res;
+  },
   list: async (type: string) => {
     const colMap: any = {
       categories: 'categories',
