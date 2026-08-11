@@ -293,6 +293,7 @@ const siteDescription = siteSettings?.seo_description || "Connect with entrepren
                           src={entrepreneur.photo} 
                           alt={entrepreneur.name} 
                           loading="lazy"
+                          decoding="async"
                           class="w-full h-full object-cover" 
                         />
                       ) : (
@@ -357,6 +358,7 @@ const siteDescription = siteSettings?.seo_description || "Connect with entrepren
                             src={listing.logo} 
                             alt={listing.business_name} 
                             loading="lazy"
+                            decoding="async"
                             class="w-full h-full object-cover" 
                           />
                         ) : (
