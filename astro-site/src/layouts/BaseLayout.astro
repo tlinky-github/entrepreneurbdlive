@@ -1,7 +1,6 @@
 ---
 // Base layout for all public pages
 import '../styles/globals.css';
-import { ClientRouter } from 'astro:transitions';
 import AdminToolbar from '../components/AdminToolbar.jsx';
 import CustomCodeInjector from '../components/common/CustomCodeInjector.jsx';
 import { Toaster } from 'sonner';
@@ -155,7 +154,6 @@ const ogImage = image.startsWith('http') ? image : `${siteUrl}${image}`;
     <Fragment set:html={customHeadHtml} />
   )}
 
-  <ClientRouter />
   <slot name="head" />
 </head>
 <body class="min-h-screen bg-stone-50 text-stone-900 font-sans antialiased">
