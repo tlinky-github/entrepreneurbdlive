@@ -87,13 +87,17 @@ export async function incrementViewCountClient(collectionName: string, id: strin
   const storageKey = `viewed_${targetCol}_${id}`;
   try {
     if (sessionStorage.getItem(storageKey)) return;
-    sessionStorage.setItem(storageKey, 'true');
 
     const docRef = doc(db, targetCol, id);
     await updateDoc(docRef, {
       view_count: increment(1)
     });
-  } catch (error) {
+    sessionStorage.setItem(storageKey, 'true');
+  } catch (error: any) {
+    // Silently ignore missing demo/mock documents that do not exist in Firestore
+    if (error?.code === 'not-found' || error?.message?.includes('No document to update')) {
+      return;
+    }
     console.warn(`[incrementViewCountClient] Failed for ${targetCol}/${id}:`, error);
   }
 }

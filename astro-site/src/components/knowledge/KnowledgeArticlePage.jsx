@@ -113,9 +113,10 @@ const KnowledgeArticlePage = ({ slug, article: initialArticle, isFirestore: init
     return () => { cancelled = true; };
   }, [slug]);
 
-  const articleContent = article?.content || {};
-  const articleSections = !isFirestore && Array.isArray(articleContent.sections) ? articleContent.sections : [];
-  const articleFaqs = !isFirestore && Array.isArray(articleContent.faqs) ? articleContent.faqs : [];
+  const effectiveIsFirestore = isFirestore && typeof article?.content === 'string';
+  const articleContent = typeof article?.content === 'object' && article?.content !== null ? article.content : {};
+  const articleSections = !effectiveIsFirestore && Array.isArray(articleContent.sections) ? articleContent.sections : [];
+  const articleFaqs = !effectiveIsFirestore && Array.isArray(articleContent.faqs) ? articleContent.faqs : [];
 
   const currentIndex = allPillarPages.findIndex(p => p.id === slug);
   const prevArticle = currentIndex > 0 ? allPillarPages[currentIndex - 1] : null;
@@ -123,7 +124,7 @@ const KnowledgeArticlePage = ({ slug, article: initialArticle, isFirestore: init
 
   // Extract dynamic Table of Contents (TOC) headings
   const getTocHeadings = () => {
-    if (isFirestore) {
+    if (effectiveIsFirestore) {
       const html = article?.content || '';
       if (!html || typeof html !== 'string') return [];
       const headings = [];
@@ -270,7 +271,7 @@ const KnowledgeArticlePage = ({ slug, article: initialArticle, isFirestore: init
             {/* Main Content */}
             <article className="lg:col-span-3">
               <div className="prose-entrepreneurship max-w-none">
-                {isFirestore ? (
+                {effectiveIsFirestore ? (
                   /* Firestore rich HTML content */
                   <div 
                     className="prose prose-stone max-w-none"

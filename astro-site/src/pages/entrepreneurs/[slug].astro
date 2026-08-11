@@ -7,11 +7,21 @@ import { getPersonSchema, buildSchema, interpolateSEOVariables, getRobotsMetaStr
 
 export async function getStaticPaths() {
   try {
-    const profiles = await getPublishedDocs('entrepreneurs', 500);
-    return profiles.map((profile: any) => ({
-      params: { slug: profile.slug },
-      props: { initialProfile: profile },
-    }));
+    const profiles = await getPublishedDocs('profiles', 500);
+    const entrepreneurs = await getPublishedDocs('entrepreneurs', 500);
+    const combined = [...profiles, ...entrepreneurs];
+    const slugSet = new Set();
+    const result = [];
+    for (const p of combined) {
+      if (p.slug && !slugSet.has(p.slug)) {
+        slugSet.add(p.slug);
+        result.push({
+          params: { slug: p.slug },
+          props: { initialProfile: p },
+        });
+      }
+    }
+    return result;
   } catch (e) {
     return [];
   }
