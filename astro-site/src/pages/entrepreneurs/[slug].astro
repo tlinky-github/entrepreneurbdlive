@@ -1,60 +1,34 @@
 ---
-export const prerender = true;
+export const prerender = false;
 import PublicLayout from '../../layouts/PublicLayout.astro';
 import EntrepreneurDetail from '../../components/entrepreneurs/EntrepreneurDetail.jsx';
 import { profileAPI, authorAPI, taxonomyAPI, getPublishedDocs, incrementViewCount } from '../../lib/serverApi';
 import { getPersonSchema, buildSchema, interpolateSEOVariables, getRobotsMetaString } from '../../lib/schema';
 
-export async function getStaticPaths() {
-  try {
-    const profiles = await getPublishedDocs('profiles', 500);
-    const entrepreneurs = await getPublishedDocs('entrepreneurs', 500);
-    const combined = [...profiles, ...entrepreneurs];
-    const slugSet = new Set();
-    const result = [];
-    for (const p of combined) {
-      if (p.slug && !slugSet.has(p.slug)) {
-        slugSet.add(p.slug);
-        result.push({
-          params: { slug: p.slug },
-          props: { initialProfile: p },
-        });
-      }
-    }
-    return result;
-  } catch (e) {
-    return [];
-  }
-}
-
 const { slug } = Astro.params;
-const { initialProfile } = Astro.props;
 
-let profile = initialProfile || null;
+let profile = null;
 let authorData = null;
 let startupStages = [];
 
 try {
   const [profileRes, stagesRes] = await Promise.all([
-    profile ? Promise.resolve({ data: profile }) : profileAPI.get(slug as string),
+    profileAPI.get(slug as string),
     taxonomyAPI.list('startup_stages')
   ]);
-  profile = profileRes.data;
-  startupStages = stagesRes.data || [];
-
-  // View counting is handled client-side
-  // (Astro.cookies is server-only and cannot be used in static pre-rendered pages)
-  
-  if (profile?.authorId) {
-    try {
-      const authorRes = await authorAPI.get(profile.authorId);
-      authorData = authorRes.data;
-    } catch (err: any) {
-      console.error('[Entrepreneur Detail] Author fetch failed:', err.message);
-    }
-  }
+  profile = profileRes?.data || null;
+  startupStages = stagesRes?.data || [];
 } catch (e: any) {
   console.error('[Entrepreneur Detail] Profile fetch failed:', e.message);
+}
+
+if (!profile) {
+  return new Response('Profile not found', { status: 404 });
+}
+
+if (profile.status && profile.status !== 'published') {
+  Astro.response.headers.set('Cache-Control', 'private, no-cache, no-store, must-revalidate');
+  Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
 }
 
 // Handle redirects if configured in RankMath advanced settings

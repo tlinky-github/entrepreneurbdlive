@@ -1,48 +1,15 @@
 ---
-export const prerender = true;
+export const prerender = false;
 import PublicLayout from '../../layouts/PublicLayout.astro';
 import KnowledgeArticlePage from '../../components/knowledge/KnowledgeArticlePage.jsx';
 import { getDocBySlug, getPublishedDocs, incrementViewCount } from '../../lib/serverApi';
 import { pillarPages, pillarPagesPart2 } from '../../data/mock';
 import { buildSchema, interpolateSEOVariables, getRobotsMetaString } from '../../lib/schema';
 
-export async function getStaticPaths() {
-  try {
-    const knowledgeArticles = await getPublishedDocs('knowledge', 500);
-    const resourcesArticles = await getPublishedDocs('resources', 500);
-    const allPillarPages = [...(pillarPages || []), ...(pillarPagesPart2 || [])];
-
-    const pillarItems = allPillarPages.map((page: any) => ({
-      params: { slug: page.id || page.slug },
-      props: { initialArticle: page },
-    }));
-
-    const firestoreItems = [...knowledgeArticles, ...resourcesArticles].map((article: any) => ({
-      params: { slug: article.slug },
-      props: { initialArticle: article },
-    }));
-
-    const slugSet = new Set();
-    const combined = [];
-
-    for (const item of [...pillarItems, ...firestoreItems]) {
-      if (item.params.slug && !slugSet.has(item.params.slug)) {
-        slugSet.add(item.params.slug);
-        combined.push(item);
-      }
-    }
-
-    return combined;
-  } catch (e) {
-    return [];
-  }
-}
-
 const { slug } = Astro.params;
-const { initialArticle } = Astro.props;
 
-let article = initialArticle || null;
-let isFirestore = typeof article?.content === 'string' || typeof article?.content_html === 'string';
+let article = null;
+let isFirestore = false;
 
 // 1. Try Firestore ('knowledge' collection first, then 'resources')
 try {

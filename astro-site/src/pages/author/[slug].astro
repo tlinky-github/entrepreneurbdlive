@@ -1,5 +1,5 @@
 ---
-export const prerender = true;
+export const prerender = false;
 import PublicLayout from '../../layouts/PublicLayout.astro';
 import { authorAPI, postAPI, profileAPI, listingAPI, resourceAPI, getPublishedDocs } from '../../lib/serverApi';
 import { decodeHtmlEntities } from '../../lib/smartDesign';
@@ -20,20 +20,7 @@ import {
   Clock
 } from 'lucide-react';
 
-export async function getStaticPaths() {
-  try {
-    const authors = await getPublishedDocs('authors', 500);
-    return authors.map((author: any) => ({
-      params: { slug: author.slug },
-      props: { initialAuthor: author },
-    }));
-  } catch (e) {
-    return [];
-  }
-}
-
 const { slug } = Astro.params;
-const { initialAuthor } = Astro.props;
 
 // Fetch author from database
 let author: any = null;

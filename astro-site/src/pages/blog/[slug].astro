@@ -1,5 +1,5 @@
 ---
-export const prerender = true;
+export const prerender = false;
 import PublicLayout from '../../layouts/PublicLayout.astro';
 import { getDocBySlug, stripHtml, authorAPI, postAPI, getPublishedDocs, incrementViewCount, getSiteSettings } from '../../lib/serverApi';
 import { processHtmlContent, decodeHtmlEntities } from '../../lib/smartDesign';
@@ -10,33 +10,24 @@ import BlogInteractionsWrapper from '../../components/blog/BlogInteractionsWrapp
 import BrandedPlaceholder from '../../components/blog/BrandedPlaceholder.jsx';
 import AIToolsModule from '../../components/blog/AIToolsModule.jsx';
 
-export async function getStaticPaths() {
-  try {
-    const posts = await getPublishedDocs('posts', 500);
-    return posts.map((post: any) => ({
-      params: { slug: post.slug },
-      props: { post },
-    }));
-  } catch (e) {
-    return [];
-  }
-}
-
 const { slug } = Astro.params;
-const { post: initialPost } = Astro.props;
 
 // Determine if Markdown version is requested (URL ending in .md)
 const isMarkdownRequest = slug && slug.endsWith('.md');
 const cleanSlug = isMarkdownRequest ? slug.slice(0, -3) : slug;
 
 // Fetch post from Firestore
-const post = initialPost && !isMarkdownRequest 
-  ? initialPost 
-  : await getDocBySlug('posts', cleanSlug as string);
+const post = await getDocBySlug('posts', cleanSlug as string);
 
 // If no post is found, return 404
 if (!post) {
   return new Response('Post not found', { status: 404 });
+}
+
+// If post is a draft preview, disable CDN caching & indexing
+if (post.status && post.status !== 'published') {
+  Astro.response.headers.set('Cache-Control', 'private, no-cache, no-store, must-revalidate');
+  Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
 }
 
 // Return raw markdown if requested
