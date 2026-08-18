@@ -213,7 +213,7 @@ const KnowledgeArticlePage = ({ slug, article: initialArticle, isFirestore: init
       </div>
 
       {/* Article Header */}
-      <section className="py-12 lg:py-16 bg-stone-50">
+      <section className="pt-8 pb-10 sm:pt-10 sm:pb-12 bg-stone-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl mx-auto text-center">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-stone-200 mb-6 shadow-sm">
@@ -245,8 +245,8 @@ const KnowledgeArticlePage = ({ slug, article: initialArticle, isFirestore: init
       </section>
 
       {/* Article Content */}
-      <section className="py-12 lg:py-16">
-        <div className="container-wide px-4 sm:px-6 lg:px-8">
+      <section className="py-8 lg:py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-12">
             {/* Table of Contents - Sidebar */}
             <aside className="lg:col-span-1">

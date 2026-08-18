@@ -111,7 +111,7 @@ const KnowledgeArticlePage = () => {
       </div>
 
       {/* Article Header */}
-      <section className="py-12 lg:py-16 bg-stone-50" data-content-id={article.id} data-content-type="knowledge">
+      <section className="pt-8 pb-10 sm:pt-10 sm:pb-12 bg-stone-50" data-content-id={article.id} data-content-type="knowledge">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl mx-auto text-center">
             <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-white border border-stone-200 mb-6 shadow-sm">
@@ -154,10 +154,9 @@ const KnowledgeArticlePage = () => {
       </section>
 
       {/* Article Content */}
-      <section className="py-12 lg:py-16">
-        <div className="container-wide px-4 sm:px-6 lg:px-8">
+      <section className="py-8 lg:py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-12">
-            {/* Table of Contents - Sidebar */}
             {/* Table of Contents - Sidebar */}
             <aside className="lg:col-span-1">
               <div className="sticky top-24">
