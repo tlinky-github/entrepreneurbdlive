@@ -679,7 +679,7 @@ export const contentAPI = {
 
   update: async (arg1: any, arg2?: any, arg3?: any) => {
     try {
-      let type = 'posts';
+      let type = 'knowledge';
       let id = '';
       let data: any = {};
 
@@ -690,17 +690,41 @@ export const contentAPI = {
       } else if (typeof arg1 === 'string' && arg2) {
         id = arg1;
         data = arg2;
-        type = data.type || 'posts';
+        type = data.type || 'knowledge';
       }
 
       const colName = getCollectionName(type, data.type);
       const cleanData = { ...data };
       delete cleanData.id;
 
-      await updateDoc(doc(db, colName, id), {
-        ...cleanData,
-        updated_at: serverTimestamp()
-      });
+      const docRef = doc(db, colName, id);
+      try {
+        await updateDoc(docRef, {
+          ...cleanData,
+          updated_at: serverTimestamp()
+        });
+      } catch (err: any) {
+        // Fallback: Check alternative collection or setDoc merge
+        if (colName === 'knowledge' || colName === 'resources') {
+          const altCol = colName === 'knowledge' ? 'resources' : 'knowledge';
+          try {
+            await updateDoc(doc(db, altCol, id), {
+              ...cleanData,
+              updated_at: serverTimestamp()
+            });
+          } catch {
+            await setDoc(docRef, {
+              ...cleanData,
+              updated_at: serverTimestamp()
+            }, { merge: true });
+          }
+        } else {
+          await setDoc(docRef, {
+            ...cleanData,
+            updated_at: serverTimestamp()
+          }, { merge: true });
+        }
+      }
 
       return { id, ...cleanData };
     } catch (error) {

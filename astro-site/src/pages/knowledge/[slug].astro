@@ -3,7 +3,6 @@ export const prerender = false;
 import PublicLayout from '../../layouts/PublicLayout.astro';
 import KnowledgeArticlePage from '../../components/knowledge/KnowledgeArticlePage.jsx';
 import { getDocBySlug, getPublishedDocs, incrementViewCount } from '../../lib/serverApi';
-import { pillarPages, pillarPagesPart2 } from '../../data/mock';
 import { buildSchema, interpolateSEOVariables, getRobotsMetaString } from '../../lib/schema';
 
 const { slug } = Astro.params;
@@ -24,12 +23,6 @@ try {
   }
 } catch (e) {
   console.error('[Knowledge Article] Firestore fetch failed:', e);
-}
-
-// 2. Try mock/pillar pages
-if (!article) {
-  const allPillarPages = [...pillarPages, ...pillarPagesPart2];
-  article = allPillarPages.find(p => p.id === slug || p.slug === slug);
 }
 
 // Handle redirects if configured in RankMath advanced settings

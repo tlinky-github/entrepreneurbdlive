@@ -10,7 +10,6 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '../components/ui/accordion';
-import { pillarPages, pillarPagesPart2 } from '../data/mock';
 import { contentAPI, incrementViewCountClient } from '../lib/api';
 import { sanitizeHtml } from '../lib/utils';
 import CustomCodeInjector from '../components/common/CustomCodeInjector';
@@ -19,9 +18,6 @@ const KnowledgeArticlePage = () => {
   const { slug } = useParams();
   const [firestoreArticle, setFirestoreArticle] = useState(null);
   const [loading, setLoading] = useState(true);
-
-  const allPillarPages = [...pillarPages, ...pillarPagesPart2];
-  const pillarArticle = allPillarPages.find(p => p.id === slug);
 
   useEffect(() => {
     const loadFromFirestore = async () => {
@@ -41,8 +37,8 @@ const KnowledgeArticlePage = () => {
     loadFromFirestore();
   }, [slug]);
 
-  const article = firestoreArticle || pillarArticle;
-  const isFirestore = !!firestoreArticle;
+  const article = firestoreArticle;
+  const isFirestore = true;
   const articleContent = article?.content || {};
   const articleSections = !isFirestore && Array.isArray(articleContent.sections) ? articleContent.sections : [];
   const articleFaqs = !isFirestore && Array.isArray(articleContent.faqs) ? articleContent.faqs : [];
@@ -135,12 +131,23 @@ const KnowledgeArticlePage = () => {
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-stone-900 mb-6">
               {article.title}
             </h1>
-            <p className="text-xl text-emerald-800 font-medium mb-4">
-              {article.subtitle}
-            </p>
-            <p className="text-lg text-stone-600 leading-relaxed">
-              {article.description}
-            </p>
+            {(() => {
+              const articleDescription = article.short_description || article.shortDescription || article.description || article.excerpt || article.seo_description || '';
+              return (
+                <>
+                  {article.subtitle && (
+                    <p className="text-xl text-emerald-800 font-medium mb-4">
+                      {article.subtitle}
+                    </p>
+                  )}
+                  {articleDescription && articleDescription !== article.subtitle && (
+                    <p className="text-lg text-stone-600 leading-relaxed">
+                      {articleDescription}
+                    </p>
+                  )}
+                </>
+              );
+            })()}
           </div>
         </div>
       </section>

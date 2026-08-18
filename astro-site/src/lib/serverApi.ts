@@ -355,6 +355,7 @@ export const contentAPI = {
           unique.push(article);
         }
       }
+      unique.sort((a: any, b: any) => Number(a.order ?? 9999) - Number(b.order ?? 9999));
       return unique.slice(0, limit);
     } catch (e: any) {
       console.error('[serverApi] contentAPI.list failed:', e.message);

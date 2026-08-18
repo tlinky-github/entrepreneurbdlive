@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { contentAPI, getDocBySlug, incrementViewCountClient } from '../../lib/api';
 import { sanitizeHtml } from '../../lib/utils';
 import CustomCodeInjector from '../../components/common/CustomCodeInjector';
-import { pillarPages, pillarPagesPart2 } from '../../data/mock';
 import { ArrowLeft, ArrowRight, BookOpen, ChevronRight, Loader2 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
@@ -74,8 +73,6 @@ function processArticleHtml(html, featuredImage, title) {
 }
 
 const KnowledgeArticlePage = ({ slug, article: initialArticle, isFirestore: initialIsFirestore }) => {
-  const allPillarPages = [...pillarPages, ...pillarPagesPart2];
-
   const [article, setArticle] = useState(initialArticle || null);
   const [isFirestore, setIsFirestore] = useState(!!initialIsFirestore);
   const [loading, setLoading] = useState(!initialArticle);
@@ -98,10 +95,6 @@ const KnowledgeArticlePage = ({ slug, article: initialArticle, isFirestore: init
         if (!cancelled && doc) {
           setArticle(doc);
           setIsFirestore(true);
-        } else if (!cancelled) {
-          // Fall back to pillar pages
-          const pillar = allPillarPages.find(p => p.id === slug || p.slug === slug);
-          if (pillar) { setArticle(pillar); setIsFirestore(false); }
         }
       } catch (e) {
         console.error('[KnowledgeArticlePage] client fetch error:', e);
@@ -229,12 +222,23 @@ const KnowledgeArticlePage = ({ slug, article: initialArticle, isFirestore: init
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-stone-900 mb-6">
               {article.title}
             </h1>
-            <p className="text-xl text-emerald-800 font-medium mb-4">
-              {article.subtitle}
-            </p>
-            <p className="text-lg text-stone-600 leading-relaxed">
-              {article.description}
-            </p>
+            {(() => {
+              const articleDescription = article.short_description || article.shortDescription || article.description || article.excerpt || article.seo_description || '';
+              return (
+                <>
+                  {article.subtitle && (
+                    <p className="text-xl text-emerald-800 font-medium mb-4">
+                      {article.subtitle}
+                    </p>
+                  )}
+                  {articleDescription && articleDescription !== article.subtitle && (
+                    <p className="text-lg text-stone-600 leading-relaxed">
+                      {articleDescription}
+                    </p>
+                  )}
+                </>
+              );
+            })()}
           </div>
         </div>
       </section>

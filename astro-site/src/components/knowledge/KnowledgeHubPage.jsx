@@ -2,26 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { ArrowRight, BookOpen, Lightbulb, MapPin, Users, Target, TrendingUp, Brain, DollarSign, AlertTriangle, Rocket, Laptop } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
-import { pillarPages, pillarPagesPart2 } from '../../data/mock';
 import { contentAPI } from '../../lib/api';
 import { SitePagination } from '../common/SitePagination';
 
-const iconMap = {
-  Lightbulb: Lightbulb,
-  MapPin: MapPin,
-  Users: Users,
-  Building: Target,
-  Brain: Brain,
-  DollarSign: DollarSign,
-  TrendingUp: TrendingUp,
-  Laptop: Laptop,
-  AlertTriangle: AlertTriangle,
-  Rocket: Rocket,
-};
-
 const KnowledgeHubPage = ({ firestoreArticles: initialArticles = [] }) => {
-  const allPillarPages = [...pillarPages, ...pillarPagesPart2];
-  
   const [articles, setArticles] = useState(initialArticles);
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 9;
@@ -57,6 +41,7 @@ const KnowledgeHubPage = ({ firestoreArticles: initialArticles = [] }) => {
           }
         }
         const docs = Array.from(map.values());
+        docs.sort((a, b) => Number(a.order ?? 9999) - Number(b.order ?? 9999));
         if (!cancelled && docs.length > 0) {
           const currentSlugs = (articles || []).map(a => a.slug).join(',');
           const newSlugs = docs.map(d => d.slug).join(',');
@@ -72,10 +57,12 @@ const KnowledgeHubPage = ({ firestoreArticles: initialArticles = [] }) => {
     return () => { cancelled = true; };
   }, []);
 
-  const totalPages = Math.ceil(articles.length / ITEMS_PER_PAGE);
+  // Sort initialArticles by order
+  const sortedArticles = [...articles].sort((a, b) => Number(a.order ?? 9999) - Number(b.order ?? 9999));
+  const totalPages = Math.ceil(sortedArticles.length / ITEMS_PER_PAGE);
   const safeCurrentPage = Math.max(1, Math.min(currentPage, totalPages || 1));
   const startIndex = (safeCurrentPage - 1) * ITEMS_PER_PAGE;
-  const paginatedArticles = articles.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  const paginatedArticles = sortedArticles.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
@@ -112,8 +99,8 @@ const KnowledgeHubPage = ({ firestoreArticles: initialArticles = [] }) => {
       <section className="py-20 lg:py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
-          {/* Published Firestore Articles (Shown Prominently at Top) */}
-          {articles.length > 0 && (
+          {/* Published Firestore Articles (Shown Prominently at Top in Grid View) */}
+          {sortedArticles.length > 0 && (
             <div className="mb-16">
               <div className="mb-8 flex items-center justify-between border-b border-stone-200 pb-4">
                 <div>
@@ -121,47 +108,54 @@ const KnowledgeHubPage = ({ firestoreArticles: initialArticles = [] }) => {
                   <p className="text-sm text-stone-500 mt-1">Recently published articles and deep dives</p>
                 </div>
                 <span className="text-sm font-medium text-emerald-900 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
-                  {articles.length} {articles.length === 1 ? 'Article' : 'Articles'}
+                  {sortedArticles.length} {sortedArticles.length === 1 ? 'Article' : 'Articles'}
                 </span>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {paginatedArticles.map((article) => (
-                  <Card
-                    key={article.id || article.slug}
-                    className="group hover:scale-105 transition-transform duration-300 border-stone-200 bg-white h-full shadow-sm hover:shadow-xl flex flex-col justify-between"
-                  >
-                    <CardHeader className="pb-4">
-                      {article.featured_image ? (
-                        <img src={article.featured_image} alt={article.title} className="w-full h-44 object-cover rounded-lg mb-4" />
-                      ) : (
-                        <div className="w-14 h-14 rounded-xl bg-emerald-50 flex items-center justify-center mb-4 group-hover:bg-emerald-900 transition-colors">
-                          <BookOpen className="w-7 h-7 text-emerald-900 group-hover:text-white transition-colors" />
+                {paginatedArticles.map((article) => {
+                  const shortDesc = article.short_description || article.shortDescription || article.description || article.excerpt || article.seo_description || article.subtitle || '';
+                  return (
+                    <Card
+                      key={article.id || article.slug}
+                      className="group hover:scale-105 transition-transform duration-300 border-stone-200 bg-white h-full shadow-sm hover:shadow-xl flex flex-col justify-between"
+                    >
+                      <CardHeader className="pb-4">
+                        {article.featured_image ? (
+                          <img src={article.featured_image} alt={article.title} className="w-full h-44 object-cover rounded-lg mb-4" />
+                        ) : (
+                          <div className="w-14 h-14 rounded-xl bg-emerald-50 flex items-center justify-center mb-4 group-hover:bg-emerald-900 transition-colors">
+                            <BookOpen className="w-7 h-7 text-emerald-900 group-hover:text-white transition-colors" />
+                          </div>
+                        )}
+                        <CardTitle className="text-xl text-stone-900 group-hover:text-emerald-900 transition-colors">
+                          <a href={`/knowledge/${article.slug}`}>{article.title}</a>
+                        </CardTitle>
+                        {article.subtitle && article.subtitle !== shortDesc && (
+                          <CardDescription className="text-stone-500 line-clamp-1 mt-1">
+                            {article.subtitle}
+                          </CardDescription>
+                        )}
+                      </CardHeader>
+                      <CardContent className="flex flex-col flex-1 justify-between">
+                        <p className="text-sm text-stone-600 mb-6 flex-1 line-clamp-3 leading-relaxed">
+                          {shortDesc}
+                        </p>
+                        <div className="flex items-center justify-between pt-4 border-t border-stone-100 mt-auto">
+                          <span className="text-xs font-medium text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-100">
+                            Article #{article.order || 1}
+                          </span>
+                          <a
+                            href={`/knowledge/${article.slug}`}
+                            className="inline-flex items-center text-sm font-medium text-emerald-900 hover:text-emerald-700 transition-colors"
+                          >
+                            Read Article
+                            <ArrowRight className="ml-1 h-4 w-4" />
+                          </a>
                         </div>
-                      )}
-                      <CardTitle className="text-xl text-stone-900 group-hover:text-emerald-900 transition-colors">
-                        <a href={`/knowledge/${article.slug}`}>{article.title}</a>
-                      </CardTitle>
-                      <CardDescription className="text-stone-500 line-clamp-2">
-                        {article.subtitle || article.excerpt || article.seo_description || ''}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="flex flex-col flex-1 justify-between">
-                      <p className="text-sm text-stone-600 mb-6 flex-1 line-clamp-3">
-                        {article.description || article.excerpt || ''}
-                      </p>
-                      <div className="flex items-center justify-between pt-4 border-t border-stone-100 mt-auto">
-                        <span className="text-sm font-medium text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded">Article</span>
-                        <a
-                          href={`/knowledge/${article.slug}`}
-                          className="inline-flex items-center text-sm font-medium text-emerald-900 hover:text-emerald-700 transition-colors"
-                        >
-                          Read Article
-                          <ArrowRight className="ml-1 h-4 w-4" />
-                        </a>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
               
               {totalPages > 1 && (
@@ -176,99 +170,56 @@ const KnowledgeHubPage = ({ firestoreArticles: initialArticles = [] }) => {
             </div>
           )}
 
-          {/* Core Foundation Guides (Pillar Pages) */}
-          <div>
-            <div className="mb-8 border-b border-stone-200 pb-4">
-              <h2 className="text-2xl sm:text-3xl font-bold text-stone-900">Core Business Topics</h2>
-              <p className="text-sm text-stone-500 mt-1">Fundamental guides to mastering entrepreneurship</p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {allPillarPages.map((pillar) => {
-                const IconComponent = iconMap[pillar.icon] || BookOpen;
-                return (
-                  <Card
-                    key={pillar.id}
-                    className="group hover:scale-105 transition-transform duration-300 border-stone-200 bg-white h-full shadow-sm hover:shadow-xl flex flex-col justify-between"
-                  >
-                    <CardHeader className="pb-4">
-                      <div className="w-14 h-14 rounded-xl bg-emerald-50 flex items-center justify-center mb-4 group-hover:bg-emerald-900 transition-colors">
-                        <IconComponent className="w-7 h-7 text-emerald-900 group-hover:text-white transition-colors" />
-                      </div>
-                      <CardTitle className="text-xl text-stone-900 group-hover:text-emerald-900 transition-colors">
-                        <a href={`/knowledge/${pillar.id}`}>
-                          {pillar.title}
-                        </a>
-                      </CardTitle>
-                      <CardDescription className="text-stone-500">
-                        {pillar.subtitle}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="flex flex-col flex-1 justify-between">
-                      <p className="text-sm text-stone-600 mb-6 flex-1">
-                        {pillar.description}
-                      </p>
-                      <div className="flex items-center justify-between pt-4 border-t border-stone-100 mt-auto">
-                        <span className="text-sm text-stone-400">
-                          {pillar.content?.sections?.length || 0} sections
-                        </span>
-                        <a
-                          href={`/knowledge/${pillar.id}`}
-                          className="inline-flex items-center text-sm font-medium text-emerald-900 hover:text-emerald-700 transition-colors"
-                        >
-                          Read Article
-                          <ArrowRight className="ml-1 h-4 w-4" />
-                        </a>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Learning Path Suggestion */}
-      <section className="py-20 bg-emerald-900">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-4xl mx-auto">
-            <div className="text-center mb-12">
-              <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">
-                Start Your Entrepreneur Journey
-              </h2>
-              <p className="text-emerald-100">
-                New to entrepreneurship? Follow this recommended path to build your foundation
+          {sortedArticles.length === 0 && (
+            <div className="text-center py-16 bg-white rounded-2xl border border-stone-200">
+              <BookOpen className="w-16 h-16 text-stone-300 mx-auto mb-4" />
+              <h3 className="text-xl font-bold text-stone-900 mb-2">No Knowledge Articles Found</h3>
+              <p className="text-stone-500 max-w-md mx-auto">
+                Articles published from the admin panel will appear here.
               </p>
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {[
-                { num: 1, title: "What is Entrepreneurship", href: "/knowledge/what-is-entrepreneurship" },
-                { num: 2, title: "Entrepreneurial Mindset", href: "/knowledge/entrepreneurial-mindset" },
-                { num: 3, title: "Business Models", href: "/knowledge/business-models" },
-                { num: 4, title: "Challenges & Risks", href: "/knowledge/challenges-risks" },
-              ].map((step) => (
-                <a
-                  key={step.num}
-                  href={step.href}
-                  className="group p-4 rounded-xl bg-emerald-800/50 border border-emerald-700/50 hover:bg-emerald-800 transition-colors"
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center flex-shrink-0">
-                      <span className="text-emerald-900 font-bold text-sm">{step.num}</span>
-                    </div>
-                    <div>
-                      <p className="text-emerald-50 font-medium text-sm group-hover:text-white transition-colors">
-                        {step.title}
-                      </p>
-                    </div>
-                  </div>
-                </a>
-              ))}
-            </div>
-          </div>
+          )}
         </div>
       </section>
+
+      {/* Learning Path Suggestion (Dynamic from Published Articles) */}
+      {sortedArticles.length > 0 && (
+        <section className="py-20 bg-emerald-900">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="max-w-4xl mx-auto">
+              <div className="text-center mb-12">
+                <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">
+                  Start Your Entrepreneur Journey
+                </h2>
+                <p className="text-emerald-100">
+                  Follow this recommended path to build your business foundation
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {sortedArticles.slice(0, 4).map((art, index) => (
+                  <a
+                    key={art.id || art.slug}
+                    href={`/knowledge/${art.slug}`}
+                    className="group p-4 rounded-xl bg-emerald-800/50 border border-emerald-700/50 hover:bg-emerald-800 transition-colors"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                        <span className="text-emerald-900 font-bold text-sm">{index + 1}</span>
+                      </div>
+                      <div>
+                        <p className="text-emerald-50 font-medium text-sm group-hover:text-white transition-colors line-clamp-2">
+                          {art.title}
+                        </p>
+                      </div>
+                    </div>
+                  </a>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* CTA */}
       <section className="py-20 lg:py-24 bg-stone-50">

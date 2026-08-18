@@ -235,6 +235,8 @@ const ContentEditorPanel = () => {
   const [title, setTitle] = useState('');
   const [slug, setSlug] = useState('');
   const [excerpt, setExcerpt] = useState('');
+  const [shortDescription, setShortDescription] = useState('');
+  const [order, setOrder] = useState(1);
   const [category, setCategory] = useState('');
   const [status, setStatus] = useState('draft');
   const [featuredImage, setFeaturedImage] = useState('');
@@ -779,7 +781,9 @@ const ContentEditorPanel = () => {
             setContactPhone(data.contact_phone || '');
             setSource(data.source || '');
 
-            setExcerpt(data.excerpt || '');
+            setExcerpt(data.excerpt || data.short_description || data.shortDescription || '');
+            setShortDescription(data.short_description || data.shortDescription || data.excerpt || '');
+            setOrder(data.order !== undefined ? Number(data.order) : 1);
             const initialCategoryValue = data.category_id || data.category || data.category_name || '';
             const resolvedCategoryValue = getResolvedSelectValue(initialCategoryValue, categories, 'category');
             setCategory(resolvedCategoryValue || initialCategoryValue || '');
@@ -1315,9 +1319,10 @@ const ContentEditorPanel = () => {
         // Extra human-readable metadata for fast rendering
         listing_type_name: type === 'directory' ? (listingTypes.find(t => t.id === listingType || t.slug === listingType)?.name || listingType) : null,
         category_name: selectedCategory?.name || categories.find(c => c.id === parseInt(category) || c.id === category)?.name || '',
-        // Sync excerpt to fields used by the frontend for intro text
+        // Sync excerpt and short_description
         details: type === 'entrepreneurs' ? excerpt : null,
-        short_description: type === 'directory' ? excerpt : null,
+        short_description: shortDescription || excerpt || '',
+        order: Number(order || 1),
         // Per-post custom code
         custom_css: customCss,
         custom_js: customJs,
@@ -2279,24 +2284,38 @@ Only output the raw JSON object, nothing else. Do not use markdown wrapping (\`\
               )}
 
               <div>
-                <label>
-                  {type === 'entrepreneurs' ? 'Short Bio (Max 400 chars)' : 'Short Description (Used in lists)'}
+                <label className="text-sm font-semibold text-stone-700">
+                  {type === 'entrepreneurs' ? 'Short Bio (Max 400 chars)' : 'Short Description (Used in cards & lists)'}
                 </label>
                 <textarea
-                  value={excerpt}
+                  value={shortDescription || excerpt}
                   onChange={(e) => {
                     if (type === 'entrepreneurs' && e.target.value.length > 400) return;
                     setExcerpt(e.target.value);
+                    setShortDescription(e.target.value);
                   }}
-                  placeholder={type === 'entrepreneurs' ? 'Brief introduction...' : 'Brief summary (used in lists)'}
-                  className="textarea-input w-full p-2 border rounded"
+                  placeholder={type === 'entrepreneurs' ? 'Brief introduction...' : 'Brief summary (used in cards and lists)'}
+                  className="textarea-input w-full p-2 border rounded mt-1 bg-white"
                   rows={4}
                 />
                 {type === 'entrepreneurs' && (
-                  <small className={`char-count ${excerpt.length > 350 ? 'text-orange-500' : ''}`}>
-                    {excerpt.length}/400
+                  <small className={`char-count ${(shortDescription || excerpt).length > 350 ? 'text-orange-500' : ''}`}>
+                    {(shortDescription || excerpt).length}/400
                   </small>
                 )}
+              </div>
+
+              <div>
+                <label className="text-sm font-semibold text-stone-700">Sort Order Hierarchy Position</label>
+                <Input
+                  type="number"
+                  min="1"
+                  value={order}
+                  onChange={(e) => setOrder(parseInt(e.target.value) || 1)}
+                  placeholder="e.g. 1 (lower numbers display first)"
+                  className="mt-1 bg-white"
+                />
+                <p className="text-[11px] text-stone-400 mt-1">Determines the order of this post on the frontend grid (e.g. #1 displays first, #2 displays second, etc.).</p>
               </div>
 
               <div className="featured-toggle-container">

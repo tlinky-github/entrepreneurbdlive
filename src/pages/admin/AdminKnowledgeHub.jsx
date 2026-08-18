@@ -55,19 +55,47 @@ const KnowledgeArticlesTab = ({ navigate }) => {
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const res = await contentAPI.list('knowledge');
-        setArticles(res.data || []);
-      } catch (err) {
-        console.error('Error loading articles:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
+  const loadArticles = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await contentAPI.list('knowledge');
+      const items = (res.data || []).map((art, idx) => ({
+        ...art,
+        order: Number(art.order ?? (idx + 1))
+      }));
+      items.sort((a, b) => a.order - b.order);
+      setArticles(items);
+    } catch (err) {
+      console.error('Error loading articles:', err);
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    loadArticles();
+  }, [loadArticles]);
+
+  const moveArticle = async (index, direction) => {
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= articles.length) return;
+
+    const a1 = articles[index];
+    const a2 = articles[targetIndex];
+    const order1 = Number(a1.order || (index + 1));
+    const order2 = Number(a2.order || (targetIndex + 1));
+
+    try {
+      const col1 = a1.type || 'knowledge';
+      const col2 = a2.type || 'knowledge';
+      await contentAPI.update(col1, a1.id, { order: order2, type: col1 });
+      await contentAPI.update(col2, a2.id, { order: order1, type: col2 });
+      toast.success('Article position updated');
+      loadArticles();
+    } catch (err) {
+      toast.error('Failed to update position');
+    }
+  };
 
   return (
     <Card>
@@ -85,14 +113,27 @@ const KnowledgeArticlesTab = ({ navigate }) => {
           <p className="text-center text-stone-500 py-8">No knowledge articles yet. Create one using the Content Editor.</p>
         ) : (
           <div className="space-y-2">
-            {articles.map(article => (
-              <div key={article.id} className="flex items-center justify-between p-3 bg-stone-50 rounded-lg">
-                <div>
-                  <p className="font-medium text-stone-900">{article.title}</p>
-                  <p className="text-xs text-stone-500">/{article.slug}</p>
+            {articles.map((article, idx) => (
+              <div key={article.id} className="flex items-center justify-between p-3 bg-stone-50 rounded-lg border border-stone-100 hover:border-stone-200">
+                <div className="flex items-center gap-3">
+                  <span className="text-xs font-bold font-mono bg-emerald-100 text-emerald-900 px-2 py-0.5 rounded-full">
+                    #{article.order || (idx + 1)}
+                  </span>
+                  <div>
+                    <p className="font-medium text-stone-900">{article.title}</p>
+                    <p className="text-xs text-stone-500">/{article.slug}</p>
+                  </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge className={article.status === 'published' ? 'bg-green-500' : 'bg-yellow-500'}>{article.status || 'draft'}</Badge>
+                  <div className="flex items-center bg-white rounded border border-stone-200">
+                    <Button size="sm" type="button" variant="ghost" disabled={idx === 0} onClick={() => moveArticle(idx, -1)} className="h-7 w-7 p-0" title="Move Up">
+                      <ChevronUp className="w-3.5 h-3.5" />
+                    </Button>
+                    <Button size="sm" type="button" variant="ghost" disabled={idx === articles.length - 1} onClick={() => moveArticle(idx, 1)} className="h-7 w-7 p-0" title="Move Down">
+                      <ChevronDown className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
                   <Button size="sm" variant="outline" onClick={() => navigate(`/admin/content-editor?type=knowledge&id=${article.id}`)}>
                     <Edit2 className="w-3 h-3" />
                   </Button>

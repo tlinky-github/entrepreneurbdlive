@@ -77,13 +77,39 @@ const KnowledgeArticlesTab = ({ navigate }) => {
     setLoading(true);
     try {
       const res = await contentAPI.list('knowledge');
-      setArticles(res.data || []);
+      const items = (res.data || []).map((art, idx) => ({
+        ...art,
+        order: Number(art.order ?? (idx + 1))
+      }));
+      items.sort((a, b) => a.order - b.order);
+      setArticles(items);
     } catch (err) {
       console.error('Error loading articles:', err);
     } finally {
       setLoading(false);
     }
   }, []);
+
+  const moveArticle = async (index, direction) => {
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= articles.length) return;
+
+    const a1 = articles[index];
+    const a2 = articles[targetIndex];
+    const order1 = Number(a1.order || (index + 1));
+    const order2 = Number(a2.order || (targetIndex + 1));
+
+    try {
+      const col1 = a1.type || 'knowledge';
+      const col2 = a2.type || 'knowledge';
+      await contentAPI.update(col1, a1.id, { order: order2, type: col1 });
+      await contentAPI.update(col2, a2.id, { order: order1, type: col2 });
+      toast.success('Article order updated');
+      loadArticles();
+    } catch (err) {
+      toast.error('Failed to update order');
+    }
+  };
 
   useEffect(() => {
     loadArticles();
@@ -251,58 +277,77 @@ const KnowledgeArticlesTab = ({ navigate }) => {
                         className="rounded border-stone-300 text-emerald-900 focus:ring-emerald-800 h-4 w-4 cursor-pointer"
                       />
                     </TableHead>
+                    <TableHead className="w-16">Order</TableHead>
                     <TableHead>Article Title</TableHead>
                     <TableHead>Slug</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead className="w-12"></TableHead>
+                    <TableHead className="w-24 text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {paginatedArticles.map((article) => (
-                    <TableRow key={article.id}>
-                      <TableCell className="px-4">
-                        <input 
-                          type="checkbox" 
-                          checked={selectedIds.includes(article.id)} 
-                          onChange={() => handleSelectRow(article.id)}
-                          className="rounded border-stone-300 text-emerald-900 focus:ring-emerald-800 h-4 w-4 cursor-pointer"
-                        />
-                      </TableCell>
-                      <TableCell className="font-medium text-stone-900">
-                        {article.title}
-                      </TableCell>
-                      <TableCell className="text-stone-600">
-                        /{article.slug}
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={article.status === 'published' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}>
-                          {article.status || 'draft'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <MoreVertical className="w-4 h-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => navigate(`/admin/content-editor?type=knowledge&id=${article.id}`)} className="flex items-center gap-2">
-                              <Pencil className="w-4 h-4" />
-                              Edit Article
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => window.open(`/knowledge/${article.slug}`, '_blank')} className="flex items-center gap-2">
-                              <Eye className="w-4 h-4" />
-                              View Public
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setDeleteId(article.id)} className="text-red-600">
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {paginatedArticles.map((article, idx) => {
+                    const globalIdx = startIndex + idx;
+                    return (
+                      <TableRow key={article.id}>
+                        <TableCell className="px-4">
+                          <input 
+                            type="checkbox" 
+                            checked={selectedIds.includes(article.id)} 
+                            onChange={() => handleSelectRow(article.id)}
+                            className="rounded border-stone-300 text-emerald-900 focus:ring-emerald-800 h-4 w-4 cursor-pointer"
+                          />
+                        </TableCell>
+                        <TableCell className="font-mono text-xs font-bold">
+                          <span className="bg-emerald-100 text-emerald-900 px-2 py-0.5 rounded-full">
+                            #{article.order || (globalIdx + 1)}
+                          </span>
+                        </TableCell>
+                        <TableCell className="font-medium text-stone-900">
+                          {article.title}
+                        </TableCell>
+                        <TableCell className="text-stone-600">
+                          /{article.slug}
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={article.status === 'published' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}>
+                            {article.status || 'draft'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <div className="flex items-center mr-1 bg-white rounded border border-stone-200">
+                              <Button size="sm" type="button" variant="ghost" disabled={globalIdx === 0} onClick={() => moveArticle(globalIdx, -1)} className="h-7 w-7 p-0" title="Move Up">
+                                <ChevronUp className="w-3.5 h-3.5" />
+                              </Button>
+                              <Button size="sm" type="button" variant="ghost" disabled={globalIdx === articles.length - 1} onClick={() => moveArticle(globalIdx, 1)} className="h-7 w-7 p-0" title="Move Down">
+                                <ChevronDown className="w-3.5 h-3.5" />
+                              </Button>
+                            </div>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm">
+                                  <MoreVertical className="w-4 h-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => navigate(`/admin/content-editor?type=knowledge&id=${article.id}`)} className="flex items-center gap-2">
+                                  <Pencil className="w-4 h-4" />
+                                  Edit Article
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => window.open(`/knowledge/${article.slug}`, '_blank')} className="flex items-center gap-2">
+                                  <Eye className="w-4 h-4" />
+                                  View Public
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => setDeleteId(article.id)} className="text-red-600">
+                                  Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
 
