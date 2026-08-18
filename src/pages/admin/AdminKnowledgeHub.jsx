@@ -10,12 +10,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/ta
 import { toast } from 'sonner';
 import {
   Plus, Trash2, Edit2, Save, X, BookOpen, HelpCircle, FileText, BookA,
-  ChevronDown, ChevronUp, Loader2
+  ChevronDown, ChevronUp, Loader2, ArrowUpDown
 } from 'lucide-react';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '../../components/ui/alert-dialog';
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter
+} from '../../components/ui/dialog';
 import { contentAPI, guidesAPI, faqCategoriesAPI, glossaryAPI } from '../../lib/api';
 import { useOutletContext } from 'react-router-dom';
 
@@ -54,6 +57,9 @@ const AdminKnowledgeHub = () => {
 const KnowledgeArticlesTab = ({ navigate }) => {
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [reorderModalOpen, setReorderModalOpen] = useState(false);
+  const [reorderItems, setReorderItems] = useState([]);
+  const [savingReorder, setSavingReorder] = useState(false);
 
   const loadArticles = useCallback(async () => {
     setLoading(true);
@@ -64,7 +70,8 @@ const KnowledgeArticlesTab = ({ navigate }) => {
         order: Number(art.order ?? (idx + 1))
       }));
       items.sort((a, b) => a.order - b.order);
-      setArticles(items);
+      const cleanItems = items.map((art, idx) => ({ ...art, order: idx + 1 }));
+      setArticles(cleanItems);
     } catch (err) {
       console.error('Error loading articles:', err);
     } finally {
@@ -76,37 +83,115 @@ const KnowledgeArticlesTab = ({ navigate }) => {
     loadArticles();
   }, [loadArticles]);
 
-  const moveArticle = async (index, direction) => {
-    const targetIndex = index + direction;
-    if (targetIndex < 0 || targetIndex >= articles.length) return;
+  const setArticlePosition = async (targetArticleId, newPos) => {
+    if (!articles || articles.length === 0) return;
+    const targetPos = Math.max(1, Math.min(newPos, articles.length));
 
-    const a1 = articles[index];
-    const a2 = articles[targetIndex];
-    const order1 = Number(a1.order || (index + 1));
-    const order2 = Number(a2.order || (targetIndex + 1));
+    const currentList = [...articles];
+    const targetIndex = currentList.findIndex(a => a.id === targetArticleId);
+    if (targetIndex === -1) return;
+
+    const [movedItem] = currentList.splice(targetIndex, 1);
+    currentList.splice(targetPos - 1, 0, movedItem);
+
+    const updatedList = currentList.map((item, idx) => ({
+      ...item,
+      order: idx + 1
+    }));
+
+    setArticles(updatedList);
+
+    const changedItems = updatedList.filter(item => {
+      const orig = articles.find(a => a.id === item.id);
+      return !orig || orig.order !== item.order;
+    });
+
+    if (changedItems.length === 0) return;
 
     try {
-      const col1 = a1.type || 'knowledge';
-      const col2 = a2.type || 'knowledge';
-      await contentAPI.update(col1, a1.id, { order: order2, type: col1 });
-      await contentAPI.update(col2, a2.id, { order: order1, type: col2 });
-      toast.success('Article position updated');
+      const updates = changedItems.map(item => {
+        const col = item.type || 'knowledge';
+        return contentAPI.update(col, item.id, { order: item.order, type: col });
+      });
+      await Promise.all(updates);
+      toast.success(`Position set to #${targetPos} & list re-sequenced`);
       loadArticles();
     } catch (err) {
-      toast.error('Failed to update position');
+      toast.error('Failed to update position sequence');
+      loadArticles();
+    }
+  };
+
+  const moveArticle = (index, direction) => {
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= articles.length) return;
+    const targetArticle = articles[index];
+    setArticlePosition(targetArticle.id, targetIndex + 1);
+  };
+
+  const openReorderModal = () => {
+    setReorderItems(articles.map((art, idx) => ({
+      ...art,
+      tempOrder: art.order || (idx + 1)
+    })));
+    setReorderModalOpen(true);
+  };
+
+  const handleAutoSequence = () => {
+    setReorderItems(prev => prev.map((item, idx) => ({ ...item, tempOrder: idx + 1 })));
+    toast.info(`Auto-sequenced positions 1 to ${reorderItems.length}`);
+  };
+
+  const handleSortAlphabetically = () => {
+    const sorted = [...reorderItems].sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+    setReorderItems(sorted.map((item, idx) => ({ ...item, tempOrder: idx + 1 })));
+    toast.info('Sorted alphabetically and assigned positions');
+  };
+
+  const handleSaveAllReorder = async () => {
+    setSavingReorder(true);
+    try {
+      const sorted = [...reorderItems].sort((a, b) => Number(a.tempOrder || 9999) - Number(b.tempOrder || 9999));
+      const reindexed = sorted.map((item, idx) => ({
+        ...item,
+        order: idx + 1
+      }));
+
+      const updates = reindexed.map(item => {
+        const col = item.type || 'knowledge';
+        return contentAPI.update(col, item.id, { order: item.order, type: col });
+      });
+      await Promise.all(updates);
+      toast.success('All article positions updated and re-sequenced!');
+      setReorderModalOpen(false);
+      loadArticles();
+    } catch (err) {
+      toast.error('Failed to update article positions');
+    } finally {
+      setSavingReorder(false);
     }
   };
 
   return (
     <Card>
-      <div className="flex justify-between items-center p-6 pb-2">
+      <div className="flex justify-between items-center p-6 pb-2 border-b border-stone-100">
         <h2 className="text-lg font-bold text-stone-900">Knowledge Articles</h2>
-        <Button className="bg-emerald-900 text-white hover:bg-emerald-800" onClick={() => navigate('/admin/content-editor?type=knowledge')}>
-          <Plus className="w-4 h-4 mr-2" />
-          New Article
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            className="border-emerald-800 text-emerald-900 hover:bg-emerald-50"
+            onClick={openReorderModal}
+          >
+            <ArrowUpDown className="w-4 h-4 mr-2" />
+            Quick Reorder All ({articles.length})
+          </Button>
+          <Button className="bg-emerald-900 text-white hover:bg-emerald-800" onClick={() => navigate('/admin/content-editor?type=knowledge')}>
+            <Plus className="w-4 h-4 mr-2" />
+            New Article
+          </Button>
+        </div>
       </div>
-      <CardContent>
+      <CardContent className="pt-4">
         {loading ? (
           <div className="space-y-3">{[...Array(3)].map((_, i) => <Skeleton key={i} className="h-12" />)}</div>
         ) : articles.length === 0 ? (
@@ -116,9 +201,28 @@ const KnowledgeArticlesTab = ({ navigate }) => {
             {articles.map((article, idx) => (
               <div key={article.id} className="flex items-center justify-between p-3 bg-stone-50 rounded-lg border border-stone-100 hover:border-stone-200">
                 <div className="flex items-center gap-3">
-                  <span className="text-xs font-bold font-mono bg-emerald-100 text-emerald-900 px-2 py-0.5 rounded-full">
-                    #{article.order || (idx + 1)}
-                  </span>
+                  <div className="flex items-center gap-1">
+                    <span className="text-stone-400 font-semibold text-xs">#</span>
+                    <input
+                      type="number"
+                      min="1"
+                      defaultValue={article.order || (idx + 1)}
+                      key={`order-input-${article.id}-${article.order}`}
+                      onBlur={(e) => {
+                        const val = parseInt(e.target.value);
+                        if (!isNaN(val) && val !== article.order) {
+                          setArticlePosition(article.id, val);
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.target.blur();
+                        }
+                      }}
+                      className="w-16 px-1.5 py-1 text-xs font-mono font-bold text-emerald-900 bg-emerald-50 border border-emerald-300 rounded text-center focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600 shadow-sm hover:border-emerald-500"
+                      title="Type position number and press Enter to move instantly"
+                    />
+                  </div>
                   <div>
                     <p className="font-medium text-stone-900">{article.title}</p>
                     <p className="text-xs text-stone-500">/{article.slug}</p>
@@ -143,6 +247,107 @@ const KnowledgeArticlesTab = ({ navigate }) => {
           </div>
         )}
       </CardContent>
+
+      {/* Quick Reorder Modal */}
+      <Dialog open={reorderModalOpen} onOpenChange={setReorderModalOpen}>
+        <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col">
+          <DialogHeader className="border-b border-stone-200 pb-4">
+            <DialogTitle className="text-xl font-bold text-stone-900 flex items-center gap-2">
+              <ArrowUpDown className="w-5 h-5 text-emerald-800" />
+              Quick Reorder All Knowledge Articles ({reorderItems.length})
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="flex items-center justify-between py-2 px-3 bg-stone-50 rounded-lg border border-stone-200 text-xs">
+            <span className="text-stone-600 font-medium">Quick Sorting Helpers:</span>
+            <div className="flex items-center gap-2">
+              <Button size="sm" type="button" variant="outline" onClick={handleAutoSequence} className="h-7 text-xs bg-white">
+                Auto-Sequence (1..{reorderItems.length})
+              </Button>
+              <Button size="sm" type="button" variant="outline" onClick={handleSortAlphabetically} className="h-7 text-xs bg-white">
+                Sort A-Z & Sequence
+              </Button>
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-y-auto pr-2 space-y-2 max-h-[450px]">
+            {reorderItems.map((item, idx) => (
+              <div key={item.id} className="flex items-center justify-between p-2.5 bg-white border border-stone-200 rounded-lg hover:border-emerald-500 transition-colors">
+                <div className="flex items-center gap-3 flex-1 min-w-0 mr-4">
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <span className="text-xs font-bold text-stone-400">#</span>
+                    <Input
+                      type="number"
+                      min="1"
+                      value={item.tempOrder}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setReorderItems(prev => prev.map(p => p.id === item.id ? { ...p, tempOrder: val } : p));
+                      }}
+                      className="w-16 h-8 text-xs font-mono font-bold text-center border-stone-300 focus:ring-emerald-700"
+                    />
+                  </div>
+                  <div className="truncate">
+                    <p className="text-sm font-medium text-stone-900 truncate">{item.title}</p>
+                    <p className="text-xs text-stone-400 truncate">/{item.slug}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Button
+                    size="sm"
+                    type="button"
+                    variant="ghost"
+                    disabled={idx === 0}
+                    onClick={() => {
+                      const newArr = [...reorderItems];
+                      const temp = newArr[idx];
+                      newArr[idx] = newArr[idx - 1];
+                      newArr[idx - 1] = temp;
+                      setReorderItems(newArr.map((it, i) => ({ ...it, tempOrder: i + 1 })));
+                    }}
+                    className="h-7 w-7 p-0"
+                    title="Move Up"
+                  >
+                    <ChevronUp className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    type="button"
+                    variant="ghost"
+                    disabled={idx === reorderItems.length - 1}
+                    onClick={() => {
+                      const newArr = [...reorderItems];
+                      const temp = newArr[idx];
+                      newArr[idx] = newArr[idx + 1];
+                      newArr[idx + 1] = temp;
+                      setReorderItems(newArr.map((it, i) => ({ ...it, tempOrder: i + 1 })));
+                    }}
+                    className="h-7 w-7 p-0"
+                    title="Move Down"
+                  >
+                    <ChevronDown className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <DialogFooter className="border-t border-stone-200 pt-4 flex items-center justify-between">
+            <Button type="button" variant="ghost" onClick={() => setReorderModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              className="bg-emerald-900 text-white hover:bg-emerald-800"
+              onClick={handleSaveAllReorder}
+              disabled={savingReorder}
+            >
+              {savingReorder ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+              Save All Positions
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };
