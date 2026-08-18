@@ -2184,7 +2184,7 @@ Only output the raw JSON object, nothing else. Do not use markdown wrapping (\`\
                 </>
               )}
 
-              {type !== 'entrepreneurs' && (
+              {type !== 'entrepreneurs' && type !== 'knowledge' && type !== 'resource' && (
                 <>
                   <QuickSelector
                     label="Category *"

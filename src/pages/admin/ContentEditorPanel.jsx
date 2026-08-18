@@ -1796,18 +1796,22 @@ const ContentEditorPanel = () => {
                 </>
               )}
 
-               <QuickSelector
-                label="Category *"
-                value={category}
-                onChange={setCategory}
-                options={categories}
-                taxType="category"
-                placeholder="Select a category"
-              />
-              {submittedCategory && (
-                <p className="text-[10px] text-emerald-600 font-bold px-1 uppercase leading-tight mt-1">
-                  User Submitted: {submittedCategory}
-                </p>
+              {type !== 'entrepreneurs' && type !== 'knowledge' && type !== 'resource' && (
+                <>
+                  <QuickSelector
+                    label="Category *"
+                    value={category}
+                    onChange={setCategory}
+                    options={categories}
+                    taxType="category"
+                    placeholder="Select a category"
+                  />
+                  {submittedCategory && (
+                    <p className="text-[10px] text-emerald-600 font-bold px-1 uppercase leading-tight mt-1">
+                      User Submitted: {submittedCategory}
+                    </p>
+                  )}
+                </>
               )}
 
               <div>
