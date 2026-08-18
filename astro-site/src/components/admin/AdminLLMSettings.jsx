@@ -17,6 +17,7 @@ const AdminLLMSettings = () => {
     ai_read_tools: '[]',
     directory_per_page: '12',
     entrepreneurs_per_page: '12',
+    knowledge_per_page: '9',
     index_blog: true,
     index_entrepreneurs: true,
     index_directory: true,

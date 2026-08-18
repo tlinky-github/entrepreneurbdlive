@@ -29,6 +29,9 @@ const AdminSettings = () => {
     seo_title: 'entrepreneurs.bd - Bangladesh Entrepreneur Ecosystem',
     seo_description: 'Connect with entrepreneurs, discover startups, and access resources for business growth in Bangladesh.',
     google_analytics_id: '',
+    directory_per_page: '12',
+    entrepreneurs_per_page: '12',
+    knowledge_per_page: '9',
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -184,6 +187,50 @@ const AdminSettings = () => {
                   value={settings.footer_text}
                   onChange={(e) => handleChange('footer_text', e.target.value)}
                 />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-stone-200 mt-6 animate-fade-in">
+            <CardHeader>
+              <CardTitle>Pagination Configuration</CardTitle>
+              <CardDescription>Specify the number of items per page for listings, profiles, and knowledge articles</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid sm:grid-cols-3 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="directory_per_page">Directory items per page</Label>
+                  <Input
+                    id="directory_per_page"
+                    type="number"
+                    value={settings.directory_per_page || '12'}
+                    onChange={(e) => handleChange('directory_per_page', e.target.value)}
+                    min="1"
+                    className="border-stone-200"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="entrepreneurs_per_page">Entrepreneurs profiles per page</Label>
+                  <Input
+                    id="entrepreneurs_per_page"
+                    type="number"
+                    value={settings.entrepreneurs_per_page || '12'}
+                    onChange={(e) => handleChange('entrepreneurs_per_page', e.target.value)}
+                    min="1"
+                    className="border-stone-200"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="knowledge_per_page">Knowledge articles per page</Label>
+                  <Input
+                    id="knowledge_per_page"
+                    type="number"
+                    value={settings.knowledge_per_page || '9'}
+                    onChange={(e) => handleChange('knowledge_per_page', e.target.value)}
+                    min="1"
+                    className="border-stone-200"
+                  />
+                </div>
               </div>
             </CardContent>
           </Card>

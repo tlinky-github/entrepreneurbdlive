@@ -33,6 +33,7 @@ const AdminSettings = () => {
     ai_read_tools: '[]',
     directory_per_page: '12',
     entrepreneurs_per_page: '12',
+    knowledge_per_page: '9',
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -227,10 +228,10 @@ const AdminSettings = () => {
           <Card className="border-stone-200 mt-6 animate-fade-in">
             <CardHeader>
               <CardTitle>Pagination Configuration</CardTitle>
-              <CardDescription>Specify the number of items per page for listings and profiles</CardDescription>
+              <CardDescription>Specify the number of items per page for listings, profiles, and knowledge articles</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="grid sm:grid-cols-2 gap-6">
+              <div className="grid sm:grid-cols-3 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="directory_per_page">Directory items per page</Label>
                   <Input
@@ -249,6 +250,17 @@ const AdminSettings = () => {
                     type="number"
                     value={settings.entrepreneurs_per_page || '12'}
                     onChange={(e) => handleChange('entrepreneurs_per_page', e.target.value)}
+                    min="1"
+                    className="border-stone-200"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="knowledge_per_page">Knowledge articles per page</Label>
+                  <Input
+                    id="knowledge_per_page"
+                    type="number"
+                    value={settings.knowledge_per_page || '9'}
+                    onChange={(e) => handleChange('knowledge_per_page', e.target.value)}
                     min="1"
                     className="border-stone-200"
                   />

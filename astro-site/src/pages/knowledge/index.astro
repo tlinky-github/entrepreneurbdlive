@@ -1,11 +1,18 @@
 ---
 import PublicLayout from '../../layouts/PublicLayout.astro';
 import KnowledgeHubPage from '../../components/knowledge/KnowledgeHubPage.jsx';
-import { contentAPI } from '../../lib/serverApi';
+import { contentAPI, getSiteSettings } from '../../lib/serverApi';
 
 let firestoreArticles = [];
+let perPage = 9;
+
 try {
-  firestoreArticles = await contentAPI.list();
+  const [articles, settings] = await Promise.all([
+    contentAPI.list(),
+    getSiteSettings()
+  ]);
+  firestoreArticles = articles || [];
+  perPage = parseInt(settings?.knowledge_per_page) || 9;
 } catch (e: any) {
   console.error('[Knowledge Hub] SSR fetch failed:', e.message);
 }
@@ -15,5 +22,5 @@ try {
   title="Knowledge Hub | Entrepreneurs BD"
   description="Your complete resource library for building and growing a successful business."
 >
-  <KnowledgeHubPage client:load firestoreArticles={firestoreArticles} />
+  <KnowledgeHubPage client:load firestoreArticles={firestoreArticles} initialPerPage={perPage} />
 </PublicLayout>

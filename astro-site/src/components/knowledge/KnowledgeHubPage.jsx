@@ -2,13 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { ArrowRight, BookOpen, Lightbulb, MapPin, Users, Target, TrendingUp, Brain, DollarSign, AlertTriangle, Rocket, Laptop } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
-import { contentAPI } from '../../lib/api';
+import { contentAPI, settingsAPI } from '../../lib/api';
 import { SitePagination } from '../common/SitePagination';
 
-const KnowledgeHubPage = ({ firestoreArticles: initialArticles = [] }) => {
+const KnowledgeHubPage = ({ firestoreArticles: initialArticles = [], initialPerPage = 9 }) => {
   const [articles, setArticles] = useState(initialArticles);
   const [currentPage, setCurrentPage] = useState(1);
-  const ITEMS_PER_PAGE = 9;
+  const [itemsPerPage, setItemsPerPage] = useState(initialPerPage);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -16,6 +16,22 @@ const KnowledgeHubPage = ({ firestoreArticles: initialArticles = [] }) => {
       const page = parseInt(params.get('page')) || 1;
       setCurrentPage(page);
     }
+  }, []);
+
+  // Fetch dynamic perPage from settings
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const res = await settingsAPI.get();
+        if (res?.data?.knowledge_per_page) {
+          const val = parseInt(res.data.knowledge_per_page);
+          if (val > 0) setItemsPerPage(val);
+        }
+      } catch (e) {
+        // Fallback to initialPerPage
+      }
+    };
+    fetchSettings();
   }, []);
 
   // Client-side sync to fetch latest published articles from Firestore
@@ -59,10 +75,10 @@ const KnowledgeHubPage = ({ firestoreArticles: initialArticles = [] }) => {
 
   // Sort initialArticles by order
   const sortedArticles = [...articles].sort((a, b) => Number(a.order ?? 9999) - Number(b.order ?? 9999));
-  const totalPages = Math.ceil(sortedArticles.length / ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(sortedArticles.length / itemsPerPage);
   const safeCurrentPage = Math.max(1, Math.min(currentPage, totalPages || 1));
-  const startIndex = (safeCurrentPage - 1) * ITEMS_PER_PAGE;
-  const paginatedArticles = sortedArticles.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  const startIndex = (safeCurrentPage - 1) * itemsPerPage;
+  const paginatedArticles = sortedArticles.slice(startIndex, startIndex + itemsPerPage);
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
