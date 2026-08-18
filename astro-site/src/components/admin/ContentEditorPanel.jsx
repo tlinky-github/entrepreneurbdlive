@@ -856,7 +856,7 @@ const ContentEditorPanel = () => {
             setEducation(data.education || '');
             setCountry(data.country || '');
 
-            const fullContent = data.content_html || data.content;
+            const fullContent = data.content || data.content_html;
             if (fullContent) {
               // Senior Engineer Fix: Automatically upgrade legacy plain-text FAQs to dynamic blocks on load
               editor.commands.setContent(upgradeLegacyFaqs(fullContent));
@@ -1249,6 +1249,7 @@ const ContentEditorPanel = () => {
         slug,
         excerpt,
         content: contentHtml,
+        content_html: contentHtml,
         category_id: category, // Keep as string Firestore ID
         // Priority: overrideStatus > current state status
         status: isScheduled ? 'scheduled' : (overrideStatus || status),

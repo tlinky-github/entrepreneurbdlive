@@ -55,7 +55,7 @@ const robotsMeta = article ? getRobotsMetaString(article.robots_meta) : undefine
 const socialMeta = article?.social_meta || undefined;
 
 // Generate Schema
-const pageSchema = buildSchema(article?.custom_schema, null, authorData, article?.content_html || article?.content);
+const pageSchema = buildSchema(article?.custom_schema, null, authorData, article?.content || article?.content_html);
 // Serialize Firestore article to break cyclic references (Timestamps, DocumentReferences, etc.)
 function serializeFirestore(obj: any, depth = 0): any {
   if (depth > 20 || obj === null || obj === undefined) return obj ?? null;
