@@ -440,46 +440,72 @@ export const listingAPI = {
 
 // --- General Content API (Used by ContentEditorPanel) ---
 export const contentAPI = {
-  list: async (type) => {
-    const collectionMap = {
-      blog: 'posts',
-      entrepreneurs: 'profiles',
-      directory: 'listings',
-      knowledge: 'resources'
-    };
-    const colName = collectionMap[type] || type;
-    const snapshot = await getDocs(collection(db, colName));
-    return { data: snapshot.docs.map(docToData) };
-  },
   get: async (type, id) => {
-    const collectionMap = {
-      blog: 'posts',
-      entrepreneurs: 'profiles',
-      directory: 'listings',
-      knowledge: 'resources'
-    };
-    const colName = collectionMap[type] || type;
-    let docRef = doc(db, colName, id);
-    let docSnap = await getDoc(docRef);
-    
-    // Fallback for legacy AI posts
-    if (!docSnap.exists() && (type === 'blog' || type === 'knowledge')) {
-      const aiRef = doc(db, 'ai_posts', id);
-      const aiSnap = await getDoc(aiRef);
-      if (aiSnap.exists()) {
-        docSnap = aiSnap;
-        docRef = aiRef;
+    try {
+      const collectionMap = {
+        blog: 'posts',
+        entrepreneurs: 'profiles',
+        directory: 'listings',
+        knowledge: 'knowledge',
+        guides: 'guides',
+        faqs: 'faq_categories',
+        glossary: 'glossary'
+      };
+      const colName = collectionMap[type] || type;
+      let docRef = doc(db, colName, id);
+      let docSnap = await getDoc(docRef);
+      
+      // Fallback 1: Query by slug in primary collection
+      if (!docSnap.exists()) {
+        try {
+          const q = query(collection(db, colName), where('slug', '==', id), limit(1));
+          const snap = await getDocs(q);
+          if (!snap.empty) {
+            docSnap = snap.docs[0];
+            docRef = doc(db, colName, docSnap.id);
+          }
+        } catch (e) {}
       }
-    }
 
-    if (docSnap.exists()) {
-      // Update view count
-      await updateDoc(docRef, {
-        view_count: increment(1)
-      }).catch(err => console.warn('Failed to increment view count:', err));
+      // Fallback 2: Check legacy fallback collection (resources <-> knowledge)
+      if (!docSnap.exists() && (colName === 'knowledge' || colName === 'resources')) {
+        const altCol = colName === 'knowledge' ? 'resources' : 'knowledge';
+        let altRef = doc(db, altCol, id);
+        let altSnap = await getDoc(altRef);
+        if (!altSnap.exists()) {
+          try {
+            const q = query(collection(db, altCol), where('slug', '==', id), limit(1));
+            const snap = await getDocs(q);
+            if (!snap.empty) altSnap = snap.docs[0];
+          } catch (e) {}
+        }
+        if (altSnap.exists()) {
+          docSnap = altSnap;
+          docRef = altRef;
+        }
+      }
+
+      // Fallback 3: Fallback for legacy AI posts
+      if (!docSnap.exists() && (type === 'blog' || type === 'knowledge')) {
+        const aiRef = doc(db, 'ai_posts', id);
+        const aiSnap = await getDoc(aiRef);
+        if (aiSnap.exists()) {
+          docSnap = aiSnap;
+          docRef = aiRef;
+        }
+      }
+
+      if (docSnap.exists()) {
+        await updateDoc(docRef, {
+          view_count: increment(1)
+        }).catch(err => console.warn('Failed to increment view count:', err));
+      }
+      
+      return { data: docToData(docSnap) };
+    } catch (error) {
+      console.error('contentAPI.get error:', error);
+      return { data: null };
     }
-    
-    return { data: docToData(docSnap) };
   },
   list: async (type = 'posts') => {
     try {
@@ -494,7 +520,16 @@ export const contentAPI = {
       };
       const colName = collectionMap[type] || type;
       const snapshot = await getDocs(collection(db, colName));
-      const rawDocs = snapshot.docs.map(docToData);
+      let rawDocs = snapshot.docs.map(docToData);
+
+      if (colName === 'knowledge' || colName === 'resources') {
+        const altCol = colName === 'knowledge' ? 'resources' : 'knowledge';
+        try {
+          const altSnap = await getDocs(collection(db, altCol));
+          const altDocs = altSnap.docs.map(docToData);
+          rawDocs = [...rawDocs, ...altDocs];
+        } catch (e) {}
+      }
 
       const uniqueMap = new Map();
       const duplicatesToDelete = [];
@@ -584,7 +619,7 @@ export const contentAPI = {
     return { id: res.id, ...cleanData };
   },
   update: async (arg1, arg2, arg3) => {
-    let type = 'posts';
+    let type = 'knowledge';
     let id = '';
     let data = {};
 
@@ -595,7 +630,7 @@ export const contentAPI = {
     } else if (typeof arg1 === 'string' && arg2) {
       id = arg1;
       data = arg2;
-      type = data.type || 'posts';
+      type = data.type || 'knowledge';
     }
 
     const collectionMap = {
@@ -618,6 +653,16 @@ export const contentAPI = {
       faqs: cleanData.faqs || [],
       updated_at: serverTimestamp() 
     }, { merge: true });
+
+    if (colName === 'knowledge' || colName === 'resources') {
+      const altCol = colName === 'knowledge' ? 'resources' : 'knowledge';
+      await setDoc(doc(db, altCol, id), {
+        ...cleanData,
+        authorId: cleanData.authorId || null,
+        faqs: cleanData.faqs || [],
+        updated_at: serverTimestamp()
+      }, { merge: true }).catch(() => {});
+    }
 
     return { id, ...cleanData };
   },

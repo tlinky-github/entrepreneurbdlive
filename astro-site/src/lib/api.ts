@@ -554,7 +554,16 @@ export const contentAPI = {
     try {
       const colName = getCollectionName(type);
       const snapshot = await getDocs(collection(db, colName));
-      const rawDocs = snapshot.docs.map(docToData);
+      let rawDocs = snapshot.docs.map(docToData);
+
+      if (colName === 'knowledge' || colName === 'resources') {
+        const altCol = colName === 'knowledge' ? 'resources' : 'knowledge';
+        try {
+          const altSnap = await getDocs(collection(db, altCol));
+          const altDocs = altSnap.docs.map(docToData);
+          rawDocs = [...rawDocs, ...altDocs];
+        } catch (e) {}
+      }
 
       // Deduplicate by slug (keep most recent and delete duplicate copies in Firestore)
       const uniqueMap = new Map<string, any>();
@@ -620,6 +629,20 @@ export const contentAPI = {
       const snapshot = await getDocs(q);
       if (!snapshot.empty) {
         return { data: docToData(snapshot.docs[0]) };
+      }
+
+      // Check fallback collection for knowledge / resources cross-compatibility
+      if (colName === 'knowledge' || colName === 'resources') {
+        const altCol = colName === 'knowledge' ? 'resources' : 'knowledge';
+        try {
+          const altSnap = await getDoc(doc(db, altCol, idOrSlug));
+          if (altSnap.exists()) return { data: docToData(altSnap) };
+        } catch (e) {}
+        try {
+          const altQ = query(collection(db, altCol), where('slug', '==', idOrSlug), fsLimit(1));
+          const altSnap = await getDocs(altQ);
+          if (!altSnap.empty) return { data: docToData(altSnap.docs[0]) };
+        } catch (e) {}
       }
 
       return { data: null };
@@ -698,32 +721,17 @@ export const contentAPI = {
       delete cleanData.id;
 
       const docRef = doc(db, colName, id);
-      try {
-        await updateDoc(docRef, {
+      await setDoc(docRef, {
+        ...cleanData,
+        updated_at: serverTimestamp()
+      }, { merge: true });
+
+      if (colName === 'knowledge' || colName === 'resources') {
+        const altCol = colName === 'knowledge' ? 'resources' : 'knowledge';
+        await setDoc(doc(db, altCol, id), {
           ...cleanData,
           updated_at: serverTimestamp()
-        });
-      } catch (err: any) {
-        // Fallback: Check alternative collection or setDoc merge
-        if (colName === 'knowledge' || colName === 'resources') {
-          const altCol = colName === 'knowledge' ? 'resources' : 'knowledge';
-          try {
-            await updateDoc(doc(db, altCol, id), {
-              ...cleanData,
-              updated_at: serverTimestamp()
-            });
-          } catch {
-            await setDoc(docRef, {
-              ...cleanData,
-              updated_at: serverTimestamp()
-            }, { merge: true });
-          }
-        } else {
-          await setDoc(docRef, {
-            ...cleanData,
-            updated_at: serverTimestamp()
-          }, { merge: true });
-        }
+        }, { merge: true }).catch(() => {});
       }
 
       return { id, ...cleanData };

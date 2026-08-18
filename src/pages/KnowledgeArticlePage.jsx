@@ -43,9 +43,10 @@ const KnowledgeArticlePage = () => {
   const articleSections = !isFirestore && Array.isArray(articleContent.sections) ? articleContent.sections : [];
   const articleFaqs = !isFirestore && Array.isArray(articleContent.faqs) ? articleContent.faqs : [];
 
-  const currentIndex = allPillarPages.findIndex(p => p.id === slug);
-  const prevArticle = currentIndex > 0 ? allPillarPages[currentIndex - 1] : null;
-  const nextArticle = currentIndex < allPillarPages.length - 1 ? allPillarPages[currentIndex + 1] : null;
+  const allPillarPagesList = typeof allPillarPages !== 'undefined' && Array.isArray(allPillarPages) ? allPillarPages : [];
+  const currentIndex = allPillarPagesList.findIndex(p => p.id === slug || p.slug === slug);
+  const prevArticle = currentIndex > 0 ? allPillarPagesList[currentIndex - 1] : null;
+  const nextArticle = currentIndex >= 0 && currentIndex < allPillarPagesList.length - 1 ? allPillarPagesList[currentIndex + 1] : null;
 
   if (loading) {
     return (
