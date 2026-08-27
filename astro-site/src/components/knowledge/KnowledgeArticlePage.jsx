@@ -5,6 +5,9 @@ import CustomCodeInjector from '../../components/common/CustomCodeInjector';
 import { ArrowLeft, ArrowRight, BookOpen, ChevronRight, Loader2 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import { pillarPages, pillarPagesPart2 } from '../../data/mock';
+
+const allPillarPagesList = [...(pillarPages || []), ...(pillarPagesPart2 || [])];
 
 // Browser-safe HTML processor (no Node.js / cheerio deps)
 function processArticleHtml(html, featuredImage, title) {
@@ -96,6 +99,13 @@ const KnowledgeArticlePage = ({ slug, article: initialArticle, isFirestore: init
         if (!cancelled && doc) {
           setArticle(doc);
           setIsFirestore(true);
+          return;
+        }
+
+        const pillarMatch = allPillarPagesList.find(p => p.id === slug || p.slug === slug);
+        if (!cancelled && pillarMatch) {
+          setArticle(pillarMatch);
+          setIsFirestore(false);
         }
       } catch (e) {
         console.error('[KnowledgeArticlePage] client fetch error:', e);
@@ -112,7 +122,6 @@ const KnowledgeArticlePage = ({ slug, article: initialArticle, isFirestore: init
   const articleSections = !effectiveIsFirestore && Array.isArray(articleContent.sections) ? articleContent.sections : [];
   const articleFaqs = !effectiveIsFirestore && Array.isArray(articleContent.faqs) ? articleContent.faqs : [];
 
-  const allPillarPagesList = typeof allPillarPages !== 'undefined' && Array.isArray(allPillarPages) ? allPillarPages : [];
   const currentIndex = allPillarPagesList.findIndex(p => p.id === slug || p.slug === slug);
   const prevArticle = currentIndex > 0 ? allPillarPagesList[currentIndex - 1] : null;
   const nextArticle = currentIndex >= 0 && currentIndex < allPillarPagesList.length - 1 ? allPillarPagesList[currentIndex + 1] : null;
