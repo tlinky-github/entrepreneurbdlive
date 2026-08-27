@@ -245,7 +245,7 @@ const Home = () => {
             {knowledgeItems.map((item) => {
               const IconComponent = iconMap[item.icon] || BookOpen;
               return (
-                <Link key={item.id} to={`/knowledge/${item.id}`}>
+                <Link key={item.id} to={`/knowledge/${item.slug || item.id}`}>
                   <Card className="h-full border-stone-200 hover:border-emerald-900/20 hover:shadow-lg transition-all duration-200 group">
                     <CardContent className="p-8 flex flex-col h-full">
                       <div className="w-12 h-12 bg-emerald-50 rounded-2xl mb-6 flex items-center justify-center group-hover:bg-emerald-900 transition-colors">

@@ -72,9 +72,17 @@ export async function getDocBySlug(collectionName: string, slug: string) {
       .where('slug', '==', slug)
       .limit(1)
       .get();
-    if (snapshot.empty) return null;
-    const d = snapshot.docs[0];
-    return convertTimestamps({ id: d.id, ...d.data() });
+    if (!snapshot.empty) {
+      const d = snapshot.docs[0];
+      return convertTimestamps({ id: d.id, ...d.data() });
+    }
+    try {
+      const docSnap = await db.collection(collectionName).doc(slug).get();
+      if (docSnap.exists) {
+        return convertTimestamps({ id: docSnap.id, ...docSnap.data() });
+      }
+    } catch (err) {}
+    return null;
   } catch (e: any) {
     console.error(`[serverApi] getDocBySlug(${collectionName}, ${slug}):`, e.message);
     return null;

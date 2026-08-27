@@ -78,7 +78,7 @@ const KnowledgeHubPage = () => {
                           <img src={article.featured_image} alt={article.title} className="w-full h-40 object-cover rounded-lg mb-4" />
                         )}
                         <CardTitle className="text-xl text-stone-900 group-hover:text-emerald-900 transition-colors">
-                          <Link to={`/knowledge/${article.slug}`}>{article.title}</Link>
+                          <Link to={`/knowledge/${article.slug || article.id}`}>{article.title}</Link>
                         </CardTitle>
                         {article.subtitle && article.subtitle !== shortDesc && (
                           <CardDescription className="text-stone-500 line-clamp-1 mt-1">
@@ -95,7 +95,7 @@ const KnowledgeHubPage = () => {
                             Article #{article.order || 1}
                           </span>
                           <Link
-                            to={`/knowledge/${article.slug}`}
+                            to={`/knowledge/${article.slug || article.id}`}
                             className="inline-flex items-center text-sm font-medium text-emerald-900 hover:text-emerald-700 transition-colors"
                           >
                             Read Article
@@ -138,7 +138,7 @@ const KnowledgeHubPage = () => {
                 {firestoreArticles.slice(0, 4).map((step, index) => (
                   <Link
                     key={step.id || step.slug}
-                    to={`/knowledge/${step.slug}`}
+                    to={`/knowledge/${step.slug || step.id}`}
                     className="group p-4 rounded-xl bg-emerald-800/50 border border-emerald-700/50 hover:bg-emerald-800 transition-colors"
                   >
                     <div className="flex items-start gap-3">

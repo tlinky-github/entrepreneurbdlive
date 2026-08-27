@@ -106,15 +106,27 @@ export async function incrementViewCountClient(collectionName: string, id: strin
  * Fetch a single document by slug from a Firestore collection
  */
 export async function getDocBySlug(collectionName: string, slug: string) {
-  const q = query(
-    collection(db, collectionName),
-    where('slug', '==', slug),
-    fsLimit(1)
-  );
-  const snapshot = await getDocs(q);
-  if (snapshot.empty) return null;
-  const docSnap = snapshot.docs[0];
-  return convertTimestamps({ id: docSnap.id, ...docSnap.data() });
+  try {
+    const q = query(
+      collection(db, collectionName),
+      where('slug', '==', slug),
+      fsLimit(1)
+    );
+    const snapshot = await getDocs(q);
+    if (!snapshot.empty) {
+      const docSnap = snapshot.docs[0];
+      return convertTimestamps({ id: docSnap.id, ...docSnap.data() });
+    }
+    try {
+      const docSnap = await getDoc(doc(db, collectionName, slug));
+      if (docSnap.exists()) {
+        return convertTimestamps({ id: docSnap.id, ...docSnap.data() });
+      }
+    } catch (err) {}
+    return null;
+  } catch (e: any) {
+    return null;
+  }
 }
 
 /**

@@ -92,6 +92,7 @@ const KnowledgeArticlePage = ({ slug, article: initialArticle, isFirestore: init
       try {
         let doc = await getDocBySlug('knowledge', slug);
         if (!doc) doc = await getDocBySlug('resources', slug);
+        if (!doc) doc = await getDocBySlug('ai_posts', slug);
         if (!cancelled && doc) {
           setArticle(doc);
           setIsFirestore(true);
@@ -353,7 +354,7 @@ const KnowledgeArticlePage = ({ slug, article: initialArticle, isFirestore: init
           <div className="flex flex-col sm:flex-row items-stretch justify-between gap-4">
             {prevArticle ? (
               <a
-                href={`/knowledge/${prevArticle.id}`}
+                href={`/knowledge/${prevArticle.slug || prevArticle.id}`}
                 className="flex-1 p-6 rounded-xl border border-stone-200 bg-white hover:border-emerald-500 transition-all hover:shadow-md group"
               >
                 <div className="flex items-center gap-2 text-sm text-stone-500 mb-2">
@@ -370,7 +371,7 @@ const KnowledgeArticlePage = ({ slug, article: initialArticle, isFirestore: init
 
             {nextArticle ? (
               <a
-                href={`/knowledge/${nextArticle.id}`}
+                href={`/knowledge/${nextArticle.slug || nextArticle.id}`}
                 className="flex-1 p-6 rounded-xl border border-stone-200 bg-white hover:border-emerald-500 transition-all hover:shadow-md group text-right"
               >
                 <div className="flex items-center justify-end gap-2 text-sm text-stone-500 mb-2">

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { SEO } from '../components/SEO';
 import { ArrowLeft, ArrowRight, BookOpen, ChevronRight, Loader2, Eye } from 'lucide-react';
+import { pillarPages, pillarPagesPart2 } from '../data/mock';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import {
@@ -14,6 +15,8 @@ import { contentAPI, incrementViewCountClient } from '../lib/api';
 import { sanitizeHtml } from '../lib/utils';
 import CustomCodeInjector from '../components/common/CustomCodeInjector';
 
+const allPillarPagesList = [...(pillarPages || []), ...(pillarPagesPart2 || [])];
+
 const KnowledgeArticlePage = () => {
   const { slug } = useParams();
   const [firestoreArticle, setFirestoreArticle] = useState(null);
@@ -22,11 +25,31 @@ const KnowledgeArticlePage = () => {
   useEffect(() => {
     const loadFromFirestore = async () => {
       try {
+        // 1. Direct fetch using contentAPI.get (checks doc ID directly, slug, resources, ai_posts)
+        const getRes = await contentAPI.get('knowledge', slug);
+        if (getRes && getRes.data && (getRes.data.title || getRes.data.content)) {
+          setFirestoreArticle(getRes.data);
+          if (getRes.data.id) {
+            incrementViewCountClient(getRes.data.type || 'knowledge', getRes.data.id);
+          }
+          return;
+        }
+
+        // 2. Fallback to list search
         const res = await contentAPI.list('knowledge');
         const match = (res.data || []).find(a => a.slug === slug || a.id === slug);
         if (match) {
           setFirestoreArticle(match);
-          incrementViewCountClient(match.type || 'knowledge', match.id);
+          if (match.id) {
+            incrementViewCountClient(match.type || 'knowledge', match.id);
+          }
+          return;
+        }
+
+        // 3. Fallback to mock / pillar pages
+        const pillarMatch = allPillarPagesList.find(p => p.id === slug || p.slug === slug);
+        if (pillarMatch) {
+          setFirestoreArticle(pillarMatch);
         }
       } catch (err) {
         console.error('Firestore lookup failed:', err);
@@ -38,12 +61,11 @@ const KnowledgeArticlePage = () => {
   }, [slug]);
 
   const article = firestoreArticle;
-  const isFirestore = true;
+  const isFirestore = typeof article?.content === 'string';
   const articleContent = article?.content || {};
   const articleSections = !isFirestore && Array.isArray(articleContent.sections) ? articleContent.sections : [];
   const articleFaqs = !isFirestore && Array.isArray(articleContent.faqs) ? articleContent.faqs : [];
 
-  const allPillarPagesList = typeof allPillarPages !== 'undefined' && Array.isArray(allPillarPages) ? allPillarPages : [];
   const currentIndex = allPillarPagesList.findIndex(p => p.id === slug || p.slug === slug);
   const prevArticle = currentIndex > 0 ? allPillarPagesList[currentIndex - 1] : null;
   const nextArticle = currentIndex >= 0 && currentIndex < allPillarPagesList.length - 1 ? allPillarPagesList[currentIndex + 1] : null;
@@ -90,7 +112,7 @@ const KnowledgeArticlePage = () => {
         breadcrumbs={[
           { name: 'Home', path: '/' },
           { name: 'Knowledge Hub', path: '/knowledge' },
-          { name: article.title, path: `/knowledge/${article.id}` }
+          { name: article.title, path: `/knowledge/${article.slug || article.id}` }
         ]}
       />
       {/* Breadcrumb */}
@@ -368,7 +390,7 @@ const KnowledgeArticlePage = () => {
           <div className="flex flex-col sm:flex-row items-stretch justify-between gap-4">
             {prevArticle ? (
               <Link
-                to={`/knowledge/${prevArticle.id}`}
+                to={`/knowledge/${prevArticle.slug || prevArticle.id}`}
                 className="flex-1 p-6 rounded-xl border border-stone-200 bg-white hover:border-emerald-500 transition-all hover:shadow-md group"
               >
                 <div className="flex items-center gap-2 text-sm text-stone-500 mb-2">
@@ -385,7 +407,7 @@ const KnowledgeArticlePage = () => {
 
             {nextArticle ? (
               <Link
-                to={`/knowledge/${nextArticle.id}`}
+                to={`/knowledge/${nextArticle.slug || nextArticle.id}`}
                 className="flex-1 p-6 rounded-xl border border-stone-200 bg-white hover:border-emerald-500 transition-all hover:shadow-md group text-right"
               >
                 <div className="flex items-center justify-end gap-2 text-sm text-stone-500 mb-2">

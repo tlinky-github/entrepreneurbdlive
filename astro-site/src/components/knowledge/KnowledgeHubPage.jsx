@@ -144,7 +144,7 @@ const KnowledgeHubPage = ({ firestoreArticles: initialArticles = [], initialPerP
                           </div>
                         )}
                         <CardTitle className="text-xl text-stone-900 group-hover:text-emerald-900 transition-colors">
-                          <a href={`/knowledge/${article.slug}`}>{article.title}</a>
+                          <a href={`/knowledge/${article.slug || article.id}`}>{article.title}</a>
                         </CardTitle>
                         {article.subtitle && article.subtitle !== shortDesc && (
                           <CardDescription className="text-stone-500 line-clamp-1 mt-1">
@@ -161,7 +161,7 @@ const KnowledgeHubPage = ({ firestoreArticles: initialArticles = [], initialPerP
                             Article #{article.order || 1}
                           </span>
                           <a
-                            href={`/knowledge/${article.slug}`}
+                            href={`/knowledge/${article.slug || article.id}`}
                             className="inline-flex items-center text-sm font-medium text-emerald-900 hover:text-emerald-700 transition-colors"
                           >
                             Read Article
@@ -216,7 +216,7 @@ const KnowledgeHubPage = ({ firestoreArticles: initialArticles = [], initialPerP
                 {sortedArticles.slice(0, 4).map((art, index) => (
                   <a
                     key={art.id || art.slug}
-                    href={`/knowledge/${art.slug}`}
+                    href={`/knowledge/${art.slug || art.id}`}
                     className="group p-4 rounded-xl bg-emerald-800/50 border border-emerald-700/50 hover:bg-emerald-800 transition-colors"
                   >
                     <div className="flex items-start gap-3">

@@ -10,13 +10,16 @@ const { slug } = Astro.params;
 let article = null;
 let isFirestore = false;
 
-// 1. Try Firestore ('knowledge' collection first, then 'resources')
+// 1. Try Firestore ('knowledge' collection first, then 'resources', then 'ai_posts')
 try {
   if (!article) {
     article = await getDocBySlug('knowledge', slug as string);
   }
   if (!article) {
     article = await getDocBySlug('resources', slug as string);
+  }
+  if (!article) {
+    article = await getDocBySlug('ai_posts', slug as string);
   }
   if (article) {
     isFirestore = true;
@@ -29,6 +32,11 @@ try {
 if (article && article.redirection && article.redirection.enable && article.redirection.url) {
   const redirectStatus = parseInt(article.redirection.type) || 301;
   return Astro.redirect(article.redirection.url, redirectStatus);
+}
+
+// Canonical redirect: If accessed via raw Firestore Document ID, redirect to clean slug
+if (article && article.slug && slug !== article.slug) {
+  return Astro.redirect(`/knowledge/${article.slug}`, 301);
 }
 
 // Prepare authorData safely for schema generation
