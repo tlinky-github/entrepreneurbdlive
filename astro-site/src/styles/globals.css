@@ -599,6 +599,14 @@ code {
   margin-top: 0.5rem !important;
 }
 
+/* Remove default prose margin-top on FAQ container headings */
+.faq-container h2,
+.faq-container > h2,
+.faq-container h3,
+#faqs h2 {
+  margin-top: 0 !important;
+}
+
 /* Syncing related thumbnails to the new 3:2 standard */
 .related-post-thumb {
   aspect-ratio: 3 / 2 !important;

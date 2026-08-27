@@ -57,7 +57,7 @@ function processArticleHtml(html, featuredImage, title) {
         .replace(/&#39;/g, "'")
         .replace(/&amp;amp;/g, '&').replace(/&amp;/g, '&');
 
-      let faqHtml = `<div class="faq-container my-10 bg-stone-50 border border-stone-200 rounded-2xl p-6 md:p-8"><h2 class="text-2xl font-bold text-stone-900 mb-6 flex items-center gap-2"><span class="text-emerald-900">❓</span> Frequently Asked Questions</h2><div class="space-y-6">`;
+      let faqHtml = `<div class="faq-container my-10 bg-stone-50 border border-stone-200 rounded-2xl p-6 md:p-8"><h2 class="text-2xl font-bold text-stone-900 mb-6 flex items-center gap-2 !mt-0 mt-0"><span class="text-emerald-900">❓</span> Frequently Asked Questions</h2><div class="space-y-6">`;
       faqs.forEach(faq => {
         const q = decodeFaq(faq.question || faq.q);
         const a = decodeFaq(faq.answer || faq.a).replace(/style="[^"]*"/gi, '');
@@ -304,7 +304,7 @@ const KnowledgeArticlePage = ({ slug, article: initialArticle, isFirestore: init
                     ))}
 
                     <section id="faqs" className="mt-16 bg-stone-50 rounded-2xl p-8 scroll-mt-28">
-                      <h2 className="text-2xl font-bold text-stone-900 mb-6">
+                      <h2 className="text-2xl font-bold text-stone-900 mb-6 !mt-0 mt-0">
                         Frequently Asked Questions
                       </h2>
                       <div className="faq-list space-y-8">

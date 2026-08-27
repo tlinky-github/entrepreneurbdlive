@@ -343,7 +343,7 @@ const KnowledgeArticlePage = () => {
                     ))}
 
                     <section id="faqs" className="mt-16 bg-stone-50 rounded-2xl p-8 scroll-mt-28">
-                      <h2 className="text-2xl font-bold text-stone-900 mb-6">
+                      <h2 className="text-2xl font-bold text-stone-900 mb-6 !mt-0 mt-0">
                         Frequently Asked Questions
                       </h2>
                       <Accordion type="single" collapsible className="w-full">
