@@ -94,8 +94,13 @@ export async function incrementViewCountClient(collectionName: string, id: strin
     });
     sessionStorage.setItem(storageKey, 'true');
   } catch (error: any) {
-    // Silently ignore missing demo/mock documents that do not exist in Firestore
-    if (error?.code === 'not-found' || error?.message?.includes('No document to update')) {
+    // Silently ignore missing demo/mock documents that do not exist in Firestore or permission restrictions
+    if (
+      error?.code === 'not-found' ||
+      error?.code === 'permission-denied' ||
+      error?.message?.includes('No document to update') ||
+      error?.message?.includes('Missing or insufficient permissions')
+    ) {
       return;
     }
     console.warn(`[incrementViewCountClient] Failed for ${targetCol}/${id}:`, error);

@@ -24,20 +24,34 @@ try {
   if (!article) {
     article = await getDocBySlug('ai_posts', slug as string);
   }
-  if (article) {
+  // Validate that article has actual title or content (avoid empty stubs)
+  if (article && (article.title || article.content || article.content_html || article.sections || article.name)) {
     isFirestore = true;
+  } else {
+    article = null;
   }
 } catch (e) {
   console.error('[Knowledge Article] Firestore fetch failed:', e);
 }
 
-// 2. Fallback to mock / pillar pages
+// 2. Fallback to mock / pillar pages (with alias support like future-of-entrepreneurship -> future-entrepreneurship)
 if (!article) {
-  const pillarMatch = allPillarPages.find(p => p.id === slug || p.slug === slug);
+  const norm = (s: string) => (s || '').toLowerCase().replace(/-of-/g, '-').replace(/[^a-z0-9]/g, '');
+  const targetNorm = norm(slug as string);
+
+  const pillarMatch = allPillarPages.find(p => {
+    if (p.id === slug || p.slug === slug) return true;
+    return norm(p.id) === targetNorm || norm(p.slug) === targetNorm;
+  });
+
   if (pillarMatch) {
     article = pillarMatch;
     isFirestore = false;
   }
+}
+
+if (!article) {
+  Astro.response.status = 404;
 }
 
 // Handle redirects if configured in RankMath advanced settings
@@ -46,9 +60,10 @@ if (article && article.redirection && article.redirection.enable && article.redi
   return Astro.redirect(article.redirection.url, redirectStatus);
 }
 
-// Canonical redirect: If accessed via raw Firestore Document ID, redirect to clean slug
-if (article && article.slug && slug !== article.slug) {
-  return Astro.redirect(`/knowledge/${article.slug}`, 301);
+// Canonical redirect: If accessed via alias or raw Firestore Document ID, redirect to clean slug/id
+const targetCanonical = article?.slug || article?.id;
+if (article && targetCanonical && slug !== targetCanonical) {
+  return Astro.redirect(`/knowledge/${targetCanonical}`, 301);
 }
 
 // Prepare authorData safely for schema generation

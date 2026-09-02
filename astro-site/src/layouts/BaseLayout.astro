@@ -103,7 +103,7 @@ const ogImage = image.startsWith('http') ? image : `${siteUrl}${image}`;
   )}
 
   <!-- Automatic Dynamic Import Error Recovery -->
-  <script is:inline>
+  <script is:inline data-cfasync="false">
     (function() {
       function handleModuleError(err) {
         const msg = (err && (err.message || String(err))) || '';

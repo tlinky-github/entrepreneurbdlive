@@ -88,6 +88,14 @@ export async function incrementViewCountClient(collectionName, id) {
       view_count: increment(1)
     });
   } catch (error) {
+    if (
+      error?.code === 'not-found' ||
+      error?.code === 'permission-denied' ||
+      error?.message?.includes('No document to update') ||
+      error?.message?.includes('Missing or insufficient permissions')
+    ) {
+      return;
+    }
     console.warn(`[incrementViewCountClient] Failed for ${targetCol}/${id}:`, error);
   }
 }

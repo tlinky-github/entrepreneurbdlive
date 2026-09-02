@@ -74,12 +74,19 @@ export async function getDocBySlug(collectionName: string, slug: string) {
       .get();
     if (!snapshot.empty) {
       const d = snapshot.docs[0];
-      return convertTimestamps({ id: d.id, ...d.data() });
+      const data = typeof d.data === 'function' ? d.data() : d.data;
+      if (data && Object.keys(data).length > 0) {
+        return convertTimestamps({ id: d.id, ...data });
+      }
     }
     try {
       const docSnap = await db.collection(collectionName).doc(slug).get();
-      if (docSnap.exists) {
-        return convertTimestamps({ id: docSnap.id, ...docSnap.data() });
+      const isExists = typeof docSnap.exists === 'function' ? docSnap.exists() : Boolean(docSnap.exists);
+      if (isExists) {
+        const data = typeof docSnap.data === 'function' ? docSnap.data() : docSnap.data;
+        if (data && Object.keys(data).length > 0) {
+          return convertTimestamps({ id: docSnap.id, ...data });
+        }
       }
     } catch (err) {}
     return null;
@@ -256,8 +263,11 @@ export async function getDocById(collectionName: string, id: string) {
   try {
     const db = getDb() as any;
     const snap = await db.collection(collectionName).doc(id).get();
-    if (!snap.exists) return null;
-    return convertTimestamps({ id: snap.id, ...snap.data() });
+    const isExists = typeof snap.exists === 'function' ? snap.exists() : Boolean(snap.exists);
+    if (!isExists) return null;
+    const data = typeof snap.data === 'function' ? snap.data() : snap.data;
+    if (!data || Object.keys(data).length === 0) return null;
+    return convertTimestamps({ id: snap.id, ...data });
   } catch (e: any) {
     console.error(`[serverApi] getDocById(${collectionName}, ${id}):`, e.message);
     return null;

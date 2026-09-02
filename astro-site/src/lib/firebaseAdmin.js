@@ -115,11 +115,14 @@ const makeAdminFirestoreWrapper = () => {
     return await getClientDb();
   };
 
-  const wrapDocSnapshot = (snap) => ({
-    exists: () => snap.exists(),
-    id: snap.id,
-    data: () => snap.data(),
-  });
+  const wrapDocSnapshot = (snap) => {
+    const isExists = typeof snap?.exists === 'function' ? snap.exists() : Boolean(snap?.exists);
+    return {
+      exists: isExists,
+      id: snap.id,
+      data: () => (typeof snap?.data === 'function' ? snap.data() : snap?.data),
+    };
+  };
 
   const wrapQuerySnapshot = (snap) => {
     const docs = snap.docs.map(doc => wrapDocSnapshot(doc));

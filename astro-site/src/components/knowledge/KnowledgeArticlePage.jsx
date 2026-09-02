@@ -82,8 +82,11 @@ const KnowledgeArticlePage = ({ slug, article: initialArticle, isFirestore: init
 
   useEffect(() => {
     if (article?.id && isFirestore) {
-      const col = article.type === 'resource' ? 'resources' : 'knowledge';
-      incrementViewCountClient(col, article.id);
+      const isMock = allPillarPagesList.some(p => p.id === article.id);
+      if (!isMock) {
+        const col = article.type === 'resource' ? 'resources' : 'knowledge';
+        incrementViewCountClient(col, article.id);
+      }
     }
   }, [article?.id, isFirestore]);
 
@@ -96,13 +99,15 @@ const KnowledgeArticlePage = ({ slug, article: initialArticle, isFirestore: init
         let doc = await getDocBySlug('knowledge', slug);
         if (!doc) doc = await getDocBySlug('resources', slug);
         if (!doc) doc = await getDocBySlug('ai_posts', slug);
-        if (!cancelled && doc) {
+        if (!cancelled && doc && (doc.title || doc.content || doc.content_html || doc.sections || doc.name)) {
           setArticle(doc);
           setIsFirestore(true);
           return;
         }
 
-        const pillarMatch = allPillarPagesList.find(p => p.id === slug || p.slug === slug);
+        const norm = (s) => (s || '').toLowerCase().replace(/-of-/g, '-').replace(/[^a-z0-9]/g, '');
+        const targetNorm = norm(slug);
+        const pillarMatch = allPillarPagesList.find(p => p.id === slug || p.slug === slug || norm(p.id) === targetNorm || norm(p.slug) === targetNorm);
         if (!cancelled && pillarMatch) {
           setArticle(pillarMatch);
           setIsFirestore(false);
@@ -117,7 +122,8 @@ const KnowledgeArticlePage = ({ slug, article: initialArticle, isFirestore: init
     return () => { cancelled = true; };
   }, [slug]);
 
-  const effectiveIsFirestore = isFirestore && typeof article?.content === 'string';
+  const articleHtmlContent = article?.content || article?.content_html || '';
+  const effectiveIsFirestore = isFirestore && (typeof articleHtmlContent === 'string' && articleHtmlContent.trim().length > 0);
   const articleContent = typeof article?.content === 'object' && article?.content !== null ? article.content : {};
   const articleSections = !effectiveIsFirestore && Array.isArray(articleContent.sections) ? articleContent.sections : [];
   const articleFaqs = !effectiveIsFirestore && Array.isArray(articleContent.faqs) ? articleContent.faqs : [];
@@ -129,7 +135,7 @@ const KnowledgeArticlePage = ({ slug, article: initialArticle, isFirestore: init
   // Extract dynamic Table of Contents (TOC) headings
   const getTocHeadings = () => {
     if (effectiveIsFirestore) {
-      const html = article?.content || '';
+      const html = articleHtmlContent;
       if (!html || typeof html !== 'string') return [];
       const headings = [];
       const regex = /<h[23][^>]*>(.*?)<\/h[23]>/gi;
@@ -159,8 +165,8 @@ const KnowledgeArticlePage = ({ slug, article: initialArticle, isFirestore: init
 
   // Process HTML for Firestore articles to inject matching IDs into headings
   const getProcessedFirestoreHtml = () => {
-    if (!isFirestore || !article?.content) return '';
-    let html = processArticleHtml(article.content, article.featured_image, article.featured_image_alt || article.title);
+    if (!effectiveIsFirestore || !articleHtmlContent) return '';
+    let html = processArticleHtml(articleHtmlContent, article?.featured_image, article?.featured_image_alt || article?.title);
     let count = 0;
     html = html.replace(/<h([23])([^>]*)>(.*?)<\/h\1>/gi, (fullMatch, level, attrs, content) => {
       const text = content.replace(/<[^>]+>/g, '').trim();
@@ -231,7 +237,7 @@ const KnowledgeArticlePage = ({ slug, article: initialArticle, isFirestore: init
               <span className="text-sm font-medium text-emerald-900">Knowledge Article</span>
             </div>
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-stone-900 mb-6">
-              {article.title}
+              {article.title || article.name}
             </h1>
             {(() => {
               const articleDescription = article.short_description || article.shortDescription || article.description || article.excerpt || article.seo_description || '';
@@ -312,43 +318,45 @@ const KnowledgeArticlePage = ({ slug, article: initialArticle, isFirestore: init
                       </section>
                     ))}
 
-                    <section id="faqs" className="mt-16 bg-stone-50 rounded-2xl p-8 scroll-mt-28">
-                      <h2 className="text-2xl font-bold text-stone-900 mb-6 !mt-0 mt-0">
-                        Frequently Asked Questions
-                      </h2>
-                      <div className="faq-list space-y-8">
-                        {articleFaqs.map((faq, index) => (
-                          <div key={index} className="faq-item border-b border-stone-200 pb-8 last:border-0 last:pb-0">
-                            <h3 className="text-xl font-bold text-stone-900 mb-3 leading-tight">
-                              {(() => {
-                                const qText = (faq.q || faq.question || '')
-                                  .replace(/&amp;lt;/g, '<').replace(/&lt;/g, '<')
-                                  .replace(/&amp;gt;/g, '>').replace(/&gt;/g, '>')
-                                  .replace(/&amp;quot;/g, '"').replace(/&quot;/g, '"')
-                                  .replace(/&amp;apos;/g, "'").replace(/&apos;/g, "'")
-                                  .replace(/&#39;/g, "'")
-                                  .replace(/&amp;amp;/g, '&').replace(/&amp;/g, '&');
-                                return qText;
-                              })()}
-                            </h3>
-                            <div className="text-stone-700 leading-relaxed prose prose-stone max-w-none prose-p:my-2 prose-a:text-emerald-600 prose-a:font-semibold hover:prose-a:text-emerald-700">
-                              {(() => {
-                                const rawAns = (faq.a || faq.answer || '')
-                                  .replace(/&amp;lt;/g, '<').replace(/&lt;/g, '<')
-                                  .replace(/&amp;gt;/g, '>').replace(/&gt;/g, '>')
-                                  .replace(/&amp;quot;/g, '"').replace(/&quot;/g, '"')
-                                  .replace(/&amp;apos;/g, "'").replace(/&apos;/g, "'")
-                                  .replace(/&#39;/g, "'")
-                                  .replace(/&amp;amp;/g, '&').replace(/&amp;/g, '&')
-                                  .replace(/style="[^"]*"/gi, '');
-                                const answerHtml = sanitizeHtml(rawAns);
-                                return <div dangerouslySetInnerHTML={{ __html: answerHtml }} />;
-                              })()}
+                    {articleFaqs && articleFaqs.length > 0 && (
+                      <section id="faqs" className="mt-16 bg-stone-50 rounded-2xl p-8 scroll-mt-28">
+                        <h2 className="text-2xl font-bold text-stone-900 mb-6 !mt-0 mt-0">
+                          Frequently Asked Questions
+                        </h2>
+                        <div className="faq-list space-y-8">
+                          {articleFaqs.map((faq, index) => (
+                            <div key={index} className="faq-item border-b border-stone-200 pb-8 last:border-0 last:pb-0">
+                              <h3 className="text-xl font-bold text-stone-900 mb-3 leading-tight">
+                                {(() => {
+                                  const qText = (faq.q || faq.question || '')
+                                    .replace(/&amp;lt;/g, '<').replace(/&lt;/g, '<')
+                                    .replace(/&amp;gt;/g, '>').replace(/&gt;/g, '>')
+                                    .replace(/&amp;quot;/g, '"').replace(/&quot;/g, '"')
+                                    .replace(/&amp;apos;/g, "'").replace(/&apos;/g, "'")
+                                    .replace(/&#39;/g, "'")
+                                    .replace(/&amp;amp;/g, '&').replace(/&amp;/g, '&');
+                                  return qText;
+                                })()}
+                              </h3>
+                              <div className="text-stone-700 leading-relaxed prose prose-stone max-w-none prose-p:my-2 prose-a:text-emerald-600 prose-a:font-semibold hover:prose-a:text-emerald-700">
+                                {(() => {
+                                  const rawAns = (faq.a || faq.answer || '')
+                                    .replace(/&amp;lt;/g, '<').replace(/&lt;/g, '<')
+                                    .replace(/&amp;gt;/g, '>').replace(/&gt;/g, '>')
+                                    .replace(/&amp;quot;/g, '"').replace(/&quot;/g, '"')
+                                    .replace(/&amp;apos;/g, "'").replace(/&apos;/g, "'")
+                                    .replace(/&#39;/g, "'")
+                                    .replace(/&amp;amp;/g, '&').replace(/&amp;/g, '&')
+                                    .replace(/style="[^"]*"/gi, '');
+                                  const answerHtml = sanitizeHtml(rawAns);
+                                  return <div dangerouslySetInnerHTML={{ __html: answerHtml }} />;
+                                })()}
+                              </div>
                             </div>
-                          </div>
-                        ))}
-                      </div>
-                    </section>
+                          ))}
+                        </div>
+                      </section>
+                    )}
                   </>
                 )}
               </div>
